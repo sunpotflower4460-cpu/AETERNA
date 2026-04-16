@@ -253,7 +253,7 @@ export class AeternaNetwork {
 
     updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket) {
         const predictionPacket = buildPredictionPacket(this);
-        const rewritePacket = runPriorRewriteStage(this, predictionPacket);
+        const rewritePacket = runPriorRewriteStage(this);
         const organismPacket = runBodyStateStage(this, {
             touchPacket: perceptionPacket,
             dynamicsPacket,
@@ -271,7 +271,6 @@ export class AeternaNetwork {
         });
         const actionPacket = runActionDecisionStage(this, {
             touchPacket: perceptionPacket,
-            organismPacket,
         });
         return {
             predictionPacket,
