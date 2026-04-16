@@ -1,17 +1,19 @@
 import { PHI } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
-import { MODE_DYNAMICS, REWRITE_TYPES, TOUCH_PROJ_BASE_GAIN } from './aeternaTuning.ts';
-import { updateDynamicsCore, updateBaseline, updateBaselineAndResidue, updatePredictionError, updateResidue, autoPredictAndError, injectPredictionError, triggerNoise } from './dynamicCore.ts';
-import { computeIntegrationProxy, computeLargestCluster, computeMeanLocalPredError, computeMeanPredictionError, computePhaseCoherence, updateDerivedStateCaches } from './derivedMetrics.ts';
-import { generateNetworkGeometry, updateNetworkRadius, updateRenderBuffers } from './networkGeometry.ts';
-import { injectSTDPExternal, normalizeDirectionalWeights } from './networkWeights.ts';
-import { updateLocalPrediction } from '../perception/localPrediction.ts';
-import { addGaussianTouch, mapTouchToSurfaceIndex, projectTouchToNetwork, updateRawTouchField, updateTouchPerception } from '../perception/touchPerception.ts';
-import { applyTouchPatternModulation, computeTouchCentroid, getDominantTouchPattern, updateTouchPatternScores, updateTouchSequenceFeatures } from '../perception/touchPatterns.ts';
-import { applyActionToDynamics, getActionDebugSummary, updateActionState } from '../organism/actionState.ts';
-import { applyDreamReplay, getModeDebugSummary, noteModeTransition, updateModeState } from '../organism/modeState.ts';
-import { buildRewriteDebugSummary, decayStructuredPriorRewrite, findRewriteCandidate, getRewriteLocalTouch, getRewriteSeedBiases, applyDirectionalRewrite, applyStructuredPriorRewrite, logRewriteEvent, updateStructuredPriorRewrite } from '../organism/rewrite.ts';
-import { getOrganismDebugSummary, recordOrganismSnapshot, updateOrganismState } from '../organism/survivalState.ts';
+import { MODE_DYNAMICS } from './aeternaTuning.ts';
+import { autoPredictAndError, injectPredictionError, runTorusDynamicsStage, triggerNoise, updatePredictionError } from './torusDynamics.ts';
+import { computeIntegrationProxy, computeLargestCluster, computeMeanLocalPredError, computeMeanPredictionError, computePhaseCoherence, runTorusMetricsStage, updateDerivedStateCaches } from './torusMetrics.ts';
+import { generateNetworkGeometry, updateNetworkRadius, updateRenderBuffers } from './torusGeometry.ts';
+import { injectSTDPExternal, normalizeDirectionalWeights } from './torusWeights.ts';
+import { runBaselineActivityStage, updateBaseline, updateResidue } from '../mode/baselineActivity.ts';
+import { buildPredictionPacket, runLocalPredictorStage, updateLocalPrediction } from '../perception/localPredictor.ts';
+import { addGaussianTouch, captureTouchSensoryInput, finalizeTouchSensoryStage, mapTouchToSurfaceIndex, projectTouchToNetwork, updateRawTouchField, updateTouchPerception } from '../perception/touchSensory.ts';
+import { applyTouchPatternStage, getDominantPatternFromScores, runTouchPatternStage } from '../perception/touchPattern.ts';
+import { runActionDecisionStage, applyActionToDynamics, getActionDebugSummary, updateActionState } from '../organism/actionDecision.ts';
+import { runModeControllerStage, applyDreamReplay, getModeDebugSummary, noteModeTransition, updateModeState } from '../mode/modeController.ts';
+import { runPriorRewriteStage, buildRewriteDebugSummary, decayStructuredPriorRewrite, findRewriteCandidate, getRewriteLocalTouch, getRewriteSeedBiases, applyDirectionalRewrite, applyStructuredPriorRewrite, logRewriteEvent, updateStructuredPriorRewrite } from '../organism/priorRewrite.ts';
+import { runBodyStateStage, getOrganismDebugSummary, recordOrganismSnapshot, updateOrganismState } from '../organism/bodyState.ts';
+import { computeTouchCentroid, updateTouchPatternScores, updateTouchSequenceFeatures } from '../perception/touchPatterns.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -161,6 +163,7 @@ export class AeternaNetwork {
         this.cachedMaxClusterSize = 0;
         this.cachedPhiApprox = 0;
         this.cachedPhaseCoherence = 0;
+        this.cachedRecentRewriteMean = 0;
     }
 
     clampFinite(value, min, max, fallback = 0) {
@@ -197,8 +200,8 @@ export class AeternaNetwork {
     triggerNoise(tension, sigmaDisp) { triggerNoise(this, tension, sigmaDisp); }
     updateBaseline() { updateBaseline(this); }
     updateResidue() { updateResidue(this); }
-    updateBaselineAndResidue() { return updateBaselineAndResidue(this); }
-    updateLocalPrediction() { updateLocalPrediction(this); }
+    updateBaselineAndResidue() { return runBaselineActivityStage(this); }
+    updateLocalPrediction() { runLocalPredictorStage(this); }
     mapTouchToSurfaceIndex(xNorm, yNorm) { return mapTouchToSurfaceIndex(this, xNorm, yNorm); }
     addGaussianTouch(centerIdx, pressure) { addGaussianTouch(this, centerIdx, pressure); }
     updateRawTouchField(activeTouches) { updateRawTouchField(this, activeTouches); }
@@ -207,8 +210,8 @@ export class AeternaNetwork {
     computeTouchCentroid(activeTouches) { return computeTouchCentroid(this, activeTouches); }
     updateTouchSequenceFeatures(activeTouches) { updateTouchSequenceFeatures(this, activeTouches); }
     updateTouchPatternScores() { updateTouchPatternScores(this); }
-    getDominantTouchPattern() { return getDominantTouchPattern(this); }
-    applyTouchPatternModulation() { applyTouchPatternModulation(this); }
+    getDominantTouchPattern() { return getDominantPatternFromScores(this.touchPatternScores); }
+    applyTouchPatternModulation() { applyTouchPatternStage(this); }
     getRewriteSeedBiases() { return getRewriteSeedBiases(this); }
     getModeDebugSummary() { return getModeDebugSummary(this); }
     noteModeTransition(nextMode) { noteModeTransition(this, nextMode); }
@@ -230,7 +233,7 @@ export class AeternaNetwork {
     updateStructuredPriorRewrite() { return updateStructuredPriorRewrite(this); }
     updatePredictionError() { updatePredictionError(this); }
     computeMeanLocalPredError() { return computeMeanLocalPredError(this); }
-    updateDynamicsCore() { return updateDynamicsCore(this); }
+    updateDynamicsCore() { return runTorusDynamicsStage(this); }
     updateRenderBuffers(diskNodeIdx) { updateRenderBuffers(this, diskNodeIdx); }
     updateDerivedStateCaches(freqRatio) { updateDerivedStateCaches(this, freqRatio); }
 
@@ -242,100 +245,39 @@ export class AeternaNetwork {
     }
 
     updatePerceptionState(activeTouches) {
-        this.updateRawTouchField(activeTouches);
-        this.updateTouchSequenceFeatures(activeTouches);
-        this.updateTouchPatternScores();
-        this.updateLocalPrediction();
-        this.updateTouchPerception();
-        this.projectTouchToNetwork();
-        this.applyTouchPatternModulation();
-
-        const activeTouchCount = activeTouches.size;
-        let replayRawTouchSum = 0;
-        let replayOnsetSum = 0;
-        let replayNoveltySum = 0;
-        for (let i = 0; i < this.numNodes; i++) {
-            replayRawTouchSum += this.rawTouch[i];
-            replayOnsetSum += this.touchOnset[i];
-            replayNoveltySum += this.touchNovelty[i];
-        }
-        const replayExternalLevel = this.clampFinite(
-            (activeTouchCount > 0 ? 0.45 : 0) + (replayRawTouchSum / this.numNodes) * 0.9 + (replayOnsetSum / this.numNodes) * 0.7 + (replayNoveltySum / this.numNodes) * 0.45,
-            0,
-            1,
-            0,
-        );
-        this.applyDreamReplay(replayExternalLevel);
-
-        const touchProjGain = TOUCH_PROJ_BASE_GAIN * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
-        let rawTouchSum = 0;
-        let onsetSum = 0;
-        let offsetSum = 0;
-        let noveltySum = 0;
-        let traceSum = 0;
-        for (let i = 0; i < this.numNodes; i++) {
-            this.currentBuffer[i] += this.touchProjection[i] * touchProjGain;
-            rawTouchSum += this.rawTouch[i];
-            onsetSum += this.touchOnset[i];
-            offsetSum += this.touchOffset[i];
-            noveltySum += this.touchNovelty[i];
-            traceSum += this.touchTrace[i];
-        }
-
-        return {
-            activeTouchCount,
-            meanRawTouch: rawTouchSum / this.numNodes,
-            meanTouchOnset: onsetSum / this.numNodes,
-            meanTouchOffset: offsetSum / this.numNodes,
-            meanTouchNovelty: noveltySum / this.numNodes,
-            meanTouchTrace: traceSum / this.numNodes,
-        };
+        const touchInputPacket = captureTouchSensoryInput(this, activeTouches);
+        runLocalPredictorStage(this);
+        const touchPatternPacket = runTouchPatternStage(this, activeTouches);
+        return finalizeTouchSensoryStage(this, touchInputPacket, touchPatternPacket);
     }
 
-    updatePostPropagationState(perceptionState, ongoingState, coreState) {
-        this.updatePredictionError();
-        const rewriteDebug = this.updateStructuredPriorRewrite();
-        let recentRewriteSum = 0;
-        for (let i = 0; i < this.numNodes; i++) recentRewriteSum += this.recentRewriteMask[i];
-        this.updateOrganismState({
-            activeTouchCount: perceptionState.activeTouchCount,
-            meanRawTouch: perceptionState.meanRawTouch,
-            meanTouchOnset: perceptionState.meanTouchOnset,
-            meanTouchNovelty: perceptionState.meanTouchNovelty,
-            meanTouchTrace: perceptionState.meanTouchTrace,
-            arousal: coreState.arousal,
-            meanPredictionError: this.computeMeanPredictionError(),
-            residueLevel: ongoingState.residueLevel,
-            rewritePressureMean: rewriteDebug.pressureMean,
-            globalRewriteLoad: rewriteDebug.globalLoad,
+    updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket) {
+        const predictionPacket = buildPredictionPacket(this);
+        const rewritePacket = runPriorRewriteStage(this);
+        const organismPacket = runBodyStateStage(this, {
+            touchPacket: perceptionPacket,
+            dynamicsPacket,
+            baselinePacket,
+            predictionPacket,
+            rewritePacket,
         });
-        this.updateActionState({
-            activeTouchCount: perceptionState.activeTouchCount,
-            meanRawTouch: perceptionState.meanRawTouch,
-            meanTouchNovelty: perceptionState.meanTouchNovelty,
-            meanTouchTrace: perceptionState.meanTouchTrace,
-        });
-        const modeDebug = this.updateModeState({
-            activeTouchCount: perceptionState.activeTouchCount,
-            meanRawTouch: perceptionState.meanRawTouch,
-            meanTouchOnset: perceptionState.meanTouchOnset,
-            meanTouchNovelty: perceptionState.meanTouchNovelty,
-            arousal: coreState.arousal,
-            meanPredictionError: this.computeMeanPredictionError(),
-            sigmaDisplay: this.sigmaDisplay,
+        const modePacket = runModeControllerStage(this, {
+            touchPacket: perceptionPacket,
+            dynamicsPacket,
+            baselinePacket,
+            predictionPacket,
+            rewritePacket,
             tension: state.tensionLoad,
-            residueLevel: ongoingState.residueLevel,
-            traceLevel: perceptionState.meanTouchTrace,
-            priorBiasMean: rewriteDebug.priorBiasMean,
-            rewritePressureMean: rewriteDebug.pressureMean,
-            recentRewriteMean: recentRewriteSum / this.numNodes,
         });
-        this.applyActionToDynamics();
+        const actionPacket = runActionDecisionStage(this, {
+            touchPacket: perceptionPacket,
+        });
         return {
-            rewriteDebug,
-            modeDebug,
-            organismDebug: this.getOrganismDebugSummary(),
-            actionDebug: this.getActionDebugSummary(),
+            predictionPacket,
+            rewritePacket,
+            organismPacket,
+            modePacket,
+            actionPacket,
         };
     }
 
@@ -345,64 +287,70 @@ export class AeternaNetwork {
 
         const touchState = activeTouches || new Map();
 
-        // update order: baseline/residue → perception → core propagation → prediction/rewrite → organism/action/mode → derived metrics → render buffers
-        const ongoingState = this.updateBaselineAndResidue();
-        const perceptionState = this.updatePerceptionState(touchState);
-        const coreState = this.updateDynamicsCore();
-        const { rewriteDebug, modeDebug, organismDebug, actionDebug } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
-        this.updateDerivedStateCaches(coreState.freqRatio);
+        // update order: baseline/residue → touch sensory input → local predictor → touch pattern → touch percept packet → torus dynamics → prediction/rewrite → organism → mode → action → metrics → render
+        const baselinePacket = runBaselineActivityStage(this);
+        const perceptionPacket = this.updatePerceptionState(touchState);
+        const dynamicsPacket = runTorusDynamicsStage(this);
+        const {
+            predictionPacket,
+            rewritePacket,
+            organismPacket,
+            modePacket,
+            actionPacket,
+        } = this.updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket);
+        const metricsPacket = runTorusMetricsStage(this, dynamicsPacket);
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
 
         return {
-            ignitionRatio: this.cachedMaxClusterSize / this.numNodes,
-            phiApprox: this.cachedPhiApprox,
-            phaseCoherence: this.cachedPhaseCoherence,
-            meanPredictionError: this.computeMeanPredictionError(),
-            meanLocalPredError: this.computeMeanLocalPredError(),
-            arousal: coreState.arousal,
-            sigmaDisplay: this.sigmaDisplay,
-            firingRateError: this.firingRateError,
-            baselineLevel: ongoingState.baselineLevel,
-            residueLevel: ongoingState.residueLevel,
-            meanRawTouch: perceptionState.meanRawTouch,
-            meanTouchOnset: perceptionState.meanTouchOnset,
-            meanTouchOffset: perceptionState.meanTouchOffset,
-            meanTouchNovelty: perceptionState.meanTouchNovelty,
-            activeTouchCount: perceptionState.activeTouchCount,
-            touchDuration: this.touchDurationFrames,
-            touchVelocity: this.touchVelocityEstimate,
-            touchRepeatCount: this.touchRepeatCount,
-            dominantPattern: this.getDominantTouchPattern(),
-            touchPatternScores: { ...this.touchPatternScores },
-            rewriteTendency: rewriteDebug.tendency,
-            rewritePressureMean: rewriteDebug.pressureMean,
-            rewritePressureMax: rewriteDebug.pressureMax,
-            priorBiasMean: rewriteDebug.priorBiasMean,
-            priorBiasSummary: rewriteDebug.priorBiasSummary,
-            globalRewriteLoad: rewriteDebug.globalLoad,
-            lastRewriteEvent: rewriteDebug.lastEvent,
-            modeState: modeDebug.modeState,
-            modePhase: modeDebug.modePhase,
-            wakeDrive: modeDebug.wakeDrive,
-            sleepPressure: modeDebug.sleepPressure,
-            dreamPressure: modeDebug.dreamPressure,
-            modeConfidence: modeDebug.modeConfidence,
-            lastModeChangeTime: modeDebug.lastModeChangeTime,
-            lastModeChangeFrames: modeDebug.lastModeChangeFrames,
-            dreamReplayActive: modeDebug.dreamReplayActive,
-            dreamReplayStrength: modeDebug.dreamReplayStrength,
-            energy: organismDebug.energy,
-            stability: organismDebug.stability,
-            overload: organismDebug.overload,
-            restDrive: organismDebug.restDrive,
-            orientingDrive: organismDebug.orientingDrive,
-            actionState: actionDebug.actionState,
-            actionPulseLevel: actionDebug.actionPulseLevel,
-            actionDirection: actionDebug.actionDirection,
-            lastActionChangeTime: actionDebug.lastActionChangeTime,
-            lastActionChangeFrames: actionDebug.lastActionChangeFrames,
-            lastTouchDirection: this.getTouchDirectionArray(),
+            ignitionRatio: metricsPacket.clusterRatio,
+            phiApprox: metricsPacket.phiProxy,
+            phaseCoherence: metricsPacket.phaseCoherence,
+            meanPredictionError: predictionPacket.meanPredictionError,
+            meanLocalPredError: predictionPacket.meanLocalPredictionError,
+            arousal: metricsPacket.arousal,
+            sigmaDisplay: metricsPacket.sigma,
+            firingRateError: metricsPacket.firingRateError,
+            baselineLevel: baselinePacket.baselineLevel,
+            residueLevel: baselinePacket.residueLevel,
+            meanRawTouch: perceptionPacket.rawTouchMean,
+            meanTouchOnset: perceptionPacket.onsetMean,
+            meanTouchOffset: perceptionPacket.offsetMean,
+            meanTouchNovelty: perceptionPacket.noveltyMean,
+            activeTouchCount: perceptionPacket.activeTouchCount,
+            touchDuration: perceptionPacket.touchDuration,
+            touchVelocity: perceptionPacket.touchVelocity,
+            touchRepeatCount: perceptionPacket.touchRepeatCount,
+            dominantPattern: perceptionPacket.dominantPattern,
+            touchPatternScores: { ...perceptionPacket.patternScores },
+            rewriteTendency: rewritePacket.dominantRewriteTendency,
+            rewritePressureMean: rewritePacket.rewritePressureMean,
+            rewritePressureMax: rewritePacket.rewritePressureMax,
+            priorBiasMean: rewritePacket.priorBiasMean,
+            priorBiasSummary: rewritePacket.priorBiasSummary,
+            globalRewriteLoad: rewritePacket.globalRewriteLoad,
+            lastRewriteEvent: rewritePacket.lastRewriteEvent,
+            modeState: modePacket.modeState,
+            modePhase: modePacket.modePhase,
+            wakeDrive: modePacket.wakeDrive,
+            sleepPressure: modePacket.sleepPressure,
+            dreamPressure: modePacket.dreamPressure,
+            modeConfidence: modePacket.modeConfidence,
+            lastModeChangeTime: modePacket.lastModeChangeTime,
+            lastModeChangeFrames: modePacket.lastModeChangeFrames,
+            dreamReplayActive: modePacket.dreamReplayActive,
+            dreamReplayStrength: modePacket.dreamReplayStrength,
+            energy: organismPacket.energy,
+            stability: organismPacket.stability,
+            overload: organismPacket.overload,
+            restDrive: organismPacket.restDrive,
+            orientingDrive: organismPacket.orientingDrive,
+            actionState: actionPacket.actionState,
+            actionPulseLevel: actionPacket.actionPulseLevel,
+            actionDirection: actionPacket.actionDirection,
+            lastActionChangeTime: actionPacket.lastActionChangeTime,
+            lastActionChangeFrames: actionPacket.lastActionChangeFrames,
+            lastTouchDirection: perceptionPacket.lastTouchDirection,
         };
     }
 }

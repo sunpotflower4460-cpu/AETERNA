@@ -1,33 +1,49 @@
 # Active Core Map
 
-- `src/core/AeternaNetwork.js` — CPU state source of truth and update-order orchestration.
-- `src/core/dynamicCore.ts` — baseline/residue, prediction-error injection, core propagation, and noise.
-- `src/core/derivedMetrics.ts` — cluster, phi proxy, phase coherence, and derived cache refresh.
-- `src/core/networkGeometry.ts` — torus generation, radius updates, and render buffers.
-- `src/core/networkWeights.ts` — directional weight normalization and external STDP updates.
-- `src/core/aeternaTuning.ts` — shared core/perception/organism tuning constants used by helpers.
+## Core orchestration
 
-- `src/perception/localPrediction.ts` — neighborhood prediction updates.
-- `src/perception/touchPerception.ts` — raw touch field, onset/offset, novelty, and touch projection.
-- `src/perception/touchPatterns.ts` — centroid, repeat/hold/stroke tracking, and pattern modulation.
-- `src/perception/TouchMemory.js` + `src/perception/touchMemoryState.ts` — touch trace bookkeeping and STDP handoff.
+- `src/core/AeternaNetwork.js` — live CPU state holder and thin packet-flow orchestration.
+- `src/types/packets.ts` — shared packet contracts for perception, prediction, rewrite, mode, organism, action, and dynamics.
 
-- `src/organism/modeState.ts` — wake/sleep/dream drives and dream replay.
-- `src/organism/survivalState.ts` — energy, stability, overload, rest, and orienting state.
-- `src/organism/actionState.ts` — idle/orient/withdraw/settle selection and action pulse effects.
-- `src/organism/rewrite.ts` — prior bias, rewrite pressure, plasticity trace, and rewrite event selection.
-- `src/organism/actionLoop.js` + `src/organism/runtimeLoop.ts` — frame loop orchestration, tension/UI/bridge cadence.
+## Core physiology modules
 
-## Agent touch points
+- `src/mode/baselineActivity.ts` — baseline activity + residue packet stage.
+- `src/perception/touchSensory.ts` — raw touch field, onset/offset/novelty/trace projection, and percept packet assembly.
+- `src/perception/localPredictor.ts` — local prediction update and prediction packet assembly.
+- `src/perception/touchPattern.ts` — touch sequence state, pure score shaping, dominant pattern packet fields.
+- `src/organism/priorRewrite.ts` — rewrite pressure, prior channels, rewrite packet assembly.
+- `src/organism/bodyState.ts` — energy/stability/overload/rest/orienting packet assembly.
+- `src/mode/modeController.ts` — wake/sleep/dream drive selection and mode packet assembly.
+- `src/organism/actionDecision.ts` — idle/orient/withdraw/settle selection and action pulse application.
+- `src/core/torusDynamics.ts` — propagation-stage entry points and dynamics packet assembly.
+- `src/core/torusMetrics.ts` — cluster/phi/coherence cache refresh and metrics packet assembly.
+- `src/core/torusGeometry.ts` — torus generation, radius updates, render buffer refresh.
+- `src/core/torusWeights.ts` — directional weight normalization and external STDP helpers.
 
-- Touch perception changes: start in `touchPerception.ts` or `touchPatterns.ts`.
-- Rewrite/plasticity changes: start in `rewrite.ts`.
-- Mode or survival tuning: start in `modeState.ts` or `survivalState.ts`.
-- Core wave / metrics / render changes: start in `dynamicCore.ts`, `derivedMetrics.ts`, or `networkGeometry.ts`.
-- Cross-cutting update order only: edit `AeternaNetwork.js`.
+## Lower-level implementation still used by the stage wrappers
 
-## AeternaNetwork role
+- `src/core/dynamicCore.ts`
+- `src/core/derivedMetrics.ts`
+- `src/core/networkGeometry.ts`
+- `src/core/networkWeights.ts`
+- `src/perception/touchPerception.ts`
+- `src/perception/touchPatterns.ts`
+- `src/perception/localPrediction.ts`
+- `src/organism/rewrite.ts`
+- `src/organism/survivalState.ts`
+- `src/organism/actionState.ts`
+- `src/organism/modeState.ts`
 
-- Holds all live CPU buffers and scalar organism state.
-- Calls helper modules in the visible update order.
-- Remains the integration point when helpers need shared state without importing each other.
+## What AeternaNetwork keeps vs delegates
+
+AeternaNetwork still keeps the live torus buffers, organism scalars, touch traces, rewrite memory, and render arrays.
+It now delegates the step order to packet-oriented stage files and mostly applies returned packets when building the public `updateDynamics()` result.
+
+## Where to touch active code first
+
+- Update flow / packet order: `src/core/AeternaNetwork.js`
+- Perception packet changes: `src/perception/touchSensory.ts`, `src/perception/touchPattern.ts`, `src/perception/localPredictor.ts`
+- Rewrite packet changes: `src/organism/priorRewrite.ts`
+- Mode / organism / action packet changes: `src/mode/modeController.ts`, `src/organism/bodyState.ts`, `src/organism/actionDecision.ts`
+- Dynamics / metrics / render packet changes: `src/core/torusDynamics.ts`, `src/core/torusMetrics.ts`, `src/core/torusGeometry.ts`
+- Bridge-facing numeric packet mapping: `src/types/packets.ts`, `src/types/torusState.ts`, `src/bridge/bridge.ts`
