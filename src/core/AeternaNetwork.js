@@ -1029,7 +1029,7 @@ export class AeternaNetwork {
         const idx = candidate.node;
         const delta = this.clampFinite(
             (0.004 + candidate.score * 0.012) * (this.currentModeDynamics?.rewriteGain ?? 1.0),
-            0.003,
+            0.004,
             0.018,
             0.004,
         );

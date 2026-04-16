@@ -88,7 +88,7 @@ export class GuidePanel {
         }
 
         const modeInfo = packet.mode_state
-            ? ` mode=${packet.mode_state} w=${(packet.wake_drive || 0).toFixed(2)} s=${(packet.sleep_pressure || 0).toFixed(2)} d=${(packet.dream_pressure || 0).toFixed(2)}`
+            ? ` mode=${packet.mode_state} wake=${(packet.wake_drive || 0).toFixed(2)} sleep=${(packet.sleep_pressure || 0).toFixed(2)} dream=${(packet.dream_pressure || 0).toFixed(2)}`
             : '';
         const text = utterance
             ? `[BRIDGE] ${utterance.slice(0, 60)}${modeInfo}${touchInfo}`
