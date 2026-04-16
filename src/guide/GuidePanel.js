@@ -5,6 +5,7 @@ export class GuidePanel {
     constructor(network) {
         this.network = network; this.history = []; this.lastEventTime = { whiteEngine: 0, heartbeat: 0, tension: 0, eye: 0, sigma: 0 };
         this.whiteFrameCount = 0; this.lastHeartbeatPulse = 0;
+        this.lastRewriteEventId = 0;
         this.historyEl = document.getElementById('guide-history'); this.latestEl = document.getElementById('guide-latest'); this.providerEl = document.getElementById('guide-provider');
         this.apiProvider = 'none'; this.apiKey = '';
     }
@@ -24,6 +25,15 @@ export class GuidePanel {
         
         if ((dynamicsInfo.sigmaDisplay < 0.95 || dynamicsInfo.sigmaDisplay > 1.05) && (simTime - this.lastEventTime.sigma > COOLDOWN)) { ev = { type: 'sigma', text: "臨界範囲を外れました。ホメオスタシスが修正を開始します。" }; this.lastEventTime.sigma = simTime; }
         if (ev) this.handleEvent(ev, dynamicsInfo, engineState);
+
+        const rewriteEvent = dynamicsInfo.lastRewriteEvent;
+        if (rewriteEvent && rewriteEvent.id !== this.lastRewriteEventId) {
+            this.lastRewriteEventId = rewriteEvent.id;
+            this.addLog(
+                `rewrite=${rewriteEvent.rewriteType} node=${rewriteEvent.node} Δ=${rewriteEvent.deltaMagnitude.toFixed(4)} load=${(dynamicsInfo.globalRewriteLoad || 0).toFixed(2)}`,
+                'REWRITE',
+            );
+        }
     }
     async handleEvent(event, dynamicsInfo, engineState) {
         const baseText = `[σ=${dynamicsInfo.sigmaDisplay.toFixed(2)}] ${event.text}`;

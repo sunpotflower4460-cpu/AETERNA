@@ -309,6 +309,21 @@
                           </div>
                       </div>
                   </div>
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-prior-rewrite', 'icon-prior-rewrite')">
+                          <span class="tracking-wider">PRIOR REWRITE</span>
+                          <svg id="icon-prior-rewrite" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-prior-rewrite" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between has-tooltip font-bold" data-tooltip="Current structured rewrite tendency inferred from touch pattern / proto seed pressure (PR8-A)" id="row-rewrite-tendency"><span>Tendency</span><span id="val-rewrite-tendency" class="text-white">none</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Mean / max rewrite pressure across nodes (PR8-A)" id="row-rewrite-pressure"><span>Pressure avg/max</span><span id="val-rewrite-pressure" class="text-white">0.000 / 0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Global safety load that suppresses further rewrites when high (PR8-A)" id="row-rewrite-load"><span>Global load</span><span id="val-rewrite-load" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Mean node-local prior channel biases: novelty / recurrence / persistence / directionality (PR8-A)" id="row-prior-bias"><span>Prior bias</span><span id="val-prior-bias" class="text-white">n=0.00 r=0.00 p=0.00 d=0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Most recent bounded prior rewrite event (PR8-A)" id="row-last-rewrite"><span>Last rewrite</span><span id="val-last-rewrite" class="text-white">&#x2014;</span></div>
+                          </div>
+                      </div>
+                  </div>
                   <!-- 前提条件 -->
                   <div>
                       <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-prereq', 'icon-prereq')">

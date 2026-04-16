@@ -59,6 +59,22 @@ export function updateMetricsUI(dyn, engineState) {
         const scoreColors = { tap: '#fbbf24', repeat: '#f87171', hold: '#a78bfa', stroke: '#34d399' };
         if(UI['val-touch-dominant']) UI['val-touch-dominant'].style.color = dom !== '—' ? (scoreColors[dom] || '') : '';
     }
+
+    const rewriteTendency = dyn.rewriteTendency || 'none';
+    const rewritePressure = `${(dyn.rewritePressureMean || 0).toFixed(3)} / ${(dyn.rewritePressureMax || 0).toFixed(3)}`;
+    const priorSummary = dyn.priorBiasSummary
+        ? Object.entries(dyn.priorBiasSummary)
+            .map(([key, value]) => `${key[0]}=${value.toFixed(2)}`)
+            .join(' ')
+        : 'n=0.00 r=0.00 p=0.00 d=0.00';
+    const lastRewrite = dyn.lastRewriteEvent
+        ? `${dyn.lastRewriteEvent.rewriteType} @ ${dyn.lastRewriteEvent.node}`
+        : '—';
+    if(UI['val-rewrite-tendency']) UI['val-rewrite-tendency'].innerText = rewriteTendency;
+    if(UI['val-rewrite-pressure']) UI['val-rewrite-pressure'].innerText = rewritePressure;
+    if(UI['val-rewrite-load']) UI['val-rewrite-load'].innerText = (dyn.globalRewriteLoad || 0).toFixed(3);
+    if(UI['val-prior-bias']) UI['val-prior-bias'].innerText = priorSummary;
+    if(UI['val-last-rewrite']) UI['val-last-rewrite'].innerText = lastRewrite;
     
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);

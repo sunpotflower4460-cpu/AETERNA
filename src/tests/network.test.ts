@@ -36,6 +36,45 @@ function stubDisk() {
   };
 }
 
+function prepareRewriteFrame(
+  net: InstanceType<typeof AeternaNetwork>,
+  node: number,
+  type: 'novelty' | 'recurrence' | 'persistence' | 'directionality',
+) {
+  net.predictionError.fill(0);
+  net.touchOnset.fill(0);
+  net.touchOffset.fill(0);
+  net.touchNovelty.fill(0);
+  net.touchTrace.fill(0);
+  net.rawTouch.fill(0);
+  net.touchProjection.fill(0);
+  net.activityResidue.fill(0);
+  net.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+  net.predictionError[node] = 1.0;
+
+  if (type === 'novelty') {
+    net.touchOnset[node] = 1.0;
+    net.touchNovelty[node] = 1.0;
+    net.touchPatternScores.tap = 0.9;
+  } else if (type === 'recurrence') {
+    net.touchTrace[node] = 1.0;
+    net.rawTouch[node] = 0.8;
+    net.touchNovelty[node] = 0.6;
+    net.touchPatternScores.repeat = 0.9;
+  } else if (type === 'persistence') {
+    net.touchOffset[node] = 1.0;
+    net.touchTrace[node] = 0.9;
+    net.activityResidue[node] = 0.5;
+    net.touchPatternScores.hold = 0.9;
+  } else {
+    net.rawTouch[node] = 1.0;
+    net.touchNovelty[node] = 0.8;
+    net.touchProjection[node] = 0.7;
+    net.touchPatternScores.stroke = 0.9;
+    net.touchDirectionVector = { dx: 0.4, dy: 0.05, strength: 0.9 };
+  }
+}
+
 describe('AeternaNetwork — baseline and residue', () => {
   let net: InstanceType<typeof AeternaNetwork>;
 
@@ -223,5 +262,85 @@ describe('AeternaNetwork — full dynamics step', () => {
       net.updateDynamics(-1);
     }
     expect(Number.isFinite(net.sigmaDisplay)).toBe(true);
+  });
+});
+
+describe('AeternaNetwork — structured prior rewrite', () => {
+  let net: InstanceType<typeof AeternaNetwork>;
+  const node = 27;
+
+  beforeEach(() => {
+    state.disk = stubDisk() as typeof state.disk;
+    state.tensionLoad = 0.6;
+    net = new AeternaNetwork(SMALL);
+  });
+
+  it('initializes bounded rewrite state', () => {
+    expect(net.priorBias.length).toBe(net.numNodes);
+    expect(net.rewritePressure.length).toBe(net.numNodes);
+    expect(net.plasticityTrace.length).toBe(net.numNodes);
+    expect(net.recentRewriteMask.length).toBe(net.numNodes);
+    expect(net.globalRewriteLoad).toBe(0);
+  });
+
+  it('creates a novelty rewrite event only after sustained trigger pressure', () => {
+    prepareRewriteFrame(net, node, 'novelty');
+    const before = net.localPrediction[node];
+    for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
+
+    expect(net.lastRewriteEvent?.rewriteType).toBe('novelty');
+    expect(net.priorChannels.novelty[node]).toBeGreaterThan(0);
+    expect(net.priorBias[node]).toBeGreaterThan(0);
+    expect(net.localPrediction[node]).toBeGreaterThan(before);
+    expect(net.recentRewriteMask[node]).toBeGreaterThan(0);
+  });
+
+  it('applies recurrence and persistence rewrites with distinct local effects', () => {
+    prepareRewriteFrame(net, node, 'recurrence');
+    for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
+    const recurrenceTrace = net.touchTrace[node];
+    expect(net.lastRewriteEvent?.rewriteType).toBe('recurrence');
+    expect(net.priorChannels.recurrence[node]).toBeGreaterThan(0);
+    expect(recurrenceTrace).toBeGreaterThan(1.0);
+
+    net.recentRewriteMask.fill(0);
+    net.globalRewriteLoad = 0;
+    prepareRewriteFrame(net, node, 'persistence');
+    const beforeResidue = net.activityResidue[node];
+    for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
+    expect(net.lastRewriteEvent?.rewriteType).toBe('persistence');
+    expect(net.priorChannels.persistence[node]).toBeGreaterThan(0);
+    expect(net.activityResidue[node]).toBeGreaterThan(beforeResidue);
+  });
+
+  it('biases directional weights and suppresses rewrite when global load is too high', () => {
+    prepareRewriteFrame(net, node, 'directionality');
+    for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
+    expect(net.lastRewriteEvent?.rewriteType).toBe('directionality');
+    expect(net.priorChannels.directionality[node]).toBeGreaterThan(0);
+    expect(net.w_right[node]).toBeGreaterThan(net.w_left[node]);
+
+    const eventId = net.lastRewriteEvent?.id;
+    net.recentRewriteMask.fill(0);
+    net.globalRewriteLoad = 0.5;
+    prepareRewriteFrame(net, node + 1, 'novelty');
+    net.updateStructuredPriorRewrite();
+    expect(net.lastRewriteEvent?.id).toBe(eventId);
+  });
+
+  it('decays rewrite bias over time', () => {
+    prepareRewriteFrame(net, node, 'novelty');
+    for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
+    const afterRewrite = net.priorBias[node];
+
+    net.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+    net.predictionError.fill(0);
+    net.touchOnset.fill(0);
+    net.touchNovelty.fill(0);
+    for (let frame = 0; frame < 120; frame++) net.decayStructuredPriorRewrite();
+
+    expect(net.priorBias[node]).toBeLessThan(afterRewrite);
+    expect(net.priorBias[node]).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(net.priorBias[node])).toBe(true);
   });
 });
