@@ -1,0 +1,306 @@
+import { PHI, PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
+import { state } from '../state.js';
+
+export class AeternaNetwork {
+    constructor(segments = 72) {
+        this.segments = segments; this.numNodes = segments * segments;
+        this.R = PHI; this.r = 1.0;
+        this.basePositions = new Float32Array(this.numNodes * 3);
+        this.vertexPositions = new Float32Array(this.numNodes * 3);
+        this.normals = new Float32Array(this.numNodes * 3);
+        this.colors = new Float32Array(this.numNodes * 3);
+        this.prevBuffer = new Float32Array(this.numNodes);
+        this.currentBuffer = new Float32Array(this.numNodes);
+        this.nextBuffer = new Float32Array(this.numNodes);
+        this.nodeType = new Uint8Array(this.numNodes);
+        this.nodeSign = new Float32Array(this.numNodes);
+        this.spikeTrace = new Float32Array(this.numNodes);
+        this.w_up = new Float32Array(this.numNodes).fill(1.0); this.w_down = new Float32Array(this.numNodes).fill(1.0);
+        this.w_left = new Float32Array(this.numNodes).fill(1.0); this.w_right = new Float32Array(this.numNodes).fill(1.0);
+        this.lastSpikeTime = new Float32Array(this.numNodes).fill(-9999);
+        this.simTime = 0; this.currGenFiring = 0; this.prevGenFiring = 0;
+        this.branchingRatioRaw = 1.0; this.sigmaDisplay = 1.0; 
+        this.TARGET_FIRING_RATE = 0.08; this.firingRateError = 0.0;
+        this.nodePhase = new Float32Array(this.numNodes); this.phaseSpeed = 0.02;
+        this.attractorLibrary = []; this.currentAttractorId = -1; this.currentAttractorSim = 0;
+        this.largestClusterNodes = new Uint8Array(this.numNodes);
+        this.isEyeNode = new Uint8Array(this.numNodes); this.nodeLayer = new Uint8Array(this.numNodes);
+        this.predictionHistory = new Float32Array(this.numNodes);
+        this.AUTO_ERROR_THRESHOLD = 2.0; 
+        this.octahedronHubs = []; this.injectedNodes = []; this.heartbeatActive = false;
+        
+        this.cachedMaxClusterSize = 0; this.cachedPhiApprox = 0; this.cachedPhaseCoherence = 0;
+
+        this.generate();
+    }
+
+    generate() {
+        let index = 0; const S = this.segments;
+        for (let i = 0; i < S; i++) {
+            for (let j = 0; j < S; j++) {
+                const u = (i / S) * Math.PI * 2; const v = (j / S) * Math.PI * 2;
+                const x = (this.R + this.r * Math.cos(v)) * Math.cos(u);
+                const y = (this.R + this.r * Math.cos(v)) * Math.sin(u);
+                const z = this.r * Math.sin(v);
+                const idx3 = index * 3;
+                this.basePositions[idx3] = x; this.basePositions[idx3+1] = y; this.basePositions[idx3+2] = z;
+                this.vertexPositions[idx3] = x; this.vertexPositions[idx3+1] = y; this.vertexPositions[idx3+2] = z;
+                this.normals[idx3] = Math.cos(v)*Math.cos(u); this.normals[idx3+1] = Math.cos(v)*Math.sin(u); this.normals[idx3+2] = Math.sin(v);
+                
+                if (Math.sin(u + v) > 0) { this.nodeType[index] = 0; this.nodeSign[index] = 1.0; } 
+                else { this.nodeType[index] = 1; this.nodeSign[index] = -1.2; } 
+
+                this.nodeLayer[index] = (Math.abs(Math.cos(v)) > 0.7) ? 1 : 0;
+
+                if ((i===Math.floor(S*0.25) && j===Math.floor(S*0.75)) || (i===Math.floor(S*0.75) && j===Math.floor(S*0.25))) {
+                    this.nodeType[index] = 2; this.nodeSign[index] = 0.0; this.isEyeNode[index] = 1;
+                }
+                this.nodePhase[index] = (i / S) * Math.PI * 2;
+                index++;
+            }
+        }
+        const hubDefs = [
+            { i: 0, j: 0, modality: 'visual-relay' }, { i: Math.floor(S/2), j: 0, modality: 'auditory-relay' },
+            { i: 0, j: Math.floor(S/4), modality: 'semantic-hub' }, { i: 0, j: Math.floor(3*S/4), modality: 'motor-hub' },
+            { i: Math.floor(S/4), j: Math.floor(S/2), modality: 'interoceptive' }, { i: Math.floor(3*S/4), j:Math.floor(S/2), modality: 'contextual' }
+        ];
+        hubDefs.forEach(hub => {
+            const idx = hub.i * S + hub.j; hub.nodeIndex = idx;
+            this.nodeType[idx] = 3; this.nodeSign[idx] = 1.5; this.isEyeNode[idx] = 1; this.octahedronHubs.push(hub);
+            for(let di=-3; di<=3; di++){ for(let dj=-3; dj<=3; dj++){
+                const nidx = ((hub.i+di+S)%S)*S + ((hub.j+dj+S)%S);
+                this.w_up[nidx]=Math.min(this.w_up[nidx]*1.15, 2.5); this.w_down[nidx]=Math.min(this.w_down[nidx]*1.15, 2.5);
+                this.w_left[nidx]=Math.min(this.w_left[nidx]*1.15, 2.5); this.w_right[nidx]=Math.min(this.w_right[nidx]*1.15, 2.5);
+            }}
+        });
+    }
+
+    updateRadius(newR) {
+        this.r = newR;
+        let index = 0;
+        const S = this.segments;
+        for (let i = 0; i < S; i++) {
+            for (let j = 0; j < S; j++) {
+                const u = (i / S) * Math.PI * 2;
+                const v = (j / S) * Math.PI * 2;
+                const x = (this.R + newR * Math.cos(v)) * Math.cos(u);
+                const y = (this.R + newR * Math.cos(v)) * Math.sin(u);
+                const z = newR * Math.sin(v);
+                const idx3 = index * 3;
+                this.basePositions[idx3] = x;
+                this.basePositions[idx3+1] = y;
+                this.basePositions[idx3+2] = z;
+                this.normals[idx3] = Math.cos(v)*Math.cos(u);
+                this.normals[idx3+1] = Math.cos(v)*Math.sin(u);
+                this.normals[idx3+2] = Math.sin(v);
+                index++;
+            }
+        }
+    }
+
+    isHubNode(index) {
+        for (let k = 0; k < this.octahedronHubs.length; k++) {
+            if (this.octahedronHubs[k].nodeIndex === index) return true;
+        }
+        return false;
+    }
+    
+    computeIntegrationProxy() {
+        const N = this.numNodes;
+        let tAll = 0, tYin = 0, cYin = 0, tYang = 0, cYang = 0;
+        let tL0 = 0, cL0 = 0, tL1 = 0, cL1 = 0;
+        let tHalf1 = 0, tHalf2 = 0;
+
+        for (let i = 0; i < N; i++) {
+            const f = this.spikeTrace[i]; tAll += f;
+            if(this.nodeType[i]===1){ tYin+=f; cYin++; } else { tYang+=f; cYang++; }
+            if(this.nodeLayer[i]===0){ tL0+=f; cL0++; } else { tL1+=f; cL1++; }
+            if(i < N/2) tHalf1+=f; else tHalf2+=f;
+        }
+        const H_whole = tAll / N;
+        const H_parts = ( (tYin/cYin + tYang/cYang)/2 + (tL0/cL0 + tL1/cL1)/2 + (tHalf1/(N/2) + tHalf2/(N/2))/2 ) / 3;
+        return Math.max(0, H_whole - H_parts); 
+    }
+
+    computePhaseCoherence() {
+        let rCos = 0, rSin = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            const wPhase = (this.nodeLayer[i] === 1) ? this.nodePhase[i] : this.nodePhase[i] * 0.5;
+            const wLocal = this.w_up[i] + this.w_down[i] + this.w_left[i] + this.w_right[i];
+            const amp = Math.max(0.1, Math.min(wLocal, 1.0));
+            rCos += amp * Math.cos(wPhase);
+            rSin += amp * Math.sin(wPhase);
+        }
+        return Math.sqrt(rCos * rCos + rSin * rSin) / this.numNodes;
+    }
+
+    computeMeanPredictionError() {
+        let sum = 0;
+        for (let i = 0; i < this.numNodes; i++) sum += this.predictionHistory[i];
+        return sum / this.numNodes;
+    }
+
+    computeLargestCluster() {
+        const S = this.segments; const N = this.numNodes;
+        const parent = new Int32Array(N); const rank = new Uint8Array(N);
+        for (let i = 0; i < N; i++) parent[i] = i;
+        const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+        const union = (a, b) => { const ra = find(a), rb = find(b); if (ra === rb) return; if (rank[ra] < rank[rb]) parent[ra] = rb; else if (rank[ra] > rank[rb]) parent[rb] = ra; else { parent[rb] = ra; rank[ra]++; } };
+        for (let i = 0; i < S; i++) { for (let j = 0; j < S; j++) {
+            const idx = i*S+j; if (this.spikeTrace[idx] <= 0.5) continue;
+            const right = i*S+((j+1)%S); const down = ((i+1)%S)*S+j;
+            if (this.spikeTrace[right] > 0.5) union(idx, right);
+            if (this.spikeTrace[down] > 0.5) union(idx, down);
+        }}
+        const sizeMap = new Map(); let maxRoot = -1; let maxSize = 0;
+        for (let i = 0; i < N; i++) {
+            if (this.spikeTrace[i] <= 0.5) continue;
+            const root = find(i); const size = (sizeMap.get(root) || 0) + 1; sizeMap.set(root, size);
+            if (size > maxSize) { maxSize = size; maxRoot = root; }
+        }
+        this.largestClusterNodes.fill(0);
+        if (maxRoot !== -1) {
+            for (let i = 0; i < N; i++) if (this.spikeTrace[i] > 0.5 && find(i) === maxRoot) this.largestClusterNodes[i] = 1;
+        }
+        return maxSize;
+    }
+
+    injectSTDPExternal(fromNode, toNode, deltaT) {
+        const A_PLUS = 0.08; const TAU = 30.0; const dw = A_PLUS * Math.exp(-deltaT / TAU);
+        const S = this.segments; const fi = Math.floor(fromNode / S), fj = fromNode % S; const ti = Math.floor(toNode / S), tj = toNode % S;
+        let di = ti - fi; if (di < -S/2) di += S; else if (di > S/2) di -= S;
+        let dj = tj - fj; if (dj < -S/2) dj += S; else if (dj > S/2) dj -= S;
+        if (Math.abs(di) >= Math.abs(dj)) { if (di > 0) this.w_down[fromNode] = Math.min(this.w_down[fromNode] + dw, 4.0); else this.w_up[fromNode] = Math.min(this.w_up[fromNode] + dw, 4.0); } 
+        else { if (dj > 0) this.w_right[fromNode] = Math.min(this.w_right[fromNode] + dw, 4.0); else this.w_left[fromNode] = Math.min(this.w_left[fromNode] + dw, 4.0); }
+    }
+
+    injectPredictionError(index) {
+        const targetVal = 10.0; const error = targetVal - this.currentBuffer[index];
+        this.currentBuffer[index] += error * 0.8;
+        const i = Math.floor(index / this.segments); const j = index % this.segments;
+        const up = ((i-1+this.segments)%this.segments)*this.segments+j; const down = ((i+1)%this.segments)*this.segments+j;
+        const left = i*this.segments+((j-1+this.segments)%this.segments); const right = i*this.segments+((j+1)%this.segments);
+        this.currentBuffer[up]+=error*0.4; this.currentBuffer[down]+=error*0.4; this.currentBuffer[left]+=error*0.4; this.currentBuffer[right]+=error*0.4;
+        this.injectedNodes.push(index);
+    }
+    
+    autoPredictAndError() {
+        if (this.simTime % 60 !== 0) return;
+        let maxError = 0; let maxErrorNode = -1;
+        for (let i = 0; i < this.numNodes; i++) {
+            const error = Math.abs(this.currentBuffer[i] - this.prevBuffer[i]) * 2.0;
+            this.predictionHistory[i] = this.predictionHistory[i] * 0.95 + error * 0.05;
+            if (error > maxError) { maxError = error; maxErrorNode = i; }
+            
+            const hubBoostThreshold = this.isHubNode(i) ? this.AUTO_ERROR_THRESHOLD * 0.75 : this.AUTO_ERROR_THRESHOLD;
+            if ((this.isEyeNode[i] === 1 || this.isHubNode(i)) && this.predictionHistory[i] > hubBoostThreshold) {
+                this.injectPredictionError(i);
+            }
+        }
+        if (maxErrorNode >= 0 && maxError > 2.0) this.injectPredictionError(maxErrorNode);
+    }
+
+    triggerNoise(tension, sigmaDisp) {
+        const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
+        const eventRate = (tension * 0.2) + (Math.abs(sigmaDisp - 1.0) * 0.1);
+        const finalRate = thermalRate + eventRate;
+        for (let i = 0; i < 3; i++) {
+            if (Math.random() < finalRate) { this.currentBuffer[Math.floor(Math.random() * this.numNodes)] += 1.0 + Math.random(); }
+        }
+    }
+
+    updateDynamics(diskNodeIdx) {
+        this.injectedNodes = []; this.simTime++;
+        const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
+        const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
+        
+        let newlyFiredCount = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            if (this.currentBuffer[i] > 0.8 && this.prevBuffer[i] <= 0.8) { 
+                this.spikeTrace[i] = 1.0; 
+                this.lastSpikeTime[i] = this.simTime; 
+                newlyFiredCount++;
+            } else { 
+                this.spikeTrace[i] *= 0.9; 
+            }
+        }
+
+        for (let i = 0; i < this.numNodes; i++) {
+            this.w_up[i] *= 0.99995; this.w_down[i] *= 0.99995; this.w_left[i] *= 0.99995; this.w_right[i] *= 0.99995;
+            const sum = this.w_up[i]+this.w_down[i]+this.w_left[i]+this.w_right[i];
+            if (sum > 0.001) { const f = 4.0/sum; const a = 0.01; this.w_up[i]+=(this.w_up[i]*f-this.w_up[i])*a; this.w_down[i]+=(this.w_down[i]*f-this.w_down[i])*a; this.w_left[i]+=(this.w_left[i]*f-this.w_left[i])*a; this.w_right[i]+=(this.w_right[i]*f-this.w_right[i])*a; }
+        }
+
+        this.prevGenFiring = this.currGenFiring;
+        this.currGenFiring = newlyFiredCount;
+        
+        this.branchingRatioRaw = this.prevGenFiring > 0 ? this.currGenFiring / this.prevGenFiring : 1.0;
+        this.sigmaDisplay = this.sigmaDisplay * 0.9 + this.branchingRatioRaw * 0.1; 
+        
+        const arousal = this.currGenFiring / this.numNodes;
+        this.firingRateError = this.TARGET_FIRING_RATE - arousal;
+
+        const homeoDamping = damping + this.firingRateError * 0.002;
+        for (let i = 0; i < this.segments; i++) { 
+            for (let j = 0; j < this.segments; j++) {
+                const idx = i*this.segments+j; 
+                const up = ((i-1+this.segments)%this.segments)*this.segments+j; 
+                const down = ((i+1)%this.segments)*this.segments+j; 
+                const left = i*this.segments+((j-1+this.segments)%this.segments); 
+                const right = i*this.segments+((j+1)%this.segments);
+                
+                // Expanded for readability and debuggability
+                let laplacian = 
+                    (this.w_down[up] * this.currentBuffer[up] * this.nodeSign[up]) +
+                    (this.w_up[down] * this.currentBuffer[down] * this.nodeSign[down]) +
+                    (this.w_right[left] * this.currentBuffer[left] * this.nodeSign[left]) +
+                    (this.w_left[right] * this.currentBuffer[right] * this.nodeSign[right]) -
+                    ((this.w_up[idx] + this.w_down[idx] + this.w_left[idx] + this.w_right[idx]) * this.currentBuffer[idx]);
+                    
+                let nextVal = 2*this.currentBuffer[idx]-this.prevBuffer[idx]+waveSpeed*laplacian;
+                nextVal *= homeoDamping;
+                if (nextVal > 8.0) nextVal = 8.0+(nextVal-8.0)*0.01; if (nextVal < -8.0) nextVal = -8.0+(nextVal+8.0)*0.01;
+                this.nextBuffer[idx] = nextVal;
+            }
+        }
+        
+        let temp = this.prevBuffer; this.prevBuffer = this.currentBuffer; this.currentBuffer = this.nextBuffer; this.nextBuffer = temp;
+        
+        this.phaseSpeed = 0.015 + 0.025 * freqRatio;
+        for (let i = 0; i < this.numNodes; i++) { this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI*2); }
+
+        if (this.simTime % 4 === 0) {
+            this.cachedMaxClusterSize = this.computeLargestCluster();
+            this.cachedPhiApprox = this.computeIntegrationProxy();
+            this.cachedPhaseCoherence = this.computePhaseCoherence();
+        }
+
+        for (let i = 0; i < this.numNodes; i++) {
+            const val = this.currentBuffer[i]; const trace = this.spikeTrace[i]; const idx3 = i*3; let r=0,g=0,b=0;
+            if (i === diskNodeIdx) { r = 1.0; }
+            else {
+                if (this.nodeType[i] === 1) { r = 0.3+trace*1.5; b = 0.1+trace*0.2; } 
+                else {
+                    if (val > 0) { r = val*0.3+trace; g = 0.1+val*0.7+trace; b = 0.4+val*0.8+trace; }
+                    else { r = -val*0.4+trace; g = trace*0.5; b = 0.3-val*0.7+trace; }
+                }
+                if (this.largestClusterNodes[i] === 1) b += 0.5;
+            }
+            this.colors[idx3] = Math.min(Math.max(r,0),1.0); this.colors[idx3+1] = Math.min(Math.max(g,0),1.0); this.colors[idx3+2] = Math.min(Math.max(b,0),1.0);
+            const d = val*0.04+trace*0.06;
+            this.vertexPositions[idx3] = this.basePositions[idx3]+this.normals[idx3]*d; this.vertexPositions[idx3+1] = this.basePositions[idx3+1]+this.normals[idx3+1]*d; this.vertexPositions[idx3+2] = this.basePositions[idx3+2]+this.normals[idx3+2]*d;
+        }
+        
+        this.autoPredictAndError();
+
+        return {
+            ignitionRatio: this.cachedMaxClusterSize / this.numNodes,
+            phiApprox: this.cachedPhiApprox,
+            phaseCoherence: this.cachedPhaseCoherence,
+            meanPredictionError: this.computeMeanPredictionError(),
+            arousal: arousal,
+            sigmaDisplay: this.sigmaDisplay,
+            firingRateError: this.firingRateError
+        };
+    }
+}
