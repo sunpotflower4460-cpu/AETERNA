@@ -300,7 +300,7 @@ export class AeternaNetwork {
     }
 
     getActionEnergyGate() {
-        return this.clampFinite(0.25 + this.energy * 0.75, 0.22, 1.0, 1.0);
+        return this.clampFinite(0.25 + this.energy * 0.75, 0.25, 1.0, 1.0);
     }
 
     normalizeDirectionalWeights(index) {
@@ -1176,9 +1176,9 @@ export class AeternaNetwork {
             0,
         );
 
-        if (this.actionState === 'orient' && this.touchDirectionVector.strength > 0.001) {
+        if (this.actionState === 'orient' && this.touchDirectionVector?.strength > 0.001) {
             this.actionDirection = [this.touchDirectionVector.dx, this.touchDirectionVector.dy];
-        } else if (this.actionState === 'withdraw' && this.touchDirectionVector.strength > 0.001) {
+        } else if (this.actionState === 'withdraw' && this.touchDirectionVector?.strength > 0.001) {
             this.actionDirection = [-this.touchDirectionVector.dx, -this.touchDirectionVector.dy];
         } else {
             this.actionDirection = null;
@@ -1206,7 +1206,7 @@ export class AeternaNetwork {
                         this.currentBuffer[idx] = this.clampFinite(this.currentBuffer[idx] + pulse * 0.012 * falloff, -8.0, 8.0, 0);
                     }
                 }
-                if (this.touchDirectionVector.strength > 0.001) this.applyDirectionalRewrite(centerIdx, pulse * 0.05);
+                if (this.touchDirectionVector?.strength > 0.001) this.applyDirectionalRewrite(centerIdx, pulse * 0.05);
             }
         } else if (this.actionState === 'withdraw') {
             const projectionDamp = 1.0 - pulse * 0.16;
