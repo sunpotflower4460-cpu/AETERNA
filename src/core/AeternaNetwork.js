@@ -1,6 +1,15 @@
 import { PHI, PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
 import { state } from '../state.js';
 
+// PR7: Touch pattern threshold constants — adjust here to tune pattern sensitivity.
+const TOUCH_TAP_MAX_FRAMES       = 8;    // contacts shorter than this qualify as tap
+const TOUCH_HOLD_MIN_FRAMES      = 20;   // contacts longer than this qualify as hold
+const TOUCH_LOW_VELOCITY         = 0.005; // normalised velocity below which movement is "stationary"
+const TOUCH_STROKE_MIN_DIST      = 0.05; // cumulative centroid distance to count as stroke
+const TOUCH_REPEAT_MIN_COUNT     = 2;    // minimum re-contacts to score as repeat
+const TOUCH_REPEAT_GAP_THRESHOLD = 12;   // max frames between contacts to count as repeat
+const TOUCH_REPEAT_RESET_FRAMES  = 60;   // gap frames after which repeat counter resets (≈1 s at 60 fps)
+
 export class AeternaNetwork {
     constructor(segments = 72) {
         this.segments = segments; this.numNodes = segments * segments;
@@ -391,6 +400,15 @@ export class AeternaNetwork {
     updateTouchSequenceFeatures(activeTouches) {
         if (activeTouches.size > 0) {
             const centroid = this.computeTouchCentroid(activeTouches);
+            // Contact just (re-)started after a gap — check if it qualifies as a repeat
+            if (this.touchDurationFrames === 0) {
+                if (this.touchGapFrames > 0 && this.touchGapFrames < TOUCH_REPEAT_GAP_THRESHOLD) {
+                    this.touchRepeatCount += 1;
+                } else if (this.touchGapFrames >= TOUCH_REPEAT_RESET_FRAMES) {
+                    // Long silence: start a fresh sequence
+                    this.touchRepeatCount = 0;
+                }
+            }
             this.touchDurationFrames += 1;
             this.touchGapFrames = 0;
             if (this.lastTouchCentroid) {
@@ -402,14 +420,6 @@ export class AeternaNetwork {
             }
             this.lastTouchCentroid = centroid;
         } else {
-            if (this.touchDurationFrames > 0 && this.touchGapFrames === 0) {
-                // Contact just ended — count as a repeat candidate if gap is short
-                if (this.touchRepeatCount > 0 || this.touchGapFrames < 12) {
-                    this.touchRepeatCount += 1;
-                }
-            }
-            // Reset repeat count after a long silent gap (>60 frames ≈ 1 s)
-            if (this.touchGapFrames > 60) { this.touchRepeatCount = 0; }
             this.touchGapFrames += 1;
             this.touchDurationFrames = 0;
             this.touchMoveDistance    *= 0.95;
@@ -427,10 +437,10 @@ export class AeternaNetwork {
         const rpt  = this.touchRepeatCount;
         const gap  = this.touchGapFrames;
 
-        const tapRaw    = (dur > 0 && dur < 8  && vel < 0.005) ? 1 : 0;
-        const holdRaw   = (dur > 20 && vel < 0.005)            ? 1 : 0;
-        const repeatRaw = (rpt >= 2 && gap < 10)               ? 1 : 0;
-        const strokeRaw = (dur > 0  && move > 0.05)            ? 1 : 0;
+        const tapRaw    = (dur > 0 && dur < TOUCH_TAP_MAX_FRAMES    && vel < TOUCH_LOW_VELOCITY) ? 1 : 0;
+        const holdRaw   = (dur > TOUCH_HOLD_MIN_FRAMES               && vel < TOUCH_LOW_VELOCITY) ? 1 : 0;
+        const repeatRaw = (rpt >= TOUCH_REPEAT_MIN_COUNT             && gap < TOUCH_REPEAT_GAP_THRESHOLD) ? 1 : 0;
+        const strokeRaw = (dur > 0 && move > TOUCH_STROKE_MIN_DIST)  ? 1 : 0;
 
         const DECAY = 0.85, INTAKE = 0.15;
         this.touchPatternScores.tap    = this.touchPatternScores.tap    * DECAY + tapRaw    * INTAKE;
