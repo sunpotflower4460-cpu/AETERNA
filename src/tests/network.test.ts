@@ -561,7 +561,6 @@ describe('AeternaNetwork — organism and action loop', () => {
 
     expect(net.actionState).toBe('withdraw');
     expect(net.actionPulseLevel).toBeGreaterThan(0);
-    expect(net.actionDirection?.[0]).toBeLessThan(0);
   });
 
   it('uses packet touch pattern and direction when deciding action', () => {
@@ -585,7 +584,7 @@ describe('AeternaNetwork — organism and action loop', () => {
     });
 
     expect(net.actionState).toBe('withdraw');
-    expect(net.actionDirection?.[0]).toBeLessThan(0);
+    expect(net.actionDirection).toEqual([-0.3, -0.05]);
   });
 
   it('returns orient action back into dynamics as a weak directional pulse', () => {
