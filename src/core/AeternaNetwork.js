@@ -69,6 +69,15 @@ const MODE_DREAM_REPLAY_NODE_LIMIT = 6;
 const MODE_DREAM_REPLAY_GATE = 0.16;
 const MODE_EXTERNAL_QUIET_GATE = 0.035;
 const MODE_TRACE_HISTORY_LIMIT = 6;
+const MODE_QUIET_TIME_FRAMES = 240;
+const MODE_AROUSAL_NORM = 16;
+const MODE_PREDICTION_NORM = 3.5;
+const MODE_SIGMA_DRIFT_NORM = 4.0;
+const MODE_RESIDUE_NORM = 1.2;
+const MODE_TRACE_NORM = 0.45;
+const MODE_PRIOR_NORM = 8.0;
+const MODE_REWRITE_PRESSURE_NORM = 12.0;
+const MODE_RECENT_REWRITE_NORM = 0.2;
 const MODE_DYNAMICS = {
     sleep: {
         baselineGain: 0.88,
@@ -407,8 +416,9 @@ export class AeternaNetwork {
         const TIME_DRIFT = 0.0008;
         const t = this.simTime * TIME_DRIFT;
         const gain = this.currentModeDynamics?.baselineGain ?? 1.0;
+        const phaseOffset = this.modePhase * Math.PI * 2;
         for (let i = 0; i < this.numNodes; i++) {
-            this.baselineActivity[i] = BASELINE_AMP * gain * Math.sin(this.nodePhase[i] + t + this.modePhase * Math.PI * 2);
+            this.baselineActivity[i] = BASELINE_AMP * gain * Math.sin(this.nodePhase[i] + t + phaseOffset);
         }
     }
 
@@ -768,15 +778,20 @@ export class AeternaNetwork {
         if (externalLevel < MODE_EXTERNAL_QUIET_GATE) this.externalQuietFrames += 1;
         else this.externalQuietFrames = 0;
 
-        const quietTime = this.clampFinite(this.externalQuietFrames / 240, 0, 1, 0);
-        const arousalNorm = this.clampFinite(arousal * 16, 0, 1, 0);
-        const predictionNorm = this.clampFinite(meanPredictionError * 3.5, 0, 1, 0);
-        const sigmaDrift = this.clampFinite(Math.abs(sigmaDisplay - 1.0) * 4.0, 0, 1, 0);
+        const quietTime = this.clampFinite(this.externalQuietFrames / MODE_QUIET_TIME_FRAMES, 0, 1, 0);
+        const arousalNorm = this.clampFinite(arousal * MODE_AROUSAL_NORM, 0, 1, 0);
+        const predictionNorm = this.clampFinite(meanPredictionError * MODE_PREDICTION_NORM, 0, 1, 0);
+        const sigmaDrift = this.clampFinite(Math.abs(sigmaDisplay - 1.0) * MODE_SIGMA_DRIFT_NORM, 0, 1, 0);
         const tensionNorm = this.clampFinite(tension, 0, 1, 0);
-        const residueNorm = this.clampFinite(residueLevel * 1.2, 0, 1, 0);
-        const traceNorm = this.clampFinite(traceLevel * 0.45, 0, 1, 0);
-        const priorNorm = this.clampFinite(priorBiasMean * 8.0, 0, 1, 0);
-        const rewriteNorm = this.clampFinite(rewritePressureMean * 12.0 + recentRewriteMean * 0.2, 0, 1, 0);
+        const residueNorm = this.clampFinite(residueLevel * MODE_RESIDUE_NORM, 0, 1, 0);
+        const traceNorm = this.clampFinite(traceLevel * MODE_TRACE_NORM, 0, 1, 0);
+        const priorNorm = this.clampFinite(priorBiasMean * MODE_PRIOR_NORM, 0, 1, 0);
+        const rewriteNorm = this.clampFinite(
+            rewritePressureMean * MODE_REWRITE_PRESSURE_NORM + recentRewriteMean * MODE_RECENT_REWRITE_NORM,
+            0,
+            1,
+            0,
+        );
         const quietness = this.clampFinite(
             (1.0 - externalLevel) * 0.5 + (1.0 - arousalNorm) * 0.3 + (1.0 - tensionNorm) * 0.2,
             0,
