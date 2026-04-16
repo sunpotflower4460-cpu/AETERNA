@@ -1,4 +1,4 @@
-import type { SignalRuntimeResult } from './types.js';
+import type { SignalRuntimeResult, TouchPatternSeeds } from './types.js';
 import { createStimulusPacket } from './createStimulusPacket.js';
 import { activateSignals } from './activateSignals.js';
 import { runSelfLoop } from './runSelfLoop.js';
@@ -13,11 +13,15 @@ import { buildSignalSentencePlan } from './buildSignalSentencePlan.js';
 import { renderSignalUtterance } from './renderSignalUtterance.js';
 import { recordSignalMemory } from './memory.js';
 
-export function runSignalRuntime(rawText: string, novelty = 0.5): SignalRuntimeResult {
+export function runSignalRuntime(
+  rawText: string,
+  novelty = 0.5,
+  touchSeeds?: TouchPatternSeeds | null,
+): SignalRuntimeResult {
   const debugNotes: string[] = [];
 
   // 1. createStimulusPacket
-  const stimulus = createStimulusPacket(rawText, novelty);
+  const stimulus = createStimulusPacket(rawText, novelty, touchSeeds);
   debugNotes.push(`stimulus: salience=${stimulus.salience.toFixed(2)}, emotionalCharge=${stimulus.emotionalCharge.toFixed(2)}, explicitQuestion=${stimulus.explicitQuestion}`);
 
   // 2. activateSignals
@@ -41,7 +45,7 @@ export function runSignalRuntime(rawText: string, novelty = 0.5): SignalRuntimeR
   debugNotes.push(`bindSignals: ${bindings.length} bindings formed`);
 
   // 7. deriveProtoMeanings
-  const protoMeanings = deriveProtoMeanings(signals, bindings);
+  const protoMeanings = deriveProtoMeanings(signals, bindings, touchSeeds);
   debugNotes.push(`protoMeanings: ${protoMeanings.map(pm => pm.glossJa).join(' | ')}`);
 
   // 8. decideSignalUtterance
@@ -64,6 +68,14 @@ export function runSignalRuntime(rawText: string, novelty = 0.5): SignalRuntimeR
   const utterance = renderSignalUtterance(sentencePlan, decision, stimulus);
   debugNotes.push(`utterance length: ${utterance.length} chars`);
 
+  // PR8-B: touch seeds debug note
+  if (touchSeeds) {
+    const seeds = touchSeeds.protoMeaningSeeds;
+    debugNotes.push(
+      `touchSeeds: novelty=${touchSeeds.noveltyBias.toFixed(2)} recurrence=${touchSeeds.recurrenceBias.toFixed(2)} persistence=${touchSeeds.persistenceBias.toFixed(2)} directionality=${touchSeeds.directionalityBias.toFixed(2)} seeds=[${seeds.join(',')}]`,
+    );
+  }
+
   const result: SignalRuntimeResult = {
     stimulus,
     signals,
@@ -76,6 +88,7 @@ export function runSignalRuntime(rawText: string, novelty = 0.5): SignalRuntimeR
     sentencePlan,
     utterance,
     debugNotes,
+    touchSeeds: touchSeeds ?? null,
   };
 
   // revision / memory 記録

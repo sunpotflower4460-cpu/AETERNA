@@ -1,5 +1,22 @@
 // ── Signal Runtime v0 — Type Definitions ──
 
+/**
+ * PR8-B: Proto-meaning seeds derived from touch pattern scores.
+ * These are bias/tendency values — not definitive emotional labels.
+ */
+export type TouchPatternSeeds = {
+  /** Bias toward arrival / novelty / punctate-contact (tap-derived) */
+  noveltyBias: number;
+  /** Bias toward recurrence / return / repeated-contact (repeat-derived) */
+  recurrenceBias: number;
+  /** Bias toward persistence / sustained-contact (hold-derived) */
+  persistenceBias: number;
+  /** Bias toward directional traversal / passage (stroke-derived) */
+  directionalityBias: number;
+  /** Soft candidate tags (internal, not final language) */
+  protoMeaningSeeds: string[];
+};
+
 export type StimulusPacket = {
   rawText: string;
   tokens: string[];
@@ -7,6 +24,8 @@ export type StimulusPacket = {
   novelty: number;
   emotionalCharge: number;
   explicitQuestion: boolean;
+  /** PR8-B: Optional touch-pattern-derived proto-meaning seeds */
+  touchSeeds?: TouchPatternSeeds | null;
 };
 
 export type SignalSource = "other" | "self" | "belief" | "field";
@@ -90,4 +109,6 @@ export type SignalRuntimeResult = {
   sentencePlan: SignalSentencePlan;
   utterance: string;
   debugNotes: string[];
+  /** PR8-B: Touch-pattern-derived proto-meaning seeds forwarded from bridge */
+  touchSeeds?: TouchPatternSeeds | null;
 };

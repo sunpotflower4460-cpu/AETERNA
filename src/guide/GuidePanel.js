@@ -55,9 +55,22 @@ export class GuidePanel {
         if (!decision) return;
         const stance = decision.stance ?? '—';
         const intent = decision.replyIntent ?? '—';
+
+        // PR8-B: build touch pattern debug string
+        let touchInfo = '';
+        if (packet.touch_pattern || packet.touch_pattern_scores) {
+            const pat = packet.touch_pattern ?? 'none';
+            const sc = packet.touch_pattern_scores;
+            const scStr = sc
+                ? `tap ${sc.tap.toFixed(2)} / rep ${sc.repeat.toFixed(2)} / hold ${sc.hold.toFixed(2)} / str ${sc.stroke.toFixed(2)}`
+                : '';
+            const seeds = bridgeResult?.touchSeeds?.protoMeaningSeeds ?? [];
+            touchInfo = ` | pattern=${pat}${scStr ? ' [' + scStr + ']' : ''}${seeds.length ? ' seeds=' + seeds.join(',') : ''}`;
+        }
+
         const text = utterance
-            ? `[BRIDGE] ${utterance.slice(0, 80)}`
-            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}`;
+            ? `[BRIDGE] ${utterance.slice(0, 60)}${touchInfo}`
+            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}${touchInfo}`;
         this.addLog(text, 'SIGNAL');
     }
 }

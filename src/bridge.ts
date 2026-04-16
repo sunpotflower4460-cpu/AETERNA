@@ -3,7 +3,7 @@
 // Bidirectional full-loop is deferred to the next phase.
 
 import { runSignalRuntime } from './signal/index.js';
-import type { SignalRuntimeResult } from './signal/types.js';
+import type { SignalRuntimeResult, TouchPatternSeeds } from './signal/types.js';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -103,6 +103,41 @@ export function buildTorusStatePacket({
   };
 }
 
+// ── PR8-B: Touch pattern → proto-meaning seed converter ───────────────
+
+/**
+ * Converts touch pattern scores into proto-meaning seeds for the Signal Runtime.
+ *
+ * These are bias/tendency values — not definitive emotional labels.
+ * Mapping (soft, score-based, not one-hot):
+ *   tap    → noveltyBias      (arrival / novelty / punctate-contact)
+ *   repeat → recurrenceBias   (recurrence / return / repeated-contact)
+ *   hold   → persistenceBias  (persistence / sustained-contact)
+ *   stroke → directionalityBias (directional traversal / passage)
+ */
+export function touchPatternToProtoSeeds(
+  scores: { tap: number; repeat: number; hold: number; stroke: number } | null | undefined,
+): TouchPatternSeeds | null {
+  if (!scores) return null;
+
+  return {
+    noveltyBias: scores.tap,
+    recurrenceBias: scores.repeat,
+    persistenceBias: scores.hold,
+    directionalityBias: scores.stroke,
+    protoMeaningSeeds: [
+      scores.tap > 0.25 ? 'arrival' : null,
+      scores.tap > 0.35 ? 'novelty' : null,
+      scores.repeat > 0.25 ? 'recurrence' : null,
+      scores.repeat > 0.35 ? 'return' : null,
+      scores.hold > 0.25 ? 'persistence' : null,
+      scores.hold > 0.35 ? 'pressure' : null,
+      scores.stroke > 0.25 ? 'passage' : null,
+      scores.stroke > 0.35 ? 'direction' : null,
+    ].filter((s): s is string => s !== null),
+  };
+}
+
 // ── Synthetic text adapter ─────────────────────────────────────────────
 
 /**
@@ -169,7 +204,8 @@ export function bridgeTorusToSignal(packet: TorusStatePacket): SignalRuntimeResu
       packet.arousal * NOVELTY_AROUSAL_WEIGHT +
       NOVELTY_BASE,
   );
-  return runSignalRuntime(syntheticText, novelty);
+  const touchSeeds = touchPatternToProtoSeeds(packet.touch_pattern_scores ?? null);
+  return runSignalRuntime(syntheticText, novelty, touchSeeds);
 }
 
 // ── Feedback stub ──────────────────────────────────────────────────────

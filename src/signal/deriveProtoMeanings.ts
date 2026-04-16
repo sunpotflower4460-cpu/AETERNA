@@ -1,4 +1,4 @@
-import type { Signal, SignalBinding, ProtoMeaning } from './types.js';
+import type { Signal, SignalBinding, ProtoMeaning, TouchPatternSeeds } from './types.js';
 
 let pmCounter = 0;
 
@@ -28,6 +28,7 @@ function getBindingWeight(bindings: SignalBinding[], sourceId: string, targetId:
 export function deriveProtoMeanings(
   signals: Signal[],
   bindings: SignalBinding[],
+  touchSeeds?: TouchPatternSeeds | null,
 ): ProtoMeaning[] {
   // Reset counter for deterministic output in tests
   pmCounter = 0;
@@ -131,6 +132,48 @@ export function deriveProtoMeanings(
       ['other_help_signal', 'self_care_response', 'belief_no_false_brightness'],
       bindings.filter(b => b.targetId === 'self_answer_pull').map(b => b.id),
     ));
+  }
+
+  // ── PR8-B: Touch pattern proto-meaning seeds ──
+  // Softly add touch-derived proto-meanings as bias/tendency, not dominant labels.
+  // These mix with signal-derived meanings; they do not override them.
+  if (touchSeeds) {
+    const { noveltyBias, recurrenceBias, persistenceBias, directionalityBias } = touchSeeds;
+    // 0.4 cap ensures touch seeds remain subordinate to signal-derived meanings
+    const TOUCH_WEIGHT = 0.4;
+
+    if (noveltyBias > 0.2) {
+      protoMeanings.push(makePM(
+        '到来の感触',
+        noveltyBias * TOUCH_WEIGHT,
+        [],
+        [],
+      ));
+    }
+    if (recurrenceBias > 0.2) {
+      protoMeanings.push(makePM(
+        '反復の感触',
+        recurrenceBias * TOUCH_WEIGHT,
+        [],
+        [],
+      ));
+    }
+    if (persistenceBias > 0.2) {
+      protoMeanings.push(makePM(
+        '持続の感触',
+        persistenceBias * TOUCH_WEIGHT,
+        [],
+        [],
+      ));
+    }
+    if (directionalityBias > 0.2) {
+      protoMeanings.push(makePM(
+        '通過の感触',
+        directionalityBias * TOUCH_WEIGHT,
+        [],
+        [],
+      ));
+    }
   }
 
   // Ensure at least one ProtoMeaning is produced (fallback)
