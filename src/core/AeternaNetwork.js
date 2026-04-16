@@ -175,6 +175,7 @@ export class AeternaNetwork {
         this.touchProjection = new Float32Array(this.numNodes);
 
         // Persistent touch-sequence memory across frames.
+        // touchDirectionVector is an immediate motion cue from contact, later read by rewrite logic.
         this.touchDurationFrames = 0;
         this.touchGapFrames = 0;
         this.touchMoveDistance = 0;
@@ -238,7 +239,7 @@ export class AeternaNetwork {
     // PR10-C: temporary/work buffers — transient event lists and low-frequency derived caches.
     initializeTemporaryWorkBuffers() {
         this.largestClusterNodes = new Uint8Array(this.numNodes); // derived render-assist buffer
-        this.injectedNodes = []; // transient per-frame event list
+        this.injectedNodes = []; // transient per-frame event list, populated by injectPredictionError/autoPredictAndError
         this.cachedMaxClusterSize = 0; // derived cache
         this.cachedPhiApprox = 0; // derived cache
         this.cachedPhaseCoherence = 0; // derived cache
@@ -250,7 +251,7 @@ export class AeternaNetwork {
      *
      * Texture A (core dynamics): currentBuffer, prevBuffer, nextBuffer, spikeTrace
      * Texture B (sensory + prediction): rawTouch, touchTrace, localPrediction, predictionError
-     * Texture C (plasticity + mode residue): priorBias, rewritePressure, plasticityTrace, activityResidue
+     * Texture C (plasticity + ongoing-life residue): priorBias, rewritePressure, plasticityTrace, activityResidue
      * Texture D (directional/connective): w_up, w_down, w_left, w_right
      * Separate render attributes: basePositions, vertexPositions, normals, colors
      */
