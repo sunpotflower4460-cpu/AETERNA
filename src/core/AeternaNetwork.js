@@ -78,6 +78,7 @@ const MODE_TRACE_NORM = 0.45;
 const MODE_PRIOR_NORM = 8.0;
 const MODE_REWRITE_PRESSURE_NORM = 12.0;
 const MODE_RECENT_REWRITE_NORM = 0.2;
+const TOUCH_PROJ_BASE_GAIN = 0.08;
 const MODE_DYNAMICS = {
     sleep: {
         baselineGain: 0.88,
@@ -416,6 +417,7 @@ export class AeternaNetwork {
         const TIME_DRIFT = 0.0008;
         const t = this.simTime * TIME_DRIFT;
         const gain = this.currentModeDynamics?.baselineGain ?? 1.0;
+        // modePhase is a global mode drift, not a per-node phase field.
         const phaseOffset = this.modePhase * Math.PI * 2;
         for (let i = 0; i < this.numNodes; i++) {
             this.baselineActivity[i] = BASELINE_AMP * gain * Math.sin(this.nodePhase[i] + t + phaseOffset);
@@ -1170,11 +1172,26 @@ export class AeternaNetwork {
 
         // PR7: Apply conservative pattern-driven modulation to touchProjection / touchTrace.
         this.applyTouchPatternModulation();
-        this.applyDreamReplay(activeTouchCount > 0 ? 1 : 0);
+        let replayRawTouchSum = 0, replayOnsetSum = 0, replayNoveltySum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            replayRawTouchSum += this.rawTouch[i];
+            replayOnsetSum += this.touchOnset[i];
+            replayNoveltySum += this.touchNovelty[i];
+        }
+        const replayExternalLevel = this.clampFinite(
+            (activeTouchCount > 0 ? 0.45 : 0) +
+            (replayRawTouchSum / this.numNodes) * 0.9 +
+            (replayOnsetSum / this.numNodes) * 0.7 +
+            (replayNoveltySum / this.numNodes) * 0.45,
+            0,
+            1,
+            0,
+        );
+        this.applyDreamReplay(replayExternalLevel);
 
         // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
         // This is the only path from touch into the dynamics; no other direct injection.
-        const touchProjGain = 0.08 * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
+        const touchProjGain = TOUCH_PROJ_BASE_GAIN * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
         let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0, traceSum = 0;
         for (let i = 0; i < this.numNodes; i++) {
             this.currentBuffer[i] += this.touchProjection[i] * touchProjGain;
