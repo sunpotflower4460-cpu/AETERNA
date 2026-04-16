@@ -30,4 +30,5 @@ export const state = {
 
     lastUIRenderTime: 0,
     lastGuideTime: 0,
+    lastBridgeTime: 0,
 };

@@ -49,4 +49,15 @@ export class GuidePanel {
         if(this.latestEl) { this.latestEl.innerHTML = item; this.latestEl.classList.remove('fade-in'); void this.latestEl.offsetWidth; this.latestEl.classList.add('fade-in'); }
         if(this.historyEl) { this.historyEl.innerHTML = this.history.slice(1).map(t => `<li>${t}</li>`).join(''); }
     }
+    updateFromBridge(bridgeResult, packet) {
+        const decision = bridgeResult?.decision;
+        const utterance = bridgeResult?.utterance;
+        if (!decision) return;
+        const stance = decision.stance ?? '—';
+        const intent = decision.replyIntent ?? '—';
+        const text = utterance
+            ? `[BRIDGE] ${utterance.slice(0, 80)}`
+            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}`;
+        this.addLog(text, 'SIGNAL');
+    }
 }
