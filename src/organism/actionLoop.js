@@ -1,15 +1,15 @@
-import { state } from '../state.js';
+import { state } from './state.js';
 import { SCHUMANN_RES, GAMMA_SYNC, TENSION_LAMBDA, TENSION_90S_FRAMES } from '../constants/aeternaConstants.js';
 import { updateDiskPhysics } from './updateDiskPhysics.js';
 import { updateHeartbeat } from './updateHeartbeat.js';
 import { updateMetricsUI } from '../ui/updateMetricsUI.js';
-import { injectMassiveError } from '../input/pointerHandlers.js';
-import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge';
+import { injectMassiveError } from '../perception/pointerHandlers.js';
+import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge/bridge';
 
 const UI_FPS = 15, GUIDE_FPS = 10, BRIDGE_INTERVAL_MS = 100;
 
-export function animateLoop(now) {
-    requestAnimationFrame(animateLoop);
+export function actionLoop(now) {
+    requestAnimationFrame(actionLoop);
     const diskNodeIdx = updateDiskPhysics(1/60); updateHeartbeat();
     
     state.network.triggerNoise(state.tensionLoad, state.network.sigmaDisplay); state.touchMem.decay();
@@ -42,3 +42,5 @@ export function animateLoop(now) {
     }
     state.renderer.render(state.scene, state.camera);
 }
+
+export const animateLoop = actionLoop;

@@ -8,10 +8,12 @@
     "skipLibCheck": true,
     "noEmit": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "baseUrl": ".",
-    "paths": {}
+    "rootDir": "src"
   },
-  "include": ["src/signal/**/*.ts"],
+  "include": [
+    "src/bridge/**/*.ts",
+    "src/signal/**/*.ts",
+    "src/types/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

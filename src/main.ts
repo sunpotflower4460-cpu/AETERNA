@@ -1,7 +1,7 @@
-// ── App.jsx: thin wiring — imports all modules and connects them ──
-import { state } from './state.js';
+// ── Active app wiring: connect current src modules without changing runtime behavior ──
+import { state } from './organism/state.js';
 import { PhysicalDisk } from './core/PhysicalDisk.js';
-import { TouchMemory } from './core/TouchMemory.js';
+import { TouchMemory } from './perception/TouchMemory.js';
 import { AeternaNetwork } from './core/AeternaNetwork.js';
 import { UI, initDOMCache } from './ui/domCache.js';
 import { toggleAccordion } from './ui/accordion.js';
@@ -10,10 +10,10 @@ import {
     handlePointerDown, handlePointerMove, handlePointerUp,
     applyPreset, resetTouchMemory, injectMassiveError,
     toggleVisualLayer, toggleDebugLabels, testAPIConnection,
-} from './input/pointerHandlers.js';
-import { RealityVisualLayer } from './visual/RealityVisualLayer.js';
-import { GuidePanel } from './guide/GuidePanel.js';
-import { animateLoop } from './loop/animateLoop.js';
+} from './perception/pointerHandlers.js';
+import { RealityVisualLayer } from './render/RealityVisualLayer.js';
+import { GuidePanel } from './ui/GuidePanel.js';
+import { actionLoop } from './organism/actionLoop.js';
 
 // ── Assign globals required by HTML onclick attributes ──
 window.toggleAccordion  = toggleAccordion;
@@ -76,7 +76,7 @@ function init() {
                 });
             }
         });
-        requestAnimationFrame(animateLoop);
+        requestAnimationFrame(actionLoop);
     } catch (e) {
         console.error('AETERNA init failed:', e);
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTorusStatePacket } from '../bridge';
+import { buildTorusStatePacket } from '../bridge/bridge.js';
 
 describe('bridge — mode packet fields', () => {
   it('includes optional mode and organism data in the torus packet', () => {

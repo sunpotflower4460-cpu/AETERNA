@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 import { TENSION_90S_FRAMES } from '../constants/aeternaConstants.js';
 
 export class GuidePanel {

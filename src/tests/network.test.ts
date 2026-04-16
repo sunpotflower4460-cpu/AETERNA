@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 // @ts-expect-error — AeternaNetwork is plain JS without type declarations
 import { AeternaNetwork } from '../core/AeternaNetwork.js';
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 
 const SMALL = 8; // small segment count keeps tests fast
 

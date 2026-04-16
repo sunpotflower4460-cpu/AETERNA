@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from './state.js';
 import { HEART_CLOCK_HZ, PULSE_STRENGTH } from '../constants/aeternaConstants.js';
 
 export function updateHeartbeat() {

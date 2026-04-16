@@ -2,68 +2,9 @@
 // PR5: One-way connection Torus → Signal Runtime.
 // Bidirectional full-loop is deferred to the next phase.
 
-import { runSignalRuntime } from './signal/index.js';
-import type { SignalRuntimeResult, TouchPatternSeeds } from './signal/types.js';
-
-// ── Types ──────────────────────────────────────────────────────────────
-
-/** Snapshot of the Torus dynamics state, sampled per bridge tick. */
-export interface TorusStatePacket {
-  /** Performance.now() timestamp at sampling time */
-  timestamp: number;
-  /** dyn.arousal */
-  arousal: number;
-  /** dyn.sigmaDisplay — critical coupling */
-  sigma: number;
-  /** dyn.phiApprox — integrated information proxy */
-  phi_proxy: number;
-  /** dyn.ignitionRatio — fraction of ignited clusters */
-  cluster_ratio: number;
-  /** state.tensionLoad — accumulated prediction error */
-  tension: number;
-  /** Whether any pointer/touch is currently active */
-  touch_active: boolean;
-  /** Normalised [0,1] screen position of the first active touch, or null */
-  touch_location: [number, number] | null;
-  /** Refined engine state from animateLoop Phase H */
-  engine_state: 'WHITE' | 'BLACK' | 'NEUTRAL';
-  /** PR7: Dominant touch tendency ('tap' | 'repeat' | 'hold' | 'stroke' | null) */
-  touch_pattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
-  /** PR7: Continuous touch pattern scores (EMA-smoothed 0..1) */
-  touch_pattern_scores?: { tap: number; repeat: number; hold: number; stroke: number };
-  /** PR9-A: Current activity mode */
-  mode_state?: 'sleep' | 'wake' | 'dream';
-  /** PR9-A: Wake-leaning drive */
-  wake_drive?: number;
-  /** PR9-A: Sleep pressure */
-  sleep_pressure?: number;
-  /** PR9-A: Dream pressure */
-  dream_pressure?: number;
-  /** PR11: organism energy reserve */
-  energy?: number;
-  /** PR11: organism stability */
-  stability?: number;
-  /** PR11: organism overload */
-  overload?: number;
-  /** PR11: current primitive action state */
-  action_state?: 'idle' | 'orient' | 'withdraw' | 'settle';
-  /** PR11: orienting drive */
-  orienting_drive?: number;
-  /** PR11: rest drive */
-  rest_drive?: number;
-}
-
-/** Placeholder for future Signal→Torus feedback (next phase). */
-export interface SignalFeedback {
-  inject_region?: { i: number; j: number; strength: number };
-  modulate_damping?: number;
-  highlight_hubs?: string[];
-}
-
-/** Minimal interface for the network object used by applySignalFeedback. */
-export interface AeternaNetworkLike {
-  numNodes: number;
-}
+import { runSignalRuntime } from '../signal/index.js';
+import type { SignalRuntimeResult, TouchPatternSeeds } from '../signal/types.js';
+import type { AeternaNetworkLike, SignalFeedback, TorusStatePacket } from '../types/torusState.js';
 
 // ── Packet builder ─────────────────────────────────────────────────────
 

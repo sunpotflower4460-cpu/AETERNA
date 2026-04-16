@@ -1,5 +1,5 @@
 import { PHI, PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 
 // PR7: Touch pattern threshold constants — adjust here to tune pattern sensitivity.
 const TOUCH_TAP_MAX_FRAMES       = 8;    // contacts shorter than this qualify as tap
