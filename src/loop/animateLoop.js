@@ -12,7 +12,7 @@ export function animateLoop(now) {
     const diskNodeIdx = updateDiskPhysics(1/60); updateHeartbeat();
     
     state.network.triggerNoise(state.tensionLoad, state.network.sigmaDisplay); state.touchMem.decay();
-    const dyn = state.network.updateDynamics(diskNodeIdx);
+    const dyn = state.network.updateDynamics(diskNodeIdx, state.activeTouches);
     
     state.particleSystem.geometry.attributes.position.needsUpdate = true; state.particleSystem.geometry.attributes.color.needsUpdate = true;
     state.particleSystem.rotation.y += 0.001 + ((state.disk.omega_t-SCHUMANN_RES)/(GAMMA_SYNC-SCHUMANN_RES)*0.002); state.particleSystem.rotation.z += 0.0005;

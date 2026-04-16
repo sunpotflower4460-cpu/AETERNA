@@ -8,6 +8,8 @@ export function initDOMCache() {
         'val-firing', 'val-cluster', 'val-phi', 'val-coherence', 'val-attractor-id', 'val-attractor-sim', 'val-arousal',
         'row-firing', 'row-cluster', 'row-phi', 'row-coherence', 'row-attractor-id', 'row-attractor-sim', 'row-arousal',
         'val-branching', 'row-branching', 'sigma-bar-fill', 'val-homeo', 'row-homeo', 'val-tension', 'row-tension', 'val-touch', 'row-touch',
+        'val-touch-active', 'row-touch-active', 'val-raw-touch', 'row-raw-touch',
+        'val-touch-onset', 'row-touch-onset', 'val-touch-offset', 'row-touch-offset', 'val-touch-novelty', 'row-touch-novelty',
         'val-baseline', 'row-baseline', 'val-residue', 'row-residue',
         'val-local-pred-error', 'row-local-pred-error',
         'val-pre-a', 'row-pre-a', 'val-pre-b', 'row-pre-b', 'val-pre-c', 'row-pre-c', 'val-pre-d', 'row-pre-d', 'val-pre-e', 'row-pre-e', 'val-total', 'row-total',

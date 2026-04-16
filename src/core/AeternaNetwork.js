@@ -40,12 +40,21 @@ export class AeternaNetwork {
         // based on a weighted neighborhood average.  Initialised to zero.
         this.localPrediction = new Float32Array(this.numNodes);
         // PR3: Prediction error — signed difference between actual state and local forecast.
-        // Kept as a state variable for PR4 touch-driven prediction error integration.
-        // NOTE: predictionHistory (above) tracks a smoothed frame-diff history used by
-        //       autoPredictAndError(). localPrediction / predictionError are a cleaner,
-        //       separate mechanism; predictionHistory will be reconciled in a later PR
-        //       once touch-driven prediction error is introduced (PR4+).
         this.predictionError = new Float32Array(this.numNodes);
+
+        // PR4: Touch as perceptual prediction error.
+        // rawTouch   — surface activation from current pointer contacts (Gaussian spread)
+        // touchOnset — max(rawTouch - localPrediction, 0): "unexpected contact"
+        // touchOffset— max(localPrediction - rawTouch, 0): "expected contact that vanished"
+        // touchNovelty — |rawTouch - localPrediction|: magnitude of perceptual mismatch
+        // touchTrace — low-pass filtered novelty; accumulates touch history
+        // touchProjection — routed onset/offset ready to be folded into dynamics
+        this.rawTouch        = new Float32Array(this.numNodes);
+        this.touchOnset      = new Float32Array(this.numNodes);
+        this.touchOffset     = new Float32Array(this.numNodes);
+        this.touchTrace      = new Float32Array(this.numNodes);
+        this.touchNovelty    = new Float32Array(this.numNodes);
+        this.touchProjection = new Float32Array(this.numNodes);
 
         this.generate();
     }
@@ -275,6 +284,81 @@ export class AeternaNetwork {
         }
     }
 
+    // PR4: Map normalised pointer coordinates to the nearest torus node index.
+    mapTouchToSurfaceIndex(xNorm, yNorm) {
+        const S = this.segments;
+        const i = Math.floor(xNorm * S) % S;
+        const j = Math.floor(yNorm * S) % S;
+        return i * S + j;
+    }
+
+    // PR4: Spread a single contact point across a Gaussian neighbourhood on the torus.
+    addGaussianTouch(centerIdx, pressure) {
+        const S  = this.segments;
+        const ci = Math.floor(centerIdx / S);
+        const cj = centerIdx % S;
+        const sigma  = 2.5;
+        const radius = 5;
+        const inv2s2 = 1.0 / (2.0 * sigma * sigma);
+        for (let di = -radius; di <= radius; di++) {
+            for (let dj = -radius; dj <= radius; dj++) {
+                const ni  = ((ci + di + S) % S);
+                const nj  = ((cj + dj + S) % S);
+                const idx = ni * S + nj;
+                const w   = pressure * Math.exp(-(di * di + dj * dj) * inv2s2);
+                this.rawTouch[idx] += w;
+            }
+        }
+    }
+
+    // PR4: Rebuild rawTouch every frame from the current set of active pointer contacts.
+    // Does NOT write to currentBuffer — rawTouch is the raw sensory surface only.
+    updateRawTouchField(activeTouches) {
+        this.rawTouch.fill(0);
+        const wW = window.innerWidth  || 1;
+        const wH = window.innerHeight || 1;
+        for (const [, touch] of activeTouches) {
+            const xNorm    = touch.x / wW;
+            const yNorm    = touch.y / wH;
+            const centerIdx = this.mapTouchToSurfaceIndex(xNorm, yNorm);
+            this.addGaussianTouch(centerIdx, touch.pressure ?? 1.0);
+        }
+    }
+
+    // PR4: Compute perceptual error fields from rawTouch vs localPrediction.
+    // onset  — "unexpected contact arrived"
+    // offset — "expected contact has vanished"
+    // novelty — overall mismatch magnitude
+    // touchTrace — low-pass history of novelty (persists after contact ends)
+    updateTouchPerception() {
+        const TRACE_DECAY  = 0.96;
+        const TRACE_INTAKE = 0.04;
+        for (let i = 0; i < this.numNodes; i++) {
+            const err = this.rawTouch[i] - this.localPrediction[i];
+            this.touchOnset[i]   = err  > 0 ? err  : 0;
+            this.touchOffset[i]  = err  < 0 ? -err : 0;
+            this.touchNovelty[i] = err  < 0 ? -err : err;
+            this.touchTrace[i]   = this.touchTrace[i] * TRACE_DECAY
+                                 + this.touchNovelty[i] * TRACE_INTAKE;
+        }
+    }
+
+    // PR4: Convert onset/offset into a projected signal destined for the network.
+    // touchProjection decays each frame so it does not accumulate unboundedly.
+    // onset  → excitatory push  (positive)
+    // offset → mild inhibitory pull (negative, smaller coefficient)
+    projectTouchToNetwork() {
+        const PROJ_DECAY        = 0.90;
+        const ONSET_COEFFICIENT = 0.12;
+        const OFFSET_COEFFICIENT = 0.06;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.touchProjection[i] =
+                this.touchProjection[i] * PROJ_DECAY
+                + this.touchOnset[i]  * ONSET_COEFFICIENT
+                - this.touchOffset[i] * OFFSET_COEFFICIENT;
+        }
+    }
+
     // PR3: Signed residual between actual state and local prediction.
     // Simple and intentionally unfiltered — the raw perceptual gap.
     updatePredictionError() {
@@ -292,7 +376,7 @@ export class AeternaNetwork {
         return sum / this.numNodes;
     }
 
-    updateDynamics(diskNodeIdx) {
+    updateDynamics(diskNodeIdx, activeTouches) {
         this.injectedNodes = []; this.simTime++;
 
         // PR2: Apply baseline drift and activity residue before wave propagation.
@@ -311,9 +395,37 @@ export class AeternaNetwork {
         const baselineLevel = baselineSum / this.numNodes;
         const residueLevel  = residueSum  / this.numNodes;
 
-        // PR3: After baseline/residue are folded into currentBuffer, update the
-        // local predictor so it sees the freshest quiet-state values.
+        // PR4: Step 2 — rebuild rawTouch surface from current pointer contacts.
+        // activeTouches is the state.activeTouches Map (pixel coords).
+        this.updateRawTouchField(activeTouches || new Map());
+
+        // PR3 / PR4: Update local predictor after baseline/residue and raw touch
+        // are known, so it sees the freshest quiet-state values before we compute
+        // the perceptual error.
         this.updateLocalPrediction();
+
+        // PR4: Step 4 — derive onset / offset / novelty / trace from raw touch vs prediction.
+        this.updateTouchPerception();
+
+        // PR4: Step 5 — accumulate onset/offset into touchProjection (decaying buffer).
+        this.projectTouchToNetwork();
+
+        // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
+        // This is the only path from touch into the dynamics; no other direct injection.
+        const TOUCH_PROJ_GAIN = 0.08;
+        let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.currentBuffer[i] += this.touchProjection[i] * TOUCH_PROJ_GAIN;
+            rawTouchSum  += this.rawTouch[i];
+            onsetSum     += this.touchOnset[i];
+            offsetSum    += this.touchOffset[i];
+            noveltySum   += this.touchNovelty[i];
+        }
+        const meanRawTouch   = rawTouchSum  / this.numNodes;
+        const meanTouchOnset = onsetSum     / this.numNodes;
+        const meanTouchOffset= offsetSum    / this.numNodes;
+        const meanTouchNovelty = noveltySum / this.numNodes;
+        const activeTouchCount = activeTouches ? activeTouches.size : 0;
 
         const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
         const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
@@ -411,7 +523,13 @@ export class AeternaNetwork {
             sigmaDisplay: this.sigmaDisplay,
             firingRateError: this.firingRateError,
             baselineLevel: baselineLevel,
-            residueLevel: residueLevel
+            residueLevel: residueLevel,
+            // PR4: touch perception metrics
+            meanRawTouch:    meanRawTouch,
+            meanTouchOnset:  meanTouchOnset,
+            meanTouchOffset: meanTouchOffset,
+            meanTouchNovelty:meanTouchNovelty,
+            activeTouchCount:activeTouchCount
         };
     }
 }

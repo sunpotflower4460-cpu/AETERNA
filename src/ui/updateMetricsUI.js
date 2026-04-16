@@ -35,6 +35,11 @@ export function updateMetricsUI(dyn, engineState) {
     updateUIRow(UI['row-homeo'], UI['val-homeo'], dyn.firingRateError.toFixed(4), Math.abs(dyn.firingRateError)<0.01);
     if(UI['val-tension']) UI['val-tension'].innerText = tensionLoad.toFixed(3); 
     if(UI['val-touch']) UI['val-touch'].innerText = touchMem.touchCount;
+    if(UI['val-touch-active'])  UI['val-touch-active'].innerText  = (dyn.activeTouchCount  || 0);
+    if(UI['val-raw-touch'])     UI['val-raw-touch'].innerText     = (dyn.meanRawTouch      || 0).toFixed(4);
+    if(UI['val-touch-onset'])   UI['val-touch-onset'].innerText   = (dyn.meanTouchOnset    || 0).toFixed(4);
+    if(UI['val-touch-offset'])  UI['val-touch-offset'].innerText  = (dyn.meanTouchOffset   || 0).toFixed(4);
+    if(UI['val-touch-novelty']) UI['val-touch-novelty'].innerText = (dyn.meanTouchNovelty  || 0).toFixed(4);
     if(UI['val-baseline']) UI['val-baseline'].innerText = (dyn.baselineLevel || 0).toFixed(4);
     if(UI['val-residue'])  UI['val-residue'].innerText  = (dyn.residueLevel  || 0).toFixed(4);
     if(UI['val-local-pred-error']) UI['val-local-pred-error'].innerText = (dyn.meanLocalPredError || 0).toFixed(4);
