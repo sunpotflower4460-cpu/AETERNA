@@ -96,8 +96,11 @@ export function applyActionToDynamics(network: any, {
         }
       }
       if (lastTouchDirection && touchDirectionStrength > 0.001) {
-        network.touchDirectionVector = { dx: lastTouchDirection[0], dy: lastTouchDirection[1], strength: touchDirectionStrength };
-        applyDirectionalRewrite(network, centerIdx, pulse * 0.05);
+        applyDirectionalRewrite(network, centerIdx, pulse * 0.05, {
+          dx: lastTouchDirection[0],
+          dy: lastTouchDirection[1],
+          strength: touchDirectionStrength,
+        });
       }
     }
   } else if (network.actionState === 'withdraw') {

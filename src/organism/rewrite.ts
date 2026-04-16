@@ -136,11 +136,16 @@ export function findRewriteCandidate(network: any, type: string, seedBias: numbe
   return best;
 }
 
-export function applyDirectionalRewrite(network: any, centerIndex: number, delta: number) {
+export function applyDirectionalRewrite(
+  network: any,
+  centerIndex: number,
+  delta: number,
+  direction = network.touchDirectionVector,
+) {
   const S = network.segments;
   const ci = Math.floor(centerIndex / S);
   const cj = centerIndex % S;
-  const { dx, dy } = network.touchDirectionVector;
+  const { dx, dy } = direction;
   const horizontalDominant = Math.abs(dx) > Math.abs(dy);
   const verticalDominant = Math.abs(dy) > Math.abs(dx);
   const balancedAxes = !horizontalDominant && !verticalDominant;
