@@ -421,7 +421,8 @@ export class AeternaNetwork {
             const persistenceBias = this.priorChannels.persistence[i];
             const decay = this.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
             const intake = this.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
-            const modeDecay = this.clampFinite(decay + modeResidueOffset, 0.94, 0.995, decay);
+            const modeDecayTarget = decay + modeResidueOffset;
+            const modeDecay = this.clampFinite(modeDecayTarget, 0.94, 0.995, modeDecayTarget);
             this.activityResidue[i] = this.activityResidue[i] * modeDecay
                                     + this.spikeTrace[i]       * intake;
             this.activityResidue[i] = this.clampFinite(this.activityResidue[i], 0, 1.25, 0);
@@ -1158,10 +1159,10 @@ export class AeternaNetwork {
 
         // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
         // This is the only path from touch into the dynamics; no other direct injection.
-        const TOUCH_PROJ_GAIN = 0.08 * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
+        const touchProjGain = 0.08 * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
         let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0, traceSum = 0;
         for (let i = 0; i < this.numNodes; i++) {
-            this.currentBuffer[i] += this.touchProjection[i] * TOUCH_PROJ_GAIN;
+            this.currentBuffer[i] += this.touchProjection[i] * touchProjGain;
             rawTouchSum  += this.rawTouch[i];
             onsetSum     += this.touchOnset[i];
             offsetSum    += this.touchOffset[i];
