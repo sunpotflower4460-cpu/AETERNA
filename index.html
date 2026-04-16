@@ -225,9 +225,9 @@
                       </div>
                       <div id="sec-physical" class="accordion-grid">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between" id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
-                              <div class="flex justify-between" id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
-                              <div class="flex justify-between" id="row-ratio"><span>R/r</span><span id="val-ratio" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Toroidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Poloidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] R/r ratio — geometrically computed from R (fixed = φ) and r (slider). Compared to φ = 1.618." id="row-ratio"><span>R/r</span><span id="val-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between" id="row-phase-ratio"><span>ω_p/ω_t</span><span id="val-phase-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="軌道がトーラス表面を稠密に埋め尽くす性質" id="row-ergodic"><span>Ergodic</span><span id="val-ergodic" class="text-white">NO</span></div>
                               <div class="flex justify-between" id="row-schumann"><span>Schumann lock</span><span id="val-schumann" class="text-white">NO</span></div>
@@ -255,11 +255,11 @@
                       </div>
                       <div id="sec-network" class="accordion-grid collapsed">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between" id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
-                              <div class="flex justify-between has-tooltip" data-tooltip="トーラス面上の最大連続活動領域の割合" id="row-cluster"><span>Largest cluster</span><span id="val-cluster" class="text-white">0.0%</span></div>
-                              <div class="flex justify-between has-tooltip" data-tooltip="Whole-vs-parts activity integration proxy" id="row-phi"><span>Φ* proxy</span><span id="val-phi" class="text-white">0.0000</span></div>
-                              <div class="flex justify-between has-tooltip" data-tooltip="局所結合を含む位相整合の近似指標" id="row-coherence"><span>Phase coherence</span><span id="val-coherence" class="text-white">0.000</span></div>
-                              <div class="flex justify-between" id="row-attractor-id"><span>Attractor ID</span><span id="val-attractor-id" class="text-white">NONE</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Fraction of nodes crossing the spike threshold this frame. Raw node count / total nodes." id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Largest connected component of active nodes (spikeTrace > 0.5) as a fraction of total. Computed via Union-Find." id="row-cluster"><span>Largest cluster</span><span id="val-cluster" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Whole-vs-parts integration proxy. Custom approximation using subgroup mean activity differences. NOT IIT Φ." id="row-phi"><span>Φ* proxy</span><span id="val-phi" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Kuramoto-like order parameter approximation. Uses weighted node phases; not full oscillator coupling." id="row-coherence"><span>Phase coherence</span><span id="val-coherence" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[SPECULATIVE] Not implemented — placeholder. Attractor library matching is not yet built. Always shows NONE." id="row-attractor-id"><span>Attractor ID</span><span id="val-attractor-id" class="text-white">NONE</span></div>
                               <div class="flex justify-between" id="row-attractor-sim"><span>Attractor sim</span><span id="val-attractor-sim" class="text-white">0.000</span></div>
                               <div class="flex justify-between" id="row-arousal"><span>Arousal</span><span id="val-arousal" class="text-white">0.000</span></div>
                           </div>
@@ -273,7 +273,7 @@
                       </div>
                       <div id="sec-nature" class="accordion-grid collapsed">
                           <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
-                              <div class="flex justify-between transition-colors duration-300 has-tooltip" data-tooltip="Smoothed firing propagation proxy. Near 1 suggests critical-like cascade." id="row-branching"><span>σ cascade</span><span id="val-branching" class="text-white font-bold">1.000</span></div>
+                              <div class="flex justify-between transition-colors duration-300 has-tooltip" data-tooltip="[DERIVED] Smoothed branching ratio: EMA of (currGenFiring / prevGenFiring). Near 1 suggests critical-like propagation. Not a direct measurement of criticality." id="row-branching"><span>σ cascade</span><span id="val-branching" class="text-white font-bold">1.000</span></div>
                               <div id="sigma-bar-track"><div id="sigma-bar-fill"></div></div>
                               <div class="sigma-label-row"><span>0 (沈黙)</span><span>1 (臨界)</span><span>2+ (過興奮)</span></div>
                               <div class="flex justify-between mt-1.5" id="row-homeo"><span>Homeo error</span><span id="val-homeo" class="text-white">0.000</span></div>
