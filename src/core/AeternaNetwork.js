@@ -108,77 +108,95 @@ const MODE_DYNAMICS = {
 
 export class AeternaNetwork {
     constructor(segments = 72) {
-        this.segments = segments; this.numNodes = segments * segments;
-        this.R = PHI; this.r = 1.0;
+        this.segments = segments;
+        this.numNodes = segments * segments;
+        this.R = PHI;
+        this.r = 1.0;
+
+        this.initializeGeometryRenderState();
+        this.initializeCoreDynamicState();
+        this.initializeStructuralState();
+        this.initializeSensoryPerceptualState();
+        this.initializePredictionState();
+        this.initializePlasticityRewriteState();
+        this.initializeModeOngoingLifeState();
+        this.initializeTemporaryWorkBuffers();
+
+        this.generate();
+    }
+
+    // PR10-C: geometry/render state — the torus body used for visualisation.
+    initializeGeometryRenderState() {
         this.basePositions = new Float32Array(this.numNodes * 3);
         this.vertexPositions = new Float32Array(this.numNodes * 3);
         this.normals = new Float32Array(this.numNodes * 3);
         this.colors = new Float32Array(this.numNodes * 3);
+    }
+
+    // PR10-C: core dynamic state — persistent activity fields and timing of the living wave.
+    initializeCoreDynamicState() {
         this.prevBuffer = new Float32Array(this.numNodes);
         this.currentBuffer = new Float32Array(this.numNodes);
         this.nextBuffer = new Float32Array(this.numNodes);
+        this.spikeTrace = new Float32Array(this.numNodes);
+        this.lastSpikeTime = new Float32Array(this.numNodes).fill(-9999);
+        this.simTime = 0;
+        this.currGenFiring = 0;
+        this.prevGenFiring = 0;
+        this.branchingRatioRaw = 1.0;
+        this.sigmaDisplay = 1.0;
+        this.nodePhase = new Float32Array(this.numNodes);
+        this.phaseSpeed = 0.02;
+        this.attractorLibrary = [];
+        this.currentAttractorId = -1;
+        this.currentAttractorSim = 0;
+    }
+
+    // PR10-C: structural/connective state — persistent scaffold and directional couplings.
+    initializeStructuralState() {
         this.nodeType = new Uint8Array(this.numNodes);
         this.nodeSign = new Float32Array(this.numNodes);
-        this.spikeTrace = new Float32Array(this.numNodes);
-        this.w_up = new Float32Array(this.numNodes).fill(1.0); this.w_down = new Float32Array(this.numNodes).fill(1.0);
-        this.w_left = new Float32Array(this.numNodes).fill(1.0); this.w_right = new Float32Array(this.numNodes).fill(1.0);
-        this.lastSpikeTime = new Float32Array(this.numNodes).fill(-9999);
-        this.simTime = 0; this.currGenFiring = 0; this.prevGenFiring = 0;
-        this.branchingRatioRaw = 1.0; this.sigmaDisplay = 1.0; 
-        this.TARGET_FIRING_RATE = 0.08; this.firingRateError = 0.0;
-        this.nodePhase = new Float32Array(this.numNodes); this.phaseSpeed = 0.02;
-        this.attractorLibrary = []; this.currentAttractorId = -1; this.currentAttractorSim = 0;
-        this.largestClusterNodes = new Uint8Array(this.numNodes);
-        this.isEyeNode = new Uint8Array(this.numNodes); this.nodeLayer = new Uint8Array(this.numNodes);
-        this.predictionHistory = new Float32Array(this.numNodes);
-        this.AUTO_ERROR_THRESHOLD = 2.0; 
-        this.octahedronHubs = []; this.injectedNodes = []; this.heartbeatActive = false;
-        
-        this.cachedMaxClusterSize = 0; this.cachedPhiApprox = 0; this.cachedPhaseCoherence = 0;
+        this.nodeLayer = new Uint8Array(this.numNodes);
+        this.isEyeNode = new Uint8Array(this.numNodes);
+        this.w_up = new Float32Array(this.numNodes).fill(1.0);
+        this.w_down = new Float32Array(this.numNodes).fill(1.0);
+        this.w_left = new Float32Array(this.numNodes).fill(1.0);
+        this.w_right = new Float32Array(this.numNodes).fill(1.0);
+        this.octahedronHubs = [];
+    }
 
-        // PR2: Baseline activity — quiet internal drift even without external input
-        this.baselineActivity = new Float32Array(this.numNodes);
-        // PR2: Activity residue — faint echo of recent firing
-        this.activityResidue = new Float32Array(this.numNodes);
-
-        // PR3: Local prediction — each node's gentle forecast of its next local input
-        // based on a weighted neighborhood average.  Initialised to zero.
-        this.localPrediction = new Float32Array(this.numNodes);
-        // PR3: Prediction error — signed difference between actual state and local forecast.
-        this.predictionError = new Float32Array(this.numNodes);
-
-        // PR4: Touch as perceptual prediction error.
-        // rawTouch   — surface activation from current pointer contacts (Gaussian spread)
-        // touchOnset — max(rawTouch - localPrediction, 0): "unexpected contact"
-        // touchOffset— max(localPrediction - rawTouch, 0): "expected contact that vanished"
-        // touchNovelty — |rawTouch - localPrediction|: magnitude of perceptual mismatch
-        // touchTrace — low-pass filtered novelty; accumulates touch history
-        // touchProjection — routed onset/offset ready to be folded into dynamics
-        this.rawTouch        = new Float32Array(this.numNodes);
-        this.touchOnset      = new Float32Array(this.numNodes);
-        this.touchOffset     = new Float32Array(this.numNodes);
-        this.touchTrace      = new Float32Array(this.numNodes);
-        this.touchNovelty    = new Float32Array(this.numNodes);
+    // PR10-C: sensory/perceptual state — what the organism currently feels from outside contact.
+    initializeSensoryPerceptualState() {
+        this.rawTouch = new Float32Array(this.numNodes);
+        this.touchOnset = new Float32Array(this.numNodes);
+        this.touchOffset = new Float32Array(this.numNodes);
+        this.touchTrace = new Float32Array(this.numNodes);
+        this.touchNovelty = new Float32Array(this.numNodes);
         this.touchProjection = new Float32Array(this.numNodes);
 
-        // PR7: Touch sequence state — temporal features of how touch unfolds.
-        // These accumulate across frames and decay on release.
-        this.touchDurationFrames  = 0;   // consecutive frames with active contact
-        this.touchGapFrames       = 0;   // frames since last contact ended
-        this.touchMoveDistance    = 0;   // cumulative centroid displacement (normalised)
-        this.touchVelocityEstimate = 0;  // EMA of per-frame centroid displacement
-        this.touchRepeatCount     = 0;   // count of short-gap re-contacts
-        this.lastTouchCentroid    = null; // [normX, normY] or null
-
-        // PR7: Continuous pattern scores (EMA-smoothed, 0..1).
-        // Hard classification is intentionally avoided.
+        // Persistent touch-sequence memory across frames.
+        // touchDirectionVector is an immediate motion cue from contact, later read by rewrite logic.
+        this.touchDurationFrames = 0;
+        this.touchGapFrames = 0;
+        this.touchMoveDistance = 0;
+        this.touchVelocityEstimate = 0;
+        this.touchRepeatCount = 0;
+        this.lastTouchCentroid = null;
         this.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+        this.strokePath = [];
+        this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+    }
 
-        // PR7: Path history for stroke trail rendering (normalised coords).
-        // Populated only while stroke tendency is active.
-        this.strokePath = []; // [ {normX, normY}, … ]  max 40 entries
+    // PR10-C: prediction/error state — local forecasts, mismatches, and auto-error history.
+    initializePredictionState() {
+        this.localPrediction = new Float32Array(this.numNodes);
+        this.predictionError = new Float32Array(this.numNodes);
+        this.predictionHistory = new Float32Array(this.numNodes);
+        this.AUTO_ERROR_THRESHOLD = 2.0;
+    }
 
-        // PR8-A: Structured prior rewrite — bounded, semi-persistent flow biases.
+    // PR10-C: plasticity/rewrite state — slow biasing of how future contact is taken in.
+    initializePlasticityRewriteState() {
         this.priorBias = new Float32Array(this.numNodes);
         this.rewritePressure = new Float32Array(this.numNodes);
         this.plasticityTrace = new Float32Array(this.numNodes);
@@ -195,7 +213,15 @@ export class AeternaNetwork {
         this.lastRewriteEventId = 0;
         this.rewriteProtoMeaningBiases = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
         this.currentRewriteTendency = 'none';
-        this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+    }
+
+    // PR10-C: mode/ongoing-life state — slow background drift, residue, and wake/sleep/dream balance.
+    initializeModeOngoingLifeState() {
+        this.baselineActivity = new Float32Array(this.numNodes);
+        this.activityResidue = new Float32Array(this.numNodes);
+        this.TARGET_FIRING_RATE = 0.08;
+        this.firingRateError = 0.0;
+        this.heartbeatActive = false;
         this.modeState = 'wake';
         this.modePhase = 0;
         this.wakeDrive = 0.4;
@@ -208,9 +234,27 @@ export class AeternaNetwork {
         this.dreamReplayActive = false;
         this.dreamReplayStrength = 0;
         this.currentModeDynamics = MODE_DYNAMICS.wake;
-
-        this.generate();
     }
+
+    // PR10-C: temporary/work buffers — transient event lists and low-frequency derived caches.
+    initializeTemporaryWorkBuffers() {
+        this.largestClusterNodes = new Uint8Array(this.numNodes); // derived render-assist buffer
+        this.injectedNodes = []; // transient per-frame event list, populated by injectPredictionError/autoPredictAndError
+        this.cachedMaxClusterSize = 0; // derived cache
+        this.cachedPhiApprox = 0; // derived cache
+        this.cachedPhaseCoherence = 0; // derived cache
+    }
+
+    /**
+     * PR10-C future GPU layout candidate.
+     * CPU arrays above remain the current source of truth; this is only a layout note for later texture packing.
+     *
+     * Texture A (core dynamics): currentBuffer, prevBuffer, nextBuffer, spikeTrace
+     * Texture B (sensory + prediction): rawTouch, touchTrace, localPrediction, predictionError
+     * Texture C (plasticity + ongoing-life residue): priorBias, rewritePressure, plasticityTrace, activityResidue
+     * Texture D (directional/connective): w_up, w_down, w_left, w_right
+     * Separate render attributes: basePositions, vertexPositions, normals, colors
+     */
 
     clampFinite(value, min, max, fallback = 0) {
         if (!Number.isFinite(value)) return fallback;
@@ -439,6 +483,29 @@ export class AeternaNetwork {
                                     + this.spikeTrace[i]       * intake;
             this.activityResidue[i] = this.clampFinite(this.activityResidue[i], 0, 1.25, 0);
         }
+    }
+
+    // PR10-C: mode/ongoing-life update step.
+    // Applies persistent baseline/residue state into the live activity buffer.
+    updateBaselineAndResidue() {
+        const BASELINE_GAIN = 0.4;
+        const RESIDUE_GAIN  = 0.005;
+        this.updateBaseline();
+        this.updateResidue();
+
+        let baselineSum = 0;
+        let residueSum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.currentBuffer[i] += this.baselineActivity[i] * BASELINE_GAIN
+                                   + this.activityResidue[i] * RESIDUE_GAIN;
+            baselineSum += Math.abs(this.baselineActivity[i]);
+            residueSum += this.activityResidue[i];
+        }
+
+        return {
+            baselineLevel: baselineSum / this.numNodes,
+            residueLevel: residueSum / this.numNodes,
+        };
     }
 
     // PR3: Slowly track the weighted neighbourhood average as a local prediction.
@@ -712,6 +779,63 @@ export class AeternaNetwork {
         } else if (strokeS < 0.02) {
             if (this.strokePath.length > 0) this.strokePath.shift(); // gradual fade
         }
+    }
+
+    // PR10-C: sensory/perceptual update step.
+    // Keeps transient touch work separate from the persistent buffers it updates.
+    updatePerceptionState(activeTouches) {
+        this.updateRawTouchField(activeTouches);
+        this.updateTouchSequenceFeatures(activeTouches);
+        this.updateTouchPatternScores();
+        this.updateLocalPrediction();
+        this.updateTouchPerception();
+        this.projectTouchToNetwork();
+        this.applyTouchPatternModulation();
+
+        const activeTouchCount = activeTouches.size;
+        let replayRawTouchSum = 0;
+        let replayOnsetSum = 0;
+        let replayNoveltySum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            replayRawTouchSum += this.rawTouch[i];
+            replayOnsetSum += this.touchOnset[i];
+            replayNoveltySum += this.touchNovelty[i];
+        }
+
+        const replayExternalLevel = this.clampFinite(
+            (activeTouchCount > 0 ? 0.45 : 0) +
+            (replayRawTouchSum / this.numNodes) * 0.9 +
+            (replayOnsetSum / this.numNodes) * 0.7 +
+            (replayNoveltySum / this.numNodes) * 0.45,
+            0,
+            1,
+            0,
+        );
+        this.applyDreamReplay(replayExternalLevel);
+
+        const touchProjGain = TOUCH_PROJ_BASE_GAIN * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
+        let rawTouchSum = 0;
+        let onsetSum = 0;
+        let offsetSum = 0;
+        let noveltySum = 0;
+        let traceSum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.currentBuffer[i] += this.touchProjection[i] * touchProjGain;
+            rawTouchSum += this.rawTouch[i];
+            onsetSum += this.touchOnset[i];
+            offsetSum += this.touchOffset[i];
+            noveltySum += this.touchNovelty[i];
+            traceSum += this.touchTrace[i];
+        }
+
+        return {
+            activeTouchCount,
+            meanRawTouch: rawTouchSum / this.numNodes,
+            meanTouchOnset: onsetSum / this.numNodes,
+            meanTouchOffset: offsetSum / this.numNodes,
+            meanTouchNovelty: noveltySum / this.numNodes,
+            meanTouchTrace: traceSum / this.numNodes,
+        };
     }
 
     getRewriteSeedBiases() {
@@ -1129,185 +1253,166 @@ export class AeternaNetwork {
         return sum / this.numNodes;
     }
 
-    updateDynamics(diskNodeIdx, activeTouches) {
-        this.injectedNodes = []; this.simTime++;
-
-        // PR2: Apply baseline drift and activity residue before wave propagation.
-        // Gains are deliberately tiny so no runaway firing occurs when input is zero.
-        const BASELINE_GAIN = 0.4;   // scales the ±0.003 sinusoid → ±0.0012 max on currentBuffer
-        const RESIDUE_GAIN  = 0.005; // residue [0,1] → at most 0.005 added per frame
-        this.updateBaseline();
-        this.updateResidue();
-        let baselineSum = 0, residueSum = 0;
-        for (let i = 0; i < this.numNodes; i++) {
-            this.currentBuffer[i] += this.baselineActivity[i] * BASELINE_GAIN
-                                   + this.activityResidue[i]  * RESIDUE_GAIN;
-            baselineSum += Math.abs(this.baselineActivity[i]);
-            residueSum  += this.activityResidue[i];
-        }
-        const baselineLevel = baselineSum / this.numNodes;
-        const residueLevel  = residueSum  / this.numNodes;
-
-        // PR4: Step 2 — rebuild rawTouch surface from current pointer contacts.
-        // activeTouches is the state.activeTouches Map (pixel coords).
-        this.updateRawTouchField(activeTouches || new Map());
-
-        // PR7: Update touch sequence features and pattern scores before perceptual steps,
-        // so that modulation can be applied to the perception/projection outputs below.
-        this.updateTouchSequenceFeatures(activeTouches || new Map());
-        this.updateTouchPatternScores();
-
-        // PR3 / PR4: Update local predictor after baseline/residue and raw touch
-        // are known, so it sees the freshest quiet-state values before we compute
-        // the perceptual error.
-        this.updateLocalPrediction();
-
-        // PR4: Step 4 — derive onset / offset / novelty / trace from raw touch vs prediction.
-        this.updateTouchPerception();
-
-        const activeTouchCount = activeTouches ? activeTouches.size : 0;
-
-        // PR4: Step 5 — accumulate onset/offset into touchProjection (decaying buffer).
-        this.projectTouchToNetwork();
-
-        // PR7: Apply conservative pattern-driven modulation to touchProjection / touchTrace.
-        this.applyTouchPatternModulation();
-        let replayRawTouchSum = 0, replayOnsetSum = 0, replayNoveltySum = 0;
-        for (let i = 0; i < this.numNodes; i++) {
-            replayRawTouchSum += this.rawTouch[i];
-            replayOnsetSum += this.touchOnset[i];
-            replayNoveltySum += this.touchNovelty[i];
-        }
-        const replayExternalLevel = this.clampFinite(
-            (activeTouchCount > 0 ? 0.45 : 0) +
-            (replayRawTouchSum / this.numNodes) * 0.9 +
-            (replayOnsetSum / this.numNodes) * 0.7 +
-            (replayNoveltySum / this.numNodes) * 0.45,
-            0,
-            1,
-            0,
-        );
-        this.applyDreamReplay(replayExternalLevel);
-
-        // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
-        // This is the only path from touch into the dynamics; no other direct injection.
-        const touchProjGain = TOUCH_PROJ_BASE_GAIN * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
-        let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0, traceSum = 0;
-        for (let i = 0; i < this.numNodes; i++) {
-            this.currentBuffer[i] += this.touchProjection[i] * touchProjGain;
-            rawTouchSum  += this.rawTouch[i];
-            onsetSum     += this.touchOnset[i];
-            offsetSum    += this.touchOffset[i];
-            noveltySum   += this.touchNovelty[i];
-            traceSum     += this.touchTrace[i];
-        }
-        const meanRawTouch   = rawTouchSum  / this.numNodes;
-        const meanTouchOnset = onsetSum     / this.numNodes;
-        const meanTouchOffset= offsetSum    / this.numNodes;
-        const meanTouchNovelty = noveltySum / this.numNodes;
-        const meanTouchTrace = traceSum / this.numNodes;
+    // PR10-C: core dynamic step — spike detection, homeostatic damping, and wave propagation.
+    updateDynamicsCore() {
         const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
-        const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
-        
+        const waveSpeed = 0.1 + 0.15 * freqRatio;
+        const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
+
         let newlyFiredCount = 0;
         for (let i = 0; i < this.numNodes; i++) {
-            if (this.currentBuffer[i] > 0.8 && this.prevBuffer[i] <= 0.8) { 
-                this.spikeTrace[i] = 1.0; 
-                this.lastSpikeTime[i] = this.simTime; 
+            if (this.currentBuffer[i] > 0.8 && this.prevBuffer[i] <= 0.8) {
+                this.spikeTrace[i] = 1.0;
+                this.lastSpikeTime[i] = this.simTime;
                 newlyFiredCount++;
-            } else { 
-                this.spikeTrace[i] *= 0.9; 
+            } else {
+                this.spikeTrace[i] *= 0.9;
             }
         }
 
         for (let i = 0; i < this.numNodes; i++) {
-            this.w_up[i] *= 0.99995; this.w_down[i] *= 0.99995; this.w_left[i] *= 0.99995; this.w_right[i] *= 0.99995;
-            const sum = this.w_up[i]+this.w_down[i]+this.w_left[i]+this.w_right[i];
-            if (sum > 0.001) { const f = 4.0/sum; const a = 0.01; this.w_up[i]+=(this.w_up[i]*f-this.w_up[i])*a; this.w_down[i]+=(this.w_down[i]*f-this.w_down[i])*a; this.w_left[i]+=(this.w_left[i]*f-this.w_left[i])*a; this.w_right[i]+=(this.w_right[i]*f-this.w_right[i])*a; }
+            this.w_up[i] *= 0.99995;
+            this.w_down[i] *= 0.99995;
+            this.w_left[i] *= 0.99995;
+            this.w_right[i] *= 0.99995;
+            const sum = this.w_up[i] + this.w_down[i] + this.w_left[i] + this.w_right[i];
+            if (sum > 0.001) {
+                const f = 4.0 / sum;
+                const a = 0.01;
+                this.w_up[i] += (this.w_up[i] * f - this.w_up[i]) * a;
+                this.w_down[i] += (this.w_down[i] * f - this.w_down[i]) * a;
+                this.w_left[i] += (this.w_left[i] * f - this.w_left[i]) * a;
+                this.w_right[i] += (this.w_right[i] * f - this.w_right[i]) * a;
+            }
         }
 
         this.prevGenFiring = this.currGenFiring;
         this.currGenFiring = newlyFiredCount;
-        
         this.branchingRatioRaw = this.prevGenFiring > 0 ? this.currGenFiring / this.prevGenFiring : 1.0;
-        this.sigmaDisplay = this.sigmaDisplay * 0.9 + this.branchingRatioRaw * 0.1; 
-        
+        this.sigmaDisplay = this.sigmaDisplay * 0.9 + this.branchingRatioRaw * 0.1;
+
         const arousal = this.currGenFiring / this.numNodes;
         this.firingRateError = this.TARGET_FIRING_RATE - arousal;
 
         const homeoDamping = damping + this.firingRateError * 0.002;
-        for (let i = 0; i < this.segments; i++) { 
+        for (let i = 0; i < this.segments; i++) {
             for (let j = 0; j < this.segments; j++) {
-                const idx = i*this.segments+j; 
-                const up = ((i-1+this.segments)%this.segments)*this.segments+j; 
-                const down = ((i+1)%this.segments)*this.segments+j; 
-                const left = i*this.segments+((j-1+this.segments)%this.segments); 
-                const right = i*this.segments+((j+1)%this.segments);
-                
-                // Expanded for readability and debuggability
-                let laplacian = 
+                const idx = i * this.segments + j;
+                const up = ((i - 1 + this.segments) % this.segments) * this.segments + j;
+                const down = ((i + 1) % this.segments) * this.segments + j;
+                const left = i * this.segments + ((j - 1 + this.segments) % this.segments);
+                const right = i * this.segments + ((j + 1) % this.segments);
+
+                let laplacian =
                     (this.w_down[up] * this.currentBuffer[up] * this.nodeSign[up]) +
                     (this.w_up[down] * this.currentBuffer[down] * this.nodeSign[down]) +
                     (this.w_right[left] * this.currentBuffer[left] * this.nodeSign[left]) +
                     (this.w_left[right] * this.currentBuffer[right] * this.nodeSign[right]) -
                     ((this.w_up[idx] + this.w_down[idx] + this.w_left[idx] + this.w_right[idx]) * this.currentBuffer[idx]);
-                    
-                let nextVal = 2*this.currentBuffer[idx]-this.prevBuffer[idx]+waveSpeed*laplacian;
+
+                let nextVal = 2 * this.currentBuffer[idx] - this.prevBuffer[idx] + waveSpeed * laplacian;
                 nextVal *= homeoDamping;
-                if (nextVal > 8.0) nextVal = 8.0+(nextVal-8.0)*0.01; if (nextVal < -8.0) nextVal = -8.0+(nextVal+8.0)*0.01;
+                if (nextVal > 8.0) nextVal = 8.0 + (nextVal - 8.0) * 0.01;
+                if (nextVal < -8.0) nextVal = -8.0 + (nextVal + 8.0) * 0.01;
                 this.nextBuffer[idx] = nextVal;
             }
         }
-        
-        let temp = this.prevBuffer; this.prevBuffer = this.currentBuffer; this.currentBuffer = this.nextBuffer; this.nextBuffer = temp;
 
-        // PR3: Now that currentBuffer holds the freshly propagated state, compute
-        // how much reality differed from the local prediction made before propagation.
+        const temp = this.prevBuffer;
+        this.prevBuffer = this.currentBuffer;
+        this.currentBuffer = this.nextBuffer;
+        this.nextBuffer = temp;
+
+        return { arousal, freqRatio };
+    }
+
+    // PR10-C: prediction/error, rewrite, and mode step after propagation has settled.
+    updatePostPropagationState(perceptionState, ongoingState, coreState) {
         this.updatePredictionError();
         const rewriteDebug = this.updateStructuredPriorRewrite();
         let recentRewriteSum = 0;
         for (let i = 0; i < this.numNodes; i++) recentRewriteSum += this.recentRewriteMask[i];
         const modeDebug = this.updateModeState({
-            activeTouchCount,
-            meanRawTouch,
-            meanTouchOnset,
-            meanTouchNovelty,
-            arousal,
+            activeTouchCount: perceptionState.activeTouchCount,
+            meanRawTouch: perceptionState.meanRawTouch,
+            meanTouchOnset: perceptionState.meanTouchOnset,
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            arousal: coreState.arousal,
             meanPredictionError: this.computeMeanPredictionError(),
             sigmaDisplay: this.sigmaDisplay,
             tension: state.tensionLoad,
-            residueLevel,
-            traceLevel: meanTouchTrace,
+            residueLevel: ongoingState.residueLevel,
+            traceLevel: perceptionState.meanTouchTrace,
             priorBiasMean: rewriteDebug.priorBiasMean,
             rewritePressureMean: rewriteDebug.pressureMean,
             recentRewriteMean: recentRewriteSum / this.numNodes,
         });
+        return { rewriteDebug, modeDebug };
+    }
 
+    // PR10-C: geometry/render state step — body deformation and colour projection.
+    updateRenderBuffers(diskNodeIdx) {
+        for (let i = 0; i < this.numNodes; i++) {
+            const val = this.currentBuffer[i];
+            const trace = this.spikeTrace[i];
+            const idx3 = i * 3;
+            let r = 0;
+            let g = 0;
+            let b = 0;
+            if (i === diskNodeIdx) {
+                r = 1.0;
+            } else {
+                if (this.nodeType[i] === 1) {
+                    r = 0.3 + trace * 1.5;
+                    b = 0.1 + trace * 0.2;
+                } else {
+                    if (val > 0) {
+                        r = val * 0.3 + trace;
+                        g = 0.1 + val * 0.7 + trace;
+                        b = 0.4 + val * 0.8 + trace;
+                    } else {
+                        r = -val * 0.4 + trace;
+                        g = trace * 0.5;
+                        b = 0.3 - val * 0.7 + trace;
+                    }
+                }
+                if (this.largestClusterNodes[i] === 1) b += 0.5;
+            }
+            this.colors[idx3] = Math.min(Math.max(r, 0), 1.0);
+            this.colors[idx3 + 1] = Math.min(Math.max(g, 0), 1.0);
+            this.colors[idx3 + 2] = Math.min(Math.max(b, 0), 1.0);
+            const d = val * 0.04 + trace * 0.06;
+            this.vertexPositions[idx3] = this.basePositions[idx3] + this.normals[idx3] * d;
+            this.vertexPositions[idx3 + 1] = this.basePositions[idx3 + 1] + this.normals[idx3 + 1] * d;
+            this.vertexPositions[idx3 + 2] = this.basePositions[idx3 + 2] + this.normals[idx3 + 2] * d;
+        }
+    }
+
+    // PR10-C: low-frequency derived state refresh.
+    updateDerivedStateCaches(freqRatio) {
         this.phaseSpeed = 0.015 + 0.025 * freqRatio;
-        for (let i = 0; i < this.numNodes; i++) { this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI*2); }
+        for (let i = 0; i < this.numNodes; i++) {
+            this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI * 2);
+        }
 
         if (this.simTime % 4 === 0) {
             this.cachedMaxClusterSize = this.computeLargestCluster();
             this.cachedPhiApprox = this.computeIntegrationProxy();
             this.cachedPhaseCoherence = this.computePhaseCoherence();
         }
+    }
 
-        for (let i = 0; i < this.numNodes; i++) {
-            const val = this.currentBuffer[i]; const trace = this.spikeTrace[i]; const idx3 = i*3; let r=0,g=0,b=0;
-            if (i === diskNodeIdx) { r = 1.0; }
-            else {
-                if (this.nodeType[i] === 1) { r = 0.3+trace*1.5; b = 0.1+trace*0.2; } 
-                else {
-                    if (val > 0) { r = val*0.3+trace; g = 0.1+val*0.7+trace; b = 0.4+val*0.8+trace; }
-                    else { r = -val*0.4+trace; g = trace*0.5; b = 0.3-val*0.7+trace; }
-                }
-                if (this.largestClusterNodes[i] === 1) b += 0.5;
-            }
-            this.colors[idx3] = Math.min(Math.max(r,0),1.0); this.colors[idx3+1] = Math.min(Math.max(g,0),1.0); this.colors[idx3+2] = Math.min(Math.max(b,0),1.0);
-            const d = val*0.04+trace*0.06;
-            this.vertexPositions[idx3] = this.basePositions[idx3]+this.normals[idx3]*d; this.vertexPositions[idx3+1] = this.basePositions[idx3+1]+this.normals[idx3+1]*d; this.vertexPositions[idx3+2] = this.basePositions[idx3+2]+this.normals[idx3+2]*d;
-        }
-        
+    updateDynamics(diskNodeIdx, activeTouches) {
+        this.injectedNodes = [];
+        this.simTime++;
+
+        const touchState = activeTouches || new Map();
+        const ongoingState = this.updateBaselineAndResidue();
+        const perceptionState = this.updatePerceptionState(touchState);
+        const coreState = this.updateDynamicsCore();
+        const { rewriteDebug, modeDebug } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
+        this.updateDerivedStateCaches(coreState.freqRatio);
+        this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
 
         return {
@@ -1316,17 +1421,17 @@ export class AeternaNetwork {
             phaseCoherence: this.cachedPhaseCoherence,
             meanPredictionError: this.computeMeanPredictionError(),
             meanLocalPredError: this.computeMeanLocalPredError(),
-            arousal: arousal,
+            arousal: coreState.arousal,
             sigmaDisplay: this.sigmaDisplay,
             firingRateError: this.firingRateError,
-            baselineLevel: baselineLevel,
-            residueLevel: residueLevel,
+            baselineLevel: ongoingState.baselineLevel,
+            residueLevel: ongoingState.residueLevel,
             // PR4: touch perception metrics
-            meanRawTouch:     meanRawTouch,
-            meanTouchOnset:   meanTouchOnset,
-            meanTouchOffset:  meanTouchOffset,
-            meanTouchNovelty: meanTouchNovelty,
-            activeTouchCount: activeTouchCount,
+            meanRawTouch: perceptionState.meanRawTouch,
+            meanTouchOnset: perceptionState.meanTouchOnset,
+            meanTouchOffset: perceptionState.meanTouchOffset,
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            activeTouchCount: perceptionState.activeTouchCount,
             // PR7: touch pattern metrics
             touchDuration:      this.touchDurationFrames,
             touchVelocity:      this.touchVelocityEstimate,

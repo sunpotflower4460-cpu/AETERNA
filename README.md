@@ -10,6 +10,21 @@
 
 現在は Signal Runtime v0 の開発を src/ 側で進めており、旧コアは archive/ に安全に退避されています。
 
+## AeternaNetwork state summary
+
+`src/core/AeternaNetwork.js` の CPU state は現在も source of truth です。  
+PR10-C では内部状態を次のカテゴリで読む前提に整理しています。
+
+- **core dynamic state** — `currentBuffer`, `prevBuffer`, `nextBuffer`, `spikeTrace`
+- **sensory / perceptual state** — `rawTouch`, `touchOnset`, `touchOffset`, `touchTrace`, `touchNovelty`, `touchProjection`
+- **prediction / error state** — `localPrediction`, `predictionError`, `predictionHistory`
+- **plasticity / rewrite state** — `priorBias`, `rewritePressure`, `plasticityTrace`, `recentRewriteMask`, `priorChannels`
+- **mode / ongoing-life state** — `baselineActivity`, `activityResidue`, `wakeDrive`, `sleepPressure`, `dreamPressure`, `modeState`
+- **geometry / render state** — `basePositions`, `vertexPositions`, `normals`, `colors`
+- **temporary / work buffers** — `injectedNodes`（transient event list）, `cachedMaxClusterSize` / `cachedPhiApprox` / `cachedPhaseCoherence`（derived cache）
+
+将来 GPU texture 化する場合も、このカテゴリ分けをそのまま layout 候補として使い、意味の source は先に CPU state 側で保つ方針です。
+
 ## Signal Runtime v0
 
 ### Signal方式について
