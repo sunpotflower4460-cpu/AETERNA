@@ -554,9 +554,9 @@ export class AeternaNetwork {
         const S = this.segments;
         const baseAlpha = 0.05;
         const organismAlphaGain = this.clampFinite(
-            1.02 - this.stability * 0.08 - this.overload * 0.04,
-            0.86,
-            1.02,
+            1.0 - Math.max(this.stability - 0.58, 0) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.05,
+            0.88,
+            1.0,
             1.0,
         );
         for (let i = 0; i < S; i++) {
@@ -642,13 +642,13 @@ export class AeternaNetwork {
         const TRACE_DECAY  = 0.96;
         const TRACE_INTAKE = 0.04;
         const touchSensitivity = (this.currentModeDynamics?.touchSensitivity ?? 1.0) * this.clampFinite(
-            1.0 + this.orientingDrive * 0.12 + this.stability * 0.04 - this.overload * 0.18,
+            1.0 + (this.orientingDrive - 0.18) * 0.12 + (this.stability - 0.58) * 0.04 - Math.max(this.overload - 0.08, 0) * 0.22,
             0.72,
             1.14,
             1.0,
         );
         const noveltyGain = this.clampFinite(
-            1.0 + this.orientingDrive * 0.08 - this.overload * 0.22,
+            1.0 + (this.orientingDrive - 0.18) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.24,
             0.7,
             1.08,
             1.0,
@@ -688,7 +688,7 @@ export class AeternaNetwork {
         const ONSET_COEFFICIENT = 0.12;
         const OFFSET_COEFFICIENT = 0.06;
         let projectionGain = (this.currentModeDynamics?.touchProjectionGain ?? 1.0) * this.clampFinite(
-            0.82 + this.energy * 0.22 - this.overload * 0.2,
+            1.0 + (this.energy - 0.62) * 0.22 - Math.max(this.overload - 0.08, 0) * 0.24,
             0.55,
             1.04,
             1.0,
@@ -1326,7 +1326,7 @@ export class AeternaNetwork {
         const seedFactor = REWRITE_SEED_BASE + seedBias * REWRITE_SEED_SCALE;
         const tensionFactor = REWRITE_TENSION_BASE + Math.min(tension, 1.0) * REWRITE_TENSION_SCALE;
         const rewriteHomeostasisGain = this.clampFinite(
-            1.0 + this.stability * 0.08 - this.overload * 0.28 - (1.0 - this.energy) * 0.08,
+            1.0 + (this.stability - 0.58) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.32 - Math.max(0.62 - this.energy, 0) * 0.1,
             0.55,
             1.06,
             1.0,
