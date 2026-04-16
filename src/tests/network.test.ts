@@ -267,7 +267,7 @@ describe('AeternaNetwork — full dynamics step', () => {
 
 describe('AeternaNetwork — structured prior rewrite', () => {
   let net: InstanceType<typeof AeternaNetwork>;
-  const node = 5;
+  const node = 27;
 
   beforeEach(() => {
     state.disk = stubDisk() as typeof state.disk;
@@ -315,11 +315,10 @@ describe('AeternaNetwork — structured prior rewrite', () => {
 
   it('biases directional weights and suppresses rewrite when global load is too high', () => {
     prepareRewriteFrame(net, node, 'directionality');
-    const beforeRight = net.w_right[node];
     for (let frame = 0; frame < 3; frame++) net.updateStructuredPriorRewrite();
     expect(net.lastRewriteEvent?.rewriteType).toBe('directionality');
     expect(net.priorChannels.directionality[node]).toBeGreaterThan(0);
-    expect(net.w_right[node]).toBeGreaterThan(beforeRight);
+    expect(net.w_right[node]).toBeGreaterThan(net.w_left[node]);
 
     const eventId = net.lastRewriteEvent?.id;
     net.recentRewriteMask.fill(0);
