@@ -15,7 +15,18 @@ export interface MetricMeta {
   tooltip: string;
 }
 
-export const METRIC_META: Record<string, MetricMeta> = {
+export type MetricKey =
+  | 'omega_t'
+  | 'omega_p'
+  | 'ratio_rr'
+  | 'firing_rate'
+  | 'largest_cluster'
+  | 'sigma_cascade'
+  | 'phi_proxy'
+  | 'phase_coherence'
+  | 'attractor_id';
+
+export const METRIC_META: Record<MetricKey, MetricMeta> = {
   omega_t: {
     category: 'MEASURED',
     tooltip: '[MEASURED] Toroidal frequency — direct slider input value. Control parameter, not derived.',
