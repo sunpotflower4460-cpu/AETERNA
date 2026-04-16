@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AETERNA Phase 9.4 - The Reality Guide (Polished)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0; overflow: hidden;
+            background-color: #010205; color: #ffffff;
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+            touch-action: none;
+        }
+        #canvas-container {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 1;
+        }
+
+        /* ── Intro Guide ── */
+        #intro-guide {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+            padding: 20px; border-radius: 12px; border: 1px solid rgba(34,211,238,0.3);
+            text-align: center; font-family: monospace; font-size: 11px; z-index: 100;
+            color: rgba(255,255,255,0.9); pointer-events: none;
+            transition: opacity 1.5s ease-out;
+        }
+
+        /* ── System State Badge ── */
+        #system-state-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 9px; font-weight: bold; font-family: monospace;
+            margin-left: 12px; vertical-align: middle;
+            border: 1px solid currentColor; letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+
+        /* ── Tooltips ── */
+        .has-tooltip { position: relative; cursor: help; border-bottom: 1px dotted rgba(255,255,255,0.3); }
+        .has-tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute; bottom: 100%; left: 0; transform: translateY(-4px);
+            background: rgba(0,0,0,0.9); border: 1px solid rgba(34,211,238,0.4);
+            color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 8px;
+            white-space: nowrap; z-index: 50; pointer-events: none; font-family: sans-serif;
+        }
+
+        /* ── スライダー基本スタイル ── */
+        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; height: 28px; cursor: pointer; margin: 0; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 10px rgba(255,255,255,0.8); transition: transform 0.1s; margin-top: -8px; }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 3px; background: linear-gradient(to right, rgba(34,211,238,0.8) var(--pct, 0%), rgba(255,255,255,0.1) var(--pct, 0%)); border-radius: 2px; }
+
+        /* ── カスタムスクロールバー ── */
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.4); border-radius: 2px; }
+
+        /* ── アコーディオン ── */
+        .accordion-grid { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.25s ease-out, opacity 0.25s ease-out; }
+        .accordion-grid.collapsed { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
+        .accordion-inner { overflow: hidden; }
+
+        /* ── メトリクスパネル ── */
+        #metrics-panel { width: min(55vw, 256px); max-height: calc(100vh - 280px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(34,211,238,0.3) transparent; pointer-events: auto; }
+
+        /* ── σバーグラフ (パフォーマンス最適化版) ── */
+        #sigma-bar-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 4px; overflow: hidden; position: relative; }
+        #sigma-bar-fill {
+            height: 100%; width: 100%; /* 初期幅を100%に */
+            background: #22d3ee;
+            border-radius: 2px;
+            transform-origin: left; /* 左端を基準に拡大縮小 */
+            transition: transform 0.1s, background-color 0.3s;
+        }
+        #sigma-bar-track::after { content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(255,255,255,0.5); transform: translateX(-50%); }
+        .sigma-label-row { display: flex; justify-content: space-between; font-size: 7px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+
+        /* ── プリセットボタン ── */
+        .preset-btn { font-size: 9px; font-family: monospace; padding: 6px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s ease; white-space: nowrap; flex: 1; min-height: 36px; }
+        .preset-btn:active { transform: scale(0.95); }
+        .preset-btn.active { background: rgba(34,211,238,0.15); border-color: rgba(34,211,238,0.5); color: #22d3ee; box-shadow: 0 0 8px rgba(34,211,238,0.2); }
+
+        /* ── アクションボタン ── */
+        .action-btn { min-height: 40px; display: flex; align-items: center; justify-content: center; }
+
+        /* ── Glassmorphism 共通 ── */
+        .glass-panel { background: rgba(5, 10, 15, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+
+        /* ── セーフエリア対応 ── */
+        .pt-safe { padding-top: max(12px, env(safe-area-inset-top, 12px)); }
+        .pl-safe { padding-left: max(12px, env(safe-area-inset-left, 12px)); }
+        .pr-safe { padding-right: max(12px, env(safe-area-inset-right, 12px)); }
+        .pb-safe { padding-bottom: max(12px, env(safe-area-inset-bottom, 12px)); }
+
+        /* ── Phase 9: Guide Panel & Visuals ── */
+        #guide-panel { position: absolute; right: max(12px, env(safe-area-inset-right, 12px)); top: 50%; transform: translateY(-50%); width: 280px; pointer-events: auto; background: rgba(0, 0, 0, 0.85); z-index: 20; display: none; }
+        @media (min-width: 768px) { #guide-panel { display: flex; } }
+        #yin-yang-canvas { position: absolute; left: max(12px, env(safe-area-inset-left, 12px)); bottom: max(12px, env(safe-area-inset-bottom, 12px)); width: 120px; height: 60px; pointer-events: none; z-index: 10; display: none; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .visual-btn.active { background: rgba(34, 211, 238, 0.2); border-color: rgba(34, 211, 238, 0.5); color: #22d3ee; }
+
+        /* ── Signal Runtime Panel ── */
+        #signal-observe-panel { display: none; }
+        #signal-observe-panel.visible { display: block; }
+        .signal-section { border-top: 1px solid rgba(34,211,238,0.15); margin-top: 6px; padding-top: 6px; }
+        .signal-section-title { font-size: 8px; color: rgba(34,211,238,0.7); font-weight: bold; letter-spacing: 0.1em; margin-bottom: 3px; }
+        .signal-row { display: flex; justify-content: space-between; font-size: 8px; color: rgba(255,255,255,0.6); margin-bottom: 1px; }
+        .signal-row-val { color: rgba(255,255,255,0.9); max-width: 60%; text-align: right; word-break: break-all; }
+        .signal-kind-dominant { color: #22d3ee; }
+        .signal-kind-coactive { color: #a78bfa; }
+        .signal-kind-background { color: rgba(255,255,255,0.4); }
+        .signal-kind-suppressed { color: rgba(239,68,68,0.6); }
+        .signal-utterance { font-size: 10px; color: #fff; line-height: 1.5; margin-top: 4px; padding: 6px; background: rgba(34,211,238,0.06); border-radius: 4px; border-left: 2px solid rgba(34,211,238,0.4); }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="intro-guide">
+        <p class="mb-2 text-cyan-300 font-bold tracking-widest">AETERNA OBSERVER</p>
+        <ul class="text-left space-y-1 text-[10px] text-white/80">
+            <li>• Try: [シュマン] preset → [VISUAL ON]</li>
+            <li>• Touch: 画面タップで予測誤差を注入</li>
+            <li>• View: 2本指でズームイン/アウト</li>
+            <li>• σ≈1.0 でシステムは臨界状態に接近します</li>
+        </ul>
+    </div>
+
+    <canvas id="yin-yang-canvas" width="240" height="120"></canvas>
+
+    <!-- ── Guide / Observe Panel ── -->
+    <div id="guide-panel" class="glass-panel p-4 rounded-xl font-mono text-[9px] text-white/80 shadow-2xl flex-col gap-3">
+        <div class="text-cyan-400 font-bold border-b border-white/10 pb-1.5 flex justify-between items-center">
+            <span class="tracking-widest">REALITY GUIDE</span>
+            <span id="guide-provider" class="text-[7px] text-white/50 bg-white/5 px-1.5 py-0.5 rounded">PROVIDER: NONE</span>
+        </div>
+        <div id="guide-latest" class="text-[11px] text-white font-bold leading-relaxed min-h-[48px] text-cyan-50">
+            Observer is online. Reading whole-vs-parts integration proxy...
+        </div>
+        <ul id="guide-history" class="space-y-1.5 text-[8px] text-white/40 list-none"></ul>
+
+        <!-- Signal Observe Panel (shown when signal_runtime mode is active) -->
+        <div id="signal-observe-panel" class="mt-2 max-h-60 overflow-y-auto custom-scrollbar">
+            <div class="text-cyan-400 font-bold text-[8px] tracking-widest mb-2">SIGNAL RUNTIME</div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">STIMULUS</div>
+                <div class="signal-row"><span>salience</span><span id="obs-salience" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>novelty</span><span id="obs-novelty" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>emotionalCharge</span><span id="obs-emotional" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>explicitQuestion</span><span id="obs-question" class="signal-row-val">—</span></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">SIGNALS</div>
+                <div id="obs-signals" class="space-y-0.5"></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">BOUNDARY</div>
+                <div class="signal-row"><span>permeability</span><span id="obs-permeability" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>selfOuterSep</span><span id="obs-separation" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>shockAbsorption</span><span id="obs-shock" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>externalPressure</span><span id="obs-pressure" class="signal-row-val">—</span></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">FIELD</div>
+                <div class="signal-row"><span>closeness</span><span id="obs-closeness" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>fragility</span><span id="obs-fragility" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>urgency</span><span id="obs-urgency" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>answerPressure</span><span id="obs-answer-pressure" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>unfinishedness</span><span id="obs-unfinished" class="signal-row-val">—</span></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">PROTO MEANINGS</div>
+                <div id="obs-proto-meanings" class="text-[8px] text-white/70 space-y-0.5"></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">DECISION</div>
+                <div class="signal-row"><span>stance</span><span id="obs-stance" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>replyIntent</span><span id="obs-intent" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>shouldAnswer</span><span id="obs-should-answer" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>shouldStayOpen</span><span id="obs-stay-open" class="signal-row-val">—</span></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">SENTENCE PLAN</div>
+                <div class="signal-row"><span>reaction</span><span id="obs-reaction" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>core</span><span id="obs-core" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>answer</span><span id="obs-answer" class="signal-row-val">—</span></div>
+                <div class="signal-row"><span>nextStep</span><span id="obs-next-step" class="signal-row-val">—</span></div>
+            </div>
+
+            <div class="signal-section">
+                <div class="signal-section-title">UTTERANCE</div>
+                <div id="obs-utterance" class="signal-utterance">—</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-layer" class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between overflow-hidden">
+        <div class="flex justify-between items-start w-full pt-safe pl-safe pr-safe pointer-events-none">
+            <div class="pointer-events-auto flex items-center">
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-[0.3em] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] leading-tight">AETERNA</h1>
+                    <h2 class="text-[8px] font-mono mt-0.5 text-cyan-400 tracking-[0.2em] opacity-80">PHASE 9.4 : POLISHED</h2>
+                </div>
+                <span id="system-state-badge" class="text-white/50 border-white/50">QUIET</span>
+            </div>
+
+            <div id="metrics-panel" class="glass-panel p-1 rounded-xl font-mono text-[8.5px] text-white/70 shadow-2xl custom-scrollbar mt-1">
+              <div class="p-2 pb-1">
+                  <!-- 物理層 -->
+                  <div class="mb-2">
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-physical', 'icon-physical')">
+                          <span class="tracking-wider">PHYSICAL DISK</span>
+                          <svg id="icon-physical" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-physical" class="accordion-grid">
+                          <div class="accordion-inner space-y-0.5 pt-0.5">
+                              <div class="flex justify-between" id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
+                              <div class="flex justify-between" id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
+                              <div class="flex justify-between" id="row-ratio"><span>R/r</span><span id="val-ratio" class="text-white">0.000</span></div>
+                              <div class="flex justify-between" id="row-phase-ratio"><span>ω_p/ω_t</span><span id="val-phase-ratio" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="軌道がトーラス表面を稠密に埋め尽くす性質" id="row-ergodic"><span>Ergodic</span><span id="val-ergodic" class="text-white">NO</span></div>
+                              <div class="flex justify-between" id="row-schumann"><span>Schumann lock</span><span id="val-schumann" class="text-white">NO</span></div>
+                          </div>
+                      </div>
+                  </div>
+                  <!-- 幾何層 -->
+                  <div class="mb-2">
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-geometry', 'icon-geometry')">
+                          <span class="tracking-wider">TORUS GEOMETRY</span>
+                          <svg id="icon-geometry" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-geometry" class="accordion-grid">
+                          <div class="accordion-inner space-y-0.5 pt-0.5">
+                              <div class="flex justify-between" id="row-torus-formed"><span>Torus formed</span><span id="val-torus-formed" class="text-white">NO</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="周波数比の無理数近似度（無理数ほど複雑な軌道）" id="row-irrational"><span>Irrationality</span><span id="val-irrational" class="text-white">0.000</span></div>
+                          </div>
+                      </div>
+                  </div>
+                  <!-- ネットワーク層 -->
+                  <div class="mb-2">
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-network', 'icon-network')">
+                          <span class="tracking-wider">NETWORK STATE</span>
+                          <svg id="icon-network" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-network" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5">
+                              <div class="flex justify-between" id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="トーラス面上の最大連続活動領域の割合" id="row-cluster"><span>Largest cluster</span><span id="val-cluster" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Whole-vs-parts activity integration proxy" id="row-phi"><span>Φ* proxy</span><span id="val-phi" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="局所結合を含む位相整合の近似指標" id="row-coherence"><span>Phase coherence</span><span id="val-coherence" class="text-white">0.000</span></div>
+                              <div class="flex justify-between" id="row-attractor-id"><span>Attractor ID</span><span id="val-attractor-id" class="text-white">NONE</span></div>
+                              <div class="flex justify-between" id="row-attractor-sim"><span>Attractor sim</span><span id="val-attractor-sim" class="text-white">0.000</span></div>
+                              <div class="flex justify-between" id="row-arousal"><span>Arousal</span><span id="val-arousal" class="text-white">0.000</span></div>
+                          </div>
+                      </div>
+                  </div>
+                  <!-- 天然メカニズム層 -->
+                  <div class="mb-2">
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-nature', 'icon-nature')">
+                          <span class="tracking-wider">NATURAL MECHANISMS</span>
+                          <svg id="icon-nature" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-nature" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between transition-colors duration-300 has-tooltip" data-tooltip="Smoothed firing propagation proxy. Near 1 suggests critical-like cascade." id="row-branching"><span>σ cascade</span><span id="val-branching" class="text-white font-bold">1.000</span></div>
+                              <div id="sigma-bar-track"><div id="sigma-bar-fill"></div></div>
+                              <div class="sigma-label-row"><span>0 (沈黙)</span><span>1 (臨界)</span><span>2+ (過興奮)</span></div>
+                              <div class="flex justify-between mt-1.5" id="row-homeo"><span>Homeo error</span><span id="val-homeo" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="予測誤差の抑圧蓄積量" id="row-tension"><span>Internal tension</span><span id="val-tension" class="text-white">0.000</span></div>
+                              <div class="flex justify-between" id="row-touch"><span>Touch count</span><span id="val-touch" class="text-white">0</span></div>
+                          </div>
+                      </div>
+                  </div>
+                  <!-- 前提条件 -->
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-prereq', 'icon-prereq')">
+                          <span class="tracking-wider">PREREQUISITES</span>
+                          <svg id="icon-prereq" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-prereq" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5">
+                              <div class="flex justify-between" id="row-pre-a"><span>A: Ergodic orbit</span><span id="val-pre-a" class="text-white">–</span></div>
+                              <div class="flex justify-between" id="row-pre-b"><span>B: R/r ≈ φ</span><span id="val-pre-b" class="text-white">–</span></div>
+                              <div class="flex justify-between" id="row-pre-c"><span>C: Φ* proxy > 0.002</span><span id="val-pre-c" class="text-white">–</span></div>
+                              <div class="flex justify-between" id="row-pre-d"><span>D: Cluster > 5%</span><span id="val-pre-d" class="text-white">–</span></div>
+                              <div class="flex justify-between" id="row-pre-e"><span>E: White Engine</span><span id="val-pre-e" class="text-white">–</span></div>
+                              <div class="flex justify-between font-bold mt-1 text-cyan-300" id="row-total"><span>TOTAL</span><span id="val-total">0/5</span></div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+            </div>
+        </div>
+
+        <!-- 下部: コントロールパネル -->
+        <div id="control-panel" class="w-full max-w-md mx-auto glass-panel rounded-t-2xl rounded-b-none border-b-0 shadow-[0_-5px_30px_rgba(0,0,0,0.5)] pointer-events-auto flex flex-col pb-safe">
+          <div class="flex justify-between items-center px-5 py-2.5 cursor-pointer bg-white/5 hover:bg-white/10 transition-colors border-b border-white/5" onclick="toggleAccordion('control-body', 'icon-control')">
+              <span class="text-[10px] font-bold text-cyan-300 tracking-[0.2em] font-mono">CONTROL PANEL</span>
+              <svg id="icon-control" class="w-4 h-4 text-cyan-300 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+
+          <div id="control-body" class="accordion-grid">
+              <div class="accordion-inner p-4 pt-3 pb-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                  <div class="flex gap-2 justify-between mb-3">
+                    <button id="preset-schumann" class="preset-btn" onclick="applyPreset('schumann')">🌍 シュマン</button>
+                    <button id="preset-golden"   class="preset-btn" onclick="applyPreset('golden')">φ 黄金比</button>
+                    <button id="preset-gamma"    class="preset-btn" onclick="applyPreset('gamma')">⚡ ガンマ</button>
+                  </div>
+                  <div class="mb-1.5">
+                    <div class="flex justify-between text-[10px] font-mono text-white/60 mb-0.5 px-1"><span>ω_t (トロイダル)</span><span id="slider-val-omega-t" class="font-bold text-white">8.33</span></div>
+                    <input type="range" id="slider-omega-t" min="1.0" max="20.0" step="0.01" value="8.33">
+                  </div>
+                  <div class="mb-1.5">
+                    <div class="flex justify-between text-[10px] font-mono text-white/60 mb-0.5 px-1"><span>ω_p (ポロイダル)</span><span id="slider-val-omega-p" class="font-bold text-white">0.00</span></div>
+                    <input type="range" id="slider-omega-p" min="0.0" max="5.0" step="0.01" value="0.0">
+                  </div>
+                  <div class="mb-3">
+                    <div class="flex justify-between text-[10px] font-mono text-white/60 mb-0.5 px-1"><span>r (断面半径)</span><span id="slider-val-r" class="font-bold text-white">1.00</span></div>
+                    <input type="range" id="slider-r" min="0.5" max="3.0" step="0.01" value="1.0">
+                  </div>
+                  <div class="flex gap-2 mb-3">
+                    <button class="action-btn flex-1 bg-red-500/10 active:scale-95 border border-red-500/20 rounded-xl text-[10px] font-mono text-red-300 tracking-wider transition-all" onclick="injectMassiveError()">⚡ INJECT ERROR</button>
+                    <button class="action-btn flex-1 bg-white/5 active:scale-95 border border-white/10 rounded-xl text-[10px] font-mono text-white/80 tracking-wider transition-all" onclick="resetTouchMemory()">🗑 CLEAR TOUCH</button>
+                  </div>
+
+                  <!-- ── Experience Mode: Signal Runtime ── -->
+                  <div class="border-t border-white/10 pt-3 mb-3">
+                      <div class="flex justify-between items-center text-[10px] font-mono mb-2">
+                          <span class="text-cyan-300 font-bold tracking-wider">EXPERIENCE MODE</span>
+                      </div>
+                      <div class="flex gap-1 mb-2">
+                          <select id="experience-mode" class="bg-black/50 border border-white/10 rounded px-1 flex-1 text-white/80 outline-none text-[10px] font-mono" onchange="onExperienceModeChange(this.value)">
+                              <option value="internal_mock">internal_mock</option>
+                              <option value="signal_runtime">signal_runtime</option>
+                          </select>
+                      </div>
+                      <div id="signal-input-area" style="display:none;">
+                          <textarea id="signal-stimulus-input" rows="2"
+                              placeholder="刺激テキストを入力してください..."
+                              class="w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-white/80 outline-none text-[10px] font-mono resize-none mb-1"></textarea>
+                          <button class="w-full action-btn bg-cyan-500/10 active:scale-95 border border-cyan-500/20 rounded-xl text-[10px] font-mono text-cyan-300 tracking-wider transition-all"
+                              onclick="runSignalMode()">▶ RUN SIGNAL</button>
+                          <div id="signal-status" class="text-[8px] text-white/40 text-right mt-1 h-3">Ready</div>
+                      </div>
+                  </div>
+
+                  <div class="border-t border-white/10 pt-3">
+                      <div class="flex justify-between items-center text-[10px] font-mono mb-2">
+                          <span class="text-white/60">VISUAL LAYER (GLASS)</span>
+                          <button id="btn-visual-layer" class="visual-btn px-4 py-1.5 rounded-md bg-white/5 border border-white/10 hover:bg-white/10 transition-colors tracking-wider" onclick="toggleVisualLayer()">OFF</button>
+                      </div>
+
+                      <div class="flex justify-between items-center text-[10px] font-mono mb-2 mt-2">
+                          <span class="text-white/60">DEBUG LABELS (DEV)</span>
+                          <button id="btn-debug-labels" class="visual-btn px-4 py-1.5 rounded-md bg-white/5 border border-white/10 hover:bg-white/10 transition-colors tracking-wider" onclick="toggleDebugLabels()">OFF</button>
+                      </div>
+
+                      <div class="flex flex-col gap-1.5 text-[10px] font-mono mt-3">
+                          <span class="text-white/60 has-tooltip" data-tooltip="Note: 本番運用時はバックエンドプロキシ経由を推奨します">GUIDE API CONFIG</span>
+                          <div class="flex gap-1">
+                              <select id="api-provider" class="bg-black/50 border border-white/10 rounded px-1 flex-1 text-white/80 outline-none">
+                                  <option value="none">NONE</option>
+                                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (推奨)</option>
+                                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                  <option value="openai">OpenAI GPT-4o</option>
+                              </select>
+                              <input type="password" id="api-key" placeholder="API KEY" class="bg-black/50 border border-white/10 rounded px-2 w-[40%] text-white/80 outline-none">
+                              <button class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 rounded px-2 hover:bg-cyan-500/30 transition-colors" onclick="testAPIConnection()">TEST</button>
+                          </div>
+                          <div id="api-status" class="text-[8px] text-white/40 h-3 text-right pr-1">Not connected</div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/signal/signalUI.js"></script>
+</body>
+</html>

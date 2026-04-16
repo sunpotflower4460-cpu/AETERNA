@@ -1,0 +1,15 @@
+export { runSignalRuntime } from './runSignalRuntime.js';
+export { createStimulusPacket } from './createStimulusPacket.js';
+export { activateSignals } from './activateSignals.js';
+export { runSelfLoop } from './runSelfLoop.js';
+export { runBoundaryLoop } from './runBoundaryLoop.js';
+export { buildSignalField } from './buildSignalField.js';
+export { bindSignals } from './bindSignals.js';
+export { deriveProtoMeanings } from './deriveProtoMeanings.js';
+export { decideSignalUtterance } from './decideSignalUtterance.js';
+export { lexicalizeProtoMeanings } from './lexicalizeProtoMeanings.js';
+export { bindSignalPhrases } from './bindSignalPhrases.js';
+export { buildSignalSentencePlan } from './buildSignalSentencePlan.js';
+export { renderSignalUtterance } from './renderSignalUtterance.js';
+export { recordSignalMemory, buildRevisionProposal, getSignalMemoryLog } from './memory.js';
+export type * from './types.js';
