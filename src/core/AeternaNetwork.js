@@ -10,6 +10,28 @@ const TOUCH_REPEAT_MIN_COUNT     = 2;    // minimum re-contacts to score as repe
 const TOUCH_REPEAT_GAP_THRESHOLD = 12;   // max frames between contacts to count as repeat
 const TOUCH_REPEAT_RESET_FRAMES  = 60;   // gap frames after which repeat counter resets (≈1 s at 60 fps)
 
+const REWRITE_TYPES = ['novelty', 'recurrence', 'persistence', 'directionality'];
+const REWRITE_PRIOR_DECAY = 0.9994;
+const REWRITE_PRESSURE_DECAY = 0.965;
+const REWRITE_PLASTICITY_DECAY = 0.987;
+const REWRITE_LOAD_DECAY = 0.94;
+const REWRITE_PRIOR_LIMIT = 0.35;
+const REWRITE_CHANNEL_LIMIT = 0.28;
+const REWRITE_PRESSURE_LIMIT = 1.0;
+const REWRITE_PLASTICITY_LIMIT = 1.0;
+const REWRITE_COOLDOWN_FRAMES = 28;
+const REWRITE_MAX_GLOBAL_LOAD = 0.3;
+const REWRITE_MAX_EVENTS = 8;
+const REWRITE_TOUCH_GATE = 0.18;
+const REWRITE_SEED_GATE = 0.18;
+const REWRITE_TENSION_GATE = 0.08;
+const REWRITE_TRIGGER_SCORE = 0.14;
+const REWRITE_TRIGGER_PRESSURE = 0.03;
+const REWRITE_TRIGGER_PLASTICITY = 0.02;
+const REWRITE_DIRECTION_MIN_STRENGTH = 0.01;
+const REWRITE_WEIGHT_MIN = 0.25;
+const REWRITE_WEIGHT_MAX = 4.0;
+
 export class AeternaNetwork {
     constructor(segments = 72) {
         this.segments = segments; this.numNodes = segments * segments;
@@ -82,7 +104,50 @@ export class AeternaNetwork {
         // Populated only while stroke tendency is active.
         this.strokePath = []; // [ {normX, normY}, … ]  max 40 entries
 
+        // PR8-A: Structured prior rewrite — bounded, semi-persistent flow biases.
+        this.priorBias = new Float32Array(this.numNodes);
+        this.rewritePressure = new Float32Array(this.numNodes);
+        this.plasticityTrace = new Float32Array(this.numNodes);
+        this.recentRewriteMask = new Uint8Array(this.numNodes);
+        this.globalRewriteLoad = 0;
+        this.priorChannels = {
+            novelty: new Float32Array(this.numNodes),
+            recurrence: new Float32Array(this.numNodes),
+            persistence: new Float32Array(this.numNodes),
+            directionality: new Float32Array(this.numNodes),
+        };
+        this.rewriteEvents = [];
+        this.lastRewriteEvent = null;
+        this.lastRewriteEventId = 0;
+        this.rewriteProtoMeaningBiases = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
+        this.currentRewriteTendency = 'none';
+        this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+
         this.generate();
+    }
+
+    clampFinite(value, min, max, fallback = 0) {
+        if (!Number.isFinite(value)) return fallback;
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    normalizeDirectionalWeights(index) {
+        this.w_up[index] = this.clampFinite(this.w_up[index], REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_down[index] = this.clampFinite(this.w_down[index], REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_left[index] = this.clampFinite(this.w_left[index], REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_right[index] = this.clampFinite(this.w_right[index], REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        const sum = this.w_up[index] + this.w_down[index] + this.w_left[index] + this.w_right[index];
+        if (!Number.isFinite(sum) || sum <= 0) {
+            this.w_up[index] = 1.0; this.w_down[index] = 1.0; this.w_left[index] = 1.0; this.w_right[index] = 1.0;
+            return;
+        }
+        const factor = 4.0 / sum;
+        this.w_up[index] = this.clampFinite(this.w_up[index] * factor, REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_down[index] = this.clampFinite(this.w_down[index] * factor, REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_left[index] = this.clampFinite(this.w_left[index] * factor, REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
+        this.w_right[index] = this.clampFinite(this.w_right[index] * factor, REWRITE_WEIGHT_MIN, REWRITE_WEIGHT_MAX, 1.0);
     }
 
     generate() {
@@ -275,8 +340,12 @@ export class AeternaNetwork {
         const RESIDUE_DECAY  = 0.97;
         const RESIDUE_INTAKE = 0.02;
         for (let i = 0; i < this.numNodes; i++) {
-            this.activityResidue[i] = this.activityResidue[i] * RESIDUE_DECAY
-                                    + this.spikeTrace[i]       * RESIDUE_INTAKE;
+            const persistenceBias = this.priorChannels.persistence[i];
+            const decay = this.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
+            const intake = this.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
+            this.activityResidue[i] = this.activityResidue[i] * decay
+                                    + this.spikeTrace[i]       * intake;
+            this.activityResidue[i] = this.clampFinite(this.activityResidue[i], 0, 1.25, 0);
         }
     }
 
@@ -284,8 +353,7 @@ export class AeternaNetwork {
     // alpha is deliberately conservative so the predictor does not chase fast transients.
     updateLocalPrediction() {
         const S = this.segments;
-        const alpha = 0.05;
-        const oneMinusAlpha = 1.0 - alpha;
+        const baseAlpha = 0.05;
         for (let i = 0; i < S; i++) {
             for (let j = 0; j < S; j++) {
                 const idx   = i * S + j;
@@ -305,7 +373,16 @@ export class AeternaNetwork {
                     this.currentBuffer[right] * this.w_right[idx]
                 ) / Math.max(weightSum, 1e-6);
 
-                this.localPrediction[idx] = this.localPrediction[idx] * oneMinusAlpha + neighborAvg * alpha;
+                const noveltyBias = this.priorChannels.novelty[idx];
+                const adaptiveAlpha = this.clampFinite(
+                    baseAlpha + noveltyBias * 0.03 + this.priorBias[idx] * 0.015,
+                    0.03,
+                    0.12,
+                    baseAlpha,
+                );
+                const oneMinusAlpha = 1.0 - adaptiveAlpha;
+                this.localPrediction[idx] = this.localPrediction[idx] * oneMinusAlpha + neighborAvg * adaptiveAlpha;
+                this.localPrediction[idx] = this.clampFinite(this.localPrediction[idx], -8.0, 8.0, 0);
             }
         }
     }
@@ -361,11 +438,27 @@ export class AeternaNetwork {
         const TRACE_INTAKE = 0.04;
         for (let i = 0; i < this.numNodes; i++) {
             const err = this.rawTouch[i] - this.localPrediction[i];
+            const noveltyBias = this.priorChannels.novelty[i];
+            const recurrenceBias = this.priorChannels.recurrence[i];
+            const persistenceBias = this.priorChannels.persistence[i];
+            const traceDecay = this.clampFinite(
+                TRACE_DECAY + recurrenceBias * 0.02 + persistenceBias * 0.015 - noveltyBias * 0.015,
+                0.9,
+                0.995,
+                TRACE_DECAY,
+            );
+            const traceIntake = this.clampFinite(
+                TRACE_INTAKE + noveltyBias * 0.012 + persistenceBias * 0.008,
+                0.02,
+                0.08,
+                TRACE_INTAKE,
+            );
             this.touchOnset[i]   = err  > 0 ? err  : 0;
             this.touchOffset[i]  = err  < 0 ? -err : 0;
             this.touchNovelty[i] = Math.abs(err);
-            this.touchTrace[i]   = this.touchTrace[i] * TRACE_DECAY
-                                 + this.touchNovelty[i] * TRACE_INTAKE;
+            this.touchTrace[i]   = this.touchTrace[i] * traceDecay
+                                 + this.touchNovelty[i] * traceIntake;
+            this.touchTrace[i] = this.clampFinite(this.touchTrace[i], 0, 4.0, 0);
         }
     }
 
@@ -378,10 +471,29 @@ export class AeternaNetwork {
         const ONSET_COEFFICIENT = 0.12;
         const OFFSET_COEFFICIENT = 0.06;
         for (let i = 0; i < this.numNodes; i++) {
+            const noveltyBias = this.priorChannels.novelty[i];
+            const recurrenceBias = this.priorChannels.recurrence[i];
+            const persistenceBias = this.priorChannels.persistence[i];
+            const directionBias = this.priorChannels.directionality[i];
+            const projDecay = this.clampFinite(PROJ_DECAY + recurrenceBias * 0.02, 0.88, 0.96, PROJ_DECAY);
+            const onsetCoefficient = this.clampFinite(
+                ONSET_COEFFICIENT + noveltyBias * 0.03 + directionBias * 0.015,
+                ONSET_COEFFICIENT,
+                0.18,
+                ONSET_COEFFICIENT,
+            );
+            const offsetCoefficient = this.clampFinite(
+                OFFSET_COEFFICIENT + persistenceBias * 0.025,
+                OFFSET_COEFFICIENT,
+                0.12,
+                OFFSET_COEFFICIENT,
+            );
+            const repeatDamp = this.clampFinite(1.0 - recurrenceBias * 0.08, 0.85, 1.0, 1.0);
             this.touchProjection[i] =
-                this.touchProjection[i] * PROJ_DECAY
-                + this.touchOnset[i]  * ONSET_COEFFICIENT
-                - this.touchOffset[i] * OFFSET_COEFFICIENT;
+                this.touchProjection[i] * projDecay
+                + this.touchOnset[i]  * onsetCoefficient * repeatDamp
+                - this.touchOffset[i] * offsetCoefficient;
+            this.touchProjection[i] = this.clampFinite(this.touchProjection[i], -4.0, 4.0, 0);
         }
     }
 
@@ -417,6 +529,9 @@ export class AeternaNetwork {
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 this.touchMoveDistance += dist;
                 this.touchVelocityEstimate = this.touchVelocityEstimate * 0.8 + dist * 0.2;
+                this.touchDirectionVector = { dx, dy, strength: Math.min(dist / TOUCH_STROKE_MIN_DIST, 1.0) };
+            } else {
+                this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
             }
             this.lastTouchCentroid = centroid;
         } else {
@@ -425,6 +540,7 @@ export class AeternaNetwork {
             this.touchMoveDistance    *= 0.95;
             this.touchVelocityEstimate *= 0.9;
             this.lastTouchCentroid = null;
+            this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
         }
     }
 
@@ -502,6 +618,240 @@ export class AeternaNetwork {
         } else if (strokeS < 0.02) {
             if (this.strokePath.length > 0) this.strokePath.shift(); // gradual fade
         }
+    }
+
+    getRewriteSeedBiases() {
+        const biases = {
+            novelty: this.clampFinite(this.touchPatternScores.tap, 0, 1, 0),
+            recurrence: this.clampFinite(this.touchPatternScores.repeat, 0, 1, 0),
+            persistence: this.clampFinite(this.touchPatternScores.hold, 0, 1, 0),
+            directionality: this.clampFinite(this.touchPatternScores.stroke, 0, 1, 0),
+        };
+        let tendency = 'none';
+        let maxBias = 0;
+        for (const type of REWRITE_TYPES) {
+            if (biases[type] > maxBias) {
+                maxBias = biases[type];
+                tendency = type;
+            }
+        }
+        this.rewriteProtoMeaningBiases = biases;
+        this.currentRewriteTendency = maxBias >= 0.05 ? tendency : 'none';
+        return { ...biases, tendency: this.currentRewriteTendency };
+    }
+
+    decayStructuredPriorRewrite() {
+        this.globalRewriteLoad = this.clampFinite(this.globalRewriteLoad * REWRITE_LOAD_DECAY, 0, 1, 0);
+        for (let i = 0; i < this.numNodes; i++) {
+            this.priorBias[i] = this.clampFinite(this.priorBias[i] * REWRITE_PRIOR_DECAY, 0, REWRITE_PRIOR_LIMIT, 0);
+            this.rewritePressure[i] = this.clampFinite(this.rewritePressure[i] * REWRITE_PRESSURE_DECAY, 0, REWRITE_PRESSURE_LIMIT, 0);
+            this.plasticityTrace[i] = this.clampFinite(this.plasticityTrace[i] * REWRITE_PLASTICITY_DECAY, 0, REWRITE_PLASTICITY_LIMIT, 0);
+            if (this.recentRewriteMask[i] > 0) this.recentRewriteMask[i] -= 1;
+        }
+        for (const type of REWRITE_TYPES) {
+            const channel = this.priorChannels[type];
+            for (let i = 0; i < this.numNodes; i++) {
+                channel[i] = this.clampFinite(channel[i] * REWRITE_PRIOR_DECAY, 0, REWRITE_CHANNEL_LIMIT, 0);
+            }
+        }
+    }
+
+    getRewriteLocalTouch(type, index) {
+        if (type === 'novelty') return this.touchOnset[index] + this.touchNovelty[index] * 0.5;
+        if (type === 'recurrence') return this.touchTrace[index] + this.rawTouch[index] * 0.25;
+        if (type === 'persistence') return this.touchOffset[index] + this.touchTrace[index] * 0.6 + this.activityResidue[index] * 0.2;
+        return Math.abs(this.touchProjection[index]) + this.touchNovelty[index] * 0.4 + this.rawTouch[index] * 0.3;
+    }
+
+    findRewriteCandidate(type, seedBias, tension) {
+        const patternMap = {
+            novelty: this.touchPatternScores.tap,
+            recurrence: this.touchPatternScores.repeat,
+            persistence: this.touchPatternScores.hold,
+            directionality: this.touchPatternScores.stroke,
+        };
+        const patternScore = this.clampFinite(patternMap[type] ?? 0, 0, 1, 0);
+        if (patternScore < REWRITE_TOUCH_GATE || seedBias < REWRITE_SEED_GATE || tension < REWRITE_TENSION_GATE) return null;
+        if (type === 'directionality' && this.touchDirectionVector.strength < REWRITE_DIRECTION_MIN_STRENGTH) return null;
+
+        let best = null;
+        const patternFactor = 0.6 + patternScore * 0.4;
+        const seedFactor = 0.55 + seedBias * 0.45;
+        const tensionFactor = 0.6 + Math.min(tension, 1.0) * 0.4;
+
+        for (let i = 0; i < this.numNodes; i++) {
+            const localTouchNorm = Math.min(Math.abs(this.getRewriteLocalTouch(type, i)), 1.5) / 1.5;
+            if (localTouchNorm < 0.04) continue;
+            const localErrorNorm = Math.min(Math.abs(this.predictionError[i]), 1.5) / 1.5;
+            if (localErrorNorm < 0.06) continue;
+
+            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor;
+            if (!Number.isFinite(composite) || composite <= 0) continue;
+
+            this.rewritePressure[i] = this.clampFinite(
+                this.rewritePressure[i] + composite * 0.18 * (1.0 - this.globalRewriteLoad * 0.5),
+                0,
+                REWRITE_PRESSURE_LIMIT,
+                0,
+            );
+            if (composite > 0.07) {
+                this.plasticityTrace[i] = this.clampFinite(this.plasticityTrace[i] + composite * 0.10, 0, REWRITE_PLASTICITY_LIMIT, 0);
+            }
+
+            if (this.recentRewriteMask[i] > 0) continue;
+            if (
+                composite < REWRITE_TRIGGER_SCORE ||
+                this.rewritePressure[i] < REWRITE_TRIGGER_PRESSURE ||
+                this.plasticityTrace[i] < REWRITE_TRIGGER_PLASTICITY
+            ) {
+                continue;
+            }
+
+            if (!best || composite > best.score) {
+                best = {
+                    node: i,
+                    rewriteType: type,
+                    score: composite,
+                    patternScore,
+                    seedBias,
+                    tension,
+                    localTouch: this.getRewriteLocalTouch(type, i),
+                    localError: Math.abs(this.predictionError[i]),
+                };
+            }
+        }
+
+        return best;
+    }
+
+    applyDirectionalRewrite(centerIndex, delta) {
+        const S = this.segments;
+        const ci = Math.floor(centerIndex / S);
+        const cj = centerIndex % S;
+        const { dx, dy } = this.touchDirectionVector;
+        for (let di = -1; di <= 1; di++) {
+            for (let dj = -1; dj <= 1; dj++) {
+                const idx = ((ci + di + S) % S) * S + ((cj + dj + S) % S);
+                const falloff = (di === 0 && dj === 0) ? 1.0 : 0.45;
+                if (Math.abs(dx) >= Math.abs(dy)) {
+                    if (dx >= 0) {
+                        this.w_right[idx] += delta * falloff;
+                        this.w_left[idx] -= delta * falloff * 0.35;
+                    } else {
+                        this.w_left[idx] += delta * falloff;
+                        this.w_right[idx] -= delta * falloff * 0.35;
+                    }
+                }
+                if (Math.abs(dy) > 0.001) {
+                    if (dy >= 0) {
+                        this.w_down[idx] += delta * falloff * 0.55;
+                        this.w_up[idx] -= delta * falloff * 0.18;
+                    } else {
+                        this.w_up[idx] += delta * falloff * 0.55;
+                        this.w_down[idx] -= delta * falloff * 0.18;
+                    }
+                }
+                this.normalizeDirectionalWeights(idx);
+            }
+        }
+    }
+
+    logRewriteEvent(candidate, delta) {
+        const event = {
+            id: ++this.lastRewriteEventId,
+            timestamp: this.simTime,
+            node: candidate.node,
+            region: {
+                i: Math.floor(candidate.node / this.segments),
+                j: candidate.node % this.segments,
+            },
+            rewriteType: candidate.rewriteType,
+            triggerSummary: `err=${candidate.localError.toFixed(3)} touch=${candidate.localTouch.toFixed(3)} seed=${candidate.seedBias.toFixed(2)} tension=${candidate.tension.toFixed(2)}`,
+            deltaMagnitude: Number(delta.toFixed(4)),
+        };
+        this.lastRewriteEvent = event;
+        this.rewriteEvents.unshift(event);
+        if (this.rewriteEvents.length > REWRITE_MAX_EVENTS) this.rewriteEvents.pop();
+    }
+
+    applyStructuredPriorRewrite(candidate) {
+        const idx = candidate.node;
+        const delta = this.clampFinite(0.004 + candidate.score * 0.012, 0.004, 0.018, 0.004);
+        const channel = this.priorChannels[candidate.rewriteType];
+        channel[idx] = this.clampFinite(channel[idx] + delta, 0, REWRITE_CHANNEL_LIMIT, 0);
+        this.priorBias[idx] = this.clampFinite(this.priorBias[idx] + delta * 0.7, 0, REWRITE_PRIOR_LIMIT, 0);
+
+        if (candidate.rewriteType === 'novelty') {
+            this.localPrediction[idx] = this.clampFinite(
+                this.localPrediction[idx] + this.touchOnset[idx] * delta * 0.2,
+                -8.0,
+                8.0,
+                0,
+            );
+        } else if (candidate.rewriteType === 'recurrence') {
+            this.touchTrace[idx] = this.clampFinite(this.touchTrace[idx] + this.touchNovelty[idx] * delta * 0.25, 0, 4.0, 0);
+            this.touchProjection[idx] = this.clampFinite(this.touchProjection[idx] * (1.0 - delta * 0.4), -4.0, 4.0, 0);
+        } else if (candidate.rewriteType === 'persistence') {
+            this.activityResidue[idx] = this.clampFinite(
+                this.activityResidue[idx] + (this.touchOffset[idx] + this.touchTrace[idx]) * delta * 0.12,
+                0,
+                1.25,
+                0,
+            );
+        } else if (candidate.rewriteType === 'directionality') {
+            this.applyDirectionalRewrite(idx, delta * 0.9);
+        }
+
+        this.rewritePressure[idx] = this.clampFinite(this.rewritePressure[idx] * 0.4, 0, REWRITE_PRESSURE_LIMIT, 0);
+        this.plasticityTrace[idx] = this.clampFinite(this.plasticityTrace[idx] * 0.5, 0, REWRITE_PLASTICITY_LIMIT, 0);
+        this.recentRewriteMask[idx] = REWRITE_COOLDOWN_FRAMES;
+        this.globalRewriteLoad = this.clampFinite(this.globalRewriteLoad + delta * 1.8, 0, 1, 0);
+        this.logRewriteEvent(candidate, delta);
+    }
+
+    buildRewriteDebugSummary(seedBiases) {
+        let pressureSum = 0;
+        let pressureMax = 0;
+        let priorSum = 0;
+        const channelSummary = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
+        for (let i = 0; i < this.numNodes; i++) {
+            pressureSum += this.rewritePressure[i];
+            priorSum += this.priorBias[i];
+            if (this.rewritePressure[i] > pressureMax) pressureMax = this.rewritePressure[i];
+            for (const type of REWRITE_TYPES) channelSummary[type] += this.priorChannels[type][i];
+        }
+        const norm = Math.max(this.numNodes, 1);
+        return {
+            tendency: seedBiases.tendency,
+            pressureMean: pressureSum / norm,
+            pressureMax,
+            priorBiasMean: priorSum / norm,
+            globalLoad: this.globalRewriteLoad,
+            priorBiasSummary: {
+                novelty: channelSummary.novelty / norm,
+                recurrence: channelSummary.recurrence / norm,
+                persistence: channelSummary.persistence / norm,
+                directionality: channelSummary.directionality / norm,
+            },
+            lastEvent: this.lastRewriteEvent,
+        };
+    }
+
+    updateStructuredPriorRewrite() {
+        this.decayStructuredPriorRewrite();
+        const seedBiases = this.getRewriteSeedBiases();
+        const tension = this.clampFinite(state.tensionLoad, 0, 1.5, 0);
+        if (this.globalRewriteLoad < REWRITE_MAX_GLOBAL_LOAD) {
+            const candidates = [];
+            for (const type of REWRITE_TYPES) {
+                const candidate = this.findRewriteCandidate(type, seedBiases[type], tension);
+                if (candidate) candidates.push(candidate);
+            }
+            candidates.sort((a, b) => b.score - a.score);
+            const chosen = candidates[0] ?? null;
+            if (chosen) this.applyStructuredPriorRewrite(chosen);
+        }
+        return this.buildRewriteDebugSummary(seedBiases);
     }
 
     // PR3: Signed residual between actual state and local prediction.
@@ -638,6 +988,7 @@ export class AeternaNetwork {
         // PR3: Now that currentBuffer holds the freshly propagated state, compute
         // how much reality differed from the local prediction made before propagation.
         this.updatePredictionError();
+        const rewriteDebug = this.updateStructuredPriorRewrite();
         
         this.phaseSpeed = 0.015 + 0.025 * freqRatio;
         for (let i = 0; i < this.numNodes; i++) { this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI*2); }
@@ -688,7 +1039,14 @@ export class AeternaNetwork {
             touchVelocity:      this.touchVelocityEstimate,
             touchRepeatCount:   this.touchRepeatCount,
             dominantPattern:    this.getDominantTouchPattern(),
-            touchPatternScores: { ...this.touchPatternScores }
+            touchPatternScores: { ...this.touchPatternScores },
+            rewriteTendency: rewriteDebug.tendency,
+            rewritePressureMean: rewriteDebug.pressureMean,
+            rewritePressureMax: rewriteDebug.pressureMax,
+            priorBiasMean: rewriteDebug.priorBiasMean,
+            priorBiasSummary: rewriteDebug.priorBiasSummary,
+            globalRewriteLoad: rewriteDebug.globalLoad,
+            lastRewriteEvent: rewriteDebug.lastEvent,
         };
     }
 }

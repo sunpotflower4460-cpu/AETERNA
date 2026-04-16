@@ -23,6 +23,11 @@ export function initDOMCache() {
         'val-score-repeat',   'row-score-repeat',
         'val-score-hold',     'row-score-hold',
         'val-score-stroke',   'row-score-stroke',
+        'val-rewrite-tendency', 'row-rewrite-tendency',
+        'val-rewrite-pressure', 'row-rewrite-pressure',
+        'val-rewrite-load',     'row-rewrite-load',
+        'val-prior-bias',       'row-prior-bias',
+        'val-last-rewrite',     'row-last-rewrite',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }
