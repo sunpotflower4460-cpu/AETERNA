@@ -59,6 +59,32 @@ const REWRITE_POST_PRESSURE_FACTOR = 0.4;
 const REWRITE_POST_PLASTICITY_FACTOR = 0.5;
 const REWRITE_GLOBAL_LOAD_FACTOR = 1.8;
 
+// PR9-A: Activity mode — sleep / wake / dream
+// Transition safety
+const MODE_COOLDOWN_FRAMES          = 180;   // ~3 s at 60 fps
+// Wake drive thresholds (hysteresis)
+const MODE_WAKE_ENTER_THRESHOLD     = 0.38;
+const MODE_WAKE_LEAVE_THRESHOLD     = 0.20;
+// Dream pressure thresholds (hysteresis)
+const MODE_DREAM_ENTER_THRESHOLD    = 0.22;
+const MODE_DREAM_LEAVE_THRESHOLD    = 0.12;
+// Drive decay rates (per frame)
+const MODE_WAKE_DRIVE_DECAY         = 0.97;
+const MODE_SLEEP_PRESSURE_DECAY     = 0.985;
+const MODE_DREAM_PRESSURE_DECAY     = 0.985;
+// Sleep modulation factors (conservative)
+const MODE_SLEEP_BASELINE_FACTOR    = 0.85;   // slightly lower baseline amplitude
+const MODE_SLEEP_TOUCH_PROJ_FACTOR  = 0.80;   // slightly lower external touch sensitivity
+// Wake modulation factors
+const MODE_WAKE_BASELINE_FACTOR     = 1.05;
+const MODE_WAKE_TOUCH_PROJ_FACTOR   = 1.08;
+// Dream modulation factors
+const MODE_DREAM_TOUCH_PROJ_FACTOR  = 0.82;   // slightly lower external touch sensitivity
+const MODE_DREAM_REPLAY_GAIN        = 0.0003; // faint internal replay per node per tick
+const MODE_DREAM_REPLAY_INTERVAL    = 8;      // frames between replay ticks
+const MODE_DREAM_REPLAY_NODES       = 12;     // top nodes replayed per tick
+const MODE_DREAM_REPLAY_MAX_TOTAL   = 0.005;  // hard cap on total residue added per tick
+
 export class AeternaNetwork {
     constructor(segments = 72) {
         this.segments = segments; this.numNodes = segments * segments;
@@ -149,6 +175,17 @@ export class AeternaNetwork {
         this.rewriteProtoMeaningBiases = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
         this.currentRewriteTendency = 'none';
         this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+
+        // PR9-A: Activity mode state — sleep / wake / dream
+        // Starts in 'wake' so normal baseline activity is unaffected from the first frame.
+        this.modeState = 'wake';  // 'sleep' | 'wake' | 'dream'
+        this.modePhase = 0;
+        this.wakeDrive = 0.4;
+        this.sleepPressure = 0;
+        this.dreamPressure = 0;
+        this.lastModeChangeTime = 0;
+        this.modeCooldownFrames = 0;
+        this.dreamReplayActive = false;
 
         this.generate();
     }
@@ -363,12 +400,16 @@ export class AeternaNetwork {
     }
 
     // PR2: Residue of recent activity — the ember that stays after fire
+    // PR9-A: In sleep mode residue decays slightly faster (lower baseline)
     updateResidue() {
         const RESIDUE_DECAY  = 0.97;
         const RESIDUE_INTAKE = 0.02;
+        const isSleep = this.modeState === 'sleep';
         for (let i = 0; i < this.numNodes; i++) {
             const persistenceBias = this.priorChannels.persistence[i];
-            const decay = this.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
+            const baseDecay = isSleep ? RESIDUE_DECAY - 0.003 : RESIDUE_DECAY;
+            const decayMin  = isSleep ? 0.96 : 0.97;
+            const decay = this.clampFinite(baseDecay + persistenceBias * 0.01, decayMin, 0.995, baseDecay);
             const intake = this.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
             this.activityResidue[i] = this.activityResidue[i] * decay
                                     + this.spikeTrace[i]       * intake;
