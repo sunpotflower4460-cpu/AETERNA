@@ -31,6 +31,11 @@ export class AeternaNetwork {
         
         this.cachedMaxClusterSize = 0; this.cachedPhiApprox = 0; this.cachedPhaseCoherence = 0;
 
+        // PR2: Baseline activity — quiet internal drift even without external input
+        this.baselineActivity = new Float32Array(this.numNodes);
+        // PR2: Activity residue — faint echo of recent firing
+        this.activityResidue = new Float32Array(this.numNodes);
+
         this.generate();
     }
 
@@ -209,8 +214,45 @@ export class AeternaNetwork {
         }
     }
 
+    // PR2: Slow sinusoidal drift — the quiet sea that always flows
+    updateBaseline() {
+        const BASELINE_AMP = 0.003;
+        const TIME_DRIFT = 0.0008;
+        const t = this.simTime * TIME_DRIFT;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.baselineActivity[i] = BASELINE_AMP * Math.sin(this.nodePhase[i] + t);
+        }
+    }
+
+    // PR2: Residue of recent activity — the ember that stays after fire
+    updateResidue() {
+        const RESIDUE_DECAY  = 0.97;
+        const RESIDUE_INTAKE = 0.02;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.activityResidue[i] = this.activityResidue[i] * RESIDUE_DECAY
+                                    + this.spikeTrace[i]       * RESIDUE_INTAKE;
+        }
+    }
+
     updateDynamics(diskNodeIdx) {
         this.injectedNodes = []; this.simTime++;
+
+        // PR2: Apply baseline drift and activity residue before wave propagation.
+        // Gains are deliberately tiny so no runaway firing occurs when input is zero.
+        const BASELINE_GAIN = 0.4;   // scales the ±0.003 sinusoid → ±0.0012 max on currentBuffer
+        const RESIDUE_GAIN  = 0.005; // residue [0,1] → at most 0.005 added per frame
+        this.updateBaseline();
+        this.updateResidue();
+        let baselineSum = 0, residueSum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            this.currentBuffer[i] += this.baselineActivity[i] * BASELINE_GAIN
+                                   + this.activityResidue[i]  * RESIDUE_GAIN;
+            baselineSum += Math.abs(this.baselineActivity[i]);
+            residueSum  += this.activityResidue[i];
+        }
+        const baselineLevel = baselineSum / this.numNodes;
+        const residueLevel  = residueSum  / this.numNodes;
+
         const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
         const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
         
@@ -300,7 +342,9 @@ export class AeternaNetwork {
             meanPredictionError: this.computeMeanPredictionError(),
             arousal: arousal,
             sigmaDisplay: this.sigmaDisplay,
-            firingRateError: this.firingRateError
+            firingRateError: this.firingRateError,
+            baselineLevel: baselineLevel,
+            residueLevel: residueLevel
         };
     }
 }
