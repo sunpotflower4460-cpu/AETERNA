@@ -85,21 +85,27 @@ export function updateMetricsUI(dyn, engineState) {
             ? `active ${(dyn.dreamReplayStrength || 0).toFixed(3)}`
             : 'inactive';
     }
-    if(UI['val-energy']) UI['val-energy'].innerText = (dyn.energy || 0).toFixed(3);
-    if(UI['val-stability']) UI['val-stability'].innerText = (dyn.stability || 0).toFixed(3);
-    if(UI['val-overload']) UI['val-overload'].innerText = (dyn.overload || 0).toFixed(3);
-    if(UI['val-rest-drive']) UI['val-rest-drive'].innerText = (dyn.restDrive || 0).toFixed(3);
-    if(UI['val-orienting-drive']) UI['val-orienting-drive'].innerText = (dyn.orientingDrive || 0).toFixed(3);
-    if(UI['val-action-state']) UI['val-action-state'].innerText = dyn.actionState || 'idle';
-    if(UI['val-action-pulse']) UI['val-action-pulse'].innerText = (dyn.actionPulseLevel || 0).toFixed(3);
-    if(UI['val-action-direction']) {
-        UI['val-action-direction'].innerText = dyn.actionDirection
-            ? `${dyn.actionDirection[0].toFixed(2)}, ${dyn.actionDirection[1].toFixed(2)}`
+    if (UI['val-energy']) UI['val-energy'].innerText = (dyn.energy || 0).toFixed(3);
+    if (UI['val-stability']) UI['val-stability'].innerText = (dyn.stability || 0).toFixed(3);
+    if (UI['val-overload']) UI['val-overload'].innerText = (dyn.overload || 0).toFixed(3);
+    if (UI['val-rest-drive']) UI['val-rest-drive'].innerText = (dyn.restDrive || 0).toFixed(3);
+    if (UI['val-orienting-drive']) UI['val-orienting-drive'].innerText = (dyn.orientingDrive || 0).toFixed(3);
+    if (UI['val-action-state']) UI['val-action-state'].innerText = dyn.actionState || 'idle';
+    if (UI['val-action-pulse']) UI['val-action-pulse'].innerText = (dyn.actionPulseLevel || 0).toFixed(3);
+    if (UI['val-action-direction']) {
+        const actionDirection = Array.isArray(dyn.actionDirection) && dyn.actionDirection.length >= 2
+            ? dyn.actionDirection
+            : null;
+        UI['val-action-direction'].innerText = actionDirection
+            ? `${actionDirection[0].toFixed(2)}, ${actionDirection[1].toFixed(2)}`
             : '—';
     }
-    if(UI['val-last-touch-direction']) {
-        UI['val-last-touch-direction'].innerText = dyn.lastTouchDirection
-            ? `${dyn.lastTouchDirection[0].toFixed(2)}, ${dyn.lastTouchDirection[1].toFixed(2)}`
+    if (UI['val-last-touch-direction']) {
+        const lastTouchDirection = Array.isArray(dyn.lastTouchDirection) && dyn.lastTouchDirection.length >= 2
+            ? dyn.lastTouchDirection
+            : null;
+        UI['val-last-touch-direction'].innerText = lastTouchDirection
+            ? `${lastTouchDirection[0].toFixed(2)}, ${lastTouchDirection[1].toFixed(2)}`
             : '—';
     }
     
