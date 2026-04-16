@@ -4,8 +4,9 @@ import { updateDiskPhysics } from './updateDiskPhysics.js';
 import { updateHeartbeat } from './updateHeartbeat.js';
 import { updateMetricsUI } from '../ui/updateMetricsUI.js';
 import { injectMassiveError } from '../input/pointerHandlers.js';
+import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge';
 
-const UI_FPS = 15, GUIDE_FPS = 10;
+const UI_FPS = 15, GUIDE_FPS = 10, BRIDGE_INTERVAL_MS = 100;
 
 export function animateLoop(now) {
     requestAnimationFrame(animateLoop);
@@ -33,5 +34,11 @@ export function animateLoop(now) {
 
     if (now - state.lastUIRenderTime > 1000/UI_FPS) { updateMetricsUI(dyn, engineState); state.realityVisualLayer.update(dyn); state.lastUIRenderTime = now; }
     if (now - state.lastGuideTime > 1000/GUIDE_FPS) { state.guidePanel.update(dyn, engineState); state.lastGuideTime = now; }
+    if (now - state.lastBridgeTime > BRIDGE_INTERVAL_MS) {
+        const packet = buildTorusStatePacket({ now, dyn, engineState, tension: state.tensionLoad, activeTouches: state.activeTouches });
+        const bridgeResult = bridgeTorusToSignal(packet);
+        if (state.guidePanel) state.guidePanel.updateFromBridge(bridgeResult, packet);
+        state.lastBridgeTime = now;
+    }
     state.renderer.render(state.scene, state.camera);
 }
