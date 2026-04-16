@@ -4,7 +4,7 @@ import { updateDiskPhysics } from './updateDiskPhysics.js';
 import { updateHeartbeat } from './updateHeartbeat.js';
 import { updateMetricsUI } from '../ui/updateMetricsUI.js';
 import { injectMassiveError } from '../perception/pointerHandlers.js';
-import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge/bridge.js';
+import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge/bridge';
 
 const UI_FPS = 15, GUIDE_FPS = 10, BRIDGE_INTERVAL_MS = 100;
 
