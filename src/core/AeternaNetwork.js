@@ -337,7 +337,7 @@ export class AeternaNetwork {
             const err = this.rawTouch[i] - this.localPrediction[i];
             this.touchOnset[i]   = err  > 0 ? err  : 0;
             this.touchOffset[i]  = err  < 0 ? -err : 0;
-            this.touchNovelty[i] = err  < 0 ? -err : err;
+            this.touchNovelty[i] = Math.abs(err);
             this.touchTrace[i]   = this.touchTrace[i] * TRACE_DECAY
                                  + this.touchNovelty[i] * TRACE_INTAKE;
         }
@@ -525,11 +525,11 @@ export class AeternaNetwork {
             baselineLevel: baselineLevel,
             residueLevel: residueLevel,
             // PR4: touch perception metrics
-            meanRawTouch:    meanRawTouch,
-            meanTouchOnset:  meanTouchOnset,
-            meanTouchOffset: meanTouchOffset,
-            meanTouchNovelty:meanTouchNovelty,
-            activeTouchCount:activeTouchCount
+            meanRawTouch:     meanRawTouch,
+            meanTouchOnset:   meanTouchOnset,
+            meanTouchOffset:  meanTouchOffset,
+            meanTouchNovelty: meanTouchNovelty,
+            activeTouchCount: activeTouchCount
         };
     }
 }
