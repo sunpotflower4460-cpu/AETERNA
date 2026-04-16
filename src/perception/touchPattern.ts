@@ -17,19 +17,21 @@ import {
 const DECAY = 0.85;
 const INTAKE = 0.15;
 
+export interface TouchPatternInput {
+  touchDuration: number;
+  touchVelocity: number;
+  touchMoveDistance: number;
+  touchRepeatCount: number;
+  touchGapFrames: number;
+}
+
 export function computeTouchPatternRawScores({
   touchDuration,
   touchVelocity,
   touchMoveDistance,
   touchRepeatCount,
   touchGapFrames,
-}: {
-  touchDuration: number;
-  touchVelocity: number;
-  touchMoveDistance: number;
-  touchRepeatCount: number;
-  touchGapFrames: number;
-}): PatternScores {
+}: TouchPatternInput): PatternScores {
   return {
     tap: touchDuration > 0 && touchDuration < TOUCH_TAP_MAX_FRAMES && touchVelocity < TOUCH_LOW_VELOCITY ? 1 : 0,
     hold: touchDuration > TOUCH_HOLD_MIN_FRAMES && touchVelocity < TOUCH_LOW_VELOCITY ? 1 : 0,

@@ -25,6 +25,7 @@ export {
 };
 
 export function runPriorRewriteStage(network: any, _predictionPacket: PredictionPacket): RewritePacket {
+  void _predictionPacket;
   const rewriteDebug = updateStructuredPriorRewrite(network);
   let recentRewriteSum = 0;
   for (let i = 0; i < network.numNodes; i++) recentRewriteSum += network.recentRewriteMask[i];
