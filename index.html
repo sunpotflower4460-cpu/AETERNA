@@ -330,6 +330,25 @@
                           </div>
                       </div>
                   </div>
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-organism-state', 'icon-organism-state')">
+                          <span class="tracking-wider">ORGANISM / ACTION</span>
+                          <svg id="icon-organism-state" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-organism-state" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between has-tooltip" data-tooltip="Current activity reserve / surplus (PR11)" id="row-energy"><span>Energy</span><span id="val-energy" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="How internally settled/coherent the organism currently is (PR11)" id="row-stability"><span>Stability</span><span id="val-stability" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Accumulated overload from novelty, prediction error, and dense contact (PR11)" id="row-overload"><span>Overload</span><span id="val-overload" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Drive toward settling / resting (PR11)" id="row-rest-drive"><span>Rest drive</span><span id="val-rest-drive" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Drive toward orienting to outside contact (PR11)" id="row-orienting-drive"><span>Orienting drive</span><span id="val-orienting-drive" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip font-bold" data-tooltip="Current primitive action tendency (PR11)" id="row-action-state"><span>Action state</span><span id="val-action-state" class="text-white">idle</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Weak action output amplitude (PR11)" id="row-action-pulse"><span>Action pulse</span><span id="val-action-pulse" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Current action direction vector when orient/withdraw is directional (PR11)" id="row-action-direction"><span>Action direction</span><span id="val-action-direction" class="text-white">&#x2014;</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Most recent touch direction cue from the surface (PR11)" id="row-last-touch-direction"><span>Touch direction</span><span id="val-last-touch-direction" class="text-white">&#x2014;</span></div>
+                          </div>
+                      </div>
+                  </div>
                   <!-- 前提条件 -->
                   <div>
                       <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-prereq', 'icon-prereq')">

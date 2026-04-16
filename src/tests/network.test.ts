@@ -450,5 +450,119 @@ describe('AeternaNetwork — sleep / wake / dream mode', () => {
     expect(typeof dyn.dreamPressure).toBe('number');
     expect(typeof dyn.lastModeChangeFrames).toBe('number');
     expect(typeof dyn.dreamReplayActive).toBe('boolean');
+    expect(typeof dyn.energy).toBe('number');
+    expect(typeof dyn.stability).toBe('number');
+    expect(typeof dyn.overload).toBe('number');
+    expect(['idle', 'orient', 'withdraw', 'settle']).toContain(dyn.actionState);
+  });
+});
+
+describe('AeternaNetwork — organism and action loop', () => {
+  let net: InstanceType<typeof AeternaNetwork>;
+
+  beforeEach(() => {
+    state.disk = stubDisk() as typeof state.disk;
+    net = new AeternaNetwork(SMALL);
+  });
+
+  it('initializes bounded organism and action state', () => {
+    expect(net.energy).toBeGreaterThanOrEqual(0);
+    expect(net.energy).toBeLessThanOrEqual(1);
+    expect(net.stability).toBeGreaterThanOrEqual(0);
+    expect(net.overload).toBeGreaterThanOrEqual(0);
+    expect(net.restDrive).toBeGreaterThanOrEqual(0);
+    expect(net.orientingDrive).toBeGreaterThanOrEqual(0);
+    expect(net.actionState).toBe('idle');
+    expect(net.organismStateHistory.length).toBeGreaterThan(0);
+  });
+
+  it('raises overload and orienting drive under novelty-heavy contact', () => {
+    const overloadBefore = net.overload;
+    const orientBefore = net.orientingDrive;
+
+    for (let frame = 0; frame < 12; frame++) {
+      net.simTime = frame + 1;
+      net.touchPatternScores = { tap: 0.85, repeat: 0.8, hold: 0.05, stroke: 0.35 };
+      net.updateOrganismState({
+        activeTouchCount: 1,
+        meanRawTouch: 0.22,
+        meanTouchOnset: 0.2,
+        meanTouchNovelty: 0.28,
+        meanTouchTrace: 0.08,
+        arousal: 0.05,
+        meanPredictionError: 0.24,
+        residueLevel: 0.04,
+        rewritePressureMean: 0.05,
+        globalRewriteLoad: 0.14,
+      });
+    }
+
+    expect(net.overload).toBeGreaterThan(overloadBefore);
+    expect(net.orientingDrive).toBeGreaterThan(orientBefore);
+  });
+
+  it('recovers energy and stability in quiet and shifts toward settle', () => {
+    net.energy = 0.22;
+    net.stability = 0.2;
+    net.overload = 0.46;
+    net.restDrive = 0.52;
+
+    for (let frame = 0; frame < 80; frame++) {
+      net.simTime = frame + 1;
+      net.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+      net.updateOrganismState({
+        residueLevel: 0.08,
+      });
+    }
+    net.updateActionState({
+      meanTouchTrace: 0.06,
+    });
+
+    expect(net.energy).toBeGreaterThan(0.22);
+    expect(net.stability).toBeGreaterThan(0.2);
+    expect(net.actionState).toBe('settle');
+  });
+
+  it('enters withdraw when overload is high', () => {
+    net.overload = 0.78;
+    net.energy = 0.28;
+    net.touchDirectionVector = { dx: 0.3, dy: 0.05, strength: 0.9 };
+
+    net.updateActionState({
+      activeTouchCount: 1,
+      meanRawTouch: 0.2,
+      meanTouchNovelty: 0.22,
+      meanTouchTrace: 0.05,
+    });
+
+    expect(net.actionState).toBe('withdraw');
+    expect(net.actionPulseLevel).toBeGreaterThan(0);
+    expect(net.actionDirection?.[0]).toBeLessThan(0);
+  });
+
+  it('returns orient action back into dynamics as a weak directional pulse', () => {
+    net.energy = 0.8;
+    net.stability = 0.62;
+    net.overload = 0.08;
+    net.restDrive = 0.12;
+    net.orientingDrive = 0.72;
+    net.lastTouchCentroid = [0.5, 0.5];
+    net.touchDirectionVector = { dx: 0.25, dy: 0.04, strength: 0.9 };
+
+    net.updateActionState({
+      activeTouchCount: 1,
+      meanRawTouch: 0.24,
+      meanTouchNovelty: 0.22,
+      meanTouchTrace: 0.03,
+    });
+    const idx = net.mapTouchToSurfaceIndex(0.5, 0.5);
+    const beforeProjection = net.touchProjection[idx];
+    const beforeCurrent = net.currentBuffer[idx];
+
+    expect(net.actionState).toBe('orient');
+    net.applyActionToDynamics();
+
+    expect(net.touchProjection[idx]).toBeGreaterThan(beforeProjection);
+    expect(net.currentBuffer[idx]).toBeGreaterThan(beforeCurrent);
   });
 });

@@ -79,6 +79,10 @@ const MODE_PRIOR_NORM = 8.0;
 const MODE_REWRITE_PRESSURE_NORM = 12.0;
 const MODE_RECENT_REWRITE_NORM = 0.2;
 const TOUCH_PROJ_BASE_GAIN = 0.08;
+const ORGANISM_HISTORY_LIMIT = 8;
+const ORGANISM_UPDATE_SMOOTHING = 0.08;
+const ACTION_PULSE_SMOOTHING = 0.18;
+const ACTION_PULSE_LIMIT = 0.22;
 const MODE_DYNAMICS = {
     sleep: {
         baselineGain: 0.88,
@@ -120,6 +124,7 @@ export class AeternaNetwork {
         this.initializePredictionState();
         this.initializePlasticityRewriteState();
         this.initializeModeOngoingLifeState();
+        this.initializeOrganismActionState();
         this.initializeTemporaryWorkBuffers();
 
         this.generate();
@@ -236,6 +241,28 @@ export class AeternaNetwork {
         this.currentModeDynamics = MODE_DYNAMICS.wake;
     }
 
+    // PR11: organism/action state — bounded bodily condition and primitive action tendencies.
+    initializeOrganismActionState() {
+        this.energy = 0.62;
+        this.stability = 0.58;
+        this.overload = 0.08;
+        this.restDrive = 0.22;
+        this.orientingDrive = 0.18;
+        this.comfortBias = 0.5;
+        this.organismStateHistory = [{
+            time: 0,
+            energy: this.energy,
+            stability: this.stability,
+            overload: this.overload,
+            restDrive: this.restDrive,
+            orientingDrive: this.orientingDrive,
+        }];
+        this.actionState = 'idle';
+        this.actionPulseLevel = 0;
+        this.actionDirection = null;
+        this.lastActionChangeTime = 0;
+    }
+
     // PR10-C: temporary/work buffers — transient event lists and low-frequency derived caches.
     initializeTemporaryWorkBuffers() {
         this.largestClusterNodes = new Uint8Array(this.numNodes); // derived render-assist buffer
@@ -261,6 +288,20 @@ export class AeternaNetwork {
         if (value < min) return min;
         if (value > max) return max;
         return value;
+    }
+
+    clamp01(value, fallback = 0) {
+        return this.clampFinite(value, 0, 1, fallback);
+    }
+
+    getTouchDirectionArray(direction = this.touchDirectionVector) {
+        if (!direction || direction.strength <= 0.001) return null;
+        return [direction.dx, direction.dy];
+    }
+
+    getActionEnergyGate() {
+        const energy = Number.isFinite(this.energy) ? this.energy : 1.0;
+        return this.clampFinite(0.25 + energy * 0.75, 0.25, 1.0, 1.0);
     }
 
     normalizeDirectionalWeights(index) {
@@ -513,6 +554,12 @@ export class AeternaNetwork {
     updateLocalPrediction() {
         const S = this.segments;
         const baseAlpha = 0.05;
+        const organismAlphaGain = this.clampFinite(
+            1.0 - Math.max(this.stability - 0.58, 0) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.05,
+            0.88,
+            1.0,
+            1.0,
+        );
         for (let i = 0; i < S; i++) {
             for (let j = 0; j < S; j++) {
                 const idx   = i * S + j;
@@ -534,7 +581,7 @@ export class AeternaNetwork {
 
                 const noveltyBias = this.priorChannels.novelty[idx];
                 const adaptiveAlpha = this.clampFinite(
-                    baseAlpha + noveltyBias * 0.03 + this.priorBias[idx] * 0.015,
+                    (baseAlpha + noveltyBias * 0.03 + this.priorBias[idx] * 0.015) * organismAlphaGain,
                     0.03,
                     0.12,
                     baseAlpha,
@@ -595,7 +642,18 @@ export class AeternaNetwork {
     updateTouchPerception() {
         const TRACE_DECAY  = 0.96;
         const TRACE_INTAKE = 0.04;
-        const touchSensitivity = this.currentModeDynamics?.touchSensitivity ?? 1.0;
+        const touchSensitivity = (this.currentModeDynamics?.touchSensitivity ?? 1.0) * this.clampFinite(
+            1.0 + (this.orientingDrive - 0.18) * 0.12 + (this.stability - 0.58) * 0.04 - Math.max(this.overload - 0.08, 0) * 0.22,
+            0.72,
+            1.14,
+            1.0,
+        );
+        const noveltyGain = this.clampFinite(
+            1.0 + (this.orientingDrive - 0.18) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.24,
+            0.7,
+            1.08,
+            1.0,
+        );
         for (let i = 0; i < this.numNodes; i++) {
             const err = this.rawTouch[i] - this.localPrediction[i];
             const noveltyBias = this.priorChannels.novelty[i];
@@ -615,7 +673,7 @@ export class AeternaNetwork {
             );
             this.touchOnset[i]   = err  > 0 ? err * touchSensitivity : 0;
             this.touchOffset[i]  = err  < 0 ? -err : 0;
-            this.touchNovelty[i] = Math.abs(err) * (0.7 + touchSensitivity * 0.3);
+            this.touchNovelty[i] = Math.abs(err) * (0.7 + touchSensitivity * 0.3) * noveltyGain;
             this.touchTrace[i]   = this.touchTrace[i] * traceDecay
                                  + this.touchNovelty[i] * traceIntake;
             this.touchTrace[i] = this.clampFinite(this.touchTrace[i], 0, 4.0, 0);
@@ -630,7 +688,15 @@ export class AeternaNetwork {
         const PROJ_DECAY        = 0.90;
         const ONSET_COEFFICIENT = 0.12;
         const OFFSET_COEFFICIENT = 0.06;
-        const projectionGain = this.currentModeDynamics?.touchProjectionGain ?? 1.0;
+        let projectionGain = (this.currentModeDynamics?.touchProjectionGain ?? 1.0) * this.clampFinite(
+            1.0 + (this.energy - 0.62) * 0.22 - Math.max(this.overload - 0.08, 0) * 0.24,
+            0.55,
+            1.04,
+            1.0,
+        );
+        if (this.actionState === 'orient') projectionGain *= 1.0 + this.actionPulseLevel * 0.35;
+        else if (this.actionState === 'withdraw') projectionGain *= 1.0 - this.actionPulseLevel * 0.45;
+        else if (this.actionState === 'settle') projectionGain *= 1.0 - this.actionPulseLevel * 0.12;
         for (let i = 0; i < this.numNodes; i++) {
             const noveltyBias = this.priorChannels.novelty[i];
             const recurrenceBias = this.priorChannels.recurrence[i];
@@ -930,21 +996,29 @@ export class AeternaNetwork {
             1,
             0,
         );
+        const organismEnergy = this.clamp01(this.energy, 0);
+        const organismStability = this.clamp01(this.stability, 0);
+        const organismOverload = this.clamp01(this.overload, 0);
+        const organismRest = this.clamp01(this.restDrive, 0);
+        const organismOrient = this.clamp01(this.orientingDrive, 0);
 
         const wakeTarget = this.clampFinite(
-            0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08,
+            0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08
+            + organismOrient * 0.12 - organismRest * 0.05 - organismOverload * 0.04,
             0,
             1,
             0,
         );
         const sleepTarget = this.clampFinite(
-            0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18,
+            0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18
+            + organismRest * 0.16 + organismOverload * 0.1 + (1.0 - organismEnergy) * 0.08,
             0,
             1,
             0,
         );
         const dreamTarget = this.clampFinite(
-            0.06 + quietTime * 0.24 + quietness * 0.12 + ember * 0.44 + rewriteNorm * 0.08 - externalLevel * 0.22,
+            0.06 + quietTime * 0.24 + quietness * 0.12 + ember * 0.44 + rewriteNorm * 0.08 - externalLevel * 0.22
+            + organismStability * 0.06 + residueNorm * 0.04 - organismOverload * 0.02,
             0,
             1,
             0,
@@ -983,6 +1057,206 @@ export class AeternaNetwork {
         this.modePhase = (this.modePhase + 0.004 + topScore * 0.01) % 1;
         this.currentModeDynamics = MODE_DYNAMICS[this.modeState] ?? MODE_DYNAMICS.wake;
         return this.getModeDebugSummary();
+    }
+
+    recordOrganismSnapshot() {
+        this.organismStateHistory.unshift({
+            time: this.simTime,
+            energy: this.energy,
+            stability: this.stability,
+            overload: this.overload,
+            restDrive: this.restDrive,
+            orientingDrive: this.orientingDrive,
+        });
+        if (this.organismStateHistory.length > ORGANISM_HISTORY_LIMIT) this.organismStateHistory.pop();
+    }
+
+    updateOrganismState({
+        activeTouchCount = 0,
+        meanRawTouch = 0,
+        meanTouchOnset = 0,
+        meanTouchNovelty = 0,
+        meanTouchTrace = 0,
+        arousal = 0,
+        meanPredictionError = 0,
+        residueLevel = 0,
+        rewritePressureMean = 0,
+        globalRewriteLoad = 0,
+    } = {}) {
+        const activeTouch = activeTouchCount > 0 ? 1 : 0;
+        const noveltyLevel = this.clamp01(meanTouchNovelty * 8 + this.touchPatternScores.tap * 0.16 + this.touchPatternScores.stroke * 0.1, 0);
+        const gentleContact = this.clamp01(
+            activeTouch * 0.1 + meanRawTouch * 0.35 + this.touchPatternScores.hold * 0.32 + meanTouchTrace * 0.08 - this.touchPatternScores.tap * 0.06,
+            0,
+        );
+        const repeatIntensity = this.clamp01(this.touchPatternScores.repeat * 0.8 + this.touchPatternScores.tap * 0.25, 0);
+        const arousalNorm = this.clamp01(arousal * MODE_AROUSAL_NORM, 0);
+        const predictionNorm = this.clamp01(meanPredictionError * MODE_PREDICTION_NORM, 0);
+        const quietness = this.clamp01(
+            (1 - activeTouch) * 0.35 + (1 - this.clamp01(meanRawTouch * 5, 0)) * 0.2 + (1 - arousalNorm) * 0.25 + (1 - noveltyLevel) * 0.2,
+            0,
+        );
+
+        const overloadRise = predictionNorm * 0.16 + noveltyLevel * 0.14 + repeatIntensity * 0.08 + globalRewriteLoad * 0.05 + rewritePressureMean * 0.6;
+        const overloadRelease = 0.025 + quietness * 0.035 + this.stability * 0.02 + (this.actionState === 'settle' ? this.actionPulseLevel * 0.08 : 0);
+        this.overload = this.clamp01(this.overload * 0.95 + overloadRise - overloadRelease, this.overload);
+
+        const energyTarget = this.clamp01(
+            0.42 + quietness * 0.22 + this.stability * 0.12 + gentleContact * 0.06
+            - arousalNorm * 0.14 - this.overload * 0.24 - globalRewriteLoad * 0.08 - this.actionPulseLevel * 0.05,
+            this.energy,
+        );
+        const stabilityTarget = this.clamp01(
+            0.38 + quietness * 0.18 + gentleContact * 0.18 + residueLevel * 0.06
+            - this.overload * 0.26 - predictionNorm * 0.12 - repeatIntensity * 0.08,
+            this.stability,
+        );
+        const restTarget = this.clamp01(
+            0.12 + (1 - this.energy) * 0.42 + this.overload * 0.34 + (1 - this.stability) * 0.12 - activeTouch * 0.06,
+            this.restDrive,
+        );
+        const orientTarget = this.clamp01(
+            0.08 + noveltyLevel * 0.34 + activeTouch * 0.18 + this.touchPatternScores.stroke * 0.12 + meanTouchOnset * 0.7
+            - quietness * 0.18 - this.overload * 0.12,
+            this.orientingDrive,
+        );
+
+        this.energy = this.clamp01(this.energy * (1 - ORGANISM_UPDATE_SMOOTHING) + energyTarget * ORGANISM_UPDATE_SMOOTHING, this.energy);
+        this.stability = this.clamp01(this.stability * (1 - ORGANISM_UPDATE_SMOOTHING) + stabilityTarget * ORGANISM_UPDATE_SMOOTHING, this.stability);
+        this.restDrive = this.clamp01(this.restDrive * (1 - ORGANISM_UPDATE_SMOOTHING) + restTarget * ORGANISM_UPDATE_SMOOTHING, this.restDrive);
+        this.orientingDrive = this.clamp01(this.orientingDrive * (1 - ORGANISM_UPDATE_SMOOTHING) + orientTarget * ORGANISM_UPDATE_SMOOTHING, this.orientingDrive);
+        this.comfortBias = this.clamp01(this.comfortBias * 0.92 + (quietness * 0.45 + this.stability * 0.35 + gentleContact * 0.2 - this.overload * 0.25) * 0.08, this.comfortBias);
+
+        if (this.simTime % 30 === 0) this.recordOrganismSnapshot();
+        return this.getOrganismDebugSummary();
+    }
+
+    updateActionState({
+        activeTouchCount = 0,
+        meanRawTouch = 0,
+        meanTouchNovelty = 0,
+        meanTouchTrace = 0,
+    } = {}) {
+        const activeTouch = activeTouchCount > 0 ? 1 : 0;
+        const quietness = this.clamp01(
+            (1 - activeTouch) * 0.45 + (1 - this.clamp01(meanRawTouch * 5, 0)) * 0.25 + (1 - this.clamp01(meanTouchNovelty * 8, 0)) * 0.3,
+            0,
+        );
+        const noveltyPressure = this.clamp01(meanTouchNovelty * 8 + this.touchPatternScores.tap * 0.18 + this.touchPatternScores.stroke * 0.1, 0);
+        const withdrawing = this.overload > 0.56 || (this.overload > 0.42 && this.energy < 0.34 && activeTouch);
+        const orienting = !withdrawing
+            && this.orientingDrive > this.restDrive * 0.72
+            && noveltyPressure > 0.16
+            && this.overload < 0.64
+            && this.energy > 0.16;
+        const settling = !withdrawing && !orienting
+            && quietness > 0.58
+            && (this.restDrive > 0.42 || this.stability < 0.56 || meanTouchTrace > 0.02 || this.overload > 0.2);
+
+        let nextState = 'idle';
+        if (withdrawing) nextState = 'withdraw';
+        else if (orienting) nextState = 'orient';
+        else if (settling) nextState = 'settle';
+
+        let targetPulse = 0;
+        if (nextState === 'orient') {
+            targetPulse = 0.03 + this.orientingDrive * 0.09 + noveltyPressure * 0.06 + (this.touchDirectionVector?.strength || 0) * 0.04;
+        } else if (nextState === 'withdraw') {
+            targetPulse = 0.04 + this.overload * 0.14 + (1 - this.energy) * 0.06;
+        } else if (nextState === 'settle') {
+            targetPulse = 0.025 + this.restDrive * 0.08 + (1 - this.stability) * 0.06 + meanTouchTrace * 0.08;
+        }
+        targetPulse = this.clampFinite(targetPulse * this.getActionEnergyGate(), 0, ACTION_PULSE_LIMIT, 0);
+
+        if (nextState !== this.actionState) this.lastActionChangeTime = this.simTime;
+        this.actionState = nextState;
+        this.actionPulseLevel = this.clampFinite(
+            this.actionPulseLevel * (1 - ACTION_PULSE_SMOOTHING) + targetPulse * ACTION_PULSE_SMOOTHING,
+            0,
+            ACTION_PULSE_LIMIT,
+            0,
+        );
+
+        if (this.actionState === 'orient' && this.touchDirectionVector?.strength > 0.001) {
+            this.actionDirection = [this.touchDirectionVector.dx, this.touchDirectionVector.dy];
+        } else if (this.actionState === 'withdraw' && this.touchDirectionVector?.strength > 0.001) {
+            this.actionDirection = [-this.touchDirectionVector.dx, -this.touchDirectionVector.dy];
+        } else {
+            this.actionDirection = null;
+        }
+
+        return this.getActionDebugSummary();
+    }
+
+    applyActionToDynamics() {
+        const pulse = this.clampFinite(this.actionPulseLevel * this.getActionEnergyGate(), 0, ACTION_PULSE_LIMIT, 0);
+        if (pulse <= 0.0001) return;
+
+        if (this.actionState === 'orient') {
+            if (this.lastTouchCentroid) {
+                const centerIdx = this.mapTouchToSurfaceIndex(this.lastTouchCentroid[0], this.lastTouchCentroid[1]);
+                const S = this.segments;
+                const ci = Math.floor(centerIdx / S);
+                const cj = centerIdx % S;
+                for (let di = -2; di <= 2; di++) {
+                    for (let dj = -2; dj <= 2; dj++) {
+                        const idx = ((ci + di + S) % S) * S + ((cj + dj + S) % S);
+                        const dist = Math.abs(di) + Math.abs(dj);
+                        const falloff = dist === 0 ? 1.0 : dist === 1 ? 0.55 : 0.25;
+                        this.touchProjection[idx] = this.clampFinite(this.touchProjection[idx] + pulse * 0.06 * falloff, -4.0, 4.0, 0);
+                        this.currentBuffer[idx] = this.clampFinite(this.currentBuffer[idx] + pulse * 0.012 * falloff, -8.0, 8.0, 0);
+                    }
+                }
+                if (this.touchDirectionVector?.strength > 0.001) this.applyDirectionalRewrite(centerIdx, pulse * 0.05);
+            }
+        } else if (this.actionState === 'withdraw') {
+            const projectionDamp = 1.0 - pulse * 0.16;
+            const residueDamp = 1.0 - pulse * 0.06;
+            const contraction = pulse * 0.018;
+            for (let i = 0; i < this.numNodes; i++) {
+                this.touchProjection[i] *= projectionDamp;
+                this.activityResidue[i] *= residueDamp;
+                this.currentBuffer[i] = this.clampFinite(
+                    this.currentBuffer[i] * (1.0 - contraction) + this.baselineActivity[i] * contraction,
+                    -8.0,
+                    8.0,
+                    0,
+                );
+            }
+            this.overload = this.clamp01(this.overload - pulse * 0.02, this.overload);
+        } else if (this.actionState === 'settle') {
+            const projectionDamp = 1.0 - pulse * 0.05;
+            const traceDamp = 1.0 - pulse * 0.04;
+            const residueDamp = 1.0 - pulse * 0.07;
+            for (let i = 0; i < this.numNodes; i++) {
+                this.touchProjection[i] *= projectionDamp;
+                this.touchTrace[i] *= traceDamp;
+                this.activityResidue[i] *= residueDamp;
+            }
+            this.stability = this.clamp01(this.stability + pulse * 0.02, this.stability);
+            this.overload = this.clamp01(this.overload - pulse * 0.03, this.overload);
+        }
+    }
+
+    getOrganismDebugSummary() {
+        return {
+            energy: this.energy,
+            stability: this.stability,
+            overload: this.overload,
+            restDrive: this.restDrive,
+            orientingDrive: this.orientingDrive,
+            comfortBias: this.comfortBias,
+        };
+    }
+
+    getActionDebugSummary() {
+        return {
+            actionState: this.actionState,
+            actionPulseLevel: this.actionPulseLevel,
+            actionDirection: this.actionDirection,
+            lastActionChangeTime: this.lastActionChangeTime,
+            lastActionChangeFrames: Math.max(this.simTime - this.lastActionChangeTime, 0),
+        };
     }
 
     applyDreamReplay(externalLevel) {
@@ -1052,6 +1326,12 @@ export class AeternaNetwork {
         const patternFactor = REWRITE_PATTERN_BASE + patternScore * REWRITE_PATTERN_SCALE;
         const seedFactor = REWRITE_SEED_BASE + seedBias * REWRITE_SEED_SCALE;
         const tensionFactor = REWRITE_TENSION_BASE + Math.min(tension, 1.0) * REWRITE_TENSION_SCALE;
+        const rewriteHomeostasisGain = this.clampFinite(
+            1.0 + (this.stability - 0.58) * 0.08 - Math.max(this.overload - 0.08, 0) * 0.32 - Math.max(0.62 - this.energy, 0) * 0.1,
+            0.55,
+            1.06,
+            1.0,
+        );
 
         for (let i = 0; i < this.numNodes; i++) {
             const localTouchNorm = Math.min(Math.abs(this.getRewriteLocalTouch(type, i)), 1.5) / 1.5;
@@ -1059,7 +1339,7 @@ export class AeternaNetwork {
             const localErrorNorm = Math.min(Math.abs(this.predictionError[i]), 1.5) / 1.5;
             if (localErrorNorm < 0.06) continue;
 
-            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * (this.currentModeDynamics?.rewriteGain ?? 1.0);
+            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * (this.currentModeDynamics?.rewriteGain ?? 1.0) * rewriteHomeostasisGain;
             if (!Number.isFinite(composite) || composite <= 0) continue;
 
             this.rewritePressure[i] = this.clampFinite(
@@ -1332,6 +1612,24 @@ export class AeternaNetwork {
         const rewriteDebug = this.updateStructuredPriorRewrite();
         let recentRewriteSum = 0;
         for (let i = 0; i < this.numNodes; i++) recentRewriteSum += this.recentRewriteMask[i];
+        this.updateOrganismState({
+            activeTouchCount: perceptionState.activeTouchCount,
+            meanRawTouch: perceptionState.meanRawTouch,
+            meanTouchOnset: perceptionState.meanTouchOnset,
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            meanTouchTrace: perceptionState.meanTouchTrace,
+            arousal: coreState.arousal,
+            meanPredictionError: this.computeMeanPredictionError(),
+            residueLevel: ongoingState.residueLevel,
+            rewritePressureMean: rewriteDebug.pressureMean,
+            globalRewriteLoad: rewriteDebug.globalLoad,
+        });
+        this.updateActionState({
+            activeTouchCount: perceptionState.activeTouchCount,
+            meanRawTouch: perceptionState.meanRawTouch,
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            meanTouchTrace: perceptionState.meanTouchTrace,
+        });
         const modeDebug = this.updateModeState({
             activeTouchCount: perceptionState.activeTouchCount,
             meanRawTouch: perceptionState.meanRawTouch,
@@ -1347,7 +1645,8 @@ export class AeternaNetwork {
             rewritePressureMean: rewriteDebug.pressureMean,
             recentRewriteMean: recentRewriteSum / this.numNodes,
         });
-        return { rewriteDebug, modeDebug };
+        this.applyActionToDynamics();
+        return { rewriteDebug, modeDebug, organismDebug: this.getOrganismDebugSummary(), actionDebug: this.getActionDebugSummary() };
     }
 
     // PR10-C: geometry/render state step — body deformation and colour projection.
@@ -1410,7 +1709,7 @@ export class AeternaNetwork {
         const ongoingState = this.updateBaselineAndResidue();
         const perceptionState = this.updatePerceptionState(touchState);
         const coreState = this.updateDynamicsCore();
-        const { rewriteDebug, modeDebug } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
+        const { rewriteDebug, modeDebug, organismDebug, actionDebug } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
         this.updateDerivedStateCaches(coreState.freqRatio);
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
@@ -1455,6 +1754,17 @@ export class AeternaNetwork {
             lastModeChangeFrames: modeDebug.lastModeChangeFrames,
             dreamReplayActive: modeDebug.dreamReplayActive,
             dreamReplayStrength: modeDebug.dreamReplayStrength,
+            energy: organismDebug.energy,
+            stability: organismDebug.stability,
+            overload: organismDebug.overload,
+            restDrive: organismDebug.restDrive,
+            orientingDrive: organismDebug.orientingDrive,
+            actionState: actionDebug.actionState,
+            actionPulseLevel: actionDebug.actionPulseLevel,
+            actionDirection: actionDebug.actionDirection,
+            lastActionChangeTime: actionDebug.lastActionChangeTime,
+            lastActionChangeFrames: actionDebug.lastActionChangeFrames,
+            lastTouchDirection: this.getTouchDirectionArray(),
         };
     }
 }

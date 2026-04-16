@@ -7,6 +7,7 @@ export class GuidePanel {
         this.whiteFrameCount = 0; this.lastHeartbeatPulse = 0;
         this.lastRewriteEventId = 0;
         this.lastModeState = null;
+        this.lastActionState = null;
         this.historyEl = document.getElementById('guide-history'); this.latestEl = document.getElementById('guide-latest'); this.providerEl = document.getElementById('guide-provider');
         this.apiProvider = 'none'; this.apiKey = '';
     }
@@ -41,6 +42,13 @@ export class GuidePanel {
             this.addLog(
                 `mode=${dynamicsInfo.modeState} wake=${(dynamicsInfo.wakeDrive || 0).toFixed(2)} sleep=${(dynamicsInfo.sleepPressure || 0).toFixed(2)} dream=${(dynamicsInfo.dreamPressure || 0).toFixed(2)} replay=${dynamicsInfo.dreamReplayActive ? 'on' : 'off'}`,
                 'MODE',
+            );
+        }
+        if (dynamicsInfo.actionState && dynamicsInfo.actionState !== this.lastActionState) {
+            this.lastActionState = dynamicsInfo.actionState;
+            this.addLog(
+                `action=${dynamicsInfo.actionState} pulse=${(dynamicsInfo.actionPulseLevel || 0).toFixed(2)} energy=${(dynamicsInfo.energy || 0).toFixed(2)} stability=${(dynamicsInfo.stability || 0).toFixed(2)} overload=${(dynamicsInfo.overload || 0).toFixed(2)}`,
+                'ORGANISM',
             );
         }
     }
@@ -90,9 +98,12 @@ export class GuidePanel {
         const modeInfo = packet.mode_state
             ? ` mode=${packet.mode_state} wake=${(packet.wake_drive || 0).toFixed(2)} sleep=${(packet.sleep_pressure || 0).toFixed(2)} dream=${(packet.dream_pressure || 0).toFixed(2)}`
             : '';
+        const organismInfo = typeof packet.energy === 'number'
+            ? ` org[e=${packet.energy.toFixed(2)} s=${(packet.stability || 0).toFixed(2)} o=${(packet.overload || 0).toFixed(2)} a=${packet.action_state || 'idle'}]`
+            : '';
         const text = utterance
-            ? `[BRIDGE] ${utterance.slice(0, 60)}${modeInfo}${touchInfo}`
-            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}${modeInfo}${touchInfo}`;
+            ? `[BRIDGE] ${utterance.slice(0, 60)}${modeInfo}${organismInfo}${touchInfo}`
+            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}${modeInfo}${organismInfo}${touchInfo}`;
         this.addLog(text, 'SIGNAL');
     }
 }

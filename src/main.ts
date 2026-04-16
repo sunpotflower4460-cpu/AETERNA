@@ -27,7 +27,7 @@ window.testAPIConnection  = testAPIConnection;
 // ── DOM-ready setup ──
 document.addEventListener('DOMContentLoaded', () => {
     initDOMCache();
-    ['icon-network', 'icon-nature', 'icon-prereq'].forEach(id => {
+    ['icon-network', 'icon-nature', 'icon-prereq', 'icon-organism-state'].forEach(id => {
         const icon = document.getElementById(id);
         if(icon) icon.style.transform = 'rotate(-180deg)';
     });

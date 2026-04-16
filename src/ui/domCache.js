@@ -34,6 +34,15 @@ export function initDOMCache() {
         'val-dream-pressure',   'row-dream-pressure',
         'val-last-mode-change', 'row-last-mode-change',
         'val-dream-replay',     'row-dream-replay',
+        'val-energy',           'row-energy',
+        'val-stability',        'row-stability',
+        'val-overload',         'row-overload',
+        'val-rest-drive',       'row-rest-drive',
+        'val-orienting-drive',  'row-orienting-drive',
+        'val-action-state',     'row-action-state',
+        'val-action-pulse',     'row-action-pulse',
+        'val-action-direction', 'row-action-direction',
+        'val-last-touch-direction', 'row-last-touch-direction',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }

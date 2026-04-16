@@ -6,6 +6,9 @@ export function updateMetricsUI(dyn, engineState) {
     const disk = state.disk;
     const tensionLoad = state.tensionLoad;
     const touchMem = state.touchMem;
+    const formatDirection = (direction) => Array.isArray(direction) && direction.length >= 2
+        ? `${direction[0].toFixed(2)}, ${direction[1].toFixed(2)}`
+        : '—';
 
     const rRatioStr = `${disk.ratioRr.toFixed(3)} [${disk.ratioRr-PHI>=0?'+':''}${(disk.ratioRr-PHI).toFixed(3)}]`;
     updateUIRow(UI['row-omega-t'], UI['val-omega-t'], disk.omega_t.toFixed(2), disk.omega_t > 0);
@@ -85,6 +88,15 @@ export function updateMetricsUI(dyn, engineState) {
             ? `active ${(dyn.dreamReplayStrength || 0).toFixed(3)}`
             : 'inactive';
     }
+    if (UI['val-energy']) UI['val-energy'].innerText = (dyn.energy || 0).toFixed(3);
+    if (UI['val-stability']) UI['val-stability'].innerText = (dyn.stability || 0).toFixed(3);
+    if (UI['val-overload']) UI['val-overload'].innerText = (dyn.overload || 0).toFixed(3);
+    if (UI['val-rest-drive']) UI['val-rest-drive'].innerText = (dyn.restDrive || 0).toFixed(3);
+    if (UI['val-orienting-drive']) UI['val-orienting-drive'].innerText = (dyn.orientingDrive || 0).toFixed(3);
+    if (UI['val-action-state']) UI['val-action-state'].innerText = dyn.actionState || 'idle';
+    if (UI['val-action-pulse']) UI['val-action-pulse'].innerText = (dyn.actionPulseLevel || 0).toFixed(3);
+    if (UI['val-action-direction']) UI['val-action-direction'].innerText = formatDirection(dyn.actionDirection);
+    if (UI['val-last-touch-direction']) UI['val-last-touch-direction'].innerText = formatDirection(dyn.lastTouchDirection);
     
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);
