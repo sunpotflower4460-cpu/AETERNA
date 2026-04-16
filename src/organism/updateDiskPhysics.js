@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from './state.js';
 
 export function updateDiskPhysics(dt) {
     state.disk.update(dt); const idx = state.disk.getInjectionIdx(state.network.segments);

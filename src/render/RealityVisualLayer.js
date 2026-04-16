@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 
 // THREE is loaded as a CDN global — no import needed.
 

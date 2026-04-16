@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 import { UI, updateUIRow } from './domCache.js';
 import { PHI } from '../constants/aeternaConstants.js';
 

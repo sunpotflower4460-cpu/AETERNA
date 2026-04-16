@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint 'src/signal/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts'",
     "test:run": "vitest run"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state } from '../organism/state.js';
 import { PRESETS } from '../constants/aeternaConstants.js';
 import { updateSliderTrack } from '../utils/slider.js';
 

@@ -5,7 +5,7 @@
 
 // Dynamic import so that Vite can tree-shake and bundle correctly.
 async function getRuntime() {
-    const mod = await import('./runSignalRuntime');
+    const mod = await import('../signal/runSignalRuntime.js');
     return mod.runSignalRuntime;
 }
 
