@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ActionPacket, OrganismPacket, TouchPerceptPacket } from '../types/packets.js';
+import type { ActionPacket, TouchPerceptPacket } from '../types/packets.js';
 import { applyActionToDynamics, getActionDebugSummary, updateActionState } from './actionState.ts';
 
 export { applyActionToDynamics, getActionDebugSummary, updateActionState };

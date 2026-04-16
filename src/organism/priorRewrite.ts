@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { PredictionPacket, RewritePacket } from '../types/packets.js';
+import type { RewritePacket } from '../types/packets.js';
 import {
   applyDirectionalRewrite,
   applyStructuredPriorRewrite,
@@ -24,8 +24,7 @@ export {
   updateStructuredPriorRewrite,
 };
 
-export function runPriorRewriteStage(network: any, _predictionPacket: PredictionPacket): RewritePacket {
-  void _predictionPacket;
+export function runPriorRewriteStage(network: any): RewritePacket {
   const rewriteDebug = updateStructuredPriorRewrite(network);
   let recentRewriteSum = 0;
   for (let i = 0; i < network.numNodes; i++) recentRewriteSum += network.recentRewriteMask[i];
