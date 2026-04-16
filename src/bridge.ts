@@ -31,6 +31,14 @@ export interface TorusStatePacket {
   touch_pattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
   /** PR7: Continuous touch pattern scores (EMA-smoothed 0..1) */
   touch_pattern_scores?: { tap: number; repeat: number; hold: number; stroke: number };
+  /** PR9-A: Current activity mode */
+  mode_state?: 'sleep' | 'wake' | 'dream';
+  /** PR9-A: Wake-leaning drive */
+  wake_drive?: number;
+  /** PR9-A: Sleep pressure */
+  sleep_pressure?: number;
+  /** PR9-A: Dream pressure */
+  dream_pressure?: number;
 }
 
 /** Placeholder for future Signal→Torus feedback (next phase). */
@@ -72,6 +80,10 @@ export function buildTorusStatePacket({
     ignitionRatio: number;
     dominantPattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
     touchPatternScores?: { tap: number; repeat: number; hold: number; stroke: number };
+    modeState?: 'sleep' | 'wake' | 'dream';
+    wakeDrive?: number;
+    sleepPressure?: number;
+    dreamPressure?: number;
   };
   engineState: 'WHITE' | 'BLACK' | 'NEUTRAL';
   tension: number;
@@ -100,6 +112,10 @@ export function buildTorusStatePacket({
     engine_state: engineState,
     touch_pattern: dyn.dominantPattern ?? null,
     touch_pattern_scores: dyn.touchPatternScores,
+    mode_state: dyn.modeState,
+    wake_drive: dyn.wakeDrive,
+    sleep_pressure: dyn.sleepPressure,
+    dream_pressure: dyn.dreamPressure,
   };
 }
 

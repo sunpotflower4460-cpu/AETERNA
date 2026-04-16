@@ -28,6 +28,12 @@ export function initDOMCache() {
         'val-rewrite-load',     'row-rewrite-load',
         'val-prior-bias',       'row-prior-bias',
         'val-last-rewrite',     'row-last-rewrite',
+        'val-mode-state',       'row-mode-state',
+        'val-wake-drive',       'row-wake-drive',
+        'val-sleep-pressure',   'row-sleep-pressure',
+        'val-dream-pressure',   'row-dream-pressure',
+        'val-last-mode-change', 'row-last-mode-change',
+        'val-dream-replay',     'row-dream-replay',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }
