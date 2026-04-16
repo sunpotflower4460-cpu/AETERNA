@@ -63,7 +63,9 @@ export function updateMetricsUI(dyn, engineState) {
     const rewriteTendency = dyn.rewriteTendency || 'none';
     const rewritePressure = `${(dyn.rewritePressureMean || 0).toFixed(3)} / ${(dyn.rewritePressureMax || 0).toFixed(3)}`;
     const priorSummary = dyn.priorBiasSummary
-        ? `n=${dyn.priorBiasSummary.novelty.toFixed(2)} r=${dyn.priorBiasSummary.recurrence.toFixed(2)} p=${dyn.priorBiasSummary.persistence.toFixed(2)} d=${dyn.priorBiasSummary.directionality.toFixed(2)}`
+        ? Object.entries(dyn.priorBiasSummary)
+            .map(([key, value]) => `${key[0]}=${value.toFixed(2)}`)
+            .join(' ')
         : 'n=0.00 r=0.00 p=0.00 d=0.00';
     const lastRewrite = dyn.lastRewriteEvent
         ? `${dyn.lastRewriteEvent.rewriteType} @ ${dyn.lastRewriteEvent.node}`

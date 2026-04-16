@@ -11,6 +11,12 @@ const TOUCH_REPEAT_GAP_THRESHOLD = 12;   // max frames between contacts to count
 const TOUCH_REPEAT_RESET_FRAMES  = 60;   // gap frames after which repeat counter resets (≈1 s at 60 fps)
 
 const REWRITE_TYPES = ['novelty', 'recurrence', 'persistence', 'directionality'];
+const REWRITE_PATTERN_SOURCES = {
+    novelty: 'tap',
+    recurrence: 'repeat',
+    persistence: 'hold',
+    directionality: 'stroke',
+};
 const REWRITE_PRIOR_DECAY = 0.9994;
 const REWRITE_PRESSURE_DECAY = 0.965;
 const REWRITE_PLASTICITY_DECAY = 0.987;
@@ -31,6 +37,27 @@ const REWRITE_TRIGGER_PLASTICITY = 0.02;
 const REWRITE_DIRECTION_MIN_STRENGTH = 0.01;
 const REWRITE_WEIGHT_MIN = 0.25;
 const REWRITE_WEIGHT_MAX = 4.0;
+const REWRITE_PATTERN_BASE = 0.6;
+const REWRITE_PATTERN_SCALE = 0.4;
+const REWRITE_SEED_BASE = 0.55;
+const REWRITE_SEED_SCALE = 0.45;
+const REWRITE_TENSION_BASE = 0.6;
+const REWRITE_TENSION_SCALE = 0.4;
+const REWRITE_PRESSURE_GAIN = 0.18;
+const REWRITE_LOAD_DAMPING_FACTOR = 0.5;
+const REWRITE_PLASTICITY_GAIN = 0.10;
+const REWRITE_DIRECTION_NEIGHBOR_FALLOFF = 0.45;
+const REWRITE_DIRECTION_COUNTER_DAMP = 0.35;
+const REWRITE_DIRECTION_VERTICAL_STRENGTH = 0.55;
+const REWRITE_DIRECTION_VERTICAL_COUNTER_DAMP = 0.18;
+const REWRITE_NOVELTY_PREDICTION_FACTOR = 0.2;
+const REWRITE_RECURRENCE_TRACE_FACTOR = 0.25;
+const REWRITE_RECURRENCE_PROJECTION_DAMPING = 0.4;
+const REWRITE_PERSISTENCE_RESIDUE_FACTOR = 0.12;
+const REWRITE_DIRECTIONALITY_WEIGHT_FACTOR = 0.9;
+const REWRITE_POST_PRESSURE_FACTOR = 0.4;
+const REWRITE_POST_PLASTICITY_FACTOR = 0.5;
+const REWRITE_GLOBAL_LOAD_FACTOR = 1.8;
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -621,12 +648,11 @@ export class AeternaNetwork {
     }
 
     getRewriteSeedBiases() {
-        const biases = {
-            novelty: this.clampFinite(this.touchPatternScores.tap, 0, 1, 0),
-            recurrence: this.clampFinite(this.touchPatternScores.repeat, 0, 1, 0),
-            persistence: this.clampFinite(this.touchPatternScores.hold, 0, 1, 0),
-            directionality: this.clampFinite(this.touchPatternScores.stroke, 0, 1, 0),
-        };
+        const biases = {};
+        for (const type of REWRITE_TYPES) {
+            const patternKey = REWRITE_PATTERN_SOURCES[type];
+            biases[type] = this.clampFinite(this.touchPatternScores[patternKey], 0, 1, 0);
+        }
         let tendency = 'none';
         let maxBias = 0;
         for (const type of REWRITE_TYPES) {
@@ -664,20 +690,15 @@ export class AeternaNetwork {
     }
 
     findRewriteCandidate(type, seedBias, tension) {
-        const patternMap = {
-            novelty: this.touchPatternScores.tap,
-            recurrence: this.touchPatternScores.repeat,
-            persistence: this.touchPatternScores.hold,
-            directionality: this.touchPatternScores.stroke,
-        };
-        const patternScore = this.clampFinite(patternMap[type] ?? 0, 0, 1, 0);
+        const patternKey = REWRITE_PATTERN_SOURCES[type];
+        const patternScore = this.clampFinite(this.touchPatternScores[patternKey] ?? 0, 0, 1, 0);
         if (patternScore < REWRITE_TOUCH_GATE || seedBias < REWRITE_SEED_GATE || tension < REWRITE_TENSION_GATE) return null;
         if (type === 'directionality' && this.touchDirectionVector.strength < REWRITE_DIRECTION_MIN_STRENGTH) return null;
 
         let best = null;
-        const patternFactor = 0.6 + patternScore * 0.4;
-        const seedFactor = 0.55 + seedBias * 0.45;
-        const tensionFactor = 0.6 + Math.min(tension, 1.0) * 0.4;
+        const patternFactor = REWRITE_PATTERN_BASE + patternScore * REWRITE_PATTERN_SCALE;
+        const seedFactor = REWRITE_SEED_BASE + seedBias * REWRITE_SEED_SCALE;
+        const tensionFactor = REWRITE_TENSION_BASE + Math.min(tension, 1.0) * REWRITE_TENSION_SCALE;
 
         for (let i = 0; i < this.numNodes; i++) {
             const localTouchNorm = Math.min(Math.abs(this.getRewriteLocalTouch(type, i)), 1.5) / 1.5;
@@ -689,13 +710,13 @@ export class AeternaNetwork {
             if (!Number.isFinite(composite) || composite <= 0) continue;
 
             this.rewritePressure[i] = this.clampFinite(
-                this.rewritePressure[i] + composite * 0.18 * (1.0 - this.globalRewriteLoad * 0.5),
+                this.rewritePressure[i] + composite * REWRITE_PRESSURE_GAIN * (1.0 - this.globalRewriteLoad * REWRITE_LOAD_DAMPING_FACTOR),
                 0,
                 REWRITE_PRESSURE_LIMIT,
                 0,
             );
             if (composite > 0.07) {
-                this.plasticityTrace[i] = this.clampFinite(this.plasticityTrace[i] + composite * 0.10, 0, REWRITE_PLASTICITY_LIMIT, 0);
+                this.plasticityTrace[i] = this.clampFinite(this.plasticityTrace[i] + composite * REWRITE_PLASTICITY_GAIN, 0, REWRITE_PLASTICITY_LIMIT, 0);
             }
 
             if (this.recentRewriteMask[i] > 0) continue;
@@ -729,26 +750,29 @@ export class AeternaNetwork {
         const ci = Math.floor(centerIndex / S);
         const cj = centerIndex % S;
         const { dx, dy } = this.touchDirectionVector;
+        const horizontalDominant = Math.abs(dx) > Math.abs(dy);
+        const verticalDominant = Math.abs(dy) > Math.abs(dx);
+        const balancedAxes = !horizontalDominant && !verticalDominant;
         for (let di = -1; di <= 1; di++) {
             for (let dj = -1; dj <= 1; dj++) {
                 const idx = ((ci + di + S) % S) * S + ((cj + dj + S) % S);
-                const falloff = (di === 0 && dj === 0) ? 1.0 : 0.45;
-                if (Math.abs(dx) >= Math.abs(dy)) {
+                const falloff = (di === 0 && dj === 0) ? 1.0 : REWRITE_DIRECTION_NEIGHBOR_FALLOFF;
+                if (horizontalDominant || balancedAxes) {
                     if (dx >= 0) {
                         this.w_right[idx] += delta * falloff;
-                        this.w_left[idx] -= delta * falloff * 0.35;
+                        this.w_left[idx] -= delta * falloff * REWRITE_DIRECTION_COUNTER_DAMP;
                     } else {
                         this.w_left[idx] += delta * falloff;
-                        this.w_right[idx] -= delta * falloff * 0.35;
+                        this.w_right[idx] -= delta * falloff * REWRITE_DIRECTION_COUNTER_DAMP;
                     }
                 }
-                if (Math.abs(dy) > 0.001) {
+                if ((verticalDominant || balancedAxes) && Math.abs(dy) > 0.001) {
                     if (dy >= 0) {
-                        this.w_down[idx] += delta * falloff * 0.55;
-                        this.w_up[idx] -= delta * falloff * 0.18;
+                        this.w_down[idx] += delta * falloff * REWRITE_DIRECTION_VERTICAL_STRENGTH;
+                        this.w_up[idx] -= delta * falloff * REWRITE_DIRECTION_VERTICAL_COUNTER_DAMP;
                     } else {
-                        this.w_up[idx] += delta * falloff * 0.55;
-                        this.w_down[idx] -= delta * falloff * 0.18;
+                        this.w_up[idx] += delta * falloff * REWRITE_DIRECTION_VERTICAL_STRENGTH;
+                        this.w_down[idx] -= delta * falloff * REWRITE_DIRECTION_VERTICAL_COUNTER_DAMP;
                     }
                 }
                 this.normalizeDirectionalWeights(idx);
@@ -783,29 +807,29 @@ export class AeternaNetwork {
 
         if (candidate.rewriteType === 'novelty') {
             this.localPrediction[idx] = this.clampFinite(
-                this.localPrediction[idx] + this.touchOnset[idx] * delta * 0.2,
+                this.localPrediction[idx] + this.touchOnset[idx] * delta * REWRITE_NOVELTY_PREDICTION_FACTOR,
                 -8.0,
                 8.0,
                 0,
             );
         } else if (candidate.rewriteType === 'recurrence') {
-            this.touchTrace[idx] = this.clampFinite(this.touchTrace[idx] + this.touchNovelty[idx] * delta * 0.25, 0, 4.0, 0);
-            this.touchProjection[idx] = this.clampFinite(this.touchProjection[idx] * (1.0 - delta * 0.4), -4.0, 4.0, 0);
+            this.touchTrace[idx] = this.clampFinite(this.touchTrace[idx] + this.touchNovelty[idx] * delta * REWRITE_RECURRENCE_TRACE_FACTOR, 0, 4.0, 0);
+            this.touchProjection[idx] = this.clampFinite(this.touchProjection[idx] * (1.0 - delta * REWRITE_RECURRENCE_PROJECTION_DAMPING), -4.0, 4.0, 0);
         } else if (candidate.rewriteType === 'persistence') {
             this.activityResidue[idx] = this.clampFinite(
-                this.activityResidue[idx] + (this.touchOffset[idx] + this.touchTrace[idx]) * delta * 0.12,
+                this.activityResidue[idx] + (this.touchOffset[idx] + this.touchTrace[idx]) * delta * REWRITE_PERSISTENCE_RESIDUE_FACTOR,
                 0,
                 1.25,
                 0,
             );
         } else if (candidate.rewriteType === 'directionality') {
-            this.applyDirectionalRewrite(idx, delta * 0.9);
+            this.applyDirectionalRewrite(idx, delta * REWRITE_DIRECTIONALITY_WEIGHT_FACTOR);
         }
 
-        this.rewritePressure[idx] = this.clampFinite(this.rewritePressure[idx] * 0.4, 0, REWRITE_PRESSURE_LIMIT, 0);
-        this.plasticityTrace[idx] = this.clampFinite(this.plasticityTrace[idx] * 0.5, 0, REWRITE_PLASTICITY_LIMIT, 0);
+        this.rewritePressure[idx] = this.clampFinite(this.rewritePressure[idx] * REWRITE_POST_PRESSURE_FACTOR, 0, REWRITE_PRESSURE_LIMIT, 0);
+        this.plasticityTrace[idx] = this.clampFinite(this.plasticityTrace[idx] * REWRITE_POST_PLASTICITY_FACTOR, 0, REWRITE_PLASTICITY_LIMIT, 0);
         this.recentRewriteMask[idx] = REWRITE_COOLDOWN_FRAMES;
-        this.globalRewriteLoad = this.clampFinite(this.globalRewriteLoad + delta * 1.8, 0, 1, 0);
+        this.globalRewriteLoad = this.clampFinite(this.globalRewriteLoad + delta * REWRITE_GLOBAL_LOAD_FACTOR, 0, 1, 0);
         this.logRewriteEvent(candidate, delta);
     }
 
