@@ -24,6 +24,18 @@ export class RealityVisualLayer {
         this.avalancheMaterial = new THREE.PointsMaterial({ size: 0.4, color: 0xff2200, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false });
         this.avalanchePoints = new THREE.Points(this.avalancheGeo, this.avalancheMaterial); this.scene.add(this.avalanchePoints); this.avalanchePoints.visible = false;
 
+        // PR7: Stroke path trail — visualises centroid trajectory during stroke gestures.
+        this.strokeTrailMaxCount = 40;
+        this.strokeTrailPositions = new Float32Array(this.strokeTrailMaxCount * 3);
+        this.strokeTrailColors    = new Float32Array(this.strokeTrailMaxCount * 3);
+        this.strokeTrailGeo = new THREE.BufferGeometry();
+        this.strokeTrailGeo.setAttribute('position', new THREE.BufferAttribute(this.strokeTrailPositions, 3).setUsage(THREE.DynamicDrawUsage));
+        this.strokeTrailGeo.setAttribute('color',    new THREE.BufferAttribute(this.strokeTrailColors, 3).setUsage(THREE.DynamicDrawUsage));
+        this.strokeTrailGeo.setDrawRange(0, 0);
+        this.strokeTrailMaterial = new THREE.PointsMaterial({ size: 0.28, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+        this.strokeTrailPoints = new THREE.Points(this.strokeTrailGeo, this.strokeTrailMaterial);
+        this.scene.add(this.strokeTrailPoints); this.strokeTrailPoints.visible = false;
+
         this.canvas = document.getElementById('yin-yang-canvas'); this.ctx = this.canvas.getContext('2d');
         this.hubLabels = []; this.hubContainer = document.createElement('div');
         this.hubContainer.style.cssText = 'position:absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:5; display:block;'; 
@@ -52,6 +64,7 @@ export class RealityVisualLayer {
 
         if (!this.visible) {
             this.avalanchePoints.visible = false;
+            this.strokeTrailPoints.visible = false;
             this.hubLabels.forEach(h => h.el.style.display = 'none');
         }
 
@@ -98,6 +111,9 @@ export class RealityVisualLayer {
         this.avalancheGeo.setDrawRange(0, avCount);
         if (avCount > 0) { this.avalancheGeo.attributes.position.needsUpdate = true; this.avalanchePoints.visible = true; } else { this.avalanchePoints.visible = false; }
 
+        // PR7: Render stroke path trail — maps centroid history to torus node positions.
+        this.updateStrokeTrail();
+
         if (state.camera) {
             this.hubLabels.forEach(hub => {
                 if (!this.visible || !this.showHubLabels || window.innerWidth < 600) {
@@ -120,6 +136,44 @@ export class RealityVisualLayer {
             });
         }
         this.drawYinYangBalance();
+    }
+
+    // PR7: Map stroke centroid path to torus node 3D positions and render as a residual trail.
+    updateStrokeTrail() {
+        const path = this.network.strokePath;
+        const S = this.network.segments;
+        const sPos = this.strokeTrailGeo.attributes.position.array;
+        const sCol = this.strokeTrailGeo.attributes.color.array;
+        const count = Math.min(path.length, this.strokeTrailMaxCount);
+
+        for (let k = 0; k < count; k++) {
+            const p = path[k];
+            const nodeIdx = (Math.floor(p.normX * S) % S) * S + (Math.floor(p.normY * S) % S);
+            const idx3 = nodeIdx * 3;
+            const k3 = k * 3;
+            sPos[k3]   = this.network.vertexPositions[idx3];
+            sPos[k3+1] = this.network.vertexPositions[idx3+1];
+            sPos[k3+2] = this.network.vertexPositions[idx3+2];
+            // Fade from bright cyan at newest to dim purple at oldest
+            const t = k / Math.max(count - 1, 1);
+            const alpha = 0.3 + t * 0.7;
+            sCol[k3]   = 0.4 * alpha;
+            sCol[k3+1] = 0.8 * alpha;
+            sCol[k3+2] = 1.0 * alpha;
+        }
+        for (let k = count; k < this.strokeTrailMaxCount; k++) {
+            const k3 = k * 3;
+            sPos[k3]=0; sPos[k3+1]=0; sPos[k3+2]=0;
+            sCol[k3]=0; sCol[k3+1]=0; sCol[k3+2]=0;
+        }
+        this.strokeTrailGeo.setDrawRange(0, count);
+        if (count > 0) {
+            this.strokeTrailGeo.attributes.position.needsUpdate = true;
+            this.strokeTrailGeo.attributes.color.needsUpdate = true;
+            this.strokeTrailPoints.visible = true;
+        } else {
+            this.strokeTrailPoints.visible = false;
+        }
     }
 
     drawYinYangBalance() {
