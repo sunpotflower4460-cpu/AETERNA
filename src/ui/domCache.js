@@ -9,6 +9,7 @@ export function initDOMCache() {
         'row-firing', 'row-cluster', 'row-phi', 'row-coherence', 'row-attractor-id', 'row-attractor-sim', 'row-arousal',
         'val-branching', 'row-branching', 'sigma-bar-fill', 'val-homeo', 'row-homeo', 'val-tension', 'row-tension', 'val-touch', 'row-touch',
         'val-baseline', 'row-baseline', 'val-residue', 'row-residue',
+        'val-local-pred-error', 'row-local-pred-error',
         'val-pre-a', 'row-pre-a', 'val-pre-b', 'row-pre-b', 'val-pre-c', 'row-pre-c', 'val-pre-d', 'row-pre-d', 'val-pre-e', 'row-pre-e', 'val-total', 'row-total',
         'system-state-badge', 'intro-guide'
     ];
