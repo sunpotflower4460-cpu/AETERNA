@@ -58,6 +58,43 @@ const REWRITE_DIRECTIONALITY_WEIGHT_FACTOR = 0.9;
 const REWRITE_POST_PRESSURE_FACTOR = 0.4;
 const REWRITE_POST_PLASTICITY_FACTOR = 0.5;
 const REWRITE_GLOBAL_LOAD_FACTOR = 1.8;
+const MODE_TRANSITION_COOLDOWN = 180;
+const MODE_HYSTERESIS = 0.06;
+const MODE_WAKE_THRESHOLD = 0.34;
+const MODE_SLEEP_THRESHOLD = 0.4;
+const MODE_DREAM_THRESHOLD = 0.42;
+const MODE_DRIVE_SMOOTHING = 0.08;
+const MODE_DREAM_REPLAY_LIMIT = 0.028;
+const MODE_DREAM_REPLAY_NODE_LIMIT = 6;
+const MODE_DREAM_REPLAY_GATE = 0.16;
+const MODE_EXTERNAL_QUIET_GATE = 0.035;
+const MODE_TRACE_HISTORY_LIMIT = 6;
+const MODE_DYNAMICS = {
+    sleep: {
+        baselineGain: 0.88,
+        touchSensitivity: 0.82,
+        touchProjectionGain: 0.82,
+        rewriteGain: 0.84,
+        residueDecayOffset: -0.012,
+        replayGain: 0.15,
+    },
+    wake: {
+        baselineGain: 1.02,
+        touchSensitivity: 1.05,
+        touchProjectionGain: 1.04,
+        rewriteGain: 1.0,
+        residueDecayOffset: 0.0,
+        replayGain: 0.25,
+    },
+    dream: {
+        baselineGain: 0.95,
+        touchSensitivity: 0.8,
+        touchProjectionGain: 0.78,
+        rewriteGain: 0.9,
+        residueDecayOffset: 0.006,
+        replayGain: 1.0,
+    },
+};
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -149,6 +186,18 @@ export class AeternaNetwork {
         this.rewriteProtoMeaningBiases = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
         this.currentRewriteTendency = 'none';
         this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+        this.modeState = 'wake';
+        this.modePhase = 0;
+        this.wakeDrive = 0.4;
+        this.sleepPressure = 0.24;
+        this.dreamPressure = 0.18;
+        this.modeConfidence = 0;
+        this.lastModeChangeTime = 0;
+        this.modeTrace = [{ mode: this.modeState, time: 0 }];
+        this.externalQuietFrames = 0;
+        this.dreamReplayActive = false;
+        this.dreamReplayStrength = 0;
+        this.currentModeDynamics = MODE_DYNAMICS.wake;
 
         this.generate();
     }
@@ -357,8 +406,9 @@ export class AeternaNetwork {
         const BASELINE_AMP = 0.003;
         const TIME_DRIFT = 0.0008;
         const t = this.simTime * TIME_DRIFT;
+        const gain = this.currentModeDynamics?.baselineGain ?? 1.0;
         for (let i = 0; i < this.numNodes; i++) {
-            this.baselineActivity[i] = BASELINE_AMP * Math.sin(this.nodePhase[i] + t);
+            this.baselineActivity[i] = BASELINE_AMP * gain * Math.sin(this.nodePhase[i] + t + this.modePhase * Math.PI * 2);
         }
     }
 
@@ -366,11 +416,13 @@ export class AeternaNetwork {
     updateResidue() {
         const RESIDUE_DECAY  = 0.97;
         const RESIDUE_INTAKE = 0.02;
+        const modeResidueOffset = this.currentModeDynamics?.residueDecayOffset ?? 0;
         for (let i = 0; i < this.numNodes; i++) {
             const persistenceBias = this.priorChannels.persistence[i];
             const decay = this.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
             const intake = this.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
-            this.activityResidue[i] = this.activityResidue[i] * decay
+            const modeDecay = this.clampFinite(decay + modeResidueOffset, 0.94, 0.995, decay);
+            this.activityResidue[i] = this.activityResidue[i] * modeDecay
                                     + this.spikeTrace[i]       * intake;
             this.activityResidue[i] = this.clampFinite(this.activityResidue[i], 0, 1.25, 0);
         }
@@ -463,6 +515,7 @@ export class AeternaNetwork {
     updateTouchPerception() {
         const TRACE_DECAY  = 0.96;
         const TRACE_INTAKE = 0.04;
+        const touchSensitivity = this.currentModeDynamics?.touchSensitivity ?? 1.0;
         for (let i = 0; i < this.numNodes; i++) {
             const err = this.rawTouch[i] - this.localPrediction[i];
             const noveltyBias = this.priorChannels.novelty[i];
@@ -480,9 +533,9 @@ export class AeternaNetwork {
                 0.08,
                 TRACE_INTAKE,
             );
-            this.touchOnset[i]   = err  > 0 ? err  : 0;
+            this.touchOnset[i]   = err  > 0 ? err * touchSensitivity : 0;
             this.touchOffset[i]  = err  < 0 ? -err : 0;
-            this.touchNovelty[i] = Math.abs(err);
+            this.touchNovelty[i] = Math.abs(err) * (0.7 + touchSensitivity * 0.3);
             this.touchTrace[i]   = this.touchTrace[i] * traceDecay
                                  + this.touchNovelty[i] * traceIntake;
             this.touchTrace[i] = this.clampFinite(this.touchTrace[i], 0, 4.0, 0);
@@ -497,6 +550,7 @@ export class AeternaNetwork {
         const PROJ_DECAY        = 0.90;
         const ONSET_COEFFICIENT = 0.12;
         const OFFSET_COEFFICIENT = 0.06;
+        const projectionGain = this.currentModeDynamics?.touchProjectionGain ?? 1.0;
         for (let i = 0; i < this.numNodes; i++) {
             const noveltyBias = this.priorChannels.novelty[i];
             const recurrenceBias = this.priorChannels.recurrence[i];
@@ -518,7 +572,7 @@ export class AeternaNetwork {
             const repeatDamp = this.clampFinite(1.0 - recurrenceBias * 0.08, 0.85, 1.0, 1.0);
             this.touchProjection[i] =
                 this.touchProjection[i] * projDecay
-                + this.touchOnset[i]  * onsetCoefficient * repeatDamp
+                + this.touchOnset[i]  * onsetCoefficient * repeatDamp * projectionGain
                 - this.touchOffset[i] * offsetCoefficient;
             this.touchProjection[i] = this.clampFinite(this.touchProjection[i], -4.0, 4.0, 0);
         }
@@ -666,6 +720,163 @@ export class AeternaNetwork {
         return { ...biases, tendency: this.currentRewriteTendency };
     }
 
+    getModeDebugSummary() {
+        return {
+            modeState: this.modeState,
+            modePhase: this.modePhase,
+            wakeDrive: this.wakeDrive,
+            sleepPressure: this.sleepPressure,
+            dreamPressure: this.dreamPressure,
+            modeConfidence: this.modeConfidence,
+            lastModeChangeTime: this.lastModeChangeTime,
+            lastModeChangeFrames: Math.max(this.simTime - this.lastModeChangeTime, 0),
+            dreamReplayActive: this.dreamReplayActive,
+            dreamReplayStrength: this.dreamReplayStrength,
+        };
+    }
+
+    noteModeTransition(nextMode) {
+        this.modeState = nextMode;
+        this.lastModeChangeTime = this.simTime;
+        this.modeTrace.unshift({ mode: nextMode, time: this.simTime });
+        if (this.modeTrace.length > MODE_TRACE_HISTORY_LIMIT) this.modeTrace.pop();
+    }
+
+    updateModeState({
+        activeTouchCount = 0,
+        meanRawTouch = 0,
+        meanTouchOnset = 0,
+        meanTouchNovelty = 0,
+        arousal = 0,
+        meanPredictionError = 0,
+        sigmaDisplay = 1,
+        tension = 0,
+        residueLevel = 0,
+        traceLevel = 0,
+        priorBiasMean = 0,
+        rewritePressureMean = 0,
+        recentRewriteMean = 0,
+    } = {}) {
+        const touchPresence = activeTouchCount > 0 ? 1 : 0;
+        const externalLevel = this.clampFinite(
+            touchPresence * 0.45 + meanRawTouch * 0.9 + meanTouchOnset * 0.7 + meanTouchNovelty * 0.45,
+            0,
+            1,
+            0,
+        );
+        if (externalLevel < MODE_EXTERNAL_QUIET_GATE) this.externalQuietFrames += 1;
+        else this.externalQuietFrames = 0;
+
+        const quietTime = this.clampFinite(this.externalQuietFrames / 240, 0, 1, 0);
+        const arousalNorm = this.clampFinite(arousal * 16, 0, 1, 0);
+        const predictionNorm = this.clampFinite(meanPredictionError * 3.5, 0, 1, 0);
+        const sigmaDrift = this.clampFinite(Math.abs(sigmaDisplay - 1.0) * 4.0, 0, 1, 0);
+        const tensionNorm = this.clampFinite(tension, 0, 1, 0);
+        const residueNorm = this.clampFinite(residueLevel * 1.2, 0, 1, 0);
+        const traceNorm = this.clampFinite(traceLevel * 0.45, 0, 1, 0);
+        const priorNorm = this.clampFinite(priorBiasMean * 8.0, 0, 1, 0);
+        const rewriteNorm = this.clampFinite(rewritePressureMean * 12.0 + recentRewriteMean * 0.2, 0, 1, 0);
+        const quietness = this.clampFinite(
+            (1.0 - externalLevel) * 0.5 + (1.0 - arousalNorm) * 0.3 + (1.0 - tensionNorm) * 0.2,
+            0,
+            1,
+            0,
+        );
+        const ember = this.clampFinite(
+            residueNorm * 0.34 + traceNorm * 0.24 + priorNorm * 0.22 + rewriteNorm * 0.2,
+            0,
+            1,
+            0,
+        );
+
+        const wakeTarget = this.clampFinite(
+            0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08,
+            0,
+            1,
+            0,
+        );
+        const sleepTarget = this.clampFinite(
+            0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18,
+            0,
+            1,
+            0,
+        );
+        const dreamTarget = this.clampFinite(
+            0.06 + quietTime * 0.24 + quietness * 0.12 + ember * 0.44 + rewriteNorm * 0.08 - externalLevel * 0.22,
+            0,
+            1,
+            0,
+        );
+
+        this.wakeDrive = this.clampFinite(this.wakeDrive * (1 - MODE_DRIVE_SMOOTHING) + wakeTarget * MODE_DRIVE_SMOOTHING, 0, 1, 0);
+        this.sleepPressure = this.clampFinite(this.sleepPressure * (1 - MODE_DRIVE_SMOOTHING) + sleepTarget * MODE_DRIVE_SMOOTHING, 0, 1, 0);
+        this.dreamPressure = this.clampFinite(this.dreamPressure * (1 - MODE_DRIVE_SMOOTHING) + dreamTarget * MODE_DRIVE_SMOOTHING, 0, 1, 0);
+
+        const scores = {
+            wake: this.wakeDrive,
+            sleep: this.sleepPressure,
+            dream: this.dreamPressure,
+        };
+        const ordered = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+        const [topMode, topScore] = ordered[0];
+        const [, secondScore] = ordered[1];
+        this.modeConfidence = this.clampFinite(topScore - secondScore, 0, 1, 0);
+
+        const cooldownElapsed = this.simTime - this.lastModeChangeTime;
+        const currentScore = scores[this.modeState] ?? 0;
+        const thresholdMet =
+            (topMode === 'wake' && topScore >= MODE_WAKE_THRESHOLD) ||
+            (topMode === 'sleep' && topScore >= MODE_SLEEP_THRESHOLD) ||
+            (topMode === 'dream' && topScore >= MODE_DREAM_THRESHOLD);
+
+        if (
+            topMode !== this.modeState &&
+            cooldownElapsed >= MODE_TRANSITION_COOLDOWN &&
+            thresholdMet &&
+            topScore > currentScore + MODE_HYSTERESIS
+        ) {
+            this.noteModeTransition(topMode);
+        }
+
+        this.modePhase = (this.modePhase + 0.004 + topScore * 0.01) % 1;
+        this.currentModeDynamics = MODE_DYNAMICS[this.modeState] ?? MODE_DYNAMICS.wake;
+        return this.getModeDebugSummary();
+    }
+
+    applyDreamReplay(externalLevel) {
+        this.dreamReplayActive = false;
+        this.dreamReplayStrength = 0;
+        if (this.modeState !== 'dream') return;
+        if (this.dreamPressure < MODE_DREAM_THRESHOLD - 0.05) return;
+        if (externalLevel > MODE_EXTERNAL_QUIET_GATE) return;
+
+        const replayCandidates = [];
+        for (let i = 0; i < this.numNodes; i++) {
+            const residueSeed = this.clampFinite(this.activityResidue[i] / 1.25, 0, 1, 0);
+            const traceSeed = this.clampFinite(this.touchTrace[i] / 4.0, 0, 1, 0);
+            const priorSeed = this.clampFinite(this.priorBias[i] / REWRITE_PRIOR_LIMIT, 0, 1, 0);
+            const rewriteSeed = this.clampFinite(this.recentRewriteMask[i] / REWRITE_COOLDOWN_FRAMES, 0, 1, 0);
+            const score = residueSeed * 0.34 + traceSeed * 0.28 + priorSeed * 0.22 + rewriteSeed * 0.16;
+            if (score >= MODE_DREAM_REPLAY_GATE) replayCandidates.push({ index: i, score });
+        }
+
+        replayCandidates.sort((a, b) => b.score - a.score);
+        const replayGain = this.currentModeDynamics?.replayGain ?? 1.0;
+        const chosen = replayCandidates.slice(0, MODE_DREAM_REPLAY_NODE_LIMIT);
+        for (const candidate of chosen) {
+            const replay = this.clampFinite(candidate.score * this.dreamPressure * replayGain * 0.03, 0, MODE_DREAM_REPLAY_LIMIT, 0);
+            if (replay <= 0) continue;
+            const idx = candidate.index;
+            this.activityResidue[idx] = this.clampFinite(this.activityResidue[idx] + replay * 0.7, 0, 1.25, 0);
+            this.touchProjection[idx] = this.clampFinite(this.touchProjection[idx] + replay * 0.5, -4.0, 4.0, 0);
+            this.localPrediction[idx] = this.clampFinite(this.localPrediction[idx] + this.priorBias[idx] * replay * 0.08, -8.0, 8.0, 0);
+            this.dreamReplayStrength += replay;
+        }
+
+        this.dreamReplayActive = this.dreamReplayStrength > 0;
+        this.dreamReplayStrength = this.clampFinite(this.dreamReplayStrength, 0, MODE_DREAM_REPLAY_LIMIT * MODE_DREAM_REPLAY_NODE_LIMIT, 0);
+    }
+
     decayStructuredPriorRewrite() {
         this.globalRewriteLoad = this.clampFinite(this.globalRewriteLoad * REWRITE_LOAD_DECAY, 0, 1, 0);
         for (let i = 0; i < this.numNodes; i++) {
@@ -706,7 +917,7 @@ export class AeternaNetwork {
             const localErrorNorm = Math.min(Math.abs(this.predictionError[i]), 1.5) / 1.5;
             if (localErrorNorm < 0.06) continue;
 
-            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor;
+            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * (this.currentModeDynamics?.rewriteGain ?? 1.0);
             if (!Number.isFinite(composite) || composite <= 0) continue;
 
             this.rewritePressure[i] = this.clampFinite(
@@ -800,7 +1011,12 @@ export class AeternaNetwork {
 
     applyStructuredPriorRewrite(candidate) {
         const idx = candidate.node;
-        const delta = this.clampFinite(0.004 + candidate.score * 0.012, 0.004, 0.018, 0.004);
+        const delta = this.clampFinite(
+            (0.004 + candidate.score * 0.012) * (this.currentModeDynamics?.rewriteGain ?? 1.0),
+            0.003,
+            0.018,
+            0.004,
+        );
         const channel = this.priorChannels[candidate.rewriteType];
         channel[idx] = this.clampFinite(channel[idx] + delta, 0, REWRITE_CHANNEL_LIMIT, 0);
         this.priorBias[idx] = this.clampFinite(this.priorBias[idx] + delta * 0.7, 0, REWRITE_PRIOR_LIMIT, 0);
@@ -931,29 +1147,32 @@ export class AeternaNetwork {
         // PR4: Step 4 — derive onset / offset / novelty / trace from raw touch vs prediction.
         this.updateTouchPerception();
 
+        const activeTouchCount = activeTouches ? activeTouches.size : 0;
+
         // PR4: Step 5 — accumulate onset/offset into touchProjection (decaying buffer).
         this.projectTouchToNetwork();
 
         // PR7: Apply conservative pattern-driven modulation to touchProjection / touchTrace.
         this.applyTouchPatternModulation();
+        this.applyDreamReplay(activeTouchCount > 0 ? 1 : 0);
 
         // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
         // This is the only path from touch into the dynamics; no other direct injection.
-        const TOUCH_PROJ_GAIN = 0.08;
-        let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0;
+        const TOUCH_PROJ_GAIN = 0.08 * (this.currentModeDynamics?.touchProjectionGain ?? 1.0);
+        let rawTouchSum = 0, onsetSum = 0, offsetSum = 0, noveltySum = 0, traceSum = 0;
         for (let i = 0; i < this.numNodes; i++) {
             this.currentBuffer[i] += this.touchProjection[i] * TOUCH_PROJ_GAIN;
             rawTouchSum  += this.rawTouch[i];
             onsetSum     += this.touchOnset[i];
             offsetSum    += this.touchOffset[i];
             noveltySum   += this.touchNovelty[i];
+            traceSum     += this.touchTrace[i];
         }
         const meanRawTouch   = rawTouchSum  / this.numNodes;
         const meanTouchOnset = onsetSum     / this.numNodes;
         const meanTouchOffset= offsetSum    / this.numNodes;
         const meanTouchNovelty = noveltySum / this.numNodes;
-        const activeTouchCount = activeTouches ? activeTouches.size : 0;
-
+        const meanTouchTrace = traceSum / this.numNodes;
         const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
         const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
         
@@ -1013,7 +1232,24 @@ export class AeternaNetwork {
         // how much reality differed from the local prediction made before propagation.
         this.updatePredictionError();
         const rewriteDebug = this.updateStructuredPriorRewrite();
-        
+        let recentRewriteSum = 0;
+        for (let i = 0; i < this.numNodes; i++) recentRewriteSum += this.recentRewriteMask[i];
+        const modeDebug = this.updateModeState({
+            activeTouchCount,
+            meanRawTouch,
+            meanTouchOnset,
+            meanTouchNovelty,
+            arousal,
+            meanPredictionError: this.computeMeanPredictionError(),
+            sigmaDisplay: this.sigmaDisplay,
+            tension: state.tensionLoad,
+            residueLevel,
+            traceLevel: meanTouchTrace,
+            priorBiasMean: rewriteDebug.priorBiasMean,
+            rewritePressureMean: rewriteDebug.pressureMean,
+            recentRewriteMean: recentRewriteSum / this.numNodes,
+        });
+
         this.phaseSpeed = 0.015 + 0.025 * freqRatio;
         for (let i = 0; i < this.numNodes; i++) { this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI*2); }
 
@@ -1071,6 +1307,16 @@ export class AeternaNetwork {
             priorBiasSummary: rewriteDebug.priorBiasSummary,
             globalRewriteLoad: rewriteDebug.globalLoad,
             lastRewriteEvent: rewriteDebug.lastEvent,
+            modeState: modeDebug.modeState,
+            modePhase: modeDebug.modePhase,
+            wakeDrive: modeDebug.wakeDrive,
+            sleepPressure: modeDebug.sleepPressure,
+            dreamPressure: modeDebug.dreamPressure,
+            modeConfidence: modeDebug.modeConfidence,
+            lastModeChangeTime: modeDebug.lastModeChangeTime,
+            lastModeChangeFrames: modeDebug.lastModeChangeFrames,
+            dreamReplayActive: modeDebug.dreamReplayActive,
+            dreamReplayStrength: modeDebug.dreamReplayStrength,
         };
     }
 }

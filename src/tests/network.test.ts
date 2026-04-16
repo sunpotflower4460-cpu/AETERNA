@@ -344,3 +344,111 @@ describe('AeternaNetwork — structured prior rewrite', () => {
     expect(Number.isFinite(net.priorBias[node])).toBe(true);
   });
 });
+
+describe('AeternaNetwork — sleep / wake / dream mode', () => {
+  let net: InstanceType<typeof AeternaNetwork>;
+
+  beforeEach(() => {
+    state.disk = stubDisk() as typeof state.disk;
+    net = new AeternaNetwork(SMALL);
+  });
+
+  it('initializes conservative mode state', () => {
+    expect(net.modeState).toBe('wake');
+    expect(net.wakeDrive).toBeGreaterThan(0);
+    expect(net.sleepPressure).toBeGreaterThanOrEqual(0);
+    expect(net.dreamPressure).toBeGreaterThanOrEqual(0);
+    expect(net.lastModeChangeTime).toBe(0);
+  });
+
+  it('raises sleep pressure during prolonged quiet', () => {
+    const before = net.sleepPressure;
+    for (let frame = 0; frame < 320; frame++) {
+      net.simTime = frame + 1;
+      net.updateModeState();
+    }
+
+    expect(net.sleepPressure).toBeGreaterThan(before);
+    expect(net.externalQuietFrames).toBeGreaterThan(200);
+  });
+
+  it('raises wake drive when touch and novelty are present', () => {
+    const before = net.wakeDrive;
+    for (let frame = 0; frame < 8; frame++) {
+      net.simTime = frame + 1;
+      net.updateModeState({
+        activeTouchCount: 1,
+        meanRawTouch: 0.28,
+        meanTouchOnset: 0.22,
+        meanTouchNovelty: 0.26,
+        arousal: 0.05,
+        meanPredictionError: 0.18,
+        sigmaDisplay: 1.07,
+        tension: 0.35,
+      });
+    }
+
+    expect(net.wakeDrive).toBeGreaterThan(before);
+  });
+
+  it('raises dream pressure from quiet residue and prior ember', () => {
+    const before = net.dreamPressure;
+    for (let frame = 0; frame < 180; frame++) {
+      net.simTime = frame + 1;
+      net.updateModeState({
+        residueLevel: 0.36,
+        traceLevel: 0.42,
+        priorBiasMean: 0.09,
+        rewritePressureMean: 0.05,
+        recentRewriteMean: 0.08,
+      });
+    }
+
+    expect(net.dreamPressure).toBeGreaterThan(before);
+  });
+
+  it('applies weak dream-like replay without direct external input', () => {
+    net.modeState = 'dream';
+    net.currentModeDynamics = { ...net.currentModeDynamics, replayGain: 1.0 };
+    net.dreamPressure = 0.72;
+    net.activityResidue[5] = 0.7;
+    net.touchTrace[5] = 1.8;
+    net.priorBias[5] = 0.2;
+    net.recentRewriteMask[5] = 20;
+    const residueBefore = net.activityResidue[5];
+    const projectionBefore = net.touchProjection[5];
+
+    net.applyDreamReplay(0);
+
+    expect(net.dreamReplayActive).toBe(true);
+    expect(net.activityResidue[5]).toBeGreaterThan(residueBefore);
+    expect(net.touchProjection[5]).toBeGreaterThan(projectionBefore);
+    expect(net.dreamReplayStrength).toBeGreaterThan(0);
+  });
+
+  it('respects cooldown and avoids immediate mode flapping', () => {
+    net.modeState = 'wake';
+    net.lastModeChangeTime = 100;
+    net.simTime = 110;
+
+    net.updateModeState({
+      residueLevel: 0.5,
+      traceLevel: 0.6,
+      priorBiasMean: 0.12,
+      rewritePressureMean: 0.08,
+      recentRewriteMean: 0.1,
+    });
+
+    expect(net.modeState).toBe('wake');
+  });
+
+  it('returns mode fields from updateDynamics()', () => {
+    const dyn = net.updateDynamics(-1);
+    expect(['sleep', 'wake', 'dream']).toContain(dyn.modeState);
+    expect(typeof dyn.wakeDrive).toBe('number');
+    expect(typeof dyn.sleepPressure).toBe('number');
+    expect(typeof dyn.dreamPressure).toBe('number');
+    expect(typeof dyn.lastModeChangeFrames).toBe('number');
+    expect(typeof dyn.dreamReplayActive).toBe('boolean');
+  });
+});

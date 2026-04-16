@@ -75,6 +75,16 @@ export function updateMetricsUI(dyn, engineState) {
     if(UI['val-rewrite-load']) UI['val-rewrite-load'].innerText = (dyn.globalRewriteLoad || 0).toFixed(3);
     if(UI['val-prior-bias']) UI['val-prior-bias'].innerText = priorSummary;
     if(UI['val-last-rewrite']) UI['val-last-rewrite'].innerText = lastRewrite;
+    if(UI['val-mode-state']) UI['val-mode-state'].innerText = dyn.modeState || 'wake';
+    if(UI['val-wake-drive']) UI['val-wake-drive'].innerText = (dyn.wakeDrive || 0).toFixed(3);
+    if(UI['val-sleep-pressure']) UI['val-sleep-pressure'].innerText = (dyn.sleepPressure || 0).toFixed(3);
+    if(UI['val-dream-pressure']) UI['val-dream-pressure'].innerText = (dyn.dreamPressure || 0).toFixed(3);
+    if(UI['val-last-mode-change']) UI['val-last-mode-change'].innerText = `${dyn.lastModeChangeFrames || 0} frames`;
+    if(UI['val-dream-replay']) {
+        UI['val-dream-replay'].innerText = dyn.dreamReplayActive
+            ? `active ${(dyn.dreamReplayStrength || 0).toFixed(3)}`
+            : 'inactive';
+    }
     
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);

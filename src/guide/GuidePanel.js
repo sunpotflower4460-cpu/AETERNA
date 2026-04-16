@@ -6,6 +6,7 @@ export class GuidePanel {
         this.network = network; this.history = []; this.lastEventTime = { whiteEngine: 0, heartbeat: 0, tension: 0, eye: 0, sigma: 0 };
         this.whiteFrameCount = 0; this.lastHeartbeatPulse = 0;
         this.lastRewriteEventId = 0;
+        this.lastModeState = null;
         this.historyEl = document.getElementById('guide-history'); this.latestEl = document.getElementById('guide-latest'); this.providerEl = document.getElementById('guide-provider');
         this.apiProvider = 'none'; this.apiKey = '';
     }
@@ -32,6 +33,14 @@ export class GuidePanel {
             this.addLog(
                 `rewrite=${rewriteEvent.rewriteType} node=${rewriteEvent.node} Δ=${rewriteEvent.deltaMagnitude.toFixed(4)} load=${(dynamicsInfo.globalRewriteLoad || 0).toFixed(2)}`,
                 'REWRITE',
+            );
+        }
+
+        if (dynamicsInfo.modeState && dynamicsInfo.modeState !== this.lastModeState) {
+            this.lastModeState = dynamicsInfo.modeState;
+            this.addLog(
+                `mode=${dynamicsInfo.modeState} wake=${(dynamicsInfo.wakeDrive || 0).toFixed(2)} sleep=${(dynamicsInfo.sleepPressure || 0).toFixed(2)} dream=${(dynamicsInfo.dreamPressure || 0).toFixed(2)} replay=${dynamicsInfo.dreamReplayActive ? 'on' : 'off'}`,
+                'MODE',
             );
         }
     }
@@ -78,9 +87,12 @@ export class GuidePanel {
             touchInfo = ` | pattern=${pat}${scStr ? ' [' + scStr + ']' : ''}${seeds.length ? ' seeds=' + seeds.join(',') : ''}`;
         }
 
+        const modeInfo = packet.mode_state
+            ? ` mode=${packet.mode_state} w=${(packet.wake_drive || 0).toFixed(2)} s=${(packet.sleep_pressure || 0).toFixed(2)} d=${(packet.dream_pressure || 0).toFixed(2)}`
+            : '';
         const text = utterance
-            ? `[BRIDGE] ${utterance.slice(0, 60)}${touchInfo}`
-            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}${touchInfo}`;
+            ? `[BRIDGE] ${utterance.slice(0, 60)}${modeInfo}${touchInfo}`
+            : `[BRIDGE] stance=${stance} intent=${intent} σ=${packet.sigma.toFixed(2)} eng=${packet.engine_state}${modeInfo}${touchInfo}`;
         this.addLog(text, 'SIGNAL');
     }
 }
