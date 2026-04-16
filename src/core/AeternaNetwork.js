@@ -106,108 +106,194 @@ const MODE_DYNAMICS = {
     },
 };
 
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * AETERNA — AeternaNetwork: state architecture overview
+ *
+ * State is grouped into 7 categories (see constructor for inline documentation):
+ *
+ *   [1] Network topology      — torus geometry and node identity (set once)
+ *   [2] Geometry / render     — Three.js vertex positions, normals, colours
+ *   [3] Core dynamic          — wave buffers, spike traces, directional weights
+ *   [4] Sensory / perceptual  — touch surface, onset/offset, sequence features
+ *   [5] Prediction / error    — local predictor, signed error, long-run history
+ *   [6] Plasticity / rewrite  — prior bias, pressure, channels, rewrite events
+ *   [7] Mode / ongoing-life   — baseline drift, residue, wake/sleep/dream drives
+ *   [+] Temporary buffers     — transient per-frame lists and derived caches
+ *
+ * ── Future GPU texture layout (candidate — NOT yet implemented) ──────────────
+ * Current source of truth is CPU state (Float32Array / Uint8Array).
+ * If the core loop were ported to WebGL compute / GLSL, the following per-node
+ * textures would be natural mapping targets:
+ *
+ *   Texture A  (RGBA float, per-node)  ← core dynamic snapshot
+ *     .r = currentBuffer   .g = prevBuffer
+ *     .b = spikeTrace      .a = activityResidue
+ *
+ *   Texture B  (RGBA float, per-node)  ← perceptual / prediction
+ *     .r = rawTouch        .g = touchProjection
+ *     .b = localPrediction .a = predictionError
+ *
+ *   Texture C  (RGBA float, per-node)  ← plasticity
+ *     .r = priorBias       .g = rewritePressure
+ *     .b = plasticityTrace .a = touchTrace
+ *
+ *   Texture D  (RGBA float, per-node)  ← directional weights
+ *     .r = w_up  .g = w_down  .b = w_left  .a = w_right
+ *
+ *   Node topology (nodeType, nodeSign, nodeLayer, isEyeNode) → uint lookup
+ *   texture, read-only by compute shaders.
+ *
+ * This layout is a planning artefact only; no GPU code exists yet.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
 export class AeternaNetwork {
     constructor(segments = 72) {
-        this.segments = segments; this.numNodes = segments * segments;
-        this.R = PHI; this.r = 1.0;
-        this.basePositions = new Float32Array(this.numNodes * 3);
-        this.vertexPositions = new Float32Array(this.numNodes * 3);
-        this.normals = new Float32Array(this.numNodes * 3);
-        this.colors = new Float32Array(this.numNodes * 3);
-        this.prevBuffer = new Float32Array(this.numNodes);
-        this.currentBuffer = new Float32Array(this.numNodes);
-        this.nextBuffer = new Float32Array(this.numNodes);
-        this.nodeType = new Uint8Array(this.numNodes);
-        this.nodeSign = new Float32Array(this.numNodes);
-        this.spikeTrace = new Float32Array(this.numNodes);
-        this.w_up = new Float32Array(this.numNodes).fill(1.0); this.w_down = new Float32Array(this.numNodes).fill(1.0);
-        this.w_left = new Float32Array(this.numNodes).fill(1.0); this.w_right = new Float32Array(this.numNodes).fill(1.0);
-        this.lastSpikeTime = new Float32Array(this.numNodes).fill(-9999);
-        this.simTime = 0; this.currGenFiring = 0; this.prevGenFiring = 0;
-        this.branchingRatioRaw = 1.0; this.sigmaDisplay = 1.0; 
-        this.TARGET_FIRING_RATE = 0.08; this.firingRateError = 0.0;
-        this.nodePhase = new Float32Array(this.numNodes); this.phaseSpeed = 0.02;
-        this.attractorLibrary = []; this.currentAttractorId = -1; this.currentAttractorSim = 0;
+
+        // ─── [1] Network topology ────────────────────────────────────────────────────
+        // Static properties that define the torus shape and node identity.
+        // Set once inside generate(); not updated per-frame.
+        this.segments = segments;
+        this.numNodes = segments * segments;
+        this.R = PHI;
+        this.r = 1.0;
+        this.nodeType  = new Uint8Array(this.numNodes);
+        this.nodeSign  = new Float32Array(this.numNodes);
+        this.nodeLayer = new Uint8Array(this.numNodes);
+        this.isEyeNode = new Uint8Array(this.numNodes);
+        this.octahedronHubs      = [];
+        this.attractorLibrary    = [];
+        this.currentAttractorId  = -1;
+        this.currentAttractorSim = 0;
+        this.heartbeatActive     = false;
+
+        // ─── [2] Geometry / render state ─────────────────────────────────────────────
+        // Written per-frame to drive the Three.js geometry.
+        // Source of truth for visual output only — do not read back into dynamics.
+        this.basePositions       = new Float32Array(this.numNodes * 3);
+        this.vertexPositions     = new Float32Array(this.numNodes * 3);
+        this.normals             = new Float32Array(this.numNodes * 3);
+        this.colors              = new Float32Array(this.numNodes * 3);
         this.largestClusterNodes = new Uint8Array(this.numNodes);
-        this.isEyeNode = new Uint8Array(this.numNodes); this.nodeLayer = new Uint8Array(this.numNodes);
-        this.predictionHistory = new Float32Array(this.numNodes);
-        this.AUTO_ERROR_THRESHOLD = 2.0; 
-        this.octahedronHubs = []; this.injectedNodes = []; this.heartbeatActive = false;
-        
-        this.cachedMaxClusterSize = 0; this.cachedPhiApprox = 0; this.cachedPhaseCoherence = 0;
 
-        // PR2: Baseline activity — quiet internal drift even without external input
-        this.baselineActivity = new Float32Array(this.numNodes);
-        // PR2: Activity residue — faint echo of recent firing
-        this.activityResidue = new Float32Array(this.numNodes);
+        // ─── [3] Core dynamic state ───────────────────────────────────────────────────
+        // The active wave field: membrane potentials, spike traces, directional
+        // connection weights, and per-node phase oscillators.
+        // This is the "now" of neural activity — the primitive heartbeat.
+        this.prevBuffer    = new Float32Array(this.numNodes);
+        this.currentBuffer = new Float32Array(this.numNodes);
+        this.nextBuffer    = new Float32Array(this.numNodes);
+        this.spikeTrace    = new Float32Array(this.numNodes);
+        this.lastSpikeTime = new Float32Array(this.numNodes).fill(-9999);
+        this.w_up    = new Float32Array(this.numNodes).fill(1.0);
+        this.w_down  = new Float32Array(this.numNodes).fill(1.0);
+        this.w_left  = new Float32Array(this.numNodes).fill(1.0);
+        this.w_right = new Float32Array(this.numNodes).fill(1.0);
+        this.nodePhase = new Float32Array(this.numNodes);
+        this.phaseSpeed = 0.02;
+        this.simTime = 0;
+        this.currGenFiring     = 0;
+        this.prevGenFiring     = 0;
+        this.branchingRatioRaw = 1.0;
+        this.sigmaDisplay      = 1.0;
+        this.TARGET_FIRING_RATE = 0.08;
+        this.firingRateError    = 0.0;
 
-        // PR3: Local prediction — each node's gentle forecast of its next local input
-        // based on a weighted neighborhood average.  Initialised to zero.
-        this.localPrediction = new Float32Array(this.numNodes);
-        // PR3: Prediction error — signed difference between actual state and local forecast.
-        this.predictionError = new Float32Array(this.numNodes);
-
-        // PR4: Touch as perceptual prediction error.
-        // rawTouch   — surface activation from current pointer contacts (Gaussian spread)
-        // touchOnset — max(rawTouch - localPrediction, 0): "unexpected contact"
-        // touchOffset— max(localPrediction - rawTouch, 0): "expected contact that vanished"
-        // touchNovelty — |rawTouch - localPrediction|: magnitude of perceptual mismatch
-        // touchTrace — low-pass filtered novelty; accumulates touch history
-        // touchProjection — routed onset/offset ready to be folded into dynamics
+        // ─── [4] Sensory / perceptual state ───────────────────────────────────────────
+        // What the organism senses right now: surface contact, onset/offset of touch,
+        // and the temporal features of how that contact unfolds across frames.
+        //   rawTouch        — direct surface activation from pointer contacts (Gaussian spread)
+        //   touchOnset      — max(rawTouch − localPrediction, 0): "unexpected contact arrived"
+        //   touchOffset     — max(localPrediction − rawTouch, 0): "expected contact vanished"
+        //   touchNovelty    — |rawTouch − localPrediction|: perceptual mismatch magnitude
+        //   touchTrace      — low-pass filtered novelty; touch history that persists briefly
+        //   touchProjection — onset/offset projected into the network dynamics
         this.rawTouch        = new Float32Array(this.numNodes);
         this.touchOnset      = new Float32Array(this.numNodes);
         this.touchOffset     = new Float32Array(this.numNodes);
         this.touchTrace      = new Float32Array(this.numNodes);
         this.touchNovelty    = new Float32Array(this.numNodes);
         this.touchProjection = new Float32Array(this.numNodes);
-
-        // PR7: Touch sequence state — temporal features of how touch unfolds.
-        // These accumulate across frames and decay on release.
-        this.touchDurationFrames  = 0;   // consecutive frames with active contact
-        this.touchGapFrames       = 0;   // frames since last contact ended
-        this.touchMoveDistance    = 0;   // cumulative centroid displacement (normalised)
-        this.touchVelocityEstimate = 0;  // EMA of per-frame centroid displacement
-        this.touchRepeatCount     = 0;   // count of short-gap re-contacts
-        this.lastTouchCentroid    = null; // [normX, normY] or null
-
-        // PR7: Continuous pattern scores (EMA-smoothed, 0..1).
-        // Hard classification is intentionally avoided.
+        // Temporal sequence features — accumulate across frames, decay on release
+        this.touchDurationFrames   = 0;   // consecutive frames with active contact
+        this.touchGapFrames        = 0;   // frames since last contact ended
+        this.touchMoveDistance     = 0;   // cumulative centroid displacement (normalised)
+        this.touchVelocityEstimate = 0;   // EMA of per-frame centroid displacement
+        this.touchRepeatCount      = 0;   // count of short-gap re-contacts
+        this.lastTouchCentroid     = null; // [normX, normY] or null
+        this.touchDirectionVector  = { dx: 0, dy: 0, strength: 0 };
+        // Continuous pattern scores (EMA-smoothed, 0..1) — no hard classification
         this.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+        // Path history for stroke trail rendering (normalised coords, max 40 entries)
+        this.strokePath = []; // [ {normX, normY}, … ]
 
-        // PR7: Path history for stroke trail rendering (normalised coords).
-        // Populated only while stroke tendency is active.
-        this.strokePath = []; // [ {normX, normY}, … ]  max 40 entries
+        // ─── [5] Prediction / error state ────────────────────────────────────────────
+        // How well the network anticipates its own next state, and where it was wrong.
+        //   localPrediction  — per-node gentle forecast from weighted neighbourhood average
+        //   predictionError  — signed residual: currentBuffer − localPrediction
+        //   predictionHistory — long-running EMA of absolute prediction error per node
+        this.localPrediction   = new Float32Array(this.numNodes);
+        this.predictionError   = new Float32Array(this.numNodes);
+        this.predictionHistory = new Float32Array(this.numNodes);
+        this.AUTO_ERROR_THRESHOLD = 2.0;
 
-        // PR8-A: Structured prior rewrite — bounded, semi-persistent flow biases.
-        this.priorBias = new Float32Array(this.numNodes);
-        this.rewritePressure = new Float32Array(this.numNodes);
-        this.plasticityTrace = new Float32Array(this.numNodes);
+        // ─── [6] Plasticity / rewrite state ──────────────────────────────────────────
+        // How the organism's reception of the world is slowly shaped by repeated contact.
+        //   priorBias        — accumulated per-node bias toward a direction of expectation
+        //   rewritePressure  — local readiness to accept a structural change
+        //   plasticityTrace  — accumulated local trigger potential before a rewrite fires
+        //   recentRewriteMask — cooldown countdown per node (prevents rewrite cascade)
+        //   priorChannels    — per-type breakdown of what touch shaped the prior bias
+        this.priorBias         = new Float32Array(this.numNodes);
+        this.rewritePressure   = new Float32Array(this.numNodes);
+        this.plasticityTrace   = new Float32Array(this.numNodes);
         this.recentRewriteMask = new Uint8Array(this.numNodes);
         this.globalRewriteLoad = 0;
         this.priorChannels = {
-            novelty: new Float32Array(this.numNodes),
-            recurrence: new Float32Array(this.numNodes),
-            persistence: new Float32Array(this.numNodes),
+            novelty:        new Float32Array(this.numNodes),
+            recurrence:     new Float32Array(this.numNodes),
+            persistence:    new Float32Array(this.numNodes),
             directionality: new Float32Array(this.numNodes),
         };
-        this.rewriteEvents = [];
-        this.lastRewriteEvent = null;
-        this.lastRewriteEventId = 0;
+        this.rewriteEvents             = [];
+        this.lastRewriteEvent          = null;
+        this.lastRewriteEventId        = 0;
         this.rewriteProtoMeaningBiases = { novelty: 0, recurrence: 0, persistence: 0, directionality: 0 };
-        this.currentRewriteTendency = 'none';
-        this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
-        this.modeState = 'wake';
-        this.modePhase = 0;
-        this.wakeDrive = 0.4;
-        this.sleepPressure = 0.24;
-        this.dreamPressure = 0.18;
-        this.modeConfidence = 0;
+        this.currentRewriteTendency    = 'none';
+
+        // ─── [7] Mode / ongoing-life state ───────────────────────────────────────────
+        // The background life-rhythm of the organism: wake, sleep, dream.
+        //   baselineActivity — quiet sinusoidal drift even without external input
+        //   activityResidue  — faint echo of recent firing (the ember after the fire)
+        //   wakeDrive / sleepPressure / dreamPressure — continuous mode drives (EMA-smoothed)
+        //   modeState        — current dominant mode: 'wake' | 'sleep' | 'dream'
+        this.baselineActivity   = new Float32Array(this.numNodes);
+        this.activityResidue    = new Float32Array(this.numNodes);
+        this.wakeDrive          = 0.4;
+        this.sleepPressure      = 0.24;
+        this.dreamPressure      = 0.18;
+        this.modeState          = 'wake';
+        this.modePhase          = 0;
+        this.modeConfidence     = 0;
         this.lastModeChangeTime = 0;
-        this.modeTrace = [{ mode: this.modeState, time: 0 }];
-        this.externalQuietFrames = 0;
-        this.dreamReplayActive = false;
-        this.dreamReplayStrength = 0;
-        this.currentModeDynamics = MODE_DYNAMICS.wake;
+        this.modeTrace          = [{ mode: this.modeState, time: 0 }];
+        this.externalQuietFrames  = 0;
+        this.dreamReplayActive    = false;
+        this.dreamReplayStrength  = 0;
+        this.currentModeDynamics  = MODE_DYNAMICS.wake;
+
+        // ─── [+] Temporary / work buffers ────────────────────────────────────────────
+        // Transient per-frame data and derived caches.
+        // Not persistent state — reset or recalculated each frame.
+        //   injectedNodes        — transient event list: nodes modified this frame by
+        //                          prediction-error injection (cleared at start of each step)
+        //   cachedMaxClusterSize — derived cache: largest active cluster (refreshed every 4 frames)
+        //   cachedPhiApprox      — derived cache: integration proxy  (refreshed every 4 frames)
+        //   cachedPhaseCoherence — derived cache: phase coherence    (refreshed every 4 frames)
+        this.injectedNodes        = [];
+        this.cachedMaxClusterSize = 0;
+        this.cachedPhiApprox      = 0;
+        this.cachedPhaseCoherence = 0;
 
         this.generate();
     }
