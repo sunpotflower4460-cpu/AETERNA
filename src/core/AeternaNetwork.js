@@ -300,7 +300,8 @@ export class AeternaNetwork {
     }
 
     getActionEnergyGate() {
-        return this.clampFinite(0.25 + this.energy * 0.75, 0.25, 1.0, 1.0);
+        const energy = Number.isFinite(this.energy) ? this.energy : 1.0;
+        return this.clampFinite(0.25 + energy * 0.75, 0.25, 1.0, 1.0);
     }
 
     normalizeDirectionalWeights(index) {
@@ -1159,7 +1160,7 @@ export class AeternaNetwork {
 
         let targetPulse = 0;
         if (nextState === 'orient') {
-            targetPulse = 0.03 + this.orientingDrive * 0.09 + noveltyPressure * 0.06 + this.touchDirectionVector.strength * 0.04;
+            targetPulse = 0.03 + this.orientingDrive * 0.09 + noveltyPressure * 0.06 + (this.touchDirectionVector?.strength || 0) * 0.04;
         } else if (nextState === 'withdraw') {
             targetPulse = 0.04 + this.overload * 0.14 + (1 - this.energy) * 0.06;
         } else if (nextState === 'settle') {
