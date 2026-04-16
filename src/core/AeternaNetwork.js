@@ -36,6 +36,17 @@ export class AeternaNetwork {
         // PR2: Activity residue — faint echo of recent firing
         this.activityResidue = new Float32Array(this.numNodes);
 
+        // PR3: Local prediction — each node's gentle forecast of its next local input
+        // based on a weighted neighborhood average.  Initialised to zero.
+        this.localPrediction = new Float32Array(this.numNodes);
+        // PR3: Prediction error — signed difference between actual state and local forecast.
+        // Kept as a state variable for PR4 touch-driven prediction error integration.
+        // NOTE: predictionHistory (above) tracks a smoothed frame-diff history used by
+        //       autoPredictAndError(). localPrediction / predictionError are a cleaner,
+        //       separate mechanism; predictionHistory will be reconciled in a later PR
+        //       once touch-driven prediction error is introduced (PR4+).
+        this.predictionError = new Float32Array(this.numNodes);
+
         this.generate();
     }
 
@@ -234,6 +245,53 @@ export class AeternaNetwork {
         }
     }
 
+    // PR3: Slowly track the weighted neighbourhood average as a local prediction.
+    // alpha is deliberately conservative so the predictor does not chase fast transients.
+    updateLocalPrediction() {
+        const S = this.segments;
+        const alpha = 0.05;
+        const oneMinusAlpha = 1.0 - alpha;
+        for (let i = 0; i < S; i++) {
+            for (let j = 0; j < S; j++) {
+                const idx   = i * S + j;
+                const up    = ((i - 1 + S) % S) * S + j;
+                const down  = ((i + 1)     % S) * S + j;
+                const left  = i * S + ((j - 1 + S) % S);
+                const right = i * S + ((j + 1)     % S);
+
+                const weightSum =
+                    this.w_up[idx] + this.w_down[idx] +
+                    this.w_left[idx] + this.w_right[idx];
+
+                const neighborAvg = (
+                    this.currentBuffer[up]    * this.w_up[idx]   +
+                    this.currentBuffer[down]  * this.w_down[idx] +
+                    this.currentBuffer[left]  * this.w_left[idx] +
+                    this.currentBuffer[right] * this.w_right[idx]
+                ) / Math.max(weightSum, 1e-6);
+
+                this.localPrediction[idx] = this.localPrediction[idx] * oneMinusAlpha + neighborAvg * alpha;
+            }
+        }
+    }
+
+    // PR3: Signed residual between actual state and local prediction.
+    // Simple and intentionally unfiltered — the raw perceptual gap.
+    updatePredictionError() {
+        for (let i = 0; i < this.numNodes; i++) {
+            this.predictionError[i] = this.currentBuffer[i] - this.localPrediction[i];
+        }
+    }
+
+    // PR3: Mean absolute prediction error across all nodes (for metrics / UI).
+    computeMeanLocalPredError() {
+        let sum = 0;
+        for (let i = 0; i < this.numNodes; i++) {
+            sum += Math.abs(this.predictionError[i]);
+        }
+        return sum / this.numNodes;
+    }
+
     updateDynamics(diskNodeIdx) {
         this.injectedNodes = []; this.simTime++;
 
@@ -252,6 +310,10 @@ export class AeternaNetwork {
         }
         const baselineLevel = baselineSum / this.numNodes;
         const residueLevel  = residueSum  / this.numNodes;
+
+        // PR3: After baseline/residue are folded into currentBuffer, update the
+        // local predictor so it sees the freshest quiet-state values.
+        this.updateLocalPrediction();
 
         const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
         const waveSpeed = 0.1 + 0.15 * freqRatio; const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
@@ -307,6 +369,10 @@ export class AeternaNetwork {
         }
         
         let temp = this.prevBuffer; this.prevBuffer = this.currentBuffer; this.currentBuffer = this.nextBuffer; this.nextBuffer = temp;
+
+        // PR3: Now that currentBuffer holds the freshly propagated state, compute
+        // how much reality differed from the local prediction made before propagation.
+        this.updatePredictionError();
         
         this.phaseSpeed = 0.015 + 0.025 * freqRatio;
         for (let i = 0; i < this.numNodes; i++) { this.nodePhase[i] = (this.nodePhase[i] + this.phaseSpeed) % (Math.PI*2); }
@@ -340,6 +406,7 @@ export class AeternaNetwork {
             phiApprox: this.cachedPhiApprox,
             phaseCoherence: this.cachedPhaseCoherence,
             meanPredictionError: this.computeMeanPredictionError(),
+            meanLocalPredError: this.computeMeanLocalPredError(),
             arousal: arousal,
             sigmaDisplay: this.sigmaDisplay,
             firingRateError: this.firingRateError,
