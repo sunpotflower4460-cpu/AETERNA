@@ -345,7 +345,7 @@ export class AeternaNetwork {
 
         const touchState = activeTouches || new Map();
 
-        // update order: baseline/residue → perception → prediction/rewrite → organism/action → core → derived → render
+        // update order: baseline/residue → perception → core propagation → prediction/rewrite → organism/action/mode → derived metrics → render buffers
         const ongoingState = this.updateBaselineAndResidue();
         const perceptionState = this.updatePerceptionState(touchState);
         const coreState = this.updateDynamicsCore();
