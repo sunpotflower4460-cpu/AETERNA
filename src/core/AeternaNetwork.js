@@ -244,7 +244,7 @@ export class AeternaNetwork {
         this.cachedPhaseCoherence = 0; // derived cache
     }
 
-    /*
+    /**
      * PR10-C future GPU layout candidate.
      * CPU arrays above remain the current source of truth; this is only a layout note for later texture packing.
      *
