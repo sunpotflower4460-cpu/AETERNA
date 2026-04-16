@@ -49,17 +49,5 @@ export function runModeControllerStage(
     rewritePressureMean: rewritePacket.rewritePressureMean,
     recentRewriteMean: network.cachedRecentRewriteMean ?? 0,
   });
-  return {
-    ...modeDebug,
-    modeState: modeDebug.modeState,
-    wakeDrive: modeDebug.wakeDrive,
-    sleepPressure: modeDebug.sleepPressure,
-    dreamPressure: modeDebug.dreamPressure,
-    modePhase: modeDebug.modePhase,
-    modeConfidence: modeDebug.modeConfidence,
-    lastModeChangeTime: modeDebug.lastModeChangeTime,
-    lastModeChangeFrames: modeDebug.lastModeChangeFrames,
-    dreamReplayActive: modeDebug.dreamReplayActive,
-    dreamReplayStrength: modeDebug.dreamReplayStrength,
-  };
+  return modeDebug;
 }

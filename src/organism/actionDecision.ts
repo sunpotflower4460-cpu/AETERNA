@@ -8,10 +8,8 @@ export function runActionDecisionStage(
   network: any,
   {
     touchPacket,
-    organismPacket: _organismPacket,
   }: {
     touchPacket: TouchPerceptPacket;
-    organismPacket: OrganismPacket;
   },
 ): ActionPacket {
   const actionDebug = updateActionState(network, {
