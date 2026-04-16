@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { state } from './state.js';
 import { injectMassiveError } from '../perception/pointerHandlers.js';
 import { updateMetricsUI } from '../ui/updateMetricsUI.js';

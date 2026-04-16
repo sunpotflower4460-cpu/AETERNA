@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   TOUCH_HOLD_MIN_FRAMES,
   TOUCH_LOW_VELOCITY,

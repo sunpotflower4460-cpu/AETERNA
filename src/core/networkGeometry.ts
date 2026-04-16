@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function generateNetworkGeometry(network: any) {
   let index = 0;
   const S = network.segments;

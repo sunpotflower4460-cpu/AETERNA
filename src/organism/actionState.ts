@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ACTION_PULSE_LIMIT, ACTION_PULSE_SMOOTHING } from '../core/aeternaTuning.ts';
 import { applyDirectionalRewrite } from './rewrite.ts';
 

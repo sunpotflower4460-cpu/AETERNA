@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function mapTouchToSurfaceIndex(network: any, xNorm: number, yNorm: number) {
   const S = network.segments;
   const i = Math.floor(xNorm * S) % S;

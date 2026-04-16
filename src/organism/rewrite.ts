@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { state } from './state.js';
 import { normalizeDirectionalWeights } from '../core/networkWeights.ts';
 import {

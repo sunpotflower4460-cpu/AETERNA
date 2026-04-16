@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   MODE_AROUSAL_NORM,
   MODE_PREDICTION_NORM,

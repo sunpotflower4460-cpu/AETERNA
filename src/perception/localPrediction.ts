@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function updateLocalPrediction(network: any) {
   const S = network.segments;
   const baseAlpha = 0.05;

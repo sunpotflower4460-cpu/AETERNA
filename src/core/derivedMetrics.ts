@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function computeIntegrationProxy(network: any) {
   const N = network.numNodes;
   let tAll = 0;

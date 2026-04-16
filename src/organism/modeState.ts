@@ -1,4 +1,4 @@
-import { state } from './state.js';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   MODE_DRIVE_SMOOTHING,
   MODE_DREAM_REPLAY_GATE,

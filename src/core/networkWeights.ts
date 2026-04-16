@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { REWRITE_WEIGHT_MAX, REWRITE_WEIGHT_MIN } from './aeternaTuning.ts';
 
 export function normalizeDirectionalWeights(network: any, index: number) {
