@@ -85,7 +85,20 @@ export function updateMetricsUI(dyn, engineState) {
             ? `active ${(dyn.dreamReplayStrength || 0).toFixed(3)}`
             : 'inactive';
     }
-    
+
+    // PR11: Organism state display
+    if(UI['val-energy']) UI['val-energy'].innerText = (dyn.energy || 0).toFixed(3);
+    if(UI['val-stability']) UI['val-stability'].innerText = (dyn.stability || 0).toFixed(3);
+    if(UI['val-overload']) UI['val-overload'].innerText = (dyn.overload || 0).toFixed(3);
+    if(UI['val-rest-drive']) UI['val-rest-drive'].innerText = (dyn.restDrive || 0).toFixed(3);
+    if(UI['val-orienting-drive']) UI['val-orienting-drive'].innerText = (dyn.orientingDrive || 0).toFixed(3);
+    if(UI['val-comfort-bias']) UI['val-comfort-bias'].innerText = (dyn.comfortBias || 0).toFixed(3);
+
+    // PR11: Action state display
+    if(UI['val-action-state']) UI['val-action-state'].innerText = dyn.actionState || 'idle';
+    if(UI['val-action-pulse']) UI['val-action-pulse'].innerText = (dyn.actionPulseLevel || 0).toFixed(3);
+    if(UI['val-action-age']) UI['val-action-age'].innerText = `${dyn.actionAge || 0} frames`;
+
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);
     updateUIRow(UI['row-pre-c'], UI['val-pre-c'], pre.C?'✓':'–', pre.C); updateUIRow(UI['row-pre-d'], UI['val-pre-d'], pre.D?'✓':'–', pre.D); updateUIRow(UI['row-pre-e'], UI['val-pre-e'], preE?'✓':'–', preE);

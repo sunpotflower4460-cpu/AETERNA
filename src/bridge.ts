@@ -39,6 +39,18 @@ export interface TorusStatePacket {
   sleep_pressure?: number;
   /** PR9-A: Dream pressure */
   dream_pressure?: number;
+  /** PR11: Organism state - activity capacity */
+  energy?: number;
+  /** PR11: Organism state - internal coherence */
+  stability?: number;
+  /** PR11: Organism state - excessive input burden */
+  overload?: number;
+  /** PR11: Organism drives - rest pressure */
+  rest_drive?: number;
+  /** PR11: Organism drives - orienting pressure */
+  orienting_drive?: number;
+  /** PR11: Action state - current primitive action tendency */
+  action_state?: 'idle' | 'orient' | 'withdraw' | 'settle';
 }
 
 /** Placeholder for future Signal→Torus feedback (next phase). */
@@ -84,6 +96,12 @@ export function buildTorusStatePacket({
     wakeDrive?: number;
     sleepPressure?: number;
     dreamPressure?: number;
+    energy?: number;
+    stability?: number;
+    overload?: number;
+    restDrive?: number;
+    orientingDrive?: number;
+    actionState?: 'idle' | 'orient' | 'withdraw' | 'settle';
   };
   engineState: 'WHITE' | 'BLACK' | 'NEUTRAL';
   tension: number;
@@ -116,6 +134,12 @@ export function buildTorusStatePacket({
     wake_drive: dyn.wakeDrive,
     sleep_pressure: dyn.sleepPressure,
     dream_pressure: dyn.dreamPressure,
+    energy: dyn.energy,
+    stability: dyn.stability,
+    overload: dyn.overload,
+    rest_drive: dyn.restDrive,
+    orienting_drive: dyn.orientingDrive,
+    action_state: dyn.actionState,
   };
 }
 

@@ -234,6 +234,21 @@ export class AeternaNetwork {
         this.dreamReplayActive = false;
         this.dreamReplayStrength = 0;
         this.currentModeDynamics = MODE_DYNAMICS.wake;
+
+        // PR11: Organism-like internal state — minimal survival variables
+        this.energy = 0.7;              // Activity capacity, 0..1, starts moderate
+        this.stability = 0.6;           // Internal coherence, 0..1, starts moderate
+        this.overload = 0.0;            // Excessive input burden, 0..1+, starts at rest
+        this.restDrive = 0.2;           // Pressure towards rest, 0..1
+        this.orientingDrive = 0.3;      // Pressure towards external orientation, 0..1
+        this.comfortBias = 0.5;         // General comfort level, 0..1
+        this.organismStateHistory = []; // Small log of recent organism state changes
+
+        // PR11: Action state — primitive action tendencies
+        this.actionState = 'idle';      // 'idle' | 'orient' | 'withdraw' | 'settle'
+        this.actionPulseLevel = 0.0;    // Strength of current action, 0..1
+        this.actionDirection = null;    // [dx, dy] or null — direction for orient action
+        this.lastActionChangeTime = 0;  // simTime when actionState last changed
     }
 
     // PR10-C: temporary/work buffers — transient event lists and low-frequency derived caches.
@@ -596,6 +611,12 @@ export class AeternaNetwork {
         const TRACE_DECAY  = 0.96;
         const TRACE_INTAKE = 0.04;
         const touchSensitivity = this.currentModeDynamics?.touchSensitivity ?? 1.0;
+
+        // PR11: Organism state modulation — adjust touch sensitivity based on overload and energy
+        const overloadDamping = this.clampFinite(1.0 - this.overload * 0.15, 0.7, 1.0, 1.0);
+        const energyModulation = this.clampFinite(0.85 + this.energy * 0.15, 0.85, 1.0, 1.0);
+        const organismTouchSensitivity = touchSensitivity * overloadDamping * energyModulation;
+
         for (let i = 0; i < this.numNodes; i++) {
             const err = this.rawTouch[i] - this.localPrediction[i];
             const noveltyBias = this.priorChannels.novelty[i];
@@ -613,9 +634,9 @@ export class AeternaNetwork {
                 0.08,
                 TRACE_INTAKE,
             );
-            this.touchOnset[i]   = err  > 0 ? err * touchSensitivity : 0;
+            this.touchOnset[i]   = err  > 0 ? err * organismTouchSensitivity : 0;
             this.touchOffset[i]  = err  < 0 ? -err : 0;
-            this.touchNovelty[i] = Math.abs(err) * (0.7 + touchSensitivity * 0.3);
+            this.touchNovelty[i] = Math.abs(err) * (0.7 + organismTouchSensitivity * 0.3);
             this.touchTrace[i]   = this.touchTrace[i] * traceDecay
                                  + this.touchNovelty[i] * traceIntake;
             this.touchTrace[i] = this.clampFinite(this.touchTrace[i], 0, 4.0, 0);
@@ -879,6 +900,221 @@ export class AeternaNetwork {
         if (this.modeTrace.length > MODE_TRACE_HISTORY_LIMIT) this.modeTrace.pop();
     }
 
+    // PR11: Update organism-like internal state — minimal survival loop
+    // Called every frame to adjust energy, stability, overload, drives based on current conditions
+    updateOrganismState({
+        activeTouchCount = 0,
+        meanTouchNovelty = 0,
+        meanRawTouch = 0,
+        arousal = 0,
+        meanPredictionError = 0,
+        touchRepeatCount = 0,
+        quietFrames = 0,
+    } = {}) {
+        // Energy: activity capacity
+        // - Decreases with high activity, high overload, high arousal
+        // - Recovers slowly during quiet periods
+        const energyDrain = arousal * 0.0008 + this.overload * 0.0012 + meanRawTouch * 0.0004;
+        const energyRecovery = (quietFrames > 30) ? 0.0006 : 0.0002;
+        this.energy += energyRecovery - energyDrain;
+        this.energy = this.clampFinite(this.energy, 0.1, 1.0, 0.7);
+
+        // Overload: excessive input burden
+        // - Increases with high novelty, rapid repeat contacts, high prediction error
+        // - Decays naturally over time
+        const overloadGain = meanTouchNovelty * 0.015 +
+                            (touchRepeatCount > 3 ? 0.008 : 0) +
+                            meanPredictionError * 0.006;
+        this.overload = this.overload * 0.94 + overloadGain;
+        this.overload = this.clampFinite(this.overload, 0, 1.2, 0);
+
+        // Stability: internal coherence
+        // - Decreases with overload, high prediction error, excessive activity
+        // - Increases slowly during calm, moderate activity with low novelty
+        const stabilityLoss = this.overload * 0.003 + meanPredictionError * 0.002;
+        const stabilityGain = (activeTouchCount === 0 && quietFrames > 60) ? 0.004 :
+                              (activeTouchCount === 1 && meanTouchNovelty < 0.1) ? 0.002 : 0;
+        this.stability += stabilityGain - stabilityLoss;
+        this.stability = this.clampFinite(this.stability, 0.2, 1.0, 0.6);
+
+        // Rest drive: pressure towards rest
+        // - Increases when energy is low or overload is high
+        // - Decreases during quiet periods as recovery happens
+        const restTarget = this.clampFinite(
+            0.1 + (1.0 - this.energy) * 0.6 + this.overload * 0.4,
+            0, 1, 0.2
+        );
+        this.restDrive = this.restDrive * 0.92 + restTarget * 0.08;
+        this.restDrive = this.clampFinite(this.restDrive, 0, 1, 0.2);
+
+        // Orienting drive: pressure towards external engagement
+        // - Increases with moderate novelty and active touch
+        // - Decreases during silence or when overloaded
+        const orientingTarget = this.clampFinite(
+            0.05 + meanTouchNovelty * 0.8 + (activeTouchCount > 0 ? 0.3 : 0) - this.overload * 0.5,
+            0, 1, 0.3
+        );
+        this.orientingDrive = this.orientingDrive * 0.88 + orientingTarget * 0.12;
+        this.orientingDrive = this.clampFinite(this.orientingDrive, 0, 1, 0.3);
+
+        // Comfort bias: general well-being
+        // - High when stability is high and overload is low
+        // - Low when stressed
+        this.comfortBias = this.clampFinite(
+            this.stability * 0.6 + (1.0 - this.overload) * 0.3 + this.energy * 0.1,
+            0, 1, 0.5
+        );
+
+        // Log state changes periodically (every 120 frames ≈ 2 seconds)
+        if (this.simTime % 120 === 0) {
+            this.organismStateHistory.unshift({
+                time: this.simTime,
+                energy: this.energy,
+                stability: this.stability,
+                overload: this.overload,
+                restDrive: this.restDrive,
+                orientingDrive: this.orientingDrive,
+            });
+            if (this.organismStateHistory.length > 10) this.organismStateHistory.pop();
+        }
+
+        return {
+            energy: this.energy,
+            stability: this.stability,
+            overload: this.overload,
+            restDrive: this.restDrive,
+            orientingDrive: this.orientingDrive,
+            comfortBias: this.comfortBias,
+        };
+    }
+
+    // PR11: Update action state — primitive action tendencies based on organism state
+    // Returns the current action state and updated parameters
+    updateActionState({
+        meanTouchNovelty = 0,
+        activeTouchCount = 0,
+        quietFrames = 0,
+    } = {}) {
+        const previousState = this.actionState;
+
+        // Decide next action state based on organism condition and environment
+        let nextState = 'idle';
+        let pulseLevel = 0.0;
+        let actionDir = null;
+
+        // ORIENT: moderate novelty + high orienting drive + not overloaded
+        if (meanTouchNovelty > 0.08 && meanTouchNovelty < 0.4 &&
+            this.orientingDrive > 0.5 && this.overload < 0.6) {
+            nextState = 'orient';
+            pulseLevel = this.clampFinite(this.orientingDrive * 0.6 + meanTouchNovelty * 0.4, 0, 1, 0);
+            // Use touch direction if available
+            if (this.touchDirectionVector && this.touchDirectionVector.strength > 0.1) {
+                actionDir = [this.touchDirectionVector.dx, this.touchDirectionVector.dy];
+            }
+        }
+        // WITHDRAW: high overload
+        else if (this.overload > 0.7) {
+            nextState = 'withdraw';
+            pulseLevel = this.clampFinite(this.overload * 0.8, 0, 1, 0);
+        }
+        // SETTLE: low stability after stress, or high rest drive in quiet
+        else if ((this.stability < 0.4 && quietFrames > 30) ||
+                 (this.restDrive > 0.6 && quietFrames > 60 && activeTouchCount === 0)) {
+            nextState = 'settle';
+            pulseLevel = this.clampFinite((1.0 - this.stability) * 0.5 + this.restDrive * 0.3, 0, 1, 0);
+        }
+        // IDLE: default state
+        else {
+            nextState = 'idle';
+            pulseLevel = 0.0;
+        }
+
+        // Update state if changed
+        if (nextState !== previousState) {
+            this.actionState = nextState;
+            this.lastActionChangeTime = this.simTime;
+        }
+
+        this.actionPulseLevel = pulseLevel;
+        this.actionDirection = actionDir;
+
+        return {
+            actionState: this.actionState,
+            actionPulseLevel: this.actionPulseLevel,
+            actionDirection: this.actionDirection,
+            actionAge: this.simTime - this.lastActionChangeTime,
+        };
+    }
+
+    // PR11: Apply action feedback to torus dynamics — micromodulation, not large disturbances
+    // Actions weakly modulate already-computed touchProjection and other fields
+    applyActionToDynamics() {
+        const pulse = this.actionPulseLevel;
+        if (pulse < 0.01) return; // Skip if action is negligible
+
+        const S = this.segments;
+
+        if (this.actionState === 'orient' && this.actionDirection) {
+            // ORIENT: slightly enhance touchProjection and directional weights towards action direction
+            const [dx, dy] = this.actionDirection;
+            const orientGain = pulse * 0.03; // Very weak gain
+
+            for (let i = 0; i < this.numNodes; i++) {
+                // Slightly boost touchProjection where touch is present
+                if (this.rawTouch[i] > 0.01) {
+                    this.touchProjection[i] += this.rawTouch[i] * orientGain;
+                    this.touchProjection[i] = this.clampFinite(this.touchProjection[i], -4.0, 4.0, 0);
+                }
+
+                // Subtly adjust directional weights toward action direction (very conservative)
+                const ii = Math.floor(i / S);
+                const jj = i % S;
+                const idx = ii * S + jj;
+
+                if (Math.abs(dx) > 0.02) {
+                    const dirDelta = orientGain * 0.08;
+                    if (dx > 0) {
+                        this.w_right[idx] += dirDelta;
+                        this.w_left[idx] -= dirDelta * 0.3;
+                    } else {
+                        this.w_left[idx] += dirDelta;
+                        this.w_right[idx] -= dirDelta * 0.3;
+                    }
+                }
+                if (Math.abs(dy) > 0.02) {
+                    const dirDelta = orientGain * 0.08;
+                    if (dy > 0) {
+                        this.w_down[idx] += dirDelta;
+                        this.w_up[idx] -= dirDelta * 0.3;
+                    } else {
+                        this.w_up[idx] += dirDelta;
+                        this.w_down[idx] -= dirDelta * 0.3;
+                    }
+                }
+                this.normalizeDirectionalWeights(idx);
+            }
+        } else if (this.actionState === 'withdraw') {
+            // WITHDRAW: reduce touch sensitivity and projection, slightly contract activity
+            const withdrawFactor = pulse * 0.06;
+            for (let i = 0; i < this.numNodes; i++) {
+                // Dampen touchProjection
+                this.touchProjection[i] *= (1.0 - withdrawFactor);
+                // Slightly reduce touch onset sensitivity via touchOnset damping
+                this.touchOnset[i] *= (1.0 - withdrawFactor * 0.5);
+            }
+        } else if (this.actionState === 'settle') {
+            // SETTLE: gently reduce residue and overload, stabilize predictions
+            const settleFactor = pulse * 0.04;
+            for (let i = 0; i < this.numNodes; i++) {
+                // Smoothly decay residue to aid recovery
+                this.activityResidue[i] *= (1.0 - settleFactor * 0.3);
+                // Slightly reduce rewrite pressure to calm plasticity
+                this.rewritePressure[i] *= (1.0 - settleFactor * 0.2);
+            }
+        }
+        // IDLE does nothing
+    }
+
     updateModeState({
         activeTouchCount = 0,
         meanRawTouch = 0,
@@ -932,19 +1168,22 @@ export class AeternaNetwork {
         );
 
         const wakeTarget = this.clampFinite(
-            0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08,
+            0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08
+            + this.orientingDrive * 0.08,  // PR11: organism state influence — orienting drive slightly boosts wake
             0,
             1,
             0,
         );
         const sleepTarget = this.clampFinite(
-            0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18,
+            0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18
+            + this.restDrive * 0.12 - this.energy * 0.06,  // PR11: rest drive and low energy boost sleep
             0,
             1,
             0,
         );
         const dreamTarget = this.clampFinite(
-            0.06 + quietTime * 0.24 + quietness * 0.12 + ember * 0.44 + rewriteNorm * 0.08 - externalLevel * 0.22,
+            0.06 + quietTime * 0.24 + quietness * 0.12 + ember * 0.44 + rewriteNorm * 0.08 - externalLevel * 0.22
+            + (this.stability > 0.5 ? ember * 0.08 : 0),  // PR11: stable organism allows richer dreams
             0,
             1,
             0,
@@ -1048,6 +1287,11 @@ export class AeternaNetwork {
         if (patternScore < REWRITE_TOUCH_GATE || seedBias < REWRITE_SEED_GATE || tension < REWRITE_TENSION_GATE) return null;
         if (type === 'directionality' && this.touchDirectionVector.strength < REWRITE_DIRECTION_MIN_STRENGTH) return null;
 
+        // PR11: Organism state modulation — suppress rewrite when overloaded, enhance when stable
+        const overloadSuppression = this.clampFinite(1.0 - this.overload * 0.2, 0.6, 1.0, 1.0);
+        const stabilityBoost = this.clampFinite(0.9 + this.stability * 0.1, 0.9, 1.0, 1.0);
+        const organismRewriteGain = overloadSuppression * stabilityBoost;
+
         let best = null;
         const patternFactor = REWRITE_PATTERN_BASE + patternScore * REWRITE_PATTERN_SCALE;
         const seedFactor = REWRITE_SEED_BASE + seedBias * REWRITE_SEED_SCALE;
@@ -1059,7 +1303,8 @@ export class AeternaNetwork {
             const localErrorNorm = Math.min(Math.abs(this.predictionError[i]), 1.5) / 1.5;
             if (localErrorNorm < 0.06) continue;
 
-            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * (this.currentModeDynamics?.rewriteGain ?? 1.0);
+            const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor *
+                             (this.currentModeDynamics?.rewriteGain ?? 1.0) * organismRewriteGain;
             if (!Number.isFinite(composite) || composite <= 0) continue;
 
             this.rewritePressure[i] = this.clampFinite(
@@ -1329,6 +1574,28 @@ export class AeternaNetwork {
     // PR10-C: prediction/error, rewrite, and mode step after propagation has settled.
     updatePostPropagationState(perceptionState, ongoingState, coreState) {
         this.updatePredictionError();
+
+        // PR11: Update organism state before mode and action decisions
+        const organismState = this.updateOrganismState({
+            activeTouchCount: perceptionState.activeTouchCount,
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            meanRawTouch: perceptionState.meanRawTouch,
+            arousal: coreState.arousal,
+            meanPredictionError: this.computeMeanPredictionError(),
+            touchRepeatCount: this.touchRepeatCount,
+            quietFrames: this.externalQuietFrames,
+        });
+
+        // PR11: Update action state based on organism condition
+        const actionStateInfo = this.updateActionState({
+            meanTouchNovelty: perceptionState.meanTouchNovelty,
+            activeTouchCount: perceptionState.activeTouchCount,
+            quietFrames: this.externalQuietFrames,
+        });
+
+        // PR11: Apply action feedback to dynamics (very weak modulation)
+        this.applyActionToDynamics();
+
         const rewriteDebug = this.updateStructuredPriorRewrite();
         let recentRewriteSum = 0;
         for (let i = 0; i < this.numNodes; i++) recentRewriteSum += this.recentRewriteMask[i];
@@ -1347,7 +1614,7 @@ export class AeternaNetwork {
             rewritePressureMean: rewriteDebug.pressureMean,
             recentRewriteMean: recentRewriteSum / this.numNodes,
         });
-        return { rewriteDebug, modeDebug };
+        return { rewriteDebug, modeDebug, organismState, actionStateInfo };
     }
 
     // PR10-C: geometry/render state step — body deformation and colour projection.
@@ -1410,7 +1677,7 @@ export class AeternaNetwork {
         const ongoingState = this.updateBaselineAndResidue();
         const perceptionState = this.updatePerceptionState(touchState);
         const coreState = this.updateDynamicsCore();
-        const { rewriteDebug, modeDebug } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
+        const { rewriteDebug, modeDebug, organismState, actionStateInfo } = this.updatePostPropagationState(perceptionState, ongoingState, coreState);
         this.updateDerivedStateCaches(coreState.freqRatio);
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
@@ -1455,6 +1722,17 @@ export class AeternaNetwork {
             lastModeChangeFrames: modeDebug.lastModeChangeFrames,
             dreamReplayActive: modeDebug.dreamReplayActive,
             dreamReplayStrength: modeDebug.dreamReplayStrength,
+            // PR11: Organism state
+            energy: organismState.energy,
+            stability: organismState.stability,
+            overload: organismState.overload,
+            restDrive: organismState.restDrive,
+            orientingDrive: organismState.orientingDrive,
+            comfortBias: organismState.comfortBias,
+            // PR11: Action state
+            actionState: actionStateInfo.actionState,
+            actionPulseLevel: actionStateInfo.actionPulseLevel,
+            actionAge: actionStateInfo.actionAge,
         };
     }
 }
