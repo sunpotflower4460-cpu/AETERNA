@@ -80,7 +80,7 @@ const MODE_DYNAMICS = {
     },
     wake: {
         baselineGain: 1.02,
-        touchSensitivity: 1.05,
+        touchSensitivity: 1.0,
         touchProjectionGain: 1.04,
         rewriteGain: 1.0,
         residueDecayOffset: 0.0,
