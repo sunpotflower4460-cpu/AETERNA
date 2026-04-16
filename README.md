@@ -1,5 +1,15 @@
 # AETERNA
 
+## プロジェクト構成
+
+- **src/** — 現在開発中のコードベース
+  - **src/signal/** — Signal Runtime v0 実装
+  - **src/main.ts** — アプリケーションのエントリポイント
+- **archive/** — 旧コードの退避先
+  - **archive/phase9.4-original.html** — 旧 App.jsx から退避した元のコード
+
+現在は Signal Runtime v0 の開発を src/ 側で進めており、旧コアは archive/ に安全に退避されています。
+
 ## Signal Runtime v0
 
 ### Signal方式について
