@@ -15,6 +15,12 @@ AETERNA core flow is now visible as a thin packet chain:
 - `ActionPacket` — action state, pulse level, action direction.
 - `DynamicsPacket` — arousal, sigma, cluster ratio, phi proxy, phase coherence.
 
+## Explicit packet handoff notes
+
+- `TouchPerceptPacket.patternScores` now feeds organism/action decisions directly.
+- `TouchPerceptPacket.lastTouchDirection` and `touchDirectionStrength` now feed action direction/pulse application directly.
+- Rewrite is still a thin split on live torus/touch arrays, but its outward summary is a `RewritePacket`.
+
 ## Thin split note
 
 This PR is intentionally a thin split.

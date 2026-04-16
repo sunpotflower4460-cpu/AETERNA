@@ -17,20 +17,27 @@ export function updateActionState(network: any, {
   meanRawTouch = 0,
   meanTouchNovelty = 0,
   meanTouchTrace = 0,
+  patternScores = network.touchPatternScores,
+  lastTouchDirection = network.getTouchDirectionArray(),
+  touchDirectionStrength = network.touchDirectionVector?.strength ?? 0,
+  energy = network.energy,
+  overload = network.overload,
+  restDrive = network.restDrive,
+  orientingDrive = network.orientingDrive,
 } = {}) {
   const activeTouch = activeTouchCount > 0 ? 1 : 0;
   const quietness = network.clamp01((1 - activeTouch) * 0.45 + (1 - network.clamp01(meanRawTouch * 5, 0)) * 0.25 + (1 - network.clamp01(meanTouchNovelty * 8, 0)) * 0.3, 0);
-  const noveltyPressure = network.clamp01(meanTouchNovelty * 8 + network.touchPatternScores.tap * 0.18 + network.touchPatternScores.stroke * 0.1, 0);
-  const withdrawing = network.overload > 0.56 || (network.overload > 0.42 && network.energy < 0.34 && activeTouch);
+  const noveltyPressure = network.clamp01(meanTouchNovelty * 8 + patternScores.tap * 0.18 + patternScores.stroke * 0.1, 0);
+  const withdrawing = overload > 0.56 || (overload > 0.42 && energy < 0.34 && activeTouch);
   const orienting = !withdrawing
-    && network.orientingDrive > network.restDrive * 0.72
+    && orientingDrive > restDrive * 0.72
     && noveltyPressure > 0.16
-    && network.overload < 0.64
-    && network.energy > 0.16;
+    && overload < 0.64
+    && energy > 0.16;
   const settling = !withdrawing
     && !orienting
     && quietness > 0.58
-    && (network.restDrive > 0.42 || network.stability < 0.56 || meanTouchTrace > 0.02 || network.overload > 0.2);
+    && (restDrive > 0.42 || network.stability < 0.56 || meanTouchTrace > 0.02 || overload > 0.2);
 
   let nextState = 'idle';
   if (withdrawing) nextState = 'withdraw';
@@ -39,11 +46,11 @@ export function updateActionState(network: any, {
 
   let targetPulse = 0;
   if (nextState === 'orient') {
-    targetPulse = 0.03 + network.orientingDrive * 0.09 + noveltyPressure * 0.06 + (network.touchDirectionVector?.strength || 0) * 0.04;
+    targetPulse = 0.03 + orientingDrive * 0.09 + noveltyPressure * 0.06 + touchDirectionStrength * 0.04;
   } else if (nextState === 'withdraw') {
-    targetPulse = 0.04 + network.overload * 0.14 + (1 - network.energy) * 0.06;
+    targetPulse = 0.04 + overload * 0.14 + (1 - energy) * 0.06;
   } else if (nextState === 'settle') {
-    targetPulse = 0.025 + network.restDrive * 0.08 + (1 - network.stability) * 0.06 + meanTouchTrace * 0.08;
+    targetPulse = 0.025 + restDrive * 0.08 + (1 - network.stability) * 0.06 + meanTouchTrace * 0.08;
   }
   targetPulse = network.clampFinite(targetPulse * network.getActionEnergyGate(), 0, ACTION_PULSE_LIMIT, 0);
 
@@ -56,22 +63,26 @@ export function updateActionState(network: any, {
     0,
   );
 
-  if (network.actionState === 'orient' && network.touchDirectionVector?.strength > 0.001) {
-    network.actionDirection = [network.touchDirectionVector.dx, network.touchDirectionVector.dy];
-  } else if (network.actionState === 'withdraw' && network.touchDirectionVector?.strength > 0.001) {
-    network.actionDirection = [-network.touchDirectionVector.dx, -network.touchDirectionVector.dy];
+  if (network.actionState === 'orient' && lastTouchDirection && touchDirectionStrength > 0.001) {
+    network.actionDirection = [lastTouchDirection[0], lastTouchDirection[1]];
+  } else if (network.actionState === 'withdraw' && lastTouchDirection && touchDirectionStrength > 0.001) {
+    network.actionDirection = [-lastTouchDirection[0], -lastTouchDirection[1]];
   } else {
     network.actionDirection = null;
   }
   return getActionDebugSummary(network);
 }
 
-export function applyActionToDynamics(network: any) {
+export function applyActionToDynamics(network: any, {
+  lastTouchCentroid = network.lastTouchCentroid,
+  lastTouchDirection = network.getTouchDirectionArray(),
+  touchDirectionStrength = network.touchDirectionVector?.strength ?? 0,
+} = {}) {
   const pulse = network.clampFinite(network.actionPulseLevel * network.getActionEnergyGate(), 0, ACTION_PULSE_LIMIT, 0);
   if (pulse <= 0.0001) return;
   if (network.actionState === 'orient') {
-    if (network.lastTouchCentroid) {
-      const centerIdx = network.mapTouchToSurfaceIndex(network.lastTouchCentroid[0], network.lastTouchCentroid[1]);
+    if (lastTouchCentroid) {
+      const centerIdx = network.mapTouchToSurfaceIndex(lastTouchCentroid[0], lastTouchCentroid[1]);
       const S = network.segments;
       const ci = Math.floor(centerIdx / S);
       const cj = centerIdx % S;
@@ -84,7 +95,10 @@ export function applyActionToDynamics(network: any) {
           network.currentBuffer[idx] = network.clampFinite(network.currentBuffer[idx] + pulse * 0.012 * falloff, -8.0, 8.0, 0);
         }
       }
-      if (network.touchDirectionVector?.strength > 0.001) applyDirectionalRewrite(network, centerIdx, pulse * 0.05);
+      if (lastTouchDirection && touchDirectionStrength > 0.001) {
+        network.touchDirectionVector = { dx: lastTouchDirection[0], dy: lastTouchDirection[1], strength: touchDirectionStrength };
+        applyDirectionalRewrite(network, centerIdx, pulse * 0.05);
+      }
     }
   } else if (network.actionState === 'withdraw') {
     const projectionDamp = 1.0 - pulse * 0.16;

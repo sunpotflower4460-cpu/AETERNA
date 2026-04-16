@@ -12,9 +12,9 @@
 - `src/perception/localPredictor.ts` — local prediction update and prediction packet assembly.
 - `src/perception/touchPattern.ts` — touch sequence state, pure score shaping, dominant pattern packet fields.
 - `src/organism/priorRewrite.ts` — rewrite pressure, prior channels, rewrite packet assembly.
-- `src/organism/bodyState.ts` — energy/stability/overload/rest/orienting packet assembly.
+- `src/organism/bodyState.ts` — energy/stability/overload/rest/orienting packet assembly from touch/dynamics/prediction/rewrite packets.
 - `src/mode/modeController.ts` — wake/sleep/dream drive selection and mode packet assembly.
-- `src/organism/actionDecision.ts` — idle/orient/withdraw/settle selection and action pulse application.
+- `src/organism/actionDecision.ts` — idle/orient/withdraw/settle selection and action pulse application from touch + organism packets.
 - `src/core/torusDynamics.ts` — propagation-stage entry points and dynamics packet assembly.
 - `src/core/torusMetrics.ts` — cluster/phi/coherence cache refresh and metrics packet assembly.
 - `src/core/torusGeometry.ts` — torus generation, radius updates, render buffer refresh.
@@ -37,7 +37,8 @@
 ## What AeternaNetwork keeps vs delegates
 
 AeternaNetwork still keeps the live torus buffers, organism scalars, touch traces, rewrite memory, and render arrays.
-It now delegates the step order to packet-oriented stage files and mostly applies returned packets when building the public `updateDynamics()` result.
+It now delegates the visible step order to packet-oriented stage files and mostly applies returned packets when building the public `updateDynamics()` result.
+Touch-derived pattern and direction fields are handed into body/action stages as packet data instead of being reread from unrelated module state.
 
 ## Where to touch active code first
 

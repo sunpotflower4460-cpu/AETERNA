@@ -33,6 +33,7 @@ export function runBodyStateStage(
     meanTouchOnset: touchPacket.onsetMean,
     meanTouchNovelty: touchPacket.noveltyMean,
     meanTouchTrace: touchPacket.meanTouchTrace,
+    patternScores: touchPacket.patternScores,
     arousal: dynamicsPacket.arousal,
     meanPredictionError: predictionPacket.meanPredictionError,
     residueLevel: baselinePacket.residueLevel,

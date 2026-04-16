@@ -35,6 +35,7 @@ export function updateOrganismState(network: any, {
   meanTouchOnset = 0,
   meanTouchNovelty = 0,
   meanTouchTrace = 0,
+  patternScores = network.touchPatternScores,
   arousal = 0,
   meanPredictionError = 0,
   residueLevel = 0,
@@ -42,9 +43,9 @@ export function updateOrganismState(network: any, {
   globalRewriteLoad = 0,
 } = {}) {
   const activeTouch = activeTouchCount > 0 ? 1 : 0;
-  const noveltyLevel = network.clamp01(meanTouchNovelty * 8 + network.touchPatternScores.tap * 0.16 + network.touchPatternScores.stroke * 0.1, 0);
-  const gentleContact = network.clamp01(activeTouch * 0.1 + meanRawTouch * 0.35 + network.touchPatternScores.hold * 0.32 + meanTouchTrace * 0.08 - network.touchPatternScores.tap * 0.06, 0);
-  const repeatIntensity = network.clamp01(network.touchPatternScores.repeat * 0.8 + network.touchPatternScores.tap * 0.25, 0);
+  const noveltyLevel = network.clamp01(meanTouchNovelty * 8 + patternScores.tap * 0.16 + patternScores.stroke * 0.1, 0);
+  const gentleContact = network.clamp01(activeTouch * 0.1 + meanRawTouch * 0.35 + patternScores.hold * 0.32 + meanTouchTrace * 0.08 - patternScores.tap * 0.06, 0);
+  const repeatIntensity = network.clamp01(patternScores.repeat * 0.8 + patternScores.tap * 0.25, 0);
   const arousalNorm = network.clamp01(arousal * MODE_AROUSAL_NORM, 0);
   const predictionNorm = network.clamp01(meanPredictionError * MODE_PREDICTION_NORM, 0);
   const quietness = network.clamp01((1 - activeTouch) * 0.35 + (1 - network.clamp01(meanRawTouch * 5, 0)) * 0.2 + (1 - arousalNorm) * 0.25 + (1 - noveltyLevel) * 0.2, 0);
@@ -56,7 +57,7 @@ export function updateOrganismState(network: any, {
   const energyTarget = network.clamp01(0.42 + quietness * 0.22 + network.stability * 0.12 + gentleContact * 0.06 - arousalNorm * 0.14 - network.overload * 0.24 - globalRewriteLoad * 0.08 - network.actionPulseLevel * 0.05, network.energy);
   const stabilityTarget = network.clamp01(0.38 + quietness * 0.18 + gentleContact * 0.18 + residueLevel * 0.06 - network.overload * 0.26 - predictionNorm * 0.12 - repeatIntensity * 0.08, network.stability);
   const restTarget = network.clamp01(0.12 + (1 - network.energy) * 0.42 + network.overload * 0.34 + (1 - network.stability) * 0.12 - activeTouch * 0.06, network.restDrive);
-  const orientTarget = network.clamp01(0.08 + noveltyLevel * 0.34 + activeTouch * 0.18 + network.touchPatternScores.stroke * 0.12 + meanTouchOnset * 0.7 - quietness * 0.18 - network.overload * 0.12, network.orientingDrive);
+  const orientTarget = network.clamp01(0.08 + noveltyLevel * 0.34 + activeTouch * 0.18 + patternScores.stroke * 0.12 + meanTouchOnset * 0.7 - quietness * 0.18 - network.overload * 0.12, network.orientingDrive);
 
   network.energy = network.clamp01(network.energy * (1 - ORGANISM_UPDATE_SMOOTHING) + energyTarget * ORGANISM_UPDATE_SMOOTHING, network.energy);
   network.stability = network.clamp01(network.stability * (1 - ORGANISM_UPDATE_SMOOTHING) + stabilityTarget * ORGANISM_UPDATE_SMOOTHING, network.stability);

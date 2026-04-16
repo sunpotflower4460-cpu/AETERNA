@@ -523,6 +523,30 @@ describe('AeternaNetwork — organism and action loop', () => {
     expect(net.actionState).toBe('settle');
   });
 
+  it('uses touch packet pattern scores when updating organism state', () => {
+    const orientBefore = net.orientingDrive;
+    net.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+
+    for (let frame = 0; frame < 12; frame++) {
+      net.simTime = frame + 1;
+      net.updateOrganismState({
+        activeTouchCount: 1,
+        meanRawTouch: 0.22,
+        meanTouchOnset: 0.2,
+        meanTouchNovelty: 0.28,
+        meanTouchTrace: 0.08,
+        patternScores: { tap: 0.85, repeat: 0.8, hold: 0.05, stroke: 0.35 },
+        arousal: 0.05,
+        meanPredictionError: 0.24,
+        residueLevel: 0.04,
+        rewritePressureMean: 0.05,
+        globalRewriteLoad: 0.14,
+      });
+    }
+
+    expect(net.orientingDrive).toBeGreaterThan(orientBefore);
+  });
+
   it('enters withdraw when overload is high', () => {
     net.overload = 0.78;
     net.energy = 0.28;
@@ -537,6 +561,30 @@ describe('AeternaNetwork — organism and action loop', () => {
 
     expect(net.actionState).toBe('withdraw');
     expect(net.actionPulseLevel).toBeGreaterThan(0);
+    expect(net.actionDirection?.[0]).toBeLessThan(0);
+  });
+
+  it('uses packet touch pattern and direction when deciding action', () => {
+    net.overload = 0.78;
+    net.energy = 0.28;
+    net.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+    net.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+
+    net.updateActionState({
+      activeTouchCount: 1,
+      meanRawTouch: 0.2,
+      meanTouchNovelty: 0.22,
+      meanTouchTrace: 0.05,
+      patternScores: { tap: 0.8, repeat: 0, hold: 0, stroke: 0.4 },
+      lastTouchDirection: [0.3, 0.05],
+      touchDirectionStrength: 0.9,
+      energy: net.energy,
+      overload: net.overload,
+      restDrive: net.restDrive,
+      orientingDrive: net.orientingDrive,
+    });
+
+    expect(net.actionState).toBe('withdraw');
     expect(net.actionDirection?.[0]).toBeLessThan(0);
   });
 

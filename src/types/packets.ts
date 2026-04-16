@@ -20,6 +20,7 @@ export interface TouchInputPacket {
   touchVelocity: number;
   touchRepeatCount: number;
   lastTouchDirection: PacketDirection;
+  touchDirectionStrength: number;
 }
 
 export interface TouchPerceptPacket extends TouchInputPacket {

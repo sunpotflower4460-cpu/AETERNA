@@ -83,6 +83,7 @@ export function runTouchPatternStage(network: any, activeTouches: Map<any, any>)
     touchVelocity: network.touchVelocityEstimate,
     touchRepeatCount: network.touchRepeatCount,
     lastTouchDirection: network.getTouchDirectionArray(),
+    touchDirectionStrength: network.touchDirectionVector?.strength ?? 0,
   };
 }
 
