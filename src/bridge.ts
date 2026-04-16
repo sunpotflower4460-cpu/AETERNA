@@ -27,6 +27,10 @@ export interface TorusStatePacket {
   touch_location: [number, number] | null;
   /** Refined engine state from animateLoop Phase H */
   engine_state: 'WHITE' | 'BLACK' | 'NEUTRAL';
+  /** PR7: Dominant touch tendency ('tap' | 'repeat' | 'hold' | 'stroke' | null) */
+  touch_pattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
+  /** PR7: Continuous touch pattern scores (EMA-smoothed 0..1) */
+  touch_pattern_scores?: { tap: number; repeat: number; hold: number; stroke: number };
 }
 
 /** Placeholder for future Signal→Torus feedback (next phase). */
@@ -61,7 +65,14 @@ export function buildTorusStatePacket({
   activeTouches,
 }: {
   now: number;
-  dyn: { arousal: number; sigmaDisplay: number; phiApprox: number; ignitionRatio: number };
+  dyn: {
+    arousal: number;
+    sigmaDisplay: number;
+    phiApprox: number;
+    ignitionRatio: number;
+    dominantPattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
+    touchPatternScores?: { tap: number; repeat: number; hold: number; stroke: number };
+  };
   engineState: 'WHITE' | 'BLACK' | 'NEUTRAL';
   tension: number;
   activeTouches: Map<number, { x: number; y: number }>;
@@ -87,6 +98,8 @@ export function buildTorusStatePacket({
     touch_active: touchActive,
     touch_location: touchLocation,
     engine_state: engineState,
+    touch_pattern: dyn.dominantPattern ?? null,
+    touch_pattern_scores: dyn.touchPatternScores,
   };
 }
 

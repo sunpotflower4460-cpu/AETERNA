@@ -43,6 +43,22 @@ export function updateMetricsUI(dyn, engineState) {
     if(UI['val-baseline']) UI['val-baseline'].innerText = (dyn.baselineLevel || 0).toFixed(4);
     if(UI['val-residue'])  UI['val-residue'].innerText  = (dyn.residueLevel  || 0).toFixed(4);
     if(UI['val-local-pred-error']) UI['val-local-pred-error'].innerText = (dyn.meanLocalPredError || 0).toFixed(4);
+
+    // PR7: Touch pattern display
+    if(UI['val-touch-duration']) UI['val-touch-duration'].innerText = (dyn.touchDuration || 0);
+    if(UI['val-touch-velocity']) UI['val-touch-velocity'].innerText = (dyn.touchVelocity || 0).toFixed(5);
+    if(UI['val-touch-repeat'])   UI['val-touch-repeat'].innerText   = (dyn.touchRepeatCount || 0);
+    const dom = dyn.dominantPattern || '—';
+    if(UI['val-touch-dominant']) UI['val-touch-dominant'].innerText = dom;
+    const ps = dyn.touchPatternScores;
+    if (ps) {
+        if(UI['val-score-tap'])    UI['val-score-tap'].innerText    = ps.tap.toFixed(3);
+        if(UI['val-score-repeat']) UI['val-score-repeat'].innerText = ps.repeat.toFixed(3);
+        if(UI['val-score-hold'])   UI['val-score-hold'].innerText   = ps.hold.toFixed(3);
+        if(UI['val-score-stroke']) UI['val-score-stroke'].innerText = ps.stroke.toFixed(3);
+        const scoreColors = { tap: '#fbbf24', repeat: '#f87171', hold: '#a78bfa', stroke: '#34d399' };
+        if(UI['val-touch-dominant']) UI['val-touch-dominant'].style.color = dom !== '—' ? (scoreColors[dom] || '') : '';
+    }
     
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);

@@ -56,6 +56,23 @@ export class AeternaNetwork {
         this.touchNovelty    = new Float32Array(this.numNodes);
         this.touchProjection = new Float32Array(this.numNodes);
 
+        // PR7: Touch sequence state — temporal features of how touch unfolds.
+        // These accumulate across frames and decay on release.
+        this.touchDurationFrames  = 0;   // consecutive frames with active contact
+        this.touchGapFrames       = 0;   // frames since last contact ended
+        this.touchMoveDistance    = 0;   // cumulative centroid displacement (normalised)
+        this.touchVelocityEstimate = 0;  // EMA of per-frame centroid displacement
+        this.touchRepeatCount     = 0;   // count of short-gap re-contacts
+        this.lastTouchCentroid    = null; // [normX, normY] or null
+
+        // PR7: Continuous pattern scores (EMA-smoothed, 0..1).
+        // Hard classification is intentionally avoided.
+        this.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
+
+        // PR7: Path history for stroke trail rendering (normalised coords).
+        // Populated only while stroke tendency is active.
+        this.strokePath = []; // [ {normX, normY}, … ]  max 40 entries
+
         this.generate();
     }
 
@@ -359,6 +376,124 @@ export class AeternaNetwork {
         }
     }
 
+    // PR7: Compute centroid of active touches in normalised [0,1] coordinates.
+    computeTouchCentroid(activeTouches) {
+        if (activeTouches.size === 0) return null;
+        const wW = window.innerWidth  || 1;
+        const wH = window.innerHeight || 1;
+        let sx = 0, sy = 0;
+        for (const [, t] of activeTouches) { sx += t.x / wW; sy += t.y / wH; }
+        return [sx / activeTouches.size, sy / activeTouches.size];
+    }
+
+    // PR7: Update temporal sequence features from the current set of active touches.
+    // Called once per frame before pattern scoring.
+    updateTouchSequenceFeatures(activeTouches) {
+        if (activeTouches.size > 0) {
+            const centroid = this.computeTouchCentroid(activeTouches);
+            this.touchDurationFrames += 1;
+            this.touchGapFrames = 0;
+            if (this.lastTouchCentroid) {
+                const dx = centroid[0] - this.lastTouchCentroid[0];
+                const dy = centroid[1] - this.lastTouchCentroid[1];
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                this.touchMoveDistance += dist;
+                this.touchVelocityEstimate = this.touchVelocityEstimate * 0.8 + dist * 0.2;
+            }
+            this.lastTouchCentroid = centroid;
+        } else {
+            if (this.touchDurationFrames > 0 && this.touchGapFrames === 0) {
+                // Contact just ended — count as a repeat candidate if gap is short
+                if (this.touchRepeatCount > 0 || this.touchGapFrames < 12) {
+                    this.touchRepeatCount += 1;
+                }
+            }
+            // Reset repeat count after a long silent gap (>60 frames ≈ 1 s)
+            if (this.touchGapFrames > 60) { this.touchRepeatCount = 0; }
+            this.touchGapFrames += 1;
+            this.touchDurationFrames = 0;
+            this.touchMoveDistance    *= 0.95;
+            this.touchVelocityEstimate *= 0.9;
+            this.lastTouchCentroid = null;
+        }
+    }
+
+    // PR7: Update EMA-smoothed touch pattern scores.
+    // Scores are continuous [0..1] tendencies, not hard classifications.
+    updateTouchPatternScores() {
+        const dur  = this.touchDurationFrames;
+        const vel  = this.touchVelocityEstimate;
+        const move = this.touchMoveDistance;
+        const rpt  = this.touchRepeatCount;
+        const gap  = this.touchGapFrames;
+
+        const tapRaw    = (dur > 0 && dur < 8  && vel < 0.005) ? 1 : 0;
+        const holdRaw   = (dur > 20 && vel < 0.005)            ? 1 : 0;
+        const repeatRaw = (rpt >= 2 && gap < 10)               ? 1 : 0;
+        const strokeRaw = (dur > 0  && move > 0.05)            ? 1 : 0;
+
+        const DECAY = 0.85, INTAKE = 0.15;
+        this.touchPatternScores.tap    = this.touchPatternScores.tap    * DECAY + tapRaw    * INTAKE;
+        this.touchPatternScores.hold   = this.touchPatternScores.hold   * DECAY + holdRaw   * INTAKE;
+        this.touchPatternScores.repeat = this.touchPatternScores.repeat * DECAY + repeatRaw * INTAKE;
+        this.touchPatternScores.stroke = this.touchPatternScores.stroke * DECAY + strokeRaw * INTAKE;
+    }
+
+    // PR7: Return the name of the currently dominant touch tendency, or null.
+    // Returns null when all scores are below a minimum threshold.
+    getDominantTouchPattern() {
+        const s = this.touchPatternScores;
+        const maxScore = Math.max(s.tap, s.hold, s.repeat, s.stroke);
+        if (maxScore < 0.05) return null;
+        if (maxScore === s.tap)    return 'tap';
+        if (maxScore === s.hold)   return 'hold';
+        if (maxScore === s.repeat) return 'repeat';
+        return 'stroke';
+    }
+
+    // PR7: Conservative pattern-driven modulation of touch dynamics.
+    // Adjusts already-computed touchProjection / touchTrace without touching the
+    // core wave equation.  All coefficients are kept small by design.
+    applyTouchPatternModulation() {
+        const tapS    = this.touchPatternScores.tap;
+        const holdS   = this.touchPatternScores.hold;
+        const repeatS = this.touchPatternScores.repeat;
+        const strokeS = this.touchPatternScores.stroke;
+
+        // Exit early when no pattern is meaningfully active
+        if (tapS < 0.02 && holdS < 0.02 && repeatS < 0.02 && strokeS < 0.02) return;
+
+        for (let i = 0; i < this.numNodes; i++) {
+            // tap: point surprise — brief novelty boost, shorter trace
+            if (tapS > 0.02) {
+                this.touchProjection[i] += this.touchOnset[i] * tapS * 0.06;
+                this.touchTrace[i] *= (1.0 - tapS * 0.04); // faster trace decay
+            }
+            // hold: desensitise onset over time, keep trace (residue) longer
+            if (holdS > 0.02) {
+                const holdFade = Math.min(this.touchDurationFrames / 40.0, 1.0);
+                this.touchProjection[i] *= (1.0 - holdS * holdFade * 0.10);
+                this.touchTrace[i]      += this.touchNovelty[i] * holdS * 0.015;
+            }
+            // repeat: dampen re-surprise — the familiar contact arrives again
+            if (repeatS > 0.02) {
+                this.touchProjection[i] *= (1.0 - repeatS * 0.06);
+            }
+            // stroke: prolong trace as path-like residue
+            if (strokeS > 0.02) {
+                this.touchTrace[i] += this.touchNovelty[i] * strokeS * 0.02;
+            }
+        }
+
+        // stroke: maintain centroid path for the visual layer
+        if (strokeS > 0.05 && this.lastTouchCentroid) {
+            this.strokePath.push({ normX: this.lastTouchCentroid[0], normY: this.lastTouchCentroid[1] });
+            if (this.strokePath.length > 40) this.strokePath.shift();
+        } else if (strokeS < 0.02) {
+            if (this.strokePath.length > 0) this.strokePath.shift(); // gradual fade
+        }
+    }
+
     // PR3: Signed residual between actual state and local prediction.
     // Simple and intentionally unfiltered — the raw perceptual gap.
     updatePredictionError() {
@@ -399,6 +534,11 @@ export class AeternaNetwork {
         // activeTouches is the state.activeTouches Map (pixel coords).
         this.updateRawTouchField(activeTouches || new Map());
 
+        // PR7: Update touch sequence features and pattern scores before perceptual steps,
+        // so that modulation can be applied to the perception/projection outputs below.
+        this.updateTouchSequenceFeatures(activeTouches || new Map());
+        this.updateTouchPatternScores();
+
         // PR3 / PR4: Update local predictor after baseline/residue and raw touch
         // are known, so it sees the freshest quiet-state values before we compute
         // the perceptual error.
@@ -409,6 +549,9 @@ export class AeternaNetwork {
 
         // PR4: Step 5 — accumulate onset/offset into touchProjection (decaying buffer).
         this.projectTouchToNetwork();
+
+        // PR7: Apply conservative pattern-driven modulation to touchProjection / touchTrace.
+        this.applyTouchPatternModulation();
 
         // PR4: Step 6 — fold touchProjection into currentBuffer with a conservative gain.
         // This is the only path from touch into the dynamics; no other direct injection.
@@ -529,7 +672,13 @@ export class AeternaNetwork {
             meanTouchOnset:   meanTouchOnset,
             meanTouchOffset:  meanTouchOffset,
             meanTouchNovelty: meanTouchNovelty,
-            activeTouchCount: activeTouchCount
+            activeTouchCount: activeTouchCount,
+            // PR7: touch pattern metrics
+            touchDuration:      this.touchDurationFrames,
+            touchVelocity:      this.touchVelocityEstimate,
+            touchRepeatCount:   this.touchRepeatCount,
+            dominantPattern:    this.getDominantTouchPattern(),
+            touchPatternScores: { ...this.touchPatternScores }
         };
     }
 }

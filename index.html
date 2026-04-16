@@ -290,6 +290,25 @@
                           </div>
                       </div>
                   </div>
+                  <!-- PR7: Touch Pattern -->
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-touch-pattern', 'icon-touch-pattern')">
+                          <span class="tracking-wider">TOUCH PATTERN</span>
+                          <svg id="icon-touch-pattern" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-touch-pattern" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between has-tooltip" data-tooltip="Consecutive frames with active contact (PR7)" id="row-touch-duration"><span>Duration (frames)</span><span id="val-touch-duration" class="text-white">0</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="EMA of per-frame centroid displacement (PR7)" id="row-touch-velocity"><span>Velocity</span><span id="val-touch-velocity" class="text-white">0.00000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Count of short-gap re-contacts (PR7)" id="row-touch-repeat"><span>Repeat count</span><span id="val-touch-repeat" class="text-white">0</span></div>
+                              <div class="flex justify-between has-tooltip font-bold" data-tooltip="Dominant touch tendency this frame (PR7)" id="row-touch-dominant"><span>Dominant</span><span id="val-touch-dominant" class="text-white">&#x2014;</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Tap score — brief contact, low movement (PR7)" id="row-score-tap"><span>Score: tap</span><span id="val-score-tap" class="text-yellow-300">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Repeat score — multiple short-gap contacts (PR7)" id="row-score-repeat"><span>Score: repeat</span><span id="val-score-repeat" class="text-red-300">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Hold score — long contact, low movement (PR7)" id="row-score-hold"><span>Score: hold</span><span id="val-score-hold" class="text-purple-300">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Stroke score — contact with significant movement (PR7)" id="row-score-stroke"><span>Score: stroke</span><span id="val-score-stroke" class="text-emerald-300">0.000</span></div>
+                          </div>
+                      </div>
+                  </div>
                   <!-- 前提条件 -->
                   <div>
                       <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-prereq', 'icon-prereq')">

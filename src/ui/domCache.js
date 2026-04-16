@@ -13,7 +13,16 @@ export function initDOMCache() {
         'val-baseline', 'row-baseline', 'val-residue', 'row-residue',
         'val-local-pred-error', 'row-local-pred-error',
         'val-pre-a', 'row-pre-a', 'val-pre-b', 'row-pre-b', 'val-pre-c', 'row-pre-c', 'val-pre-d', 'row-pre-d', 'val-pre-e', 'row-pre-e', 'val-total', 'row-total',
-        'system-state-badge', 'intro-guide'
+        'system-state-badge', 'intro-guide',
+        // PR7: Touch pattern
+        'val-touch-duration', 'row-touch-duration',
+        'val-touch-velocity', 'row-touch-velocity',
+        'val-touch-repeat',   'row-touch-repeat',
+        'val-touch-dominant', 'row-touch-dominant',
+        'val-score-tap',      'row-score-tap',
+        'val-score-repeat',   'row-score-repeat',
+        'val-score-hold',     'row-score-hold',
+        'val-score-stroke',   'row-score-stroke',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }
