@@ -1,4 +1,4 @@
-import type { StimulusPacket } from './types.js';
+import type { StimulusPacket, TouchPatternSeeds } from './types.js';
 
 // Keywords that raise emotionalCharge
 const EMOTIONAL_KEYWORDS = [
@@ -48,7 +48,11 @@ function computeSalience(text: string, emotionalCharge: number, explicitQuestion
   return Math.min(1.0, salience);
 }
 
-export function createStimulusPacket(rawText: string, novelty = 0.5): StimulusPacket {
+export function createStimulusPacket(
+  rawText: string,
+  novelty = 0.5,
+  touchSeeds?: TouchPatternSeeds | null,
+): StimulusPacket {
   const tokens = tokenize(rawText);
   const emotionalCharge = detectEmotionalCharge(rawText);
   const explicitQuestion = detectExplicitQuestion(rawText);
@@ -61,5 +65,6 @@ export function createStimulusPacket(rawText: string, novelty = 0.5): StimulusPa
     novelty,
     emotionalCharge,
     explicitQuestion,
+    touchSeeds: touchSeeds ?? null,
   };
 }
