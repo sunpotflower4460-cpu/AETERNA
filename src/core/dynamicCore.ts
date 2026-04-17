@@ -27,7 +27,7 @@ export function updateResidue(network: any) {
   const RESIDUE_INTAKE = 0.02;
   const modeResidueOffset = network.currentModeDynamics?.residueDecayOffset ?? 0;
   for (let i = 0; i < network.numNodes; i++) {
-    const persistenceBias = network.priorChannels.persistence[i];
+    const persistenceBias = network.priorChannels.persistence[i]; // direct behavioral dependency; target for weakening in Phase C
     const decay = network.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
     const intake = network.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
     const modeDecayTarget = decay + modeResidueOffset;

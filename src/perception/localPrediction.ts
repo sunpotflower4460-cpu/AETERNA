@@ -22,7 +22,7 @@ export function updateLocalPrediction(network: any) {
         + network.currentBuffer[left] * network.w_left[idx]
         + network.currentBuffer[right] * network.w_right[idx]
       ) / Math.max(weightSum, 1e-6);
-      const noveltyBias = network.priorChannels.novelty[idx];
+      const noveltyBias = network.priorChannels.novelty[idx]; // direct behavioral dependency; target for weakening in Phase C
       const adaptiveAlpha = network.clampFinite(
         (baseAlpha + noveltyBias * 0.03 + network.priorBias[idx] * 0.015) * organismAlphaGain,
         0.03,
