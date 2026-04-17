@@ -81,11 +81,20 @@ export function updateMetricsUI(dyn, engineState) {
     const lastRewrite = dyn.lastRewriteEvent
         ? `${dyn.lastRewriteEvent.rewriteType} @ ${dyn.lastRewriteEvent.node}`
         : '—';
+    const dormantEvents = Array.isArray(dyn.recentDormantWakeEvents) && dyn.recentDormantWakeEvents.length > 0
+        ? dyn.recentDormantWakeEvents.slice(0, 3).map(event => `${event.node}@${event.timestamp}`).join(' | ')
+        : '—';
     if(UI['val-rewrite-tendency']) UI['val-rewrite-tendency'].innerText = rewriteTendency;
     if(UI['val-rewrite-pressure']) UI['val-rewrite-pressure'].innerText = rewritePressure;
     if(UI['val-rewrite-load']) UI['val-rewrite-load'].innerText = (dyn.globalRewriteLoad || 0).toFixed(3);
     if(UI['val-prior-bias']) UI['val-prior-bias'].innerText = priorSummary;
     if(UI['val-last-rewrite']) UI['val-last-rewrite'].innerText = lastRewrite;
+    if(UI['val-noise-path']) UI['val-noise-path'].innerText = dyn.hardwareRandomNoiseActivePath ? `crypto (${dyn.hardwareRandomNoiseSource || 'crypto'})` : (dyn.hardwareRandomNoiseSource || 'fallback');
+    if(UI['val-noise-mag']) UI['val-noise-mag'].innerText = (dyn.noiseMagnitude || 0).toFixed(4);
+    if(UI['val-dormant-nodes']) UI['val-dormant-nodes'].innerText = `${dyn.dormantNodeCount || 0} (${dyn.activeDormantNodeCount || 0} awake)`;
+    if(UI['val-dormant-wakes']) UI['val-dormant-wakes'].innerText = `${dyn.dormantWakeCount || 0}`;
+    if(UI['val-dormant-pressure']) UI['val-dormant-pressure'].innerText = `${(dyn.wakePressureMean || 0).toFixed(3)} / ${(dyn.wakePressureMax || 0).toFixed(3)}`;
+    if(UI['val-dormant-events']) UI['val-dormant-events'].innerText = dormantEvents;
     if(UI['val-mode-state']) UI['val-mode-state'].innerText = dyn.modeState || 'wake';
     if(UI['val-wake-drive']) UI['val-wake-drive'].innerText = (dyn.wakeDrive || 0).toFixed(3);
     if(UI['val-sleep-pressure']) UI['val-sleep-pressure'].innerText = (dyn.sleepPressure || 0).toFixed(3);
