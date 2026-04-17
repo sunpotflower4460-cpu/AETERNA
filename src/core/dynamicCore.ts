@@ -6,7 +6,7 @@ import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRando
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
   const eventRate = tension * 0.2 + Math.abs(sigmaDisp - 1.0) * 0.1;
-  const finalRate = Math.min(Math.max(thermalRate + eventRate, 0), 1);
+  const finalRate = network.clampFinite(thermalRate + eventRate, 0, 1, 0);
   network.hardwareRandomNoiseSource = hasHardwareRandomSource() ? 'crypto' : 'fallback';
   let injectedMagnitude = 0;
   let injectedEvents = 0;

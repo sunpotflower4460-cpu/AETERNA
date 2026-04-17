@@ -10,7 +10,16 @@ const DORMANT_WAKE_MIN_ACTIVITY = 0.2;
 const DORMANT_WAKE_MIN_ERROR = 0.1;
 const DORMANT_WAKE_COOLDOWN_MIN = 22;
 const DORMANT_WAKE_COOLDOWN_RANGE = 18;
+const DORMANT_PRESSURE_WEIGHT_ACTIVITY = 0.34;
+const DORMANT_PRESSURE_WEIGHT_ERROR = 0.31;
+const DORMANT_PRESSURE_WEIGHT_HOTSPOT = 0.2;
+const DORMANT_PRESSURE_WEIGHT_LOCAL_BUFFER = 0.08;
+const DORMANT_WAKE_SIGNAL_ACTIVITY = 0.18;
+const DORMANT_WAKE_SIGNAL_ERROR = 0.12;
+const DORMANT_WAKE_SIGNAL_HOTSPOT = 0.08;
+const DORMANT_WAKE_SIGNAL_RANDOM = 0.03;
 const DORMANT_AWAKE_SELF_INFLUENCE = 0.032;
+const DORMANT_AWAKE_INFLUENCE_MAX = 0.045;
 const DORMANT_AWAKE_NEIGHBOR_INFLUENCE = 0.18;
 const DORMANT_RESLEEP_PRESSURE = 0.2;
 const DORMANT_RESLEEP_ACTIVITY = 0.15;
@@ -115,7 +124,10 @@ export function updateDormantNodes(network: any) {
     const { localActivity, localError, hotspot, neighbors } = getLocalSignals(network, i);
 
     if (network.isDormantNode[i] === 1) {
-      const pressureInput = localActivity * 0.34 + localError * 0.31 + hotspot * 0.2 + network.clampFinite(Math.abs(network.currentBuffer[i]) / 1.2, 0, 1, 0) * 0.08;
+      const pressureInput = localActivity * DORMANT_PRESSURE_WEIGHT_ACTIVITY
+        + localError * DORMANT_PRESSURE_WEIGHT_ERROR
+        + hotspot * DORMANT_PRESSURE_WEIGHT_HOTSPOT
+        + network.clampFinite(Math.abs(network.currentBuffer[i]) / 1.2, 0, 1, 0) * DORMANT_PRESSURE_WEIGHT_LOCAL_BUFFER;
       network.dormantWakePressure[i] = network.clampFinite(
         network.dormantWakePressure[i] * DORMANT_WAKE_PRESSURE_DECAY + pressureInput * DORMANT_WAKE_PRESSURE_GAIN,
         0,
@@ -127,10 +139,10 @@ export function updateDormantNodes(network: any) {
       }
 
       const wakeSignal = network.dormantWakePressure[i]
-        + localActivity * 0.18
-        + localError * 0.12
-        + hotspot * 0.08
-        + getHardwareRandomSigned() * 0.03;
+        + localActivity * DORMANT_WAKE_SIGNAL_ACTIVITY
+        + localError * DORMANT_WAKE_SIGNAL_ERROR
+        + hotspot * DORMANT_WAKE_SIGNAL_HOTSPOT
+        + getHardwareRandomSigned() * DORMANT_WAKE_SIGNAL_RANDOM;
 
       if (
         network.dormantWakeCooldown[i] <= 0
@@ -148,7 +160,7 @@ export function updateDormantNodes(network: any) {
     }
 
     activeDormantNodeCount++;
-    const wakeInfluence = network.clampFinite(network.dormantWakePressure[i] * DORMANT_AWAKE_SELF_INFLUENCE, 0, 0.045, 0);
+    const wakeInfluence = network.clampFinite(network.dormantWakePressure[i] * DORMANT_AWAKE_SELF_INFLUENCE, 0, DORMANT_AWAKE_INFLUENCE_MAX, 0);
     if (wakeInfluence > 0) {
       const signedInfluence = wakeInfluence * (network.nodeSign[i] >= 0 ? 1 : -0.6);
       network.currentBuffer[i] += signedInfluence;

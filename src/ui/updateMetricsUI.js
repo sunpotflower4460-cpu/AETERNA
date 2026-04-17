@@ -82,7 +82,7 @@ export function updateMetricsUI(dyn, engineState) {
         ? `${dyn.lastRewriteEvent.rewriteType} @ ${dyn.lastRewriteEvent.node}`
         : '—';
     const dormantEvents = Array.isArray(dyn.recentDormantWakeEvents) && dyn.recentDormantWakeEvents.length > 0
-        ? dyn.recentDormantWakeEvents.slice(0, 3).map(event => `${event.node}@${event.timestamp}`).join(' | ')
+        ? dyn.recentDormantWakeEvents.slice(0, 3).map(event => `node:${event.node}@time:${event.timestamp}`).join(' | ')
         : '—';
     if(UI['val-rewrite-tendency']) UI['val-rewrite-tendency'].innerText = rewriteTendency;
     if(UI['val-rewrite-pressure']) UI['val-rewrite-pressure'].innerText = rewritePressure;
