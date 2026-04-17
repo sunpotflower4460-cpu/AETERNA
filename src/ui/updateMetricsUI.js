@@ -105,6 +105,26 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-action-pulse']) UI['val-action-pulse'].innerText = (dyn.actionPulseLevel || 0).toFixed(3);
     if (UI['val-action-direction']) UI['val-action-direction'].innerText = formatDirection(dyn.actionDirection);
     if (UI['val-last-touch-direction']) UI['val-last-touch-direction'].innerText = formatDirection(dyn.lastTouchDirection);
+
+    // Phase B2: light sensory
+    if (UI['val-light-level'])       UI['val-light-level'].innerText       = (dyn.lightLevel       || 0).toFixed(4);
+    if (UI['val-light-delta'])       UI['val-light-delta'].innerText       = (dyn.lightDelta       || 0).toFixed(4);
+    if (UI['val-light-novelty'])     UI['val-light-novelty'].innerText     = (dyn.lightNovelty     || 0).toFixed(4);
+    if (UI['val-light-persistence']) UI['val-light-persistence'].innerText = (dyn.lightPersistence || 0).toFixed(4);
+    if (UI['val-light-active'])      UI['val-light-active'].innerText      = dyn.lightActive ? 'active' : 'inactive';
+
+    // Phase B2: motion sensory
+    if (UI['val-motion-level'])       UI['val-motion-level'].innerText       = (dyn.motionLevel       || 0).toFixed(4);
+    if (UI['val-motion-delta'])       UI['val-motion-delta'].innerText       = (dyn.motionDelta       || 0).toFixed(4);
+    if (UI['val-motion-novelty'])     UI['val-motion-novelty'].innerText     = (dyn.motionNovelty     || 0).toFixed(4);
+    if (UI['val-motion-persistence']) UI['val-motion-persistence'].innerText = (dyn.motionPersistence || 0).toFixed(4);
+    if (UI['val-motion-active'])      UI['val-motion-active'].innerText      = dyn.motionActive ? 'active' : 'inactive';
+
+    // Phase B2: time sensory
+    if (UI['val-time-phase'])       UI['val-time-phase'].innerText       = (dyn.timePhase       || 0).toFixed(4);
+    if (UI['val-time-level'])       UI['val-time-level'].innerText       = (dyn.timeLevel       || 0).toFixed(4);
+    if (UI['val-time-persistence']) UI['val-time-persistence'].innerText = (dyn.timePersistence || 0).toFixed(4);
+    if (UI['val-time-active'])      UI['val-time-active'].innerText      = dyn.timeActive ? 'active' : 'inactive';
     
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);

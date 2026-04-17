@@ -51,6 +51,23 @@ export function initDOMCache() {
         'val-action-pulse',     'row-action-pulse',
         'val-action-direction', 'row-action-direction',
         'val-last-touch-direction', 'row-last-touch-direction',
+        // Phase B2: light sensory
+        'val-light-level',       'row-light-level',
+        'val-light-delta',       'row-light-delta',
+        'val-light-novelty',     'row-light-novelty',
+        'val-light-persistence', 'row-light-persistence',
+        'val-light-active',      'row-light-active',
+        // Phase B2: motion sensory
+        'val-motion-level',       'row-motion-level',
+        'val-motion-delta',       'row-motion-delta',
+        'val-motion-novelty',     'row-motion-novelty',
+        'val-motion-persistence', 'row-motion-persistence',
+        'val-motion-active',      'row-motion-active',
+        // Phase B2: time sensory
+        'val-time-phase',        'row-time-phase',
+        'val-time-level',        'row-time-level',
+        'val-time-persistence',  'row-time-persistence',
+        'val-time-active',       'row-time-active',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }

@@ -15,6 +15,9 @@ import { runPriorRewriteStage, buildRewriteDebugSummary, decayStructuredPriorRew
 import { runBodyStateStage, getOrganismDebugSummary, recordOrganismSnapshot, updateOrganismState } from '../organism/bodyState.ts';
 import { computeTouchCentroid, updateTouchPatternScores, updateTouchSequenceFeatures } from '../perception/touchPatterns.ts';
 import { createSoundSensoryController, updateSoundSensory } from '../perception/soundSensory.ts';
+import { createLightSensoryController, updateLightSensory } from '../perception/lightSensory.ts';
+import { createMotionSensoryController, updateMotionSensory } from '../perception/motionSensory.ts';
+import { createTimeSensoryController, updateTimeSensory } from '../perception/timeSensory.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -101,6 +104,23 @@ export class AeternaNetwork {
         this.soundRecurrence = 0;
         this.soundDirectionality = 0;
         this.soundActive = false;
+        this.lightSensory = createLightSensoryController();
+        this.lightLevel = 0;
+        this.lightDelta = 0;
+        this.lightNovelty = 0;
+        this.lightPersistence = 0;
+        this.lightActive = false;
+        this.motionSensory = createMotionSensoryController();
+        this.motionLevel = 0;
+        this.motionDelta = 0;
+        this.motionNovelty = 0;
+        this.motionPersistence = 0;
+        this.motionActive = false;
+        this.timeSensory = createTimeSensoryController();
+        this.timePhase = 0;
+        this.timeLevel = 0;
+        this.timePersistence = 0;
+        this.timeActive = true;
     }
 
     initializePredictionState() {
@@ -274,6 +294,23 @@ export class AeternaNetwork {
         this.soundRecurrence = this.lastSoundPerceptPacket.recurrence;
         this.soundDirectionality = this.lastSoundPerceptPacket.directionality;
         this.soundActive = this.lastSoundPerceptPacket.active;
+        const lightController = updateLightSensory(this.lightSensory);
+        this.lightLevel = lightController.packet.level;
+        this.lightDelta = lightController.packet.delta;
+        this.lightNovelty = lightController.packet.novelty;
+        this.lightPersistence = lightController.packet.persistence;
+        this.lightActive = lightController.packet.active;
+        const motionController = updateMotionSensory(this.motionSensory);
+        this.motionLevel = motionController.packet.level;
+        this.motionDelta = motionController.packet.delta;
+        this.motionNovelty = motionController.packet.novelty;
+        this.motionPersistence = motionController.packet.persistence;
+        this.motionActive = motionController.packet.active;
+        const timeController = updateTimeSensory(this.timeSensory);
+        this.timePhase = timeController.packet.phase;
+        this.timeLevel = timeController.packet.level;
+        this.timePersistence = timeController.packet.persistence;
+        this.timeActive = timeController.packet.active;
         return perceptionPacket;
     }
 
@@ -360,6 +397,20 @@ export class AeternaNetwork {
             soundRecurrence: this.soundRecurrence,
             soundDirectionality: this.soundDirectionality,
             soundActive: this.soundActive,
+            lightLevel: this.lightLevel,
+            lightDelta: this.lightDelta,
+            lightNovelty: this.lightNovelty,
+            lightPersistence: this.lightPersistence,
+            lightActive: this.lightActive,
+            motionLevel: this.motionLevel,
+            motionDelta: this.motionDelta,
+            motionNovelty: this.motionNovelty,
+            motionPersistence: this.motionPersistence,
+            motionActive: this.motionActive,
+            timePhase: this.timePhase,
+            timeLevel: this.timeLevel,
+            timePersistence: this.timePersistence,
+            timeActive: this.timeActive,
             rewriteTendency: rewritePacket.dominantRewriteTendency,
             rewritePressureMean: rewritePacket.rewritePressureMean,
             rewritePressureMax: rewritePacket.rewritePressureMax,

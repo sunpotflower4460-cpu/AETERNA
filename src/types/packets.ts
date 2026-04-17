@@ -47,6 +47,36 @@ export interface SoundPerceptPacket {
   active: boolean;
 }
 
+export interface LightPerceptPacket {
+  level: number;
+  delta: number;
+  novelty: number;
+  persistence: number;
+  recurrence: number;
+  directionality: number;
+  active: boolean;
+}
+
+export interface MotionPerceptPacket {
+  level: number;
+  delta: number;
+  novelty: number;
+  persistence: number;
+  recurrence: number;
+  directionality: number;
+  active: boolean;
+}
+
+export interface TimePerceptPacket {
+  phase: number;
+  level: number;
+  novelty: number;
+  persistence: number;
+  recurrence: number;
+  directionality: number;
+  active: boolean;
+}
+
 export interface PredictionPacket {
   meanPrediction: number;
   meanPredictionError: number;
@@ -122,6 +152,20 @@ export type BridgeFacingNumericPacket = Pick<
   | 'sound_recurrence'
   | 'sound_directionality'
   | 'sound_active'
+  | 'light_level'
+  | 'light_delta'
+  | 'light_novelty'
+  | 'light_persistence'
+  | 'light_active'
+  | 'motion_level'
+  | 'motion_delta'
+  | 'motion_novelty'
+  | 'motion_persistence'
+  | 'motion_active'
+  | 'time_phase'
+  | 'time_level'
+  | 'time_persistence'
+  | 'time_active'
   | 'mode_state'
   | 'wake_drive'
   | 'sleep_pressure'
