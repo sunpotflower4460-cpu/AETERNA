@@ -14,6 +14,7 @@ import { runModeControllerStage, applyDreamReplay, getModeDebugSummary, noteMode
 import { runPriorRewriteStage, buildRewriteDebugSummary, decayStructuredPriorRewrite, findRewriteCandidate, getRewriteLocalTouch, getRewriteSeedBiases, applyDirectionalRewrite, applyStructuredPriorRewrite, logRewriteEvent, updateStructuredPriorRewrite } from '../organism/priorRewrite.ts';
 import { runBodyStateStage, getOrganismDebugSummary, recordOrganismSnapshot, updateOrganismState } from '../organism/bodyState.ts';
 import { computeTouchCentroid, updateTouchPatternScores, updateTouchSequenceFeatures } from '../perception/touchPatterns.ts';
+import { createSoundSensoryController, updateSoundSensory } from '../perception/soundSensory.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -88,6 +89,18 @@ export class AeternaNetwork {
         this.touchPatternScores = { tap: 0, repeat: 0, hold: 0, stroke: 0 };
         this.strokePath = [];
         this.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
+        this.soundSensory = createSoundSensoryController();
+        this.lastSoundPerceptPacket = { ...this.soundSensory.packet };
+        this.soundLevel = 0;
+        this.soundDelta = 0;
+        this.soundBandLow = 0;
+        this.soundBandMid = 0;
+        this.soundBandHigh = 0;
+        this.soundNovelty = 0;
+        this.soundPersistence = 0;
+        this.soundRecurrence = 0;
+        this.soundDirectionality = 0;
+        this.soundActive = false;
     }
 
     initializePredictionState() {
@@ -248,7 +261,20 @@ export class AeternaNetwork {
         const touchInputPacket = captureTouchSensoryInput(this, activeTouches);
         runLocalPredictorStage(this);
         const touchPatternPacket = runTouchPatternStage(this, activeTouches);
-        return finalizeTouchSensoryStage(this, touchInputPacket, touchPatternPacket);
+        const perceptionPacket = finalizeTouchSensoryStage(this, touchInputPacket, touchPatternPacket);
+        const soundController = updateSoundSensory(this.soundSensory);
+        this.lastSoundPerceptPacket = { ...soundController.packet };
+        this.soundLevel = this.lastSoundPerceptPacket.level;
+        this.soundDelta = this.lastSoundPerceptPacket.delta;
+        this.soundBandLow = this.lastSoundPerceptPacket.bandLow;
+        this.soundBandMid = this.lastSoundPerceptPacket.bandMid;
+        this.soundBandHigh = this.lastSoundPerceptPacket.bandHigh;
+        this.soundNovelty = this.lastSoundPerceptPacket.novelty;
+        this.soundPersistence = this.lastSoundPerceptPacket.persistence;
+        this.soundRecurrence = this.lastSoundPerceptPacket.recurrence;
+        this.soundDirectionality = this.lastSoundPerceptPacket.directionality;
+        this.soundActive = this.lastSoundPerceptPacket.active;
+        return perceptionPacket;
     }
 
     updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket) {
@@ -324,6 +350,16 @@ export class AeternaNetwork {
             touchRepeatCount: perceptionPacket.touchRepeatCount,
             dominantPattern: perceptionPacket.dominantPattern,
             touchPatternScores: { ...perceptionPacket.patternScores },
+            soundLevel: this.soundLevel,
+            soundDelta: this.soundDelta,
+            soundBandLow: this.soundBandLow,
+            soundBandMid: this.soundBandMid,
+            soundBandHigh: this.soundBandHigh,
+            soundNovelty: this.soundNovelty,
+            soundPersistence: this.soundPersistence,
+            soundRecurrence: this.soundRecurrence,
+            soundDirectionality: this.soundDirectionality,
+            soundActive: this.soundActive,
             rewriteTendency: rewritePacket.dominantRewriteTendency,
             rewritePressureMean: rewritePacket.rewritePressureMean,
             rewritePressureMax: rewritePacket.rewritePressureMax,

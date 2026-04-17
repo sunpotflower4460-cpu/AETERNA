@@ -31,6 +31,16 @@ export function buildTorusStatePacket({
     sigmaDisplay: number;
     phiApprox: number;
     ignitionRatio: number;
+    soundLevel?: number;
+    soundDelta?: number;
+    soundBandLow?: number;
+    soundBandMid?: number;
+    soundBandHigh?: number;
+    soundNovelty?: number;
+    soundPersistence?: number;
+    soundRecurrence?: number;
+    soundDirectionality?: number;
+    soundActive?: boolean;
     dominantPattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
     touchPatternScores?: { tap: number; repeat: number; hold: number; stroke: number };
     modeState?: 'sleep' | 'wake' | 'dream';
@@ -68,6 +78,16 @@ export function buildTorusStatePacket({
     tension,
     touch_active: touchActive,
     touch_location: touchLocation,
+    sound_level: dyn.soundLevel,
+    sound_delta: dyn.soundDelta,
+    sound_band_low: dyn.soundBandLow,
+    sound_band_mid: dyn.soundBandMid,
+    sound_band_high: dyn.soundBandHigh,
+    sound_novelty: dyn.soundNovelty,
+    sound_persistence: dyn.soundPersistence,
+    sound_recurrence: dyn.soundRecurrence,
+    sound_directionality: dyn.soundDirectionality,
+    sound_active: dyn.soundActive,
     engine_state: engineState,
     touch_pattern: dyn.dominantPattern ?? null,
     touch_pattern_scores: dyn.touchPatternScores,
