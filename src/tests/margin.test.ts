@@ -59,6 +59,7 @@ describe('Phase D margin paths', () => {
   });
 
   it('uses the crypto-backed noise path without calling Math.random', () => {
+    state.disk = stubDisk() as typeof state.disk;
     const net = new AeternaNetwork(8);
     setCryptoStub(0);
     Math.random = () => {
