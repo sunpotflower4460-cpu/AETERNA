@@ -106,7 +106,12 @@ export function initializeDormantNodes(network: any) {
     eligibleNodes.push(i);
   }
 
-  eligibleNodes.sort((a, b) => dormantPlacementHash(a) - dormantPlacementHash(b));
+  eligibleNodes.sort((a, b) => {
+    const aHash = dormantPlacementHash(a);
+    const bHash = dormantPlacementHash(b);
+    if (aHash === bHash) return 0;
+    return aHash < bHash ? -1 : 1;
+  });
   const targetCount = Math.min(eligibleNodes.length, Math.max(1, Math.floor(network.numNodes * DORMANT_NODE_RATIO)));
   for (let n = 0; n < targetCount; n++) {
     const idx = eligibleNodes[Math.floor(((n + 0.5) * eligibleNodes.length) / targetCount)];

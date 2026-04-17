@@ -2,6 +2,11 @@ import { state } from '../organism/state.js';
 import { UI, updateUIRow } from './domCache.js';
 import { PHI } from '../constants/aeternaConstants.js';
 
+function formatDormantEvents(events) {
+    if (!Array.isArray(events) || events.length === 0) return '—';
+    return events.slice(0, 3).map(event => `node:${event.node}@time:${event.timestamp}`).join(' | ');
+}
+
 export function updateMetricsUI(dyn, engineState) {
     const disk = state.disk;
     const tensionLoad = state.tensionLoad;
@@ -81,9 +86,7 @@ export function updateMetricsUI(dyn, engineState) {
     const lastRewrite = dyn.lastRewriteEvent
         ? `${dyn.lastRewriteEvent.rewriteType} @ ${dyn.lastRewriteEvent.node}`
         : '—';
-    const dormantEvents = Array.isArray(dyn.recentDormantWakeEvents) && dyn.recentDormantWakeEvents.length > 0
-        ? dyn.recentDormantWakeEvents.slice(0, 3).map(event => `node:${event.node}@time:${event.timestamp}`).join(' | ')
-        : '—';
+    const dormantEvents = formatDormantEvents(dyn.recentDormantWakeEvents);
     if(UI['val-rewrite-tendency']) UI['val-rewrite-tendency'].innerText = rewriteTendency;
     if(UI['val-rewrite-pressure']) UI['val-rewrite-pressure'].innerText = rewritePressure;
     if(UI['val-rewrite-load']) UI['val-rewrite-load'].innerText = (dyn.globalRewriteLoad || 0).toFixed(3);
