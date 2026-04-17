@@ -1,7 +1,11 @@
 import type { MotionPerceptPacket } from '../types/packets.js';
 
 const MOTION_ACTIVE_THRESHOLD = 0.15;
+// Raw acceleration from DeviceMotionEvent.accelerationIncludingGravity is in m/s².
+// 20 m/s² covers typical vigorous device motion including gravitational component.
 const ACCEL_NORMALIZE = 20.0;
+// Raw rotation rate from DeviceMotionEvent.rotationRate is in degrees/second.
+// 360 deg/s represents a full rotation per second, a reasonable upper bound.
 const GYRO_NORMALIZE = 360.0;
 
 export interface MotionFeatureFrame {

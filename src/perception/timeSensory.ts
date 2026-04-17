@@ -57,6 +57,7 @@ export function updateTimeObservationState(
   // Phase delta per frame is tiny; scale up to detect midnight crossing
   const rawDelta = phase - state.previousPhase;
   // Handle midnight wrap: if rawDelta is strongly negative, a day rolled over
+  // (phase jumped from ~1.0 back to ~0.0), so add 1 to recover the true forward step.
   const phaseDelta = rawDelta < -0.5 ? rawDelta + 1 : rawDelta;
   const noveltyInstant = clamp01(Math.abs(phaseDelta) * 500.0);
 

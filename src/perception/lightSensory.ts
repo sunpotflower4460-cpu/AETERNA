@@ -175,6 +175,7 @@ function readLightFeatureFrame(controller: LightSensoryController): LightFeature
   let sum = 0;
   const pixelCount = SAMPLE_WIDTH * SAMPLE_HEIGHT;
   for (let i = 0; i < data.length; i += 4) {
+    // Rec. 601 luma coefficients: Y' = 0.299R + 0.587G + 0.114B
     sum += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
   }
   return { level: clamp01(sum / pixelCount) };
