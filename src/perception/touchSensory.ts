@@ -22,6 +22,7 @@ export function captureTouchSensoryInput(network: any, activeTouches: Map<any, a
     touchVelocity: network.touchVelocityEstimate,
     touchRepeatCount: network.touchRepeatCount,
     lastTouchDirection: network.getTouchDirectionArray(),
+    touchDirectionStrength: network.touchDirectionVector?.strength ?? 0,
   };
 }
 

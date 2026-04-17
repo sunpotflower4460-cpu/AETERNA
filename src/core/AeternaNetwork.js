@@ -271,6 +271,7 @@ export class AeternaNetwork {
         });
         const actionPacket = runActionDecisionStage(this, {
             touchPacket: perceptionPacket,
+            organismPacket,
         });
         return {
             predictionPacket,
