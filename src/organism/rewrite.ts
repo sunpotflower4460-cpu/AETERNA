@@ -54,7 +54,7 @@ export function decayStructuredPriorRewrite(network: any) {
     if (network.recentRewriteMask[i] > 0) network.recentRewriteMask[i] -= 1;
   }
   for (const type of REWRITE_TYPES) {
-    const channel = network.priorChannels[type];
+    const channel = network.priorChannels[type]; // state maintenance; keep in Phase C
     for (let i = 0; i < network.numNodes; i++) channel[i] = network.clampFinite(channel[i] * REWRITE_PRIOR_DECAY, 0, REWRITE_CHANNEL_LIMIT, 0);
   }
 }
@@ -197,9 +197,9 @@ export function logRewriteEvent(network: any, candidate: any, delta: number) {
 export function applyStructuredPriorRewrite(network: any, candidate: any) {
   const idx = candidate.node;
   const delta = network.clampFinite((0.004 + candidate.score * 0.012) * (network.currentModeDynamics?.rewriteGain ?? 1.0), 0.004, 0.018, 0.004);
-  const channel = network.priorChannels[candidate.rewriteType];
+  const channel = network.priorChannels[candidate.rewriteType]; // state maintenance; keep in Phase C
   channel[idx] = network.clampFinite(channel[idx] + delta, 0, REWRITE_CHANNEL_LIMIT, 0);
-  network.priorBias[idx] = network.clampFinite(network.priorBias[idx] + delta * 0.7, 0, REWRITE_PRIOR_LIMIT, 0);
+  network.priorBias[idx] = network.clampFinite(network.priorBias[idx] + delta * 0.7, 0, REWRITE_PRIOR_LIMIT, 0); // co-written with priorChannels; reroute target in Phase C
 
   if (candidate.rewriteType === 'novelty') {
     network.localPrediction[idx] = network.clampFinite(network.localPrediction[idx] + network.touchOnset[idx] * delta * REWRITE_NOVELTY_PREDICTION_FACTOR, -8.0, 8.0, 0);
@@ -228,7 +228,7 @@ export function buildRewriteDebugSummary(network: any, seedBiases: any) {
     pressureSum += network.rewritePressure[i];
     priorSum += network.priorBias[i];
     if (network.rewritePressure[i] > pressureMax) pressureMax = network.rewritePressure[i];
-    for (const type of REWRITE_TYPES) channelSummary[type] += network.priorChannels[type][i];
+    for (const type of REWRITE_TYPES) channelSummary[type] += network.priorChannels[type][i]; // observation-only usage; keep in Phase C
   }
   const norm = Math.max(network.numNodes, 1);
   return {

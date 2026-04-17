@@ -53,6 +53,7 @@ export function updateTouchPerception(network: any) {
   );
   for (let i = 0; i < network.numNodes; i++) {
     const err = network.rawTouch[i] - network.localPrediction[i];
+    // direct behavioral dependency (updateTouchPerception); target for weakening in Phase C
     const noveltyBias = network.priorChannels.novelty[i];
     const recurrenceBias = network.priorChannels.recurrence[i];
     const persistenceBias = network.priorChannels.persistence[i];
@@ -90,6 +91,7 @@ export function projectTouchToNetwork(network: any) {
   else if (network.actionState === 'withdraw') projectionGain *= 1.0 - network.actionPulseLevel * 0.45;
   else if (network.actionState === 'settle') projectionGain *= 1.0 - network.actionPulseLevel * 0.12;
   for (let i = 0; i < network.numNodes; i++) {
+    // direct behavioral dependency (projectTouchToNetwork, all 4 channels); target for weakening in Phase C
     const noveltyBias = network.priorChannels.novelty[i];
     const recurrenceBias = network.priorChannels.recurrence[i];
     const persistenceBias = network.priorChannels.persistence[i];
