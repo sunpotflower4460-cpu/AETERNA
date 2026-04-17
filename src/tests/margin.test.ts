@@ -91,7 +91,7 @@ describe('Phase D margin paths', () => {
     ];
 
     net.dormantWakeCooldown[dormantIndex] = 0;
-    net.dormantWakePressure[dormantIndex] = 0.54;
+    net.dormantWakePressure[dormantIndex] = 0.7;
     net.currentBuffer[dormantIndex] = 1.2;
     net.localPrediction[dormantIndex] = 0;
     net.activityResidue[dormantIndex] = 0.8;

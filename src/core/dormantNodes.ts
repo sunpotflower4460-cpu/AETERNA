@@ -3,18 +3,18 @@ import { getHardwareRandomFloat, getHardwareRandomSigned } from './hardwareRando
 
 const DORMANT_NODE_RATIO = 0.05;
 const DORMANT_WAKE_PRESSURE_DECAY = 0.986;
-const DORMANT_WAKE_PRESSURE_GAIN = 0.072;
-const DORMANT_WAKE_TRIGGER_PRESSURE = 0.46;
-const DORMANT_WAKE_TRIGGER_SIGNAL = 0.62;
-const DORMANT_WAKE_MIN_ACTIVITY = 0.16;
-const DORMANT_WAKE_MIN_ERROR = 0.08;
-const DORMANT_WAKE_COOLDOWN_MIN = 48;
-const DORMANT_WAKE_COOLDOWN_RANGE = 36;
+const DORMANT_WAKE_PRESSURE_GAIN = 0.052;
+const DORMANT_WAKE_TRIGGER_PRESSURE = 0.58;
+const DORMANT_WAKE_TRIGGER_SIGNAL = 0.72;
+const DORMANT_WAKE_MIN_ACTIVITY = 0.2;
+const DORMANT_WAKE_MIN_ERROR = 0.1;
+const DORMANT_WAKE_COOLDOWN_MIN = 22;
+const DORMANT_WAKE_COOLDOWN_RANGE = 18;
 const DORMANT_AWAKE_SELF_INFLUENCE = 0.032;
 const DORMANT_AWAKE_NEIGHBOR_INFLUENCE = 0.18;
-const DORMANT_RESLEEP_PRESSURE = 0.16;
-const DORMANT_RESLEEP_ACTIVITY = 0.12;
-const DORMANT_RESLEEP_ERROR = 0.07;
+const DORMANT_RESLEEP_PRESSURE = 0.2;
+const DORMANT_RESLEEP_ACTIVITY = 0.15;
+const DORMANT_RESLEEP_ERROR = 0.09;
 const DORMANT_EVENT_LIMIT = 8;
 
 function dormantPlacementHash(index: number) {
@@ -157,7 +157,7 @@ export function updateDormantNodes(network: any) {
       }
     }
 
-    network.dormantWakePressure[i] = network.clampFinite(network.dormantWakePressure[i] * 0.955 - 0.004, 0, 1.5, 0);
+    network.dormantWakePressure[i] = network.clampFinite(network.dormantWakePressure[i] * 0.94 - 0.006, 0, 1.5, 0);
     if (network.dormantWakeCooldown[i] > 0) {
       network.dormantWakeCooldown[i] = network.clampFinite(network.dormantWakeCooldown[i] - 1, 0, 240, 0);
     }
@@ -172,7 +172,7 @@ export function updateDormantNodes(network: any) {
 
     if (shouldSleep) {
       network.isDormantNode[i] = 1;
-      network.dormantWakeCooldown[i] = 18;
+      network.dormantWakeCooldown[i] = 42;
       network.dormantWakePressure[i] = network.clampFinite(network.dormantWakePressure[i] * 0.45, 0, 1.5, 0);
     }
   }
