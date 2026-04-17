@@ -34,6 +34,19 @@ export interface TouchPerceptPacket extends TouchInputPacket {
   patternScores: PatternScores;
 }
 
+export interface SoundPerceptPacket {
+  level: number;
+  delta: number;
+  bandLow: number;
+  bandMid: number;
+  bandHigh: number;
+  novelty: number;
+  persistence: number;
+  recurrence: number;
+  directionality: number;
+  active: boolean;
+}
+
 export interface PredictionPacket {
   meanPrediction: number;
   meanPredictionError: number;
@@ -99,6 +112,16 @@ export type BridgeFacingNumericPacket = Pick<
   | 'cluster_ratio'
   | 'touch_pattern'
   | 'touch_pattern_scores'
+  | 'sound_level'
+  | 'sound_delta'
+  | 'sound_band_low'
+  | 'sound_band_mid'
+  | 'sound_band_high'
+  | 'sound_novelty'
+  | 'sound_persistence'
+  | 'sound_recurrence'
+  | 'sound_directionality'
+  | 'sound_active'
   | 'mode_state'
   | 'wake_drive'
   | 'sleep_pressure'

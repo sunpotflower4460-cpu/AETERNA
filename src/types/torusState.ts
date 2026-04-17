@@ -7,6 +7,16 @@ export interface TorusStatePacket {
   tension: number;
   touch_active: boolean;
   touch_location: [number, number] | null;
+  sound_level?: number;
+  sound_delta?: number;
+  sound_band_low?: number;
+  sound_band_mid?: number;
+  sound_band_high?: number;
+  sound_novelty?: number;
+  sound_persistence?: number;
+  sound_recurrence?: number;
+  sound_directionality?: number;
+  sound_active?: boolean;
   engine_state: 'WHITE' | 'BLACK' | 'NEUTRAL';
   touch_pattern?: 'tap' | 'repeat' | 'hold' | 'stroke' | null;
   touch_pattern_scores?: { tap: number; repeat: number; hold: number; stroke: number };

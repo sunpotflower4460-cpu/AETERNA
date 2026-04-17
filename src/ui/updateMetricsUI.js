@@ -43,6 +43,14 @@ export function updateMetricsUI(dyn, engineState) {
     if(UI['val-touch-onset'])   UI['val-touch-onset'].innerText   = (dyn.meanTouchOnset    || 0).toFixed(4);
     if(UI['val-touch-offset'])  UI['val-touch-offset'].innerText  = (dyn.meanTouchOffset   || 0).toFixed(4);
     if(UI['val-touch-novelty']) UI['val-touch-novelty'].innerText = (dyn.meanTouchNovelty  || 0).toFixed(4);
+    if(UI['val-sound-level']) UI['val-sound-level'].innerText = (dyn.soundLevel || 0).toFixed(4);
+    if(UI['val-sound-delta']) UI['val-sound-delta'].innerText = (dyn.soundDelta || 0).toFixed(4);
+    if(UI['val-sound-low']) UI['val-sound-low'].innerText = (dyn.soundBandLow || 0).toFixed(4);
+    if(UI['val-sound-mid']) UI['val-sound-mid'].innerText = (dyn.soundBandMid || 0).toFixed(4);
+    if(UI['val-sound-high']) UI['val-sound-high'].innerText = (dyn.soundBandHigh || 0).toFixed(4);
+    if(UI['val-sound-novelty']) UI['val-sound-novelty'].innerText = (dyn.soundNovelty || 0).toFixed(4);
+    if(UI['val-sound-persistence']) UI['val-sound-persistence'].innerText = (dyn.soundPersistence || 0).toFixed(4);
+    if(UI['val-sound-active']) UI['val-sound-active'].innerText = dyn.soundActive ? 'active' : 'inactive';
     if(UI['val-baseline']) UI['val-baseline'].innerText = (dyn.baselineLevel || 0).toFixed(4);
     if(UI['val-residue'])  UI['val-residue'].innerText  = (dyn.residueLevel  || 0).toFixed(4);
     if(UI['val-local-pred-error']) UI['val-local-pred-error'].innerText = (dyn.meanLocalPredError || 0).toFixed(4);
