@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getLivingStateInfluence } from '../organism/livingState.ts';
+
 export function updateLocalPrediction(network: any) {
   const S = network.segments;
   const baseAlpha = 0.05;
+
+  // Phase 2: Apply living state prediction sensitivity
+  const livingInfluence = network.livingState ? getLivingStateInfluence(network.livingState) : { predictionSensitivityModifier: 1.0 };
+
   const organismAlphaGain = network.clampFinite(
     1.0 - Math.max(network.stability - 0.58, 0) * 0.08 - Math.max(network.overload - 0.08, 0) * 0.05,
     0.88,
@@ -23,8 +29,10 @@ export function updateLocalPrediction(network: any) {
         + network.currentBuffer[right] * network.w_right[idx]
       ) / Math.max(weightSum, 1e-6);
       const noveltyBias = network.priorChannels.novelty[idx]; // direct behavioral dependency; target for weakening in Phase C
+
+      // Apply living state sensitivity to adaptive alpha
       const adaptiveAlpha = network.clampFinite(
-        (baseAlpha + noveltyBias * 0.03 + network.priorBias[idx] * 0.015) * organismAlphaGain,
+        (baseAlpha + noveltyBias * 0.03 + network.priorBias[idx] * 0.015) * organismAlphaGain * livingInfluence.predictionSensitivityModifier,
         0.03,
         0.12,
         baseAlpha,

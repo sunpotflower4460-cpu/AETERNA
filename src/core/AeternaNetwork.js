@@ -20,6 +20,7 @@ import { createLightSensoryController, updateLightSensory } from '../perception/
 import { createMotionSensoryController, updateMotionSensory } from '../perception/motionSensory.ts';
 import { createTimeSensoryController, updateTimeSensory } from '../perception/timeSensory.ts';
 import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebugSummary } from '../organism/energyFlow.ts';
+import { createInitialLivingState, updateLivingState, getLivingStateDebug, getLivingStateInfluence } from '../organism/livingState.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -37,6 +38,7 @@ export class AeternaNetwork {
         this.initializeModeOngoingLifeState();
         this.initializeOrganismActionState();
         this.initializeEnergyFlowState();
+        this.initializeLivingState();
         this.initializeTemporaryWorkBuffers();
 
         this.generate();
@@ -206,6 +208,10 @@ export class AeternaNetwork {
 
     initializeEnergyFlowState() {
         this.energyFlowState = createInitialEnergyFlowState();
+    }
+
+    initializeLivingState() {
+        this.livingState = createInitialLivingState();
     }
 
     initializeTemporaryWorkBuffers() {

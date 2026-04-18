@@ -2,6 +2,7 @@
 import { PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
 import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRandom.ts';
+import { getLivingStateInfluence } from '../organism/livingState.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
@@ -32,11 +33,19 @@ export function updateBaseline(network: any) {
   // Phase E2: Apply top-down modulation to baseline gain
   const topDownDelta = network.topDownModulation?.baselineGainDelta ?? 0;
   const modulatedGain = gain + topDownDelta;
-  const clampedGain = Math.max(0.5, Math.min(1.5, modulatedGain));
+
+  // Phase 2: Apply living state influence to baseline gain
+  const livingInfluence = network.livingState ? getLivingStateInfluence(network.livingState) : { baselineGainModifier: 1.0 };
+  const finalGain = modulatedGain * livingInfluence.baselineGainModifier;
+  const clampedGain = Math.max(0.5, Math.min(1.5, finalGain));
 
   const phaseOffset = network.modePhase * Math.PI * 2;
+
+  // Phase 2: Add long baseline tone from living state
+  const longTone = network.livingState?.longBaselineTone ?? 0.12;
+
   for (let i = 0; i < network.numNodes; i++) {
-    network.baselineActivity[i] = BASELINE_AMP * clampedGain * Math.sin(network.nodePhase[i] + t + phaseOffset);
+    network.baselineActivity[i] = BASELINE_AMP * clampedGain * Math.sin(network.nodePhase[i] + t + phaseOffset) + longTone * 0.02;
   }
 }
 
@@ -44,13 +53,21 @@ export function updateResidue(network: any) {
   const RESIDUE_DECAY = 0.97;
   const RESIDUE_INTAKE = 0.02;
   const modeResidueOffset = network.currentModeDynamics?.residueDecayOffset ?? 0;
+
+  // Phase 2: Apply living state influence to residue
+  const livingInfluence = network.livingState ? getLivingStateInfluence(network.livingState) : { residueGainModifier: 1.0 };
+
   for (let i = 0; i < network.numNodes; i++) {
     const persistenceBias = network.priorChannels.persistence[i]; // direct behavioral dependency; target for weakening in Phase C
     const decay = network.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
     const intake = network.clampFinite(RESIDUE_INTAKE + persistenceBias * 0.004, RESIDUE_INTAKE, 0.03, RESIDUE_INTAKE);
     const modeDecayTarget = decay + modeResidueOffset;
     const modeDecay = network.clampFinite(modeDecayTarget, 0.94, 0.995, modeDecayTarget);
-    network.activityResidue[i] = network.activityResidue[i] * modeDecay + network.spikeTrace[i] * intake;
+
+    // Apply living state residue bias to intake
+    const adjustedIntake = intake * livingInfluence.residueGainModifier;
+
+    network.activityResidue[i] = network.activityResidue[i] * modeDecay + network.spikeTrace[i] * adjustedIntake;
     network.activityResidue[i] = network.clampFinite(network.activityResidue[i], 0, 1.25, 0);
   }
 }
