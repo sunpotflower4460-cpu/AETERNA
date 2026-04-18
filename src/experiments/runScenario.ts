@@ -51,6 +51,15 @@ export interface MetricsSnapshot {
     overload: number;
     energyReserve: number;
     hasNaN: boolean;
+    // Phase 2: Living state metrics
+    fatigue?: number;
+    coherenceMemory?: number;
+    preferredErgodicity?: number;
+    longBaselineTone?: number;
+    recentHistoryBias?: number;
+    residueBias?: number;
+    predictionSensitivity?: number;
+    touchNeedBaseline?: number;
 }
 
 export interface ScenarioResult {
@@ -76,6 +85,7 @@ export interface ScenarioResult {
  */
 function stubWindowForHeadless() {
     if (typeof window === 'undefined') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (globalThis as any).window = {
             innerWidth: 1920,
             innerHeight: 1080,
@@ -88,7 +98,8 @@ function stubWindowForHeadless() {
  * dynamicCore.ts requires state.disk for frequency calculations
  */
 async function setupStateForHeadless(disk: PhysicalDisk): Promise<void> {
-    const { state } = await import('../organism/state.js');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { state } = await import('../organism/state.js') as any;
     state.disk = disk;
 }
 
@@ -179,10 +190,10 @@ function applyTouchScript(
 function buildMetricsSnapshot(
     frame: number,
     network: AeternaNetwork,
-    dyn: any,
+    dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     recentMeans: number[]
 ): MetricsSnapshot {
-    return {
+    const snapshot: MetricsSnapshot = {
         frame,
         meanActivity: computeMeanActivity(network),
         maxActivity: computeMaxActivity(network),
@@ -206,6 +217,20 @@ function buildMetricsSnapshot(
         energyReserve: dyn.energyReserve ?? 1.0,
         hasNaN: hasNaN(network),
     };
+
+    // Phase 2: Add living state metrics
+    if (network.livingState) {
+        snapshot.fatigue = network.livingState.fatigue;
+        snapshot.coherenceMemory = network.livingState.coherenceMemory;
+        snapshot.preferredErgodicity = network.livingState.preferredErgodicity;
+        snapshot.longBaselineTone = network.livingState.longBaselineTone;
+        snapshot.recentHistoryBias = network.livingState.recentHistoryBias;
+        snapshot.residueBias = network.livingState.residueBias;
+        snapshot.predictionSensitivity = network.livingState.predictionSensitivity;
+        snapshot.touchNeedBaseline = network.livingState.touchNeedBaseline;
+    }
+
+    return snapshot;
 }
 
 /**
