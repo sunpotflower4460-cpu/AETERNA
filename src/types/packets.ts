@@ -124,6 +124,19 @@ export interface ActionPacket {
   lastActionChangeFrames: number;
 }
 
+export interface EnergyFlowPacket {
+  energyReserve: number;
+  energyInflow: number;
+  energyOutflow: number;
+  maintenanceCost: number;
+  activityCost: number;
+  rewriteCost: number;
+  structuralIntegrity: number;
+  lowEnergyPressure: number;
+  recoveryDrive: number;
+  energyIsDormant: boolean;
+}
+
 export interface DynamicsPacket {
   arousal: number;
   sigma: number;

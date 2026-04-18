@@ -84,14 +84,18 @@ export function updateModeState(network: any, {
   const organismRest = network.clamp01(network.restDrive, 0);
   const organismOrient = network.clamp01(network.orientingDrive, 0);
 
+  // Phase F: Energy flow influences mode drives
+  const lowEnergyPressure = network.energyFlowState?.lowEnergyPressure ?? 0;
+  const recoveryDrive = network.energyFlowState?.recoveryDrive ?? 0;
+
   const wakeTarget = network.clampFinite(
-    0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08 + organismOrient * 0.12 - organismRest * 0.05 - organismOverload * 0.04,
+    0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08 + organismOrient * 0.12 - organismRest * 0.05 - organismOverload * 0.04 - lowEnergyPressure * 0.08 + recoveryDrive * 0.06,
     0,
     1,
     0,
   );
   const sleepTarget = network.clampFinite(
-    0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18 + organismRest * 0.16 + organismOverload * 0.1 + (1.0 - organismEnergy) * 0.08,
+    0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18 + organismRest * 0.16 + organismOverload * 0.1 + (1.0 - organismEnergy) * 0.08 + lowEnergyPressure * 0.14,
     0,
     1,
     0,

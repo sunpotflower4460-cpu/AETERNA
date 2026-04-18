@@ -138,6 +138,18 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-time-persistence']) UI['val-time-persistence'].innerText = (dyn.timePersistence || 0).toFixed(4);
     if (UI['val-time-active'])      UI['val-time-active'].innerText      = dyn.timeActive ? 'active' : 'inactive';
 
+    // Phase F: Energy flow state
+    if (UI['val-energy-reserve'])         UI['val-energy-reserve'].innerText         = (dyn.energyReserve         || 0).toFixed(4);
+    if (UI['val-energy-inflow'])          UI['val-energy-inflow'].innerText          = (dyn.energyInflow          || 0).toFixed(4);
+    if (UI['val-energy-outflow'])         UI['val-energy-outflow'].innerText         = (dyn.energyOutflow         || 0).toFixed(4);
+    if (UI['val-maintenance-cost'])       UI['val-maintenance-cost'].innerText       = (dyn.maintenanceCost       || 0).toFixed(4);
+    if (UI['val-activity-cost'])          UI['val-activity-cost'].innerText          = (dyn.activityCost          || 0).toFixed(4);
+    if (UI['val-rewrite-cost'])           UI['val-rewrite-cost'].innerText           = (dyn.rewriteCost           || 0).toFixed(4);
+    if (UI['val-structural-integrity'])   UI['val-structural-integrity'].innerText   = (dyn.structuralIntegrity   || 1).toFixed(4);
+    if (UI['val-low-energy-pressure'])    UI['val-low-energy-pressure'].innerText    = (dyn.lowEnergyPressure     || 0).toFixed(4);
+    if (UI['val-recovery-drive'])         UI['val-recovery-drive'].innerText         = (dyn.recoveryDrive         || 0).toFixed(4);
+    if (UI['val-energy-dormant'])         UI['val-energy-dormant'].innerText         = dyn.energyIsDormant ? 'dormant' : 'active';
+
     // Phase E1: hierarchical torus
     if (dyn.hierarchySummary) {
         const h = dyn.hierarchySummary;
