@@ -107,7 +107,14 @@ export function findRewriteCandidate(network: any, type: string, seedBias: numbe
     if (localTouchNorm < 0.04) continue;
     const localErrorNorm = Math.min(Math.abs(network.predictionError[i]), 1.5) / 1.5;
     if (localErrorNorm < 0.06) continue;
-    const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * (network.currentModeDynamics?.rewriteGain ?? 1.0) * rewriteHomeostasisGain;
+
+    // Phase E2: Apply top-down modulation to rewrite gain
+    const baseRewriteGain = network.currentModeDynamics?.rewriteGain ?? 1.0;
+    const rewriteGainDelta = network.topDownModulation?.rewriteGainDelta ?? 0;
+    const modulatedRewriteGain = baseRewriteGain + rewriteGainDelta;
+    const clampedRewriteGain = Math.max(0.5, Math.min(1.3, modulatedRewriteGain));
+
+    const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * clampedRewriteGain * rewriteHomeostasisGain;
     if (!Number.isFinite(composite) || composite <= 0) continue;
 
     network.rewritePressure[i] = network.clampFinite(
@@ -196,7 +203,14 @@ export function logRewriteEvent(network: any, candidate: any, delta: number) {
 
 export function applyStructuredPriorRewrite(network: any, candidate: any) {
   const idx = candidate.node;
-  const delta = network.clampFinite((0.004 + candidate.score * 0.012) * (network.currentModeDynamics?.rewriteGain ?? 1.0), 0.004, 0.018, 0.004);
+
+  // Phase E2: Apply top-down modulation to rewrite gain
+  const baseRewriteGain = network.currentModeDynamics?.rewriteGain ?? 1.0;
+  const rewriteGainDelta = network.topDownModulation?.rewriteGainDelta ?? 0;
+  const modulatedRewriteGain = baseRewriteGain + rewriteGainDelta;
+  const clampedRewriteGain = Math.max(0.5, Math.min(1.3, modulatedRewriteGain));
+
+  const delta = network.clampFinite((0.004 + candidate.score * 0.012) * clampedRewriteGain, 0.004, 0.018, 0.004);
   const channel = network.priorChannels[candidate.rewriteType]; // state maintenance; keep in Phase C
   channel[idx] = network.clampFinite(channel[idx] + delta, 0, REWRITE_CHANNEL_LIMIT, 0);
   network.priorBias[idx] = network.clampFinite(network.priorBias[idx] + delta * 0.7, 0, REWRITE_PRIOR_LIMIT, 0); // co-written with priorChannels; reroute target in Phase C

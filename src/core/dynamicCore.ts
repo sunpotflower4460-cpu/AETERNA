@@ -28,9 +28,15 @@ export function updateBaseline(network: any) {
   const TIME_DRIFT = 0.0008;
   const t = network.simTime * TIME_DRIFT;
   const gain = network.currentModeDynamics?.baselineGain ?? 1.0;
+
+  // Phase E2: Apply top-down modulation to baseline gain
+  const topDownDelta = network.topDownModulation?.baselineGainDelta ?? 0;
+  const modulatedGain = gain + topDownDelta;
+  const clampedGain = Math.max(0.5, Math.min(1.5, modulatedGain));
+
   const phaseOffset = network.modePhase * Math.PI * 2;
   for (let i = 0; i < network.numNodes; i++) {
-    network.baselineActivity[i] = BASELINE_AMP * gain * Math.sin(network.nodePhase[i] + t + phaseOffset);
+    network.baselineActivity[i] = BASELINE_AMP * clampedGain * Math.sin(network.nodePhase[i] + t + phaseOffset);
   }
 }
 
@@ -112,9 +118,15 @@ export function updateDynamicsCore(network: any) {
   const waveSpeed = 0.1 + 0.15 * freqRatio;
   const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
 
+  // Phase E2: Apply top-down threshold modulation
+  const thresholdDelta = network.topDownModulation?.thresholdDelta ?? 0;
+  const baseThreshold = 0.8;
+  const modulatedThreshold = baseThreshold + thresholdDelta;
+  const clampedThreshold = Math.max(0.6, Math.min(1.0, modulatedThreshold));
+
   let newlyFiredCount = 0;
   for (let i = 0; i < network.numNodes; i++) {
-    const dormantThreshold = network.dormantTraitMask?.[i] === 1 && network.isDormantNode?.[i] === 1 ? 1.05 : 0.8;
+    const dormantThreshold = network.dormantTraitMask?.[i] === 1 && network.isDormantNode?.[i] === 1 ? 1.05 : clampedThreshold;
     if (network.currentBuffer[i] > dormantThreshold && network.prevBuffer[i] <= dormantThreshold) {
       network.spikeTrace[i] = 1.0;
       network.lastSpikeTime[i] = network.simTime;
