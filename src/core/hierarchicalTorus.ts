@@ -2,7 +2,6 @@
 import { AeternaNetwork } from './AeternaNetwork.js';
 import type { SubTorusSummaryPacket, LayerAggregatePacket, HierarchicalFeedbackPacket } from '../types/packets.js';
 import {
-  extractSubTorusSummary,
   aggregateSubToriSummaries,
   mapSummariesToUpperInput,
   generateTopDownModulation,
