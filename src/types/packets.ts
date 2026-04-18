@@ -197,3 +197,27 @@ export interface LayerAggregatePacket {
   gridWidth: number;
   gridHeight: number;
 }
+
+/**
+ * Top-down modulation packet for Phase E2.
+ * Represents weak, continuous influence from upper torus to a single sub-torus.
+ * These are NOT commands, but environmental biases that slightly tilt lower-layer conditions.
+ */
+export interface TopDownModulationPacket {
+  baselineGainDelta: number;
+  rewriteGainDelta: number;
+  thresholdDelta: number;
+  residueGainDelta?: number;
+  predictionAdaptationDelta?: number;
+}
+
+/**
+ * Complete hierarchical feedback packet containing modulation for all sub-tori.
+ * Includes source upper-torus state for debugging and analysis.
+ */
+export interface HierarchicalFeedbackPacket {
+  perSubTorus: TopDownModulationPacket[];
+  sourceTopLevelSigma: number;
+  sourceTopLevelPhiProxy: number;
+  sourceTopLevelArousal: number;
+}
