@@ -3,6 +3,7 @@ import { state } from '../organism/state.js';
 import { MODE_DYNAMICS } from './aeternaTuning.ts';
 import { autoPredictAndError, injectPredictionError, runTorusDynamicsStage, triggerNoise, updatePredictionError } from './torusDynamics.ts';
 import { computeIntegrationProxy, computeLargestCluster, computeMeanLocalPredError, computeMeanPredictionError, computePhaseCoherence, runTorusMetricsStage, updateDerivedStateCaches } from './torusMetrics.ts';
+import { buildDormantDebugSummary, initializeDormantNodes, updateDormantNodes } from './dormantNodes.ts';
 import { generateNetworkGeometry, updateNetworkRadius, updateRenderBuffers } from './torusGeometry.ts';
 import { injectSTDPExternal, normalizeDirectionalWeights } from './torusWeights.ts';
 import { runBaselineActivityStage, updateBaseline, updateResidue } from '../mode/baselineActivity.ts';
@@ -73,6 +74,17 @@ export class AeternaNetwork {
         this.w_down = new Float32Array(this.numNodes).fill(1.0);
         this.w_left = new Float32Array(this.numNodes).fill(1.0);
         this.w_right = new Float32Array(this.numNodes).fill(1.0);
+        this.dormantTraitMask = new Uint8Array(this.numNodes);
+        this.isDormantNode = new Uint8Array(this.numNodes);
+        this.dormantWakePressure = new Float32Array(this.numNodes);
+        this.dormantWakeCooldown = new Float32Array(this.numNodes);
+        this.recentDormantWakeEvents = [];
+        this.totalDormantNodeCount = 0;
+        this.totalDormantWakeCount = 0;
+        this.activeDormantNodeCount = 0;
+        this.hardwareRandomNoiseSource = 'uninitialized';
+        this.lastNoiseMagnitude = 0;
+        this.lastNoiseEventCount = 0;
         this.octahedronHubs = [];
     }
 
@@ -220,7 +232,7 @@ export class AeternaNetwork {
         return this.clampFinite(0.25 + energy * 0.75, 0.25, 1.0, 1.0);
     }
 
-    generate() { generateNetworkGeometry(this); }
+    generate() { generateNetworkGeometry(this); initializeDormantNodes(this); }
     updateRadius(newR) { updateNetworkRadius(this, newR); }
     normalizeDirectionalWeights(index) { normalizeDirectionalWeights(this, index); }
     computeIntegrationProxy() { return computeIntegrationProxy(this); }
@@ -354,6 +366,7 @@ export class AeternaNetwork {
         // update order: baseline/residue → touch sensory input → local predictor → touch pattern → touch percept packet → torus dynamics → prediction/rewrite → organism → mode → action → metrics → render
         const baselinePacket = runBaselineActivityStage(this);
         const perceptionPacket = this.updatePerceptionState(touchState);
+        updateDormantNodes(this);
         const dynamicsPacket = runTorusDynamicsStage(this);
         const {
             predictionPacket,
@@ -363,6 +376,7 @@ export class AeternaNetwork {
             actionPacket,
         } = this.updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket);
         const metricsPacket = runTorusMetricsStage(this, dynamicsPacket);
+        const dormantDebug = buildDormantDebugSummary(this);
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
 
@@ -439,6 +453,15 @@ export class AeternaNetwork {
             lastActionChangeTime: actionPacket.lastActionChangeTime,
             lastActionChangeFrames: actionPacket.lastActionChangeFrames,
             lastTouchDirection: perceptionPacket.lastTouchDirection,
+            dormantNodeCount: dormantDebug.dormantNodeCount,
+            dormantWakeCount: dormantDebug.dormantWakeCount,
+            activeDormantNodeCount: dormantDebug.activeDormantNodeCount,
+            recentDormantWakeEvents: dormantDebug.recentDormantWakeEvents,
+            hardwareRandomNoiseActivePath: dormantDebug.hardwareRandomNoiseActivePath,
+            hardwareRandomNoiseSource: dormantDebug.hardwareRandomNoiseSource,
+            noiseMagnitude: dormantDebug.noiseMagnitude,
+            wakePressureMean: dormantDebug.wakePressureMean,
+            wakePressureMax: dormantDebug.wakePressureMax,
         };
     }
 }

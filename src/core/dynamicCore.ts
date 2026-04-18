@@ -1,14 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
+import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRandom.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
   const eventRate = tension * 0.2 + Math.abs(sigmaDisp - 1.0) * 0.1;
-  const finalRate = thermalRate + eventRate;
+  const finalRate = network.clampFinite(thermalRate + eventRate, 0, 1, 0);
+  network.hardwareRandomNoiseSource = hasHardwareRandomSource() ? 'crypto' : 'fallback';
+  let injectedMagnitude = 0;
+  let injectedEvents = 0;
   for (let i = 0; i < 3; i++) {
-    if (Math.random() < finalRate) network.currentBuffer[Math.floor(Math.random() * network.numNodes)] += 1.0 + Math.random();
+    if (getHardwareRandomFloat() < finalRate) {
+      const index = Math.floor(getHardwareRandomFloat() * network.numNodes);
+      const magnitude = 1.0 + getHardwareRandomFloat();
+      network.currentBuffer[index] += magnitude;
+      injectedMagnitude += magnitude;
+      injectedEvents++;
+    }
   }
+  network.lastNoiseMagnitude = injectedMagnitude;
+  network.lastNoiseEventCount = injectedEvents;
 }
 
 export function updateBaseline(network: any) {
@@ -102,7 +114,8 @@ export function updateDynamicsCore(network: any) {
 
   let newlyFiredCount = 0;
   for (let i = 0; i < network.numNodes; i++) {
-    if (network.currentBuffer[i] > 0.8 && network.prevBuffer[i] <= 0.8) {
+    const dormantThreshold = network.dormantTraitMask?.[i] === 1 && network.isDormantNode?.[i] === 1 ? 1.05 : 0.8;
+    if (network.currentBuffer[i] > dormantThreshold && network.prevBuffer[i] <= dormantThreshold) {
       network.spikeTrace[i] = 1.0;
       network.lastSpikeTime[i] = network.simTime;
       newlyFiredCount++;
@@ -151,6 +164,15 @@ export function updateDynamicsCore(network: any) {
 
       let nextVal = 2 * network.currentBuffer[idx] - network.prevBuffer[idx] + waveSpeed * laplacian;
       nextVal *= homeoDamping;
+      if (network.dormantTraitMask?.[idx] === 1) {
+        if (network.isDormantNode?.[idx] === 1) {
+          const dormantSuppression = 0.78 + Math.min(network.dormantWakePressure?.[idx] ?? 0, 1.0) * 0.08;
+          nextVal *= dormantSuppression;
+        } else {
+          const wakeLift = Math.min(network.dormantWakePressure?.[idx] ?? 0, 1.0) * 0.05;
+          nextVal += wakeLift * (network.nodeSign[idx] >= 0 ? 1 : -0.6);
+        }
+      }
       if (nextVal > 8.0) nextVal = 8.0 + (nextVal - 8.0) * 0.01;
       if (nextVal < -8.0) nextVal = -8.0 + (nextVal + 8.0) * 0.01;
       network.nextBuffer[idx] = nextVal;
