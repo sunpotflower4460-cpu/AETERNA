@@ -74,6 +74,13 @@ export function initDOMCache() {
         'val-time-level',        'row-time-level',
         'val-time-persistence',  'row-time-persistence',
         'val-time-active',       'row-time-active',
+        // Phase E1: hierarchical torus
+        'val-subtori-count',      'val-subtorus-size',
+        'val-upper-size',         'val-sub-mean-activity',
+        'val-sub-mean-arousal',   'val-sub-mean-sigma',
+        'val-sub-mean-phi',       'val-upper-mean-activity',
+        'val-upper-arousal',      'val-upper-sigma',
+        'val-upper-phi',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }

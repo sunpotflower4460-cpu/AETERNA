@@ -265,6 +265,28 @@
                           </div>
                       </div>
                   </div>
+                  <!-- 階層層 (Phase E1) -->
+                  <div class="mb-2">
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-hierarchy', 'icon-hierarchy')">
+                          <span class="tracking-wider">HIERARCHY (E1)</span>
+                          <svg id="icon-hierarchy" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-hierarchy" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5">
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Number of sub-tori in lower layer"><span>Sub-tori count</span><span id="val-subtori-count" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Size of each sub-torus (segments × segments)"><span>Sub-torus size</span><span id="val-subtorus-size" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Size of upper torus (segments × segments)"><span>Upper torus size</span><span id="val-upper-size" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Mean activity across all sub-tori"><span>Sub mean activity</span><span id="val-sub-mean-activity" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Mean arousal across all sub-tori"><span>Sub mean arousal</span><span id="val-sub-mean-arousal" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Mean sigma across all sub-tori"><span>Sub mean sigma</span><span id="val-sub-mean-sigma" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Mean phi proxy across all sub-tori"><span>Sub mean phi</span><span id="val-sub-mean-phi" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Mean activity in upper torus"><span>Upper mean activity</span><span id="val-upper-mean-activity" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Arousal in upper torus"><span>Upper arousal</span><span id="val-upper-arousal" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Sigma in upper torus"><span>Upper sigma</span><span id="val-upper-sigma" class="text-white">—</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[E1] Phi proxy in upper torus"><span>Upper phi</span><span id="val-upper-phi" class="text-white">—</span></div>
+                          </div>
+                      </div>
+                  </div>
                   <!-- 天然メカニズム層 -->
                   <div class="mb-2">
                       <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-nature', 'icon-nature')">

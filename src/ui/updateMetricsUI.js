@@ -137,7 +137,23 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-time-level'])       UI['val-time-level'].innerText       = (dyn.timeLevel       || 0).toFixed(4);
     if (UI['val-time-persistence']) UI['val-time-persistence'].innerText = (dyn.timePersistence || 0).toFixed(4);
     if (UI['val-time-active'])      UI['val-time-active'].innerText      = dyn.timeActive ? 'active' : 'inactive';
-    
+
+    // Phase E1: hierarchical torus
+    if (dyn.hierarchySummary) {
+        const h = dyn.hierarchySummary;
+        if (UI['val-subtori-count'])      UI['val-subtori-count'].innerText      = h.subTorusCount || '—';
+        if (UI['val-subtorus-size'])      UI['val-subtorus-size'].innerText      = `${h.subTorusSize}×${h.subTorusSize}` || '—';
+        if (UI['val-upper-size'])         UI['val-upper-size'].innerText         = `${h.gridWidth}×${h.gridHeight}` || '—';
+        if (UI['val-sub-mean-activity'])  UI['val-sub-mean-activity'].innerText  = (h.subMeanActivity  || 0).toFixed(4);
+        if (UI['val-sub-mean-arousal'])   UI['val-sub-mean-arousal'].innerText   = (h.subMeanArousal   || 0).toFixed(4);
+        if (UI['val-sub-mean-sigma'])     UI['val-sub-mean-sigma'].innerText     = (h.subMeanSigma     || 0).toFixed(4);
+        if (UI['val-sub-mean-phi'])       UI['val-sub-mean-phi'].innerText       = (h.subMeanPhiProxy  || 0).toFixed(4);
+        if (UI['val-upper-mean-activity']) UI['val-upper-mean-activity'].innerText = (h.upperMeanActivity || 0).toFixed(4);
+        if (UI['val-upper-arousal'])      UI['val-upper-arousal'].innerText      = (h.upperArousal     || 0).toFixed(4);
+        if (UI['val-upper-sigma'])        UI['val-upper-sigma'].innerText        = (h.upperSigma       || 0).toFixed(4);
+        if (UI['val-upper-phi'])          UI['val-upper-phi'].innerText          = (h.upperPhiProxy    || 0).toFixed(4);
+    }
+
     const pre = disk.getConsciousnessPrerequisites(); pre.C = dyn.phiApprox>0.002; pre.D = dyn.ignitionRatio>0.05; const preE = engineState==='WHITE';
     updateUIRow(UI['row-pre-a'], UI['val-pre-a'], pre.A?'✓':'–', pre.A); updateUIRow(UI['row-pre-b'], UI['val-pre-b'], pre.B?'✓':'–', pre.B);
     updateUIRow(UI['row-pre-c'], UI['val-pre-c'], pre.C?'✓':'–', pre.C); updateUIRow(UI['row-pre-d'], UI['val-pre-d'], pre.D?'✓':'–', pre.D); updateUIRow(UI['row-pre-e'], UI['val-pre-e'], preE?'✓':'–', preE);
