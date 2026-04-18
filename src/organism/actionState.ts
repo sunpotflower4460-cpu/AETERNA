@@ -28,16 +28,21 @@ export function updateActionState(network: any, {
   const activeTouch = activeTouchCount > 0 ? 1 : 0;
   const quietness = network.clamp01((1 - activeTouch) * 0.45 + (1 - network.clamp01(meanRawTouch * 5, 0)) * 0.25 + (1 - network.clamp01(meanTouchNovelty * 8, 0)) * 0.3, 0);
   const noveltyPressure = network.clamp01(meanTouchNovelty * 8 + patternScores.tap * 0.18 + patternScores.stroke * 0.1, 0);
+
+  // Phase F: Energy flow influences action state thresholds
+  const lowEnergyPressure = network.energyFlowState?.lowEnergyPressure ?? 0;
+  const effectiveEnergyThreshold = 0.16 + lowEnergyPressure * 0.15; // Higher threshold when low energy
+
   const withdrawing = overload > 0.56 || (overload > 0.42 && energy < 0.34 && activeTouch);
   const orienting = !withdrawing
     && orientingDrive > restDrive * 0.72
     && noveltyPressure > 0.16
     && overload < 0.64
-    && energy > 0.16;
+    && energy > effectiveEnergyThreshold;
   const settling = !withdrawing
     && !orienting
     && quietness > 0.58
-    && (restDrive > 0.42 || network.stability < 0.56 || meanTouchTrace > 0.02 || overload > 0.2);
+    && (restDrive > 0.42 || network.stability < 0.56 || meanTouchTrace > 0.02 || overload > 0.2 || lowEnergyPressure > 0.35);
 
   let nextState = 'idle';
   if (withdrawing) nextState = 'withdraw';
@@ -52,7 +57,9 @@ export function updateActionState(network: any, {
   } else if (nextState === 'settle') {
     targetPulse = 0.025 + restDrive * 0.08 + (1 - network.stability) * 0.06 + meanTouchTrace * 0.08;
   }
-  targetPulse = network.clampFinite(targetPulse * network.getActionEnergyGate(), 0, ACTION_PULSE_LIMIT, 0);
+  // Action pulse is further reduced by low energy pressure
+  const energyModulation = 1.0 - lowEnergyPressure * 0.3;
+  targetPulse = network.clampFinite(targetPulse * network.getActionEnergyGate() * energyModulation, 0, ACTION_PULSE_LIMIT, 0);
 
   if (nextState !== network.actionState) network.lastActionChangeTime = network.simTime;
   network.actionState = nextState;

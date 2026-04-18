@@ -19,6 +19,7 @@ import { createSoundSensoryController, updateSoundSensory } from '../perception/
 import { createLightSensoryController, updateLightSensory } from '../perception/lightSensory.ts';
 import { createMotionSensoryController, updateMotionSensory } from '../perception/motionSensory.ts';
 import { createTimeSensoryController, updateTimeSensory } from '../perception/timeSensory.ts';
+import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebugSummary } from '../organism/energyFlow.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -35,6 +36,7 @@ export class AeternaNetwork {
         this.initializePlasticityRewriteState();
         this.initializeModeOngoingLifeState();
         this.initializeOrganismActionState();
+        this.initializeEnergyFlowState();
         this.initializeTemporaryWorkBuffers();
 
         this.generate();
@@ -202,6 +204,10 @@ export class AeternaNetwork {
         this.lastActionChangeTime = 0;
     }
 
+    initializeEnergyFlowState() {
+        this.energyFlowState = createInitialEnergyFlowState();
+    }
+
     initializeTemporaryWorkBuffers() {
         this.largestClusterNodes = new Uint8Array(this.numNodes);
         this.injectedNodes = [];
@@ -329,6 +335,29 @@ export class AeternaNetwork {
     updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket) {
         const predictionPacket = buildPredictionPacket(this);
         const rewritePacket = runPriorRewriteStage(this);
+
+        // Phase F: Update energy flow state based on sensory inputs and activity
+        this.energyFlowState = updateEnergyFlowState(this.energyFlowState, {
+            soundNovelty: this.soundNovelty,
+            soundLevel: this.soundLevel,
+            soundActive: this.soundActive,
+            lightNovelty: this.lightNovelty,
+            lightLevel: this.lightLevel,
+            lightActive: this.lightActive,
+            motionNovelty: this.motionNovelty,
+            motionLevel: this.motionLevel,
+            motionActive: this.motionActive,
+            arousal: dynamicsPacket.arousal,
+            sigma: dynamicsPacket.sigma,
+            clusterRatio: dynamicsPacket.clusterRatio,
+            meanActivity: (dynamicsPacket.arousal + baselinePacket.residueLevel) * 0.5,
+            rewritePressureMean: rewritePacket.rewritePressureMean,
+            globalRewriteLoad: rewritePacket.globalRewriteLoad,
+            priorBiasMean: rewritePacket.priorBiasMean,
+            numNodes: this.numNodes,
+            simTime: this.simTime,
+        });
+
         const organismPacket = runBodyStateStage(this, {
             touchPacket: perceptionPacket,
             dynamicsPacket,
@@ -462,6 +491,16 @@ export class AeternaNetwork {
             noiseMagnitude: dormantDebug.noiseMagnitude,
             wakePressureMean: dormantDebug.wakePressureMean,
             wakePressureMax: dormantDebug.wakePressureMax,
+            energyReserve: this.energyFlowState.energyReserve,
+            energyInflow: this.energyFlowState.energyInflow,
+            energyOutflow: this.energyFlowState.energyOutflow,
+            maintenanceCost: this.energyFlowState.maintenanceCost,
+            activityCost: this.energyFlowState.activityCost,
+            rewriteCost: this.energyFlowState.rewriteCost,
+            structuralIntegrity: this.energyFlowState.structuralIntegrity,
+            lowEnergyPressure: this.energyFlowState.lowEnergyPressure,
+            recoveryDrive: this.energyFlowState.recoveryDrive,
+            energyIsDormant: this.energyFlowState.wasDormantByEnergy,
         };
     }
 }
