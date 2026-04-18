@@ -180,3 +180,20 @@ export type BridgeFacingNumericPacket = Pick<
 
 // Core packets stay numeric so the bridge can later forward them directly to
 // Signal Runtime. Japanese text synthesis remains a downstream bridge concern.
+
+export interface SubTorusSummaryPacket {
+  meanActivity: number;
+  arousal: number;
+  sigma: number;
+  clusterRatio: number;
+  phiProxy: number;
+  predictionErrorMean: number;
+  stability?: number;
+  overload?: number;
+}
+
+export interface LayerAggregatePacket {
+  summaries: SubTorusSummaryPacket[];
+  gridWidth: number;
+  gridHeight: number;
+}
