@@ -95,12 +95,22 @@ export function findRewriteCandidate(network: any, type: string, seedBias: numbe
   const patternFactor = REWRITE_PATTERN_BASE + patternScore * REWRITE_PATTERN_SCALE;
   const seedFactor = REWRITE_SEED_BASE + seedBias * REWRITE_SEED_SCALE;
   const tensionFactor = REWRITE_TENSION_BASE + Math.min(tension, 1.0) * REWRITE_TENSION_SCALE;
+
+  // Existing Phase 3 homeostasis (energy/stability/overload)
   const rewriteHomeostasisGain = network.clampFinite(
     1.0 + (network.stability - 0.58) * 0.08 - Math.max(network.overload - 0.08, 0) * 0.32 - Math.max(0.62 - network.energy, 0) * 0.1,
     0.55,
     1.06,
     1.0,
   );
+
+  // Phase 4: Apply additional homeostatic influence if available
+  let homeostaticRewriteModifier = 1.0;
+  if (network.homeostaticState && typeof network.homeostaticState === 'object') {
+    const { getHomeostaticInfluence } = require('./survivalState.ts');
+    const homeoInfluence = getHomeostaticInfluence(network.homeostaticState);
+    homeostaticRewriteModifier = homeoInfluence.rewriteGainModifier;
+  }
 
   for (let i = 0; i < network.numNodes; i++) {
     const localTouchNorm = Math.min(Math.abs(getRewriteLocalTouch(network, type, i)), 1.5) / 1.5;
@@ -114,7 +124,7 @@ export function findRewriteCandidate(network: any, type: string, seedBias: numbe
     const modulatedRewriteGain = baseRewriteGain + rewriteGainDelta;
     const clampedRewriteGain = Math.max(0.5, Math.min(1.3, modulatedRewriteGain));
 
-    const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * clampedRewriteGain * rewriteHomeostasisGain;
+    const composite = localErrorNorm * localTouchNorm * patternFactor * seedFactor * tensionFactor * clampedRewriteGain * rewriteHomeostasisGain * homeostaticRewriteModifier;
     if (!Number.isFinite(composite) || composite <= 0) continue;
 
     network.rewritePressure[i] = network.clampFinite(

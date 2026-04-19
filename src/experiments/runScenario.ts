@@ -75,6 +75,16 @@ export interface MetricsSnapshot {
     touchAbsenceError?: number;
     isTouchHolding?: number;
     touchHoldDuration?: number;
+    // Phase 4: Homeostatic state metrics
+    stabilityIndex?: number;
+    boundaryIntegrity?: number;
+    selfPreservationBias?: number;
+    irritabilityLevel?: number;
+    restorationBias?: number;
+    collapseRisk?: number;
+    homeostaticStress?: number;
+    preferredStabilityBand?: number;
+    consecutiveQuietFrames?: number;
 }
 
 export interface ScenarioResult {
@@ -267,6 +277,19 @@ function buildMetricsSnapshot(
         snapshot.touchMissingSurprise = network.touchSurpriseMetrics.missingTouchSurprise;
         snapshot.touchReleaseSurprise = network.touchSurpriseMetrics.releaseSurprise;
         snapshot.touchTotalSurprise = network.touchSurpriseMetrics.totalSurprise;
+    }
+
+    // Phase 4: Add homeostatic state metrics
+    if (network.homeostaticState) {
+        snapshot.stabilityIndex = network.homeostaticState.stabilityIndex;
+        snapshot.boundaryIntegrity = network.homeostaticState.boundaryIntegrity;
+        snapshot.selfPreservationBias = network.homeostaticState.selfPreservationBias;
+        snapshot.irritabilityLevel = network.homeostaticState.irritabilityLevel;
+        snapshot.restorationBias = network.homeostaticState.restorationBias;
+        snapshot.collapseRisk = network.homeostaticState.collapseRisk;
+        snapshot.homeostaticStress = network.homeostaticState.homeostaticStress;
+        snapshot.preferredStabilityBand = network.homeostaticState.preferredStabilityBand;
+        snapshot.consecutiveQuietFrames = network.homeostaticState.consecutiveQuietFrames;
     }
 
     return snapshot;

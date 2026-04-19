@@ -88,14 +88,22 @@ export function updateModeState(network: any, {
   const lowEnergyPressure = network.energyFlowState?.lowEnergyPressure ?? 0;
   const recoveryDrive = network.energyFlowState?.recoveryDrive ?? 0;
 
+  // Phase 4: Homeostatic influence on mode drives
+  let homeostaticModeDriftBias = 0;
+  if (network.homeostaticState && typeof network.homeostaticState === 'object') {
+    const { getHomeostaticInfluence } = require('./survivalState.ts');
+    const homeoInfluence = getHomeostaticInfluence(network.homeostaticState);
+    homeostaticModeDriftBias = homeoInfluence.modeDriftBias;
+  }
+
   const wakeTarget = network.clampFinite(
-    0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08 + organismOrient * 0.12 - organismRest * 0.05 - organismOverload * 0.04 - lowEnergyPressure * 0.08 + recoveryDrive * 0.06,
+    0.12 + externalLevel * 0.42 + arousalNorm * 0.16 + predictionNorm * 0.12 + tensionNorm * 0.1 + sigmaDrift * 0.08 + organismOrient * 0.12 - organismRest * 0.05 - organismOverload * 0.04 - lowEnergyPressure * 0.08 + recoveryDrive * 0.06 + homeostaticModeDriftBias * 0.3,
     0,
     1,
     0,
   );
   const sleepTarget = network.clampFinite(
-    0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18 + organismRest * 0.16 + organismOverload * 0.1 + (1.0 - organismEnergy) * 0.08 + lowEnergyPressure * 0.14,
+    0.08 + quietTime * 0.42 + quietness * 0.26 + (1.0 - ember) * 0.12 - externalLevel * 0.18 + organismRest * 0.16 + organismOverload * 0.1 + (1.0 - organismEnergy) * 0.08 + lowEnergyPressure * 0.14 - homeostaticModeDriftBias * 0.2,
     0,
     1,
     0,
