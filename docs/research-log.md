@@ -170,6 +170,140 @@ Expected patterns:
 
 ---
 
+## 2026-04-19: Phase 8 - Relational Proto-Self Infrastructure
+
+### Context
+- Implemented Phase 8: Relational proto-self minimal infrastructure
+- Added relational state tracking for specific-partner interaction traces
+- Weak integration with organism slow state
+- No behavior break - relational layer薄く sits on top of existing organism
+
+### New Infrastructure
+
+**Core Relational State:**
+- `src/organism/relationalState.ts`: Partner trace accumulation and updates
+  - partnerTraceStrength: Trace accumulation (0-1)
+  - partnerFamiliarity: Familiarity from repetition (0-1)
+  - partnerValence: Positive/negative interaction tilt (-1 to 1)
+  - partnerAbsenceDrift: Drift during absence (0-1)
+  - boundaryPermeability: Organism openness to partner (0-1)
+  - relationalStabilityBias: Weak relational pattern maintenance (0-1)
+  - protoCommunicationPressure: Internal state leakage pressure (0-1)
+
+**Living State Integration:**
+- `src/organism/livingState.ts`: Weak relational modifiers added
+  - touchNeedBaseline: ~5% reduction with familiar partner
+  - longBaselineTone: ~5-8% increase during absence drift
+  - predictionSensitivity: ~3% reduction with familiarity
+
+**Evidence Metrics:**
+- `src/core/evidenceMetrics.ts`: 7 new relational evidence metrics
+  - relationalTraceScore: Partner trace accumulation [PROXY]
+  - relationalFamiliarityGain: Familiarity growth rate [DERIVED]
+  - boundaryPermeabilityShift: Permeability change from neutral [DERIVED]
+  - partnerAbsenceEffect: State drift during absence [DERIVED]
+  - partnerConditionedDivergence: Response difference by history [DERIVED]
+  - protoCommunicationLeakage: State leakage signal strength [DERIVED]
+  - relationalInfluenceScore: Aggregate relational evidence [PROXY]
+
+**Documentation:**
+- `docs/relational-proto-self-notes.md`: Design principles and caveats
+
+### Phase 8 Design Principles
+
+✅ **Not friendship AI**: No演技, no "好き/寂しい" labels
+✅ **Weak influence**: Relational modifiers < 10% of base values
+✅ **No behavior break**: Core organism dynamics unchanged
+✅ **Partner = pattern**: Interaction source, not identity/persona
+✅ **Proto-communication = leakage**: Side effect, not intentional signal
+✅ **Evidence approach**: All metrics [PROXY] or [DERIVED]
+
+### Implementation Decisions
+
+**Single-Partner Tracking (Phase 8)**:
+- Simplified: Any touch = partner interaction
+- Multi-partner tracking deferred to future phase
+- Pattern-based recognition deferred
+
+**Weak Integration**:
+- Relational influence on living state: 3-8% modifiers
+- Boundary permeability range: 0.2-0.9
+- All changes extremely slow (smoothing < 0.005)
+
+**Proto-Communication**:
+- baselinePulseLeakage: +8% max from communication pressure
+- visualLeakageIntensity: Trace + absence combination
+- touchInvitationPressure: Familiarity × permeability product
+
+### Expected Observable Patterns
+
+**Repeated Familiar Partner (Scenario V)**:
+- partnerFamiliarity ↑ over 500+ frames
+- boundaryPermeability adjusts toward familiarity+valence target
+- Touch surprise slightly reduced (~8% at high familiarity)
+
+**Familiar Partner Absence (Scenario W)**:
+- partnerAbsenceDrift ↑ when familiarity > 0.3
+- longBaselineTone ↑ by ~5-8% at high absence drift
+- protoCommunicationPressure ↑ correlates with trace × absence
+
+**Familiar vs Harsh Pattern (Scenario X)**:
+- Stable pattern: valence → positive, permeability ↑
+- Destabilizing pattern: valence → negative, permeability ↓
+- Response irritability diverges based on permeability
+
+**Same Touch, Different History (Scenario Y)**:
+- Response amplitude differs by ~10-20% based on relational state
+- Touch surprise lower with familiar partner
+- Habituation faster with familiar partner
+
+**Proto-Communication Leakage (Scenario Z)**:
+- Baseline pulse +5-8% under high relational pressure
+- Visual leakage correlates with trace strength
+- Touch invitation pressure weak but nonzero
+
+### Limitations & Caveats
+
+1. **Single-partner simplification**: No multi-partner tracking yet
+2. **Very weak signals**: Relational effects < 10%, may be noisy
+3. **No partner identity**: Pattern continuity proxy, not recognition
+4. **No intentionality**: Proto-communication is leakage, not messaging
+5. **Slow accumulation**: Requires 500-1000+ frames to observe clear effects
+
+### What Phase 8 Does NOT Include
+
+❌ Friendship/social AI演出
+❌ Emotional labeling (no "寂しい", "懐かしい")
+❌ Multi-user identity system
+❌ Conversation/dialogue enhancement
+❌ Personality演技 based on relationship
+❌ Self/other philosophical framework
+
+### Next Steps
+
+1. Add relational scenarios (V-Z) to scenario runner
+2. Add relational observer panel to debug UI
+3. Run baseline scenarios with/without relational state
+4. Verify relational modifiers < 10% of base values
+5. Document first observations of partner trace accumulation
+6. Phase 9: Consider proto-communication modalities (if warranted)
+
+### Research Integrity Note
+
+Phase 8 creates **a container for relational traces**, not演出 of relationships.
+
+Honest language:
+✓ "Repeated interaction patterns leave long-term traces"
+✓ "Partner absence causes slow state drift"
+✓ "Boundary permeability adjusts based on partner pattern"
+
+Forbidden language:
+✗ "AETERNA has友情"
+✗ "AETERNA feels寂しい"
+✗ "AETERNA recognizes individuals"
+
+---
+
 ## Template for Future Entries
 
 ### YYYY-MM-DD: [Experiment Title]
