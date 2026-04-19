@@ -8,6 +8,7 @@
 import { AeternaNetwork } from '../core/AeternaNetwork.js';
 import { PhysicalDisk } from '../core/PhysicalDisk.js';
 import { TouchMemory } from '../perception/TouchMemory.js';
+import { updateHomeostaticState } from '../organism/survivalState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -350,6 +351,30 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
         // Update network dynamics
         const dyn = network.updateDynamics(diskNodeIdx, activeTouches);
+
+        // Update homeostatic state (Phase 4)
+        if (network.homeostaticState) {
+            const noveltyLevel = network.touchNovelty ?
+                Math.max(...Array.from(network.touchNovelty)) : 0;
+
+            network.homeostaticState = updateHomeostaticState(
+                network.homeostaticState,
+                network,
+                {
+                    arousal: network.currGenFiring ?? 0,
+                    predictionError: network.predictionError ?
+                        Array.from(network.predictionError).reduce((a, b) => a + Math.abs(b), 0) / network.numNodes : 0,
+                    noveltyLevel,
+                    rewriteLoad: network.globalRewriteLoad ?? 0,
+                    clusterRatio: network.cachedMaxClusterSize ? network.cachedMaxClusterSize / network.numNodes : 0,
+                    phaseCoherence: network.cachedPhaseCoherence ?? 0.5,
+                    activeTouchCount: activeTouches.size,
+                    meanRawTouch: network.rawTouch ?
+                        Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0,
+                    simTime: frame,
+                }
+            );
+        }
 
         // Collect metrics
         const meanAct = computeMeanActivity(network);
