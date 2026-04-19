@@ -14,6 +14,8 @@ import {
 import { RealityVisualLayer } from './render/RealityVisualLayer.js';
 import { GuidePanel } from './ui/GuidePanel.js';
 import { actionLoop } from './organism/actionLoop.js';
+import { CameraControls } from './utils/cameraControls.js';
+import { MajorStateObserver } from './ui/MajorStateObserver.js';
 
 // ── Assign globals required by HTML onclick attributes ──
 window.toggleAccordion  = toggleAccordion;
@@ -23,6 +25,10 @@ window.resetTouchMemory = resetTouchMemory;
 window.toggleVisualLayer  = toggleVisualLayer;
 window.toggleDebugLabels  = toggleDebugLabels;
 window.testAPIConnection  = testAPIConnection;
+window.cameraResetView = () => state.cameraControls?.resetView();
+window.cameraTopView = () => state.cameraControls?.topView();
+window.cameraSideView = () => state.cameraControls?.sideView();
+window.cameraFocusTorus = () => state.cameraControls?.focusTorus();
 
 // ── DOM-ready setup ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,8 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Initialisation ──
 function init() {
     try {
-        state.scene = new THREE.Scene(); state.scene.fog = new THREE.FogExp2(0x010205, 0.04);
-        state.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100); state.camera.position.set(0, 4, 14); state.camera.lookAt(0, 0, 0);
+        state.scene = new THREE.Scene(); state.scene.fog = new THREE.FogExp2(0x010205, 0.025);
+        state.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100); state.camera.position.set(3, 6, 12); state.camera.lookAt(0, 0, 0);
         state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); state.renderer.setPixelRatio(window.devicePixelRatio); state.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('canvas-container').appendChild(state.renderer.domElement);
         
@@ -60,6 +66,8 @@ function init() {
         state.disk = new PhysicalDisk();
         state.network.currentBuffer[0] = +8.0; state.network.currentBuffer[Math.floor(state.network.numNodes/2)] = -8.0;
         state.realityVisualLayer = new RealityVisualLayer(state.scene, state.network, state.particleSystem); state.guidePanel = new GuidePanel(state.network);
+        state.cameraControls = new CameraControls(state.camera, state.renderer.domElement);
+        state.majorStateObserver = new MajorStateObserver();
 
         ['omega-t', 'omega-p', 'r'].forEach(k => {
             const el = document.getElementById(`slider-${k}`);

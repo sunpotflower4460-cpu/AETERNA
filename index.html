@@ -143,6 +143,25 @@
         </div>
         <ul id="guide-history" class="space-y-1.5 text-[8px] text-white/40 list-none"></ul>
 
+        <!-- Phase 6: Long-horizon trend sparklines -->
+        <div class="border-t border-white/10 pt-2 mt-2">
+            <div class="text-[7px] text-white/50 mb-1 tracking-wider">RECENT TRENDS (100 frames)</div>
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">σ</span>
+                    <canvas id="sparkline-sigma" class="opacity-80"></canvas>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">Φ*</span>
+                    <canvas id="sparkline-phi" class="opacity-80"></canvas>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">energy</span>
+                    <canvas id="sparkline-energy" class="opacity-80"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Signal Observe Panel (shown when signal_runtime mode is active) -->
         <div id="signal-observe-panel" class="mt-2 max-h-60 overflow-y-auto custom-scrollbar">
             <div class="text-cyan-400 font-bold text-[8px] tracking-widest mb-2">SIGNAL RUNTIME</div>
@@ -213,6 +232,10 @@
                     <h2 class="text-[8px] font-mono mt-0.5 text-cyan-400 tracking-[0.2em] opacity-80">PHASE 9.4 : POLISHED</h2>
                 </div>
                 <span id="system-state-badge" class="text-white/50 border-white/50">QUIET</span>
+                <!-- Phase 6: Major process indicator -->
+                <div id="major-process-indicator" class="ml-3 px-2 py-1 rounded text-[8px] font-mono border border-white/20 bg-white/5" style="display: none;">
+                    <span id="major-process-label" class="font-bold">—</span>
+                </div>
             </div>
 
             <div id="metrics-panel" class="glass-panel p-1 rounded-xl font-mono text-[8.5px] text-white/70 shadow-2xl custom-scrollbar mt-1">
@@ -225,8 +248,8 @@
                       </div>
                       <div id="sec-physical" class="accordion-grid">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Toroidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Poloidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Toroidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Poloidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] R/r ratio — geometrically computed from R (fixed = φ) and r (slider). Compared to φ = 1.618." id="row-ratio"><span>R/r</span><span id="val-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between" id="row-phase-ratio"><span>ω_p/ω_t</span><span id="val-phase-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="軌道がトーラス表面を稠密に埋め尽くす性質" id="row-ergodic"><span>Ergodic</span><span id="val-ergodic" class="text-white">NO</span></div>
@@ -255,7 +278,7 @@
                       </div>
                       <div id="sec-network" class="accordion-grid collapsed">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Fraction of nodes crossing the spike threshold this frame. Raw node count / total nodes." id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Fraction of nodes crossing the spike threshold this frame. Raw node count / total nodes." id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Largest connected component of active nodes (spikeTrace > 0.5) as a fraction of total. Computed via Union-Find." id="row-cluster"><span>Largest cluster</span><span id="val-cluster" class="text-white">0.0%</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Whole-vs-parts integration proxy. Custom approximation using subgroup mean activity differences. NOT IIT Φ." id="row-phi"><span>Φ* proxy</span><span id="val-phi" class="text-white">0.0000</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Kuramoto-like order parameter approximation. Uses weighted node phases; not full oscillator coupling." id="row-coherence"><span>Phase coherence</span><span id="val-coherence" class="text-white">0.000</span></div>
@@ -481,6 +504,17 @@
                       <div class="flex justify-between items-center text-[10px] font-mono mb-2 mt-2">
                           <span class="text-white/60">DEBUG LABELS (DEV)</span>
                           <button id="btn-debug-labels" class="visual-btn px-4 py-1.5 rounded-md bg-white/5 border border-white/10 hover:bg-white/10 transition-colors tracking-wider" onclick="toggleDebugLabels()">OFF</button>
+                      </div>
+
+                      <!-- Phase 6: Camera view controls -->
+                      <div class="border-t border-white/10 pt-3 mt-3">
+                          <span class="text-[9px] text-white/60 font-bold tracking-wider">CAMERA VIEWPOINTS</span>
+                          <div class="grid grid-cols-2 gap-1.5 mt-2">
+                              <button class="px-2 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-[9px] text-white/80 font-mono" onclick="cameraResetView()">RESET</button>
+                              <button class="px-2 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-[9px] text-white/80 font-mono" onclick="cameraFocusTorus()">FOCUS</button>
+                              <button class="px-2 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-[9px] text-white/80 font-mono" onclick="cameraTopView()">TOP</button>
+                              <button class="px-2 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-[9px] text-white/80 font-mono" onclick="cameraSideView()">SIDE</button>
+                          </div>
                       </div>
 
                       <div class="flex flex-col gap-1.5 text-[10px] font-mono mt-3">

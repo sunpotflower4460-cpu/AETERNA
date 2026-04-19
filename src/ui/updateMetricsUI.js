@@ -1,6 +1,7 @@
 import { state } from '../organism/state.js';
 import { UI, updateUIRow } from './domCache.js';
 import { PHI } from '../constants/aeternaConstants.js';
+import { updateStateTrends } from './trendSparkline.js';
 
 function formatDormantEvents(events) {
     if (!Array.isArray(events) || events.length === 0) return '—';
@@ -14,6 +15,27 @@ export function updateMetricsUI(dyn, engineState) {
     const formatDirection = (direction) => Array.isArray(direction) && direction.length >= 2
         ? `${direction[0].toFixed(2)}, ${direction[1].toFixed(2)}`
         : '—';
+
+    // Phase 6: Update major state observer
+    if (state.majorStateObserver) {
+        const majorState = state.majorStateObserver.update(dyn, engineState);
+        const indicatorEl = document.getElementById('major-process-indicator');
+        const labelEl = document.getElementById('major-process-label');
+
+        if (indicatorEl && labelEl && majorState.type !== 'quiet' && majorState.type !== 'low_drift') {
+            indicatorEl.style.display = 'block';
+            indicatorEl.style.borderColor = majorState.color;
+            indicatorEl.style.color = majorState.color;
+            labelEl.textContent = majorState.label;
+        } else if (indicatorEl) {
+            indicatorEl.style.display = 'none';
+        }
+
+        // Update sparklines every 10 frames for performance
+        if (state.network && state.network.simTime % 10 === 0) {
+            updateStateTrends(state.majorStateObserver);
+        }
+    }
 
     const rRatioStr = `${disk.ratioRr.toFixed(3)} [${disk.ratioRr-PHI>=0?'+':''}${(disk.ratioRr-PHI).toFixed(3)}]`;
     updateUIRow(UI['row-omega-t'], UI['val-omega-t'], disk.omega_t.toFixed(2), disk.omega_t > 0);
