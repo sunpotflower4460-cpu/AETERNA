@@ -24,6 +24,7 @@ import {
   REWRITE_COOLDOWN_FRAMES,
   REWRITE_PRIOR_LIMIT,
 } from '../core/aeternaTuning.ts';
+import { getHomeostaticInfluence } from './survivalState.ts';
 
 export function getModeDebugSummary(network: any) {
   return {
@@ -91,7 +92,6 @@ export function updateModeState(network: any, {
   // Phase 4: Homeostatic influence on mode drives
   let homeostaticModeDriftBias = 0;
   if (network.homeostaticState && typeof network.homeostaticState === 'object') {
-    const { getHomeostaticInfluence } = require('./survivalState.ts');
     const homeoInfluence = getHomeostaticInfluence(network.homeostaticState);
     homeostaticModeDriftBias = homeoInfluence.modeDriftBias;
   }

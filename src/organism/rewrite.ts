@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { state } from './state.js';
 import { normalizeDirectionalWeights } from '../core/networkWeights.ts';
+import { getHomeostaticInfluence } from './survivalState.ts';
 import {
   REWRITE_CHANNEL_LIMIT,
   REWRITE_COOLDOWN_FRAMES,
@@ -107,7 +108,6 @@ export function findRewriteCandidate(network: any, type: string, seedBias: numbe
   // Phase 4: Apply additional homeostatic influence if available
   let homeostaticRewriteModifier = 1.0;
   if (network.homeostaticState && typeof network.homeostaticState === 'object') {
-    const { getHomeostaticInfluence } = require('./survivalState.ts');
     const homeoInfluence = getHomeostaticInfluence(network.homeostaticState);
     homeostaticRewriteModifier = homeoInfluence.rewriteGainModifier;
   }
