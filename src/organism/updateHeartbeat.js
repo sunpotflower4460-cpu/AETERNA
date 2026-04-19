@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { HEART_CLOCK_HZ, PULSE_STRENGTH } from '../constants/aeternaConstants.js';
 import { updateLivingState, getLivingStateInfluence } from './livingState.ts';
+import { updateHomeostaticState, getHomeostaticInfluence } from './survivalState.ts';
 
 export function updateHeartbeat() {
     const nowMs = performance.now();
@@ -29,13 +30,50 @@ export function updateHeartbeat() {
         });
     }
 
+    // Phase 4: Update homeostatic state on every heartbeat tick
+    if (state.network && state.network.homeostaticState) {
+        const network = state.network;
+
+        // Compute novelty level from touch
+        const noveltyLevel = network.touchNovelty ?
+            Math.max(...Array.from(network.touchNovelty)) : 0;
+
+        network.homeostaticState = updateHomeostaticState(
+            network.homeostaticState,
+            network,
+            {
+                arousal: network.currGenFiring ?? 0,
+                predictionError: network.predictionError ?
+                    Array.from(network.predictionError).reduce((a, b) => a + Math.abs(b), 0) / network.numNodes : 0,
+                noveltyLevel,
+                rewriteLoad: network.globalRewriteLoad ?? 0,
+                clusterRatio: network.cachedMaxClusterSize ? network.cachedMaxClusterSize / network.numNodes : 0,
+                phaseCoherence: network.cachedPhaseCoherence ?? 0.5,
+                activeTouchCount: 0,  // will be updated during dynamics
+                meanRawTouch: network.rawTouch ?
+                    Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0,
+                simTime: network.simTime ?? 0,
+            }
+        );
+    }
+
     if (nowMs - state.lastHeartbeatTime > 1000 / HEART_CLOCK_HZ) {
         state.lastHeartbeatTime = nowMs;
         state.network.heartbeatActive = true;
 
         // Apply living state influence to pulse strength
         const influence = getLivingStateInfluence(state.network.livingState);
-        const adjustedPulseStrength = PULSE_STRENGTH * influence.baselineGainModifier;
+
+        // Phase 4: Also apply homeostatic influence
+        let homeoInfluence = null;
+        if (state.network.homeostaticState) {
+            homeoInfluence = getHomeostaticInfluence(state.network.homeostaticState);
+        }
+
+        // Combine influences (both reduce baseline under low energy/high stress)
+        const combinedBaselineModifier = influence.baselineGainModifier *
+            (homeoInfluence ? homeoInfluence.baselineGainModifier : 1.0);
+        const adjustedPulseStrength = PULSE_STRENGTH * combinedBaselineModifier;
 
         for (let i = 0; i < state.network.numNodes; i++) {
             state.network.currentBuffer[i] +=

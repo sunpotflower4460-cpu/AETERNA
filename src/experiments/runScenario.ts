@@ -8,6 +8,7 @@
 import { AeternaNetwork } from '../core/AeternaNetwork.js';
 import { PhysicalDisk } from '../core/PhysicalDisk.js';
 import { TouchMemory } from '../perception/TouchMemory.js';
+import { updateHomeostaticState } from '../organism/survivalState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -75,6 +76,16 @@ export interface MetricsSnapshot {
     touchAbsenceError?: number;
     isTouchHolding?: number;
     touchHoldDuration?: number;
+    // Phase 4: Homeostatic state metrics
+    stabilityIndex?: number;
+    boundaryIntegrity?: number;
+    selfPreservationBias?: number;
+    irritabilityLevel?: number;
+    restorationBias?: number;
+    collapseRisk?: number;
+    homeostaticStress?: number;
+    preferredStabilityBand?: number;
+    consecutiveQuietFrames?: number;
 }
 
 export interface ScenarioResult {
@@ -269,6 +280,19 @@ function buildMetricsSnapshot(
         snapshot.touchTotalSurprise = network.touchSurpriseMetrics.totalSurprise;
     }
 
+    // Phase 4: Add homeostatic state metrics
+    if (network.homeostaticState) {
+        snapshot.stabilityIndex = network.homeostaticState.stabilityIndex;
+        snapshot.boundaryIntegrity = network.homeostaticState.boundaryIntegrity;
+        snapshot.selfPreservationBias = network.homeostaticState.selfPreservationBias;
+        snapshot.irritabilityLevel = network.homeostaticState.irritabilityLevel;
+        snapshot.restorationBias = network.homeostaticState.restorationBias;
+        snapshot.collapseRisk = network.homeostaticState.collapseRisk;
+        snapshot.homeostaticStress = network.homeostaticState.homeostaticStress;
+        snapshot.preferredStabilityBand = network.homeostaticState.preferredStabilityBand;
+        snapshot.consecutiveQuietFrames = network.homeostaticState.consecutiveQuietFrames;
+    }
+
     return snapshot;
 }
 
@@ -327,6 +351,30 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
         // Update network dynamics
         const dyn = network.updateDynamics(diskNodeIdx, activeTouches);
+
+        // Update homeostatic state (Phase 4)
+        if (network.homeostaticState) {
+            const noveltyLevel = network.touchNovelty ?
+                Math.max(...Array.from(network.touchNovelty)) : 0;
+
+            network.homeostaticState = updateHomeostaticState(
+                network.homeostaticState,
+                network,
+                {
+                    arousal: network.currGenFiring ?? 0,
+                    predictionError: network.predictionError ?
+                        Array.from(network.predictionError).reduce((a, b) => a + Math.abs(b), 0) / network.numNodes : 0,
+                    noveltyLevel,
+                    rewriteLoad: network.globalRewriteLoad ?? 0,
+                    clusterRatio: network.cachedMaxClusterSize ? network.cachedMaxClusterSize / network.numNodes : 0,
+                    phaseCoherence: network.cachedPhaseCoherence ?? 0.5,
+                    activeTouchCount: activeTouches.size,
+                    meanRawTouch: network.rawTouch ?
+                        Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0,
+                    simTime: frame,
+                }
+            );
+        }
 
         // Collect metrics
         const meanAct = computeMeanActivity(network);

@@ -104,10 +104,8 @@ export function updateTouchExpectation(
   if (touchPresent) {
     // Find touch centroid from rawTouch field
     let maxTouch = 0;
-    let totalTouch = 0;
     for (let i = 0; i < numNodes; i++) {
       const touch = network.rawTouch[i];
-      totalTouch += touch;
       if (touch > maxTouch) {
         maxTouch = touch;
         touchCentroidIdx = i;
