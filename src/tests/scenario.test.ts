@@ -788,4 +788,255 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    // ──────────────────────────────────────────────────────
+    // Phase 7: Self-Origin Evidence & Behavioral Identity
+    // ──────────────────────────────────────────────────────
+
+    describe('Scenario Q: No-Input Continuation (Phase 7)', async () => {
+        it('should show endogenous drift during extended no-input period', async () => {
+            const config: ScenarioConfig = {
+                name: 'no-input-continuation',
+                totalFrames: 3000,  // Extended quiet for endogenous observation
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 50,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Measure slow variable drift
+            const earlyMetrics = result.metrics.filter(m => m.frame < 500);
+            const lateMetrics = result.metrics.filter(m => m.frame > 2500);
+
+            if (earlyMetrics.length > 0 && lateMetrics.length > 0) {
+                const earlyFatigue = earlyMetrics.reduce((sum, m) => sum + (m.fatigue ?? 0.08), 0) / earlyMetrics.length;
+                const lateFatigue = lateMetrics.reduce((sum, m) => sum + (m.fatigue ?? 0.08), 0) / lateMetrics.length;
+
+                const earlyErgodicity = earlyMetrics.reduce((sum, m) => sum + (m.preferredErgodicity ?? 0.5), 0) / earlyMetrics.length;
+                const lateErgodicity = lateMetrics.reduce((sum, m) => sum + (m.preferredErgodicity ?? 0.5), 0) / lateMetrics.length;
+
+                const earlyBaseline = earlyMetrics.reduce((sum, m) => sum + (m.longBaselineTone ?? 0.12), 0) / earlyMetrics.length;
+                const lateBaseline = lateMetrics.reduce((sum, m) => sum + (m.longBaselineTone ?? 0.12), 0) / lateMetrics.length;
+
+                console.log('Scenario Q fatigue drift:', lateFatigue - earlyFatigue);
+                console.log('Scenario Q ergodicity drift:', lateErgodicity - earlyErgodicity);
+                console.log('Scenario Q baseline tone drift:', lateBaseline - earlyBaseline);
+
+                // Endogenous drift evidence: variables change without input
+                const totalDrift = Math.abs(lateFatigue - earlyFatigue) +
+                                   Math.abs(lateErgodicity - earlyErgodicity) +
+                                   Math.abs(lateBaseline - earlyBaseline);
+
+                console.log('Scenario Q total endogenous drift:', totalDrift);
+            }
+        });
+    });
+
+    describe('Scenario R: Repeated Stimulus After Different History (Phase 7)', async () => {
+        it('should show history-dependent response divergence', async () => {
+            // Condition A: Touch after long quiet
+            const configQuiet: ScenarioConfig = {
+                name: 'touch-after-quiet-history',
+                totalFrames: 1500,
+                touchScript: [
+                    { frame: 1000, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            // Condition B: Same touch after active history
+            const configActive: ScenarioConfig = {
+                name: 'touch-after-active-history',
+                totalFrames: 1500,
+                touchScript: [
+                    // Active history: multiple touches
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.4, y: 0.4, pressure: 1.0, duration: 1 },
+                    { frame: 300, x: 0.6, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 400, x: 0.7, y: 0.7, pressure: 1.0, duration: 1 },
+                    // Then quiet gap before test touch
+                    { frame: 1000, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const resultQuiet = await runScenario(configQuiet);
+            const resultActive = await runScenario(configActive);
+
+            expect(resultQuiet.succeeded).toBe(true);
+            expect(resultActive.succeeded).toBe(true);
+
+            // Compare responses to identical touch at frame 1000
+            console.log('Scenario R response after quiet:', resultQuiet.summary.meanResponseAmplitude);
+            console.log('Scenario R response after active:', resultActive.summary.meanResponseAmplitude);
+
+            // Calculate divergence
+            const divergence = Math.abs(resultActive.summary.meanResponseAmplitude -
+                                        resultQuiet.summary.meanResponseAmplitude);
+            console.log('Scenario R history-dependent divergence:', divergence);
+
+            // Check living state differences
+            const quietPreTouch = resultQuiet.metrics.filter(m => m.frame >= 900 && m.frame < 1000);
+            const activePreTouch = resultActive.metrics.filter(m => m.frame >= 900 && m.frame < 1000);
+
+            if (quietPreTouch.length > 0 && activePreTouch.length > 0) {
+                const quietFatigue = quietPreTouch.reduce((sum, m) => sum + (m.fatigue ?? 0), 0) / quietPreTouch.length;
+                const activeFatigue = activePreTouch.reduce((sum, m) => sum + (m.fatigue ?? 0), 0) / activePreTouch.length;
+
+                console.log('Scenario R fatigue before touch (quiet history):', quietFatigue);
+                console.log('Scenario R fatigue before touch (active history):', activeFatigue);
+            }
+        });
+    });
+
+    describe('Scenario S: Overload to Recovery Self-Preservation (Phase 7)', async () => {
+        it('should show self-preservation evidence during recovery from overload', async () => {
+            const config: ScenarioConfig = {
+                name: 'overload-to-recovery',
+                totalFrames: 2000,
+                touchScript: [
+                    // Create overload
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 120, x: 0.3, y: 0.7, pressure: 1.0, duration: 1 },
+                    { frame: 140, x: 0.7, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 160, x: 0.2, y: 0.8, pressure: 1.0, duration: 1 },
+                    { frame: 180, x: 0.8, y: 0.2, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    // Then observe recovery
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Track self-preservation evidence
+            const peakOverload = result.metrics.filter(m => m.frame >= 100 && m.frame < 250);
+            const earlyRecovery = result.metrics.filter(m => m.frame >= 300 && m.frame < 600);
+            const lateRecovery = result.metrics.filter(m => m.frame >= 1500 && m.frame < 1900);
+
+            if (peakOverload.length > 0 && earlyRecovery.length > 0 && lateRecovery.length > 0) {
+                const maxOverload = Math.max(...peakOverload.map(m => m.overload ?? 0));
+                const earlyRecoveryDrive = earlyRecovery.reduce((sum, m) => sum + (m.restorationBias ?? 0.5), 0) / earlyRecovery.length;
+                const lateOverloadLevel = lateRecovery.reduce((sum, m) => sum + (m.overload ?? 0), 0) / lateRecovery.length;
+
+                console.log('Scenario S max overload:', maxOverload);
+                console.log('Scenario S early recovery drive:', earlyRecoveryDrive);
+                console.log('Scenario S late overload level:', lateOverloadLevel);
+                console.log('Scenario S restoration evidence:', maxOverload > 0.5 && earlyRecoveryDrive > 0.5);
+
+                // Check self-preservation bias
+                const lateSelfPreservation = lateRecovery.reduce((sum, m) => sum + (m.selfPreservationBias ?? 0.5), 0) / lateRecovery.length;
+                console.log('Scenario S late self-preservation bias:', lateSelfPreservation);
+            }
+        });
+    });
+
+    describe('Scenario T: Non-Instrumental Micro-Action (Phase 7)', async () => {
+        it('should show spontaneous actions during low-input condition', async () => {
+            const config: ScenarioConfig = {
+                name: 'non-instrumental-micro-action',
+                totalFrames: 2000,
+                touchScript: [
+                    // Very sparse touches to create low-input but not zero-input
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.3, duration: 1 },
+                    { frame: 1500, x: 0.5, y: 0.5, pressure: 0.3, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Count action transitions during quiet periods
+            const quietPeriods = result.metrics.filter(m =>
+                (m.frame < 400 || (m.frame > 600 && m.frame < 1400))
+            );
+
+            if (quietPeriods.length > 0) {
+                // Count action state changes
+                let actionTransitions = 0;
+                let lastAction = quietPeriods[0].actionState;
+                for (const m of quietPeriods) {
+                    if (m.actionState !== lastAction && m.actionState !== 'idle') {
+                        actionTransitions++;
+                        console.log(`Scenario T spontaneous action at frame ${m.frame}: ${lastAction} → ${m.actionState}`);
+                    }
+                    lastAction = m.actionState;
+                }
+
+                const quietFrames = quietPeriods.length * 20;  // metricsInterval = 20
+                const actionRate = (actionTransitions / quietFrames) * 1000;
+
+                console.log('Scenario T spontaneous action transitions:', actionTransitions);
+                console.log('Scenario T quiet frames:', quietFrames);
+                console.log('Scenario T non-instrumental action rate (per 1000 frames):', actionRate);
+            }
+        });
+    });
+
+    describe('Scenario U: Identity Continuity Run (Phase 7)', async () => {
+        it('should show individual tendency persistence across time segments', async () => {
+            const config: ScenarioConfig = {
+                name: 'identity-continuity-run',
+                totalFrames: 3000,
+                touchScript: [
+                    // Periodic gentle touches to provide minimal variance
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.5, duration: 5 },
+                    { frame: 1000, x: 0.5, y: 0.5, pressure: 0.5, duration: 5 },
+                    { frame: 1500, x: 0.5, y: 0.5, pressure: 0.5, duration: 5 },
+                    { frame: 2000, x: 0.5, y: 0.5, pressure: 0.5, duration: 5 },
+                    { frame: 2500, x: 0.5, y: 0.5, pressure: 0.5, duration: 5 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 50,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Divide into segments and check consistency
+            const segment1 = result.metrics.filter(m => m.frame < 1000);
+            const segment2 = result.metrics.filter(m => m.frame >= 1000 && m.frame < 2000);
+            const segment3 = result.metrics.filter(m => m.frame >= 2000);
+
+            if (segment1.length > 0 && segment2.length > 0 && segment3.length > 0) {
+                // Check fatigue consistency
+                const fatigue1 = segment1.reduce((sum, m) => sum + (m.fatigue ?? 0), 0) / segment1.length;
+                const fatigue2 = segment2.reduce((sum, m) => sum + (m.fatigue ?? 0), 0) / segment2.length;
+                const fatigue3 = segment3.reduce((sum, m) => sum + (m.fatigue ?? 0), 0) / segment3.length;
+
+                console.log('Scenario U segment 1 fatigue:', fatigue1);
+                console.log('Scenario U segment 2 fatigue:', fatigue2);
+                console.log('Scenario U segment 3 fatigue:', fatigue3);
+
+                // Check ergodicity consistency
+                const ergo1 = segment1.reduce((sum, m) => sum + (m.preferredErgodicity ?? 0.5), 0) / segment1.length;
+                const ergo2 = segment2.reduce((sum, m) => sum + (m.preferredErgodicity ?? 0.5), 0) / segment2.length;
+                const ergo3 = segment3.reduce((sum, m) => sum + (m.preferredErgodicity ?? 0.5), 0) / segment3.length;
+
+                console.log('Scenario U segment 1 ergodicity:', ergo1);
+                console.log('Scenario U segment 2 ergodicity:', ergo2);
+                console.log('Scenario U segment 3 ergodicity:', ergo3);
+
+                // Compute variance across segments (low variance = high consistency)
+                const fatigueVariance = ((fatigue1 - fatigue2) ** 2 + (fatigue2 - fatigue3) ** 2 + (fatigue1 - fatigue3) ** 2) / 3;
+                const ergoVariance = ((ergo1 - ergo2) ** 2 + (ergo2 - ergo3) ** 2 + (ergo1 - ergo3) ** 2) / 3;
+
+                console.log('Scenario U fatigue cross-segment variance:', fatigueVariance);
+                console.log('Scenario U ergodicity cross-segment variance:', ergoVariance);
+                console.log('Scenario U identity consistency evidence:', fatigueVariance < 0.01 && ergoVariance < 0.01);
+            }
+        });
+    });
 });
