@@ -22,6 +22,7 @@ import { createTimeSensoryController, updateTimeSensory } from '../perception/ti
 import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebugSummary } from '../organism/energyFlow.ts';
 import { createInitialLivingState, updateLivingState, getLivingStateDebug, getLivingStateInfluence } from '../organism/livingState.ts';
 import { createTouchExpectationState, updateTouchExpectation, computeTouchSurprise, updateTouchHabituation, getTouchExpectationDebug, getTouchExpectationInfluence } from '../perception/touchExpectation.ts';
+import { createInitialHomeostaticState, updateHomeostaticState, getHomeostaticDebugSummary, getHomeostaticInfluence } from '../organism/survivalState.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -41,6 +42,7 @@ export class AeternaNetwork {
         this.initializeEnergyFlowState();
         this.initializeLivingState();
         this.initializeTouchExpectationState();
+        this.initializeHomeostaticState();
         this.initializeTemporaryWorkBuffers();
 
         this.generate();
@@ -226,6 +228,10 @@ export class AeternaNetwork {
             releaseSurprise: 0,
             totalSurprise: 0,
         };
+    }
+
+    initializeHomeostaticState() {
+        this.homeostaticState = createInitialHomeostaticState();
     }
 
     initializeTemporaryWorkBuffers() {
