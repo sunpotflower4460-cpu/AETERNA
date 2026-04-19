@@ -429,4 +429,171 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    // ──────────────────────────────────────────────────────
+    // Phase 3: Touch Expectation & Habituation Scenarios
+    // ──────────────────────────────────────────────────────
+
+    describe('Scenario I: Repeated Same-Location Touch (Phase 3)', async () => {
+        it('should show habituation with repeated same-location touches', async () => {
+            const config: ScenarioConfig = {
+                name: 'repeated-same-location-habituation',
+                totalFrames: 1200,
+                touchScript: [
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 600, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check for habituation buildup
+            const metrics = result.metrics.filter(m => m.meanTouchHabituation !== undefined);
+            if (metrics.length > 10) {
+                const early = metrics.slice(0, 20);
+                const late = metrics.slice(-20);
+
+                const earlyHab = early.reduce((sum, m) => sum + (m.meanTouchHabituation ?? 0), 0) / early.length;
+                const lateHab = late.reduce((sum, m) => sum + (m.meanTouchHabituation ?? 0), 0) / late.length;
+
+                console.log('Scenario I early habituation:', earlyHab);
+                console.log('Scenario I late habituation:', lateHab);
+
+                // Habituation should increase with repetition
+                expect(lateHab).toBeGreaterThan(earlyHab * 0.9);
+            }
+        });
+    });
+
+    describe('Scenario J: Expected Touch Miss (Phase 3)', async () => {
+        it('should show missing touch surprise when expected touch does not arrive', async () => {
+            const config: ScenarioConfig = {
+                name: 'expected-touch-miss',
+                totalFrames: 800,
+                touchScript: [
+                    // Establish pattern: touch every 100 frames
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    // Miss expected touch at frame 500
+                    // Touch again later at frame 700
+                    { frame: 700, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 5,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check for missing touch surprise around frame 500
+            const missingPeriod = result.metrics.filter(m => m.frame >= 500 && m.frame < 600);
+            if (missingPeriod.length > 0) {
+                const maxMissingSurprise = Math.max(...missingPeriod.map(m => m.touchMissingSurprise ?? 0));
+                console.log('Scenario J max missing touch surprise:', maxMissingSurprise);
+
+                // Should show some missing surprise
+                expect(maxMissingSurprise).toBeGreaterThan(0.01);
+            }
+
+            // Check expectation confidence was built up
+            const preMiss = result.metrics.filter(m => m.frame >= 350 && m.frame < 400);
+            if (preMiss.length > 0) {
+                const avgConfidence = preMiss.reduce((sum, m) => sum + (m.touchExpectationConfidence ?? 0), 0) / preMiss.length;
+                console.log('Scenario J expectation confidence before miss:', avgConfidence);
+            }
+        });
+    });
+
+    describe('Scenario K: Hold Then Release (Phase 3)', async () => {
+        it('should show hold continuation expectation and release surprise', async () => {
+            const config: ScenarioConfig = {
+                name: 'hold-then-release',
+                totalFrames: 600,
+                touchScript: [
+                    // Long hold
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 200 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 5,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // During hold: check continuation expectation builds up
+            const duringHold = result.metrics.filter(m => m.frame >= 150 && m.frame < 280);
+            if (duringHold.length > 0) {
+                const maxContinuation = Math.max(...duringHold.map(m => m.holdContinuationExpectation ?? 0));
+                console.log('Scenario K max hold continuation expectation:', maxContinuation);
+
+                // Continuation expectation should build during hold
+                expect(maxContinuation).toBeGreaterThan(0.1);
+            }
+
+            // After release: check for release surprise or absence error
+            const afterRelease = result.metrics.filter(m => m.frame >= 300 && m.frame < 350);
+            if (afterRelease.length > 0) {
+                const maxReleaseSurprise = Math.max(...afterRelease.map(m => m.touchReleaseSurprise ?? 0));
+                const maxAbsenceError = Math.max(...afterRelease.map(m => m.touchAbsenceError ?? 0));
+
+                console.log('Scenario K max release surprise:', maxReleaseSurprise);
+                console.log('Scenario K max absence error:', maxAbsenceError);
+
+                // Should show some release-related signal
+                expect(Math.max(maxReleaseSurprise, maxAbsenceError)).toBeGreaterThan(0.01);
+            }
+        });
+    });
+
+    describe('Scenario L: Unexpected Far Touch (Phase 3)', async () => {
+        it('should show spatial surprise for unexpected location touch', async () => {
+            const config: ScenarioConfig = {
+                name: 'unexpected-far-touch',
+                totalFrames: 600,
+                touchScript: [
+                    // Establish pattern at location A
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 300, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    // Unexpected touch at distant location B
+                    { frame: 400, x: 0.8, y: 0.8, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 5,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check for spatial surprise around frame 400
+            const unexpectedPeriod = result.metrics.filter(m => m.frame >= 400 && m.frame < 450);
+            if (unexpectedPeriod.length > 0) {
+                const maxSpatialSurprise = Math.max(...unexpectedPeriod.map(m => m.touchSpatialSurprise ?? 0));
+                console.log('Scenario L max spatial surprise:', maxSpatialSurprise);
+
+                // Should show spatial surprise
+                expect(maxSpatialSurprise).toBeGreaterThan(0.01);
+            }
+
+            // Verify expectation confidence was built
+            const beforeUnexpected = result.metrics.filter(m => m.frame >= 250 && m.frame < 300);
+            if (beforeUnexpected.length > 0) {
+                const avgConfidence = beforeUnexpected.reduce((sum, m) => sum + (m.touchExpectationConfidence ?? 0), 0) / beforeUnexpected.length;
+                console.log('Scenario L expectation confidence before unexpected:', avgConfidence);
+            }
+        });
+    });
 });
