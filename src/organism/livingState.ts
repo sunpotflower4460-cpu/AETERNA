@@ -75,6 +75,8 @@ export function createInitialLivingState(): LivingState {
  * This is called EVERY tick/heartbeat, even when nothing external happens
  *
  * Key principle: slow drift, not instant response
+ *
+ * Phase 8: Now incorporates weak relational influences
  */
 export function updateLivingState(
   livingState: LivingState,
@@ -88,6 +90,7 @@ export function updateLivingState(
     recentPerturbationIntensity = 0,
     stability = 0.5,
     overload = 0,
+    relationalInfluence = null,
   }: {
     arousal?: number;
     coherence?: number;
@@ -97,6 +100,13 @@ export function updateLivingState(
     recentPerturbationIntensity?: number;
     stability?: number;
     overload?: number;
+    relationalInfluence?: {
+      touchNeedBaselineModifier?: number;
+      predictionSensitivityModifier?: number;
+      longBaselineToneModifier?: number;
+      restorationBiasModifier?: number;
+      boundaryIntegrityModifier?: number;
+    } | null;
   } = {},
 ): void {
   const clamp = (v: number, min: number, max: number) =>
@@ -134,8 +144,10 @@ export function updateLivingState(
   );
 
   // 4. Long baseline tone: glacially slow drift
+  // Phase 8: Weakly influenced by relational absence drift
   const baselineDrift = 0.00005;
-  const baselineTarget = 0.12 + residueLevel * 0.05;  // influenced by residue
+  const relationalToneModifier = relationalInfluence?.longBaselineToneModifier ?? 1.0;
+  const baselineTarget = (0.12 + residueLevel * 0.05) * relationalToneModifier;
   livingState.longBaselineTone = clamp(
     livingState.longBaselineTone * (1 - baselineDrift) +
       baselineTarget * baselineDrift,
@@ -189,9 +201,11 @@ export function updateLivingState(
   );
 
   // 8. Touch need baseline: adapts based on touch history
+  // Phase 8: Weakly influenced by relational familiarity
   const touchSmoothing = 0.001;
   const touchPresence = activeTouchCount > 0 ? 1 : 0;
-  const touchTarget = clamp(0.5 - touchPresence * 0.1, 0.2, 0.8);
+  const relationalTouchModifier = relationalInfluence?.touchNeedBaselineModifier ?? 1.0;
+  const touchTarget = clamp((0.5 - touchPresence * 0.1) * relationalTouchModifier, 0.2, 0.8);
   livingState.touchNeedBaseline = clamp(
     livingState.touchNeedBaseline * (1 - touchSmoothing) +
       touchTarget * touchSmoothing,
