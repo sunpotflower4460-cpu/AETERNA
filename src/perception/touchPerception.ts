@@ -39,12 +39,24 @@ export function updateRawTouchField(network: any, activeTouches: Map<any, any>) 
 export function updateTouchPerception(network: any) {
   const TRACE_DECAY = 0.96;
   const TRACE_INTAKE = 0.04;
+
+  // Phase 3: Apply touch expectation influence to touch sensitivity
+  let touchSensitivityModifier = 1.0;
+  if (network.touchExpectation && network.touchSurpriseMetrics) {
+    // Import touch expectation influence function inline to avoid circular dependency
+    const meanHabituation = network.touchExpectation.touchHabituationField.reduce((a: number, b: number) => a + b, 0) /
+                            network.touchExpectation.touchHabituationField.length;
+    touchSensitivityModifier = 1.0 - meanHabituation * 0.15;
+    touchSensitivityModifier = Math.max(0.5, Math.min(1.0, touchSensitivityModifier));
+  }
+
   const touchSensitivity = (network.currentModeDynamics?.touchSensitivity ?? 1.0) * network.clampFinite(
     1.0 + (network.orientingDrive - 0.18) * 0.12 + (network.stability - 0.58) * 0.04 - Math.max(network.overload - 0.08, 0) * 0.22,
     0.72,
     1.14,
     1.0,
-  );
+  ) * touchSensitivityModifier;
+
   const noveltyGain = network.clampFinite(
     1.0 + (network.orientingDrive - 0.18) * 0.08 - Math.max(network.overload - 0.08, 0) * 0.24,
     0.7,

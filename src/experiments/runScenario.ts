@@ -60,6 +60,21 @@ export interface MetricsSnapshot {
     residueBias?: number;
     predictionSensitivity?: number;
     touchNeedBaseline?: number;
+    // Phase 3: Touch expectation metrics
+    expectedTouchInterval?: number;
+    expectedTouchStrength?: number;
+    touchExpectationConfidence?: number;
+    touchSpatialSurprise?: number;
+    touchTemporalSurprise?: number;
+    touchStrengthSurprise?: number;
+    touchMissingSurprise?: number;
+    touchReleaseSurprise?: number;
+    touchTotalSurprise?: number;
+    meanTouchHabituation?: number;
+    holdContinuationExpectation?: number;
+    touchAbsenceError?: number;
+    isTouchHolding?: number;
+    touchHoldDuration?: number;
 }
 
 export interface ScenarioResult {
@@ -228,6 +243,30 @@ function buildMetricsSnapshot(
         snapshot.residueBias = network.livingState.residueBias;
         snapshot.predictionSensitivity = network.livingState.predictionSensitivity;
         snapshot.touchNeedBaseline = network.livingState.touchNeedBaseline;
+    }
+
+    // Phase 3: Add touch expectation metrics
+    if (network.touchExpectation) {
+        snapshot.expectedTouchInterval = network.touchExpectation.expectedInterTouchInterval;
+        snapshot.expectedTouchStrength = network.touchExpectation.expectedTouchStrength;
+        snapshot.touchExpectationConfidence = network.touchExpectation.touchExpectationConfidence;
+        snapshot.holdContinuationExpectation = network.touchExpectation.holdContinuationExpectation;
+        snapshot.touchAbsenceError = network.touchExpectation.absenceError;
+        snapshot.isTouchHolding = network.touchExpectation.isHolding ? 1 : 0;
+        snapshot.touchHoldDuration = network.touchExpectation.holdDuration;
+
+        const meanHab = network.touchExpectation.touchHabituationField.reduce((a: number, b: number) => a + b, 0) /
+                        network.touchExpectation.touchHabituationField.length;
+        snapshot.meanTouchHabituation = meanHab;
+    }
+
+    if (network.touchSurpriseMetrics) {
+        snapshot.touchSpatialSurprise = network.touchSurpriseMetrics.spatialSurprise;
+        snapshot.touchTemporalSurprise = network.touchSurpriseMetrics.temporalSurprise;
+        snapshot.touchStrengthSurprise = network.touchSurpriseMetrics.strengthSurprise;
+        snapshot.touchMissingSurprise = network.touchSurpriseMetrics.missingTouchSurprise;
+        snapshot.touchReleaseSurprise = network.touchSurpriseMetrics.releaseSurprise;
+        snapshot.touchTotalSurprise = network.touchSurpriseMetrics.totalSurprise;
     }
 
     return snapshot;

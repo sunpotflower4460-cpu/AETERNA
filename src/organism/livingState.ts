@@ -145,7 +145,14 @@ export function updateLivingState(
 
   // 5. Recent history bias: EMA of recent perturbations
   const historySmoothing = 0.01;  // moderate integration
-  const perturbationBias = clamp(recentPerturbationIntensity, -1, 1);
+
+  // Phase 3: Incorporate touch expectation violation into history bias
+  let expectationViolationBias = 0;
+  if (network.touchSurpriseMetrics) {
+    expectationViolationBias = network.touchSurpriseMetrics.totalSurprise * 0.05;
+  }
+
+  const perturbationBias = clamp(recentPerturbationIntensity + expectationViolationBias, -1, 1);
   livingState.recentHistoryBias = clamp(
     livingState.recentHistoryBias * (1 - historySmoothing) +
       perturbationBias * historySmoothing,
@@ -166,7 +173,14 @@ export function updateLivingState(
   // 7. Prediction sensitivity: adapts based on prediction errors
   const sensitivitySmoothing = 0.002;
   const errorLevel = clamp(predictionError, 0, 2);
-  const sensitivityTarget = clamp(0.5 + errorLevel * 0.1, 0.3, 0.8);
+
+  // Phase 3: Apply touch expectation surprise influence
+  let surpriseInfluence = 0;
+  if (network.touchSurpriseMetrics) {
+    surpriseInfluence = network.touchSurpriseMetrics.totalSurprise * 0.08;
+  }
+
+  const sensitivityTarget = clamp(0.5 + errorLevel * 0.1 + surpriseInfluence, 0.3, 0.8);
   livingState.predictionSensitivity = clamp(
     livingState.predictionSensitivity * (1 - sensitivitySmoothing) +
       sensitivityTarget * sensitivitySmoothing,

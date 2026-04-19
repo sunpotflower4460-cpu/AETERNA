@@ -21,6 +21,7 @@ import { createMotionSensoryController, updateMotionSensory } from '../perceptio
 import { createTimeSensoryController, updateTimeSensory } from '../perception/timeSensory.ts';
 import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebugSummary } from '../organism/energyFlow.ts';
 import { createInitialLivingState, updateLivingState, getLivingStateDebug, getLivingStateInfluence } from '../organism/livingState.ts';
+import { createTouchExpectationState, updateTouchExpectation, computeTouchSurprise, updateTouchHabituation, getTouchExpectationDebug, getTouchExpectationInfluence } from '../perception/touchExpectation.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -39,6 +40,7 @@ export class AeternaNetwork {
         this.initializeOrganismActionState();
         this.initializeEnergyFlowState();
         this.initializeLivingState();
+        this.initializeTouchExpectationState();
         this.initializeTemporaryWorkBuffers();
 
         this.generate();
@@ -212,6 +214,18 @@ export class AeternaNetwork {
 
     initializeLivingState() {
         this.livingState = createInitialLivingState();
+    }
+
+    initializeTouchExpectationState() {
+        this.touchExpectation = createTouchExpectationState(this.numNodes);
+        this.touchSurpriseMetrics = {
+            spatialSurprise: 0,
+            temporalSurprise: 0,
+            strengthSurprise: 0,
+            missingTouchSurprise: 0,
+            releaseSurprise: 0,
+            totalSurprise: 0,
+        };
     }
 
     initializeTemporaryWorkBuffers() {
@@ -507,6 +521,21 @@ export class AeternaNetwork {
             lowEnergyPressure: this.energyFlowState.lowEnergyPressure,
             recoveryDrive: this.energyFlowState.recoveryDrive,
             energyIsDormant: this.energyFlowState.wasDormantByEnergy,
+            // Phase 3: Touch expectation metrics
+            expectedTouchInterval: this.touchExpectation?.expectedInterTouchInterval ?? 0,
+            expectedTouchStrength: this.touchExpectation?.expectedTouchStrength ?? 0,
+            touchExpectationConfidence: this.touchExpectation?.touchExpectationConfidence ?? 0,
+            touchSpatialSurprise: this.touchSurpriseMetrics?.spatialSurprise ?? 0,
+            touchTemporalSurprise: this.touchSurpriseMetrics?.temporalSurprise ?? 0,
+            touchStrengthSurprise: this.touchSurpriseMetrics?.strengthSurprise ?? 0,
+            touchMissingSurprise: this.touchSurpriseMetrics?.missingTouchSurprise ?? 0,
+            touchReleaseSurprise: this.touchSurpriseMetrics?.releaseSurprise ?? 0,
+            touchTotalSurprise: this.touchSurpriseMetrics?.totalSurprise ?? 0,
+            meanTouchHabituation: this.touchExpectation ? (this.touchExpectation.touchHabituationField.reduce((a, b) => a + b, 0) / this.touchExpectation.touchHabituationField.length) : 0,
+            holdContinuationExpectation: this.touchExpectation?.holdContinuationExpectation ?? 0,
+            touchAbsenceError: this.touchExpectation?.absenceError ?? 0,
+            isTouchHolding: this.touchExpectation?.isHolding ? 1 : 0,
+            touchHoldDuration: this.touchExpectation?.holdDuration ?? 0,
         };
     }
 }

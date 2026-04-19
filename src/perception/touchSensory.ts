@@ -10,11 +10,20 @@ import {
   updateRawTouchField,
   updateTouchPerception,
 } from './touchPerception.ts';
+import { updateTouchExpectation, computeTouchSurprise, updateTouchHabituation } from './touchExpectation.ts';
 
 export { addGaussianTouch, mapTouchToSurfaceIndex, updateRawTouchField, updateTouchPerception, projectTouchToNetwork };
 
 export function captureTouchSensoryInput(network: any, activeTouches: Map<any, any>): TouchInputPacket {
   updateRawTouchField(network, activeTouches);
+
+  // Phase 3: Update touch expectation AFTER rawTouch is set but BEFORE perception processing
+  if (network.touchExpectation) {
+    updateTouchExpectation(network, network.touchExpectation, activeTouches, network.simTime);
+    network.touchSurpriseMetrics = computeTouchSurprise(network, network.touchExpectation, activeTouches, network.simTime);
+    updateTouchHabituation(network, network.touchExpectation, activeTouches);
+  }
+
   return {
     activeTouchCount: activeTouches.size,
     lastTouchCentroid: network.lastTouchCentroid,
