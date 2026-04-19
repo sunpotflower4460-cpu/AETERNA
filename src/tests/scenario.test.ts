@@ -306,4 +306,127 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    describe('Scenario F: Long Quiet Drift (Phase 2)', async () => {
+        it('should show slow variable drift during extended quiet period', async () => {
+            const config: ScenarioConfig = {
+                name: 'long-quiet-drift',
+                totalFrames: 3000,  // ~50 seconds
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 100,  // collect every 100 frames
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check that living state variables drift over time
+            const firstMetric = result.metrics[0];
+            const lastMetric = result.metrics[result.metrics.length - 1];
+
+            if (firstMetric && lastMetric) {
+                console.log('Scenario F initial fatigue:', firstMetric.fatigue);
+                console.log('Scenario F final fatigue:', lastMetric.fatigue);
+                console.log('Scenario F initial longBaselineTone:', firstMetric.longBaselineTone);
+                console.log('Scenario F final longBaselineTone:', lastMetric.longBaselineTone);
+                console.log('Scenario F initial preferredErgodicity:', firstMetric.preferredErgodicity);
+                console.log('Scenario F final preferredErgodicity:', lastMetric.preferredErgodicity);
+
+                // Fatigue should decrease in quiet (recovery)
+                if (firstMetric.fatigue !== undefined && lastMetric.fatigue !== undefined) {
+                    console.log('Scenario F: Fatigue drift:', lastMetric.fatigue - firstMetric.fatigue);
+                }
+
+                // Long baseline tone should drift slightly
+                if (firstMetric.longBaselineTone !== undefined && lastMetric.longBaselineTone !== undefined) {
+                    console.log('Scenario F: Baseline tone drift:', lastMetric.longBaselineTone - firstMetric.longBaselineTone);
+                }
+            }
+        });
+    });
+
+    describe('Scenario G: Perturbation After Quiet (Phase 2)', async () => {
+        it('should show that prior quiet period affects touch response', async () => {
+            // Run two scenarios: touch after quiet vs immediate touch
+            const quietThenTouchConfig: ScenarioConfig = {
+                name: 'perturbation-after-quiet',
+                totalFrames: 1500,
+                touchScript: [
+                    { frame: 1000, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },  // touch after 1000 frames quiet
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const immediateTouchConfig: ScenarioConfig = {
+                name: 'immediate-perturbation',
+                totalFrames: 500,
+                touchScript: [
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },  // touch early
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const quietThenTouchResult = await runScenario(quietThenTouchConfig);
+            const immediateTouchResult = await runScenario(immediateTouchConfig);
+
+            expect(quietThenTouchResult.succeeded).toBe(true);
+            expect(immediateTouchResult.succeeded).toBe(true);
+
+            console.log('Scenario G quiet-then-touch response:', quietThenTouchResult.summary.meanResponseAmplitude);
+            console.log('Scenario G immediate-touch response:', immediateTouchResult.summary.meanResponseAmplitude);
+
+            // Check living state before touch in long quiet scenario
+            const preTouchMetrics = quietThenTouchResult.metrics.filter(m => m.frame < 1000);
+            if (preTouchMetrics.length > 0) {
+                const lastPreTouch = preTouchMetrics[preTouchMetrics.length - 1];
+                console.log('Scenario G fatigue before touch:', lastPreTouch.fatigue);
+                console.log('Scenario G coherenceMemory before touch:', lastPreTouch.coherenceMemory);
+            }
+        });
+    });
+
+    describe('Scenario H: Repeated Perturbation Carry-Over (Phase 2)', async () => {
+        it('should show living state bias persists after repeated touches', async () => {
+            const config: ScenarioConfig = {
+                name: 'repeated-perturbation-carryover',
+                totalFrames: 1500,
+                touchScript: [
+                    // Rapid sequence of touches
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 120, x: 0.4, y: 0.4, pressure: 1.0, duration: 1 },
+                    { frame: 140, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 160, x: 0.6, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 180, x: 0.7, y: 0.7, pressure: 1.0, duration: 1 },
+                    // Then quiet for 500+ frames
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check recent history bias during and after perturbations
+            const duringPerturbation = result.metrics.find(m => m.frame >= 180 && m.frame < 200);
+            const longAfterPerturbation = result.metrics.find(m => m.frame >= 700 && m.frame < 800);
+
+            if (duringPerturbation && longAfterPerturbation) {
+                console.log('Scenario H recentHistoryBias during touches:', duringPerturbation.recentHistoryBias);
+                console.log('Scenario H recentHistoryBias 500 frames later:', longAfterPerturbation.recentHistoryBias);
+                console.log('Scenario H fatigue during touches:', duringPerturbation.fatigue);
+                console.log('Scenario H fatigue 500 frames later:', longAfterPerturbation.fatigue);
+                console.log('Scenario H residueBias during touches:', duringPerturbation.residueBias);
+                console.log('Scenario H residueBias 500 frames later:', longAfterPerturbation.residueBias);
+
+                // Recent history bias should still be non-zero after quiet period
+                if (longAfterPerturbation.recentHistoryBias !== undefined) {
+                    console.log('Scenario H: Bias persists:', Math.abs(longAfterPerturbation.recentHistoryBias) > 0.01);
+                }
+            }
+        });
+    });
 });
