@@ -143,6 +143,25 @@
         </div>
         <ul id="guide-history" class="space-y-1.5 text-[8px] text-white/40 list-none"></ul>
 
+        <!-- Phase 6: Long-horizon trend sparklines -->
+        <div class="border-t border-white/10 pt-2 mt-2">
+            <div class="text-[7px] text-white/50 mb-1 tracking-wider">RECENT TRENDS (100 frames)</div>
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">σ</span>
+                    <canvas id="sparkline-sigma" class="opacity-80"></canvas>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">Φ*</span>
+                    <canvas id="sparkline-phi" class="opacity-80"></canvas>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] text-white/60 w-12">energy</span>
+                    <canvas id="sparkline-energy" class="opacity-80"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Signal Observe Panel (shown when signal_runtime mode is active) -->
         <div id="signal-observe-panel" class="mt-2 max-h-60 overflow-y-auto custom-scrollbar">
             <div class="text-cyan-400 font-bold text-[8px] tracking-widest mb-2">SIGNAL RUNTIME</div>
@@ -213,6 +232,10 @@
                     <h2 class="text-[8px] font-mono mt-0.5 text-cyan-400 tracking-[0.2em] opacity-80">PHASE 9.4 : POLISHED</h2>
                 </div>
                 <span id="system-state-badge" class="text-white/50 border-white/50">QUIET</span>
+                <!-- Phase 6: Major process indicator -->
+                <div id="major-process-indicator" class="ml-3 px-2 py-1 rounded text-[8px] font-mono border border-white/20 bg-white/5" style="display: none;">
+                    <span id="major-process-label" class="font-bold">—</span>
+                </div>
             </div>
 
             <div id="metrics-panel" class="glass-panel p-1 rounded-xl font-mono text-[8.5px] text-white/70 shadow-2xl custom-scrollbar mt-1">
