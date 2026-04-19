@@ -248,8 +248,8 @@
                       </div>
                       <div id="sec-physical" class="accordion-grid">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Toroidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Poloidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Toroidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-t"><span>ω_t (toroidal Hz)</span><span id="val-omega-t" class="text-white">0.00</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Poloidal frequency — direct slider input value. Control parameter, not derived." id="row-omega-p"><span>ω_p (poloidal Hz)</span><span id="val-omega-p" class="text-white">0.00</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] R/r ratio — geometrically computed from R (fixed = φ) and r (slider). Compared to φ = 1.618." id="row-ratio"><span>R/r</span><span id="val-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between" id="row-phase-ratio"><span>ω_p/ω_t</span><span id="val-phase-ratio" class="text-white">0.000</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="軌道がトーラス表面を稠密に埋め尽くす性質" id="row-ergodic"><span>Ergodic</span><span id="val-ergodic" class="text-white">NO</span></div>
@@ -278,7 +278,7 @@
                       </div>
                       <div id="sec-network" class="accordion-grid collapsed">
                           <div class="accordion-inner space-y-0.5 pt-0.5">
-                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED] Fraction of nodes crossing the spike threshold this frame. Raw node count / total nodes." id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[EXACT] Fraction of nodes crossing the spike threshold this frame. Raw node count / total nodes." id="row-firing"><span>Firing rate</span><span id="val-firing" class="text-white">0.0%</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Largest connected component of active nodes (spikeTrace > 0.5) as a fraction of total. Computed via Union-Find." id="row-cluster"><span>Largest cluster</span><span id="val-cluster" class="text-white">0.0%</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Whole-vs-parts integration proxy. Custom approximation using subgroup mean activity differences. NOT IIT Φ." id="row-phi"><span>Φ* proxy</span><span id="val-phi" class="text-white">0.0000</span></div>
                               <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Kuramoto-like order parameter approximation. Uses weighted node phases; not full oscillator coupling." id="row-coherence"><span>Phase coherence</span><span id="val-coherence" class="text-white">0.000</span></div>
