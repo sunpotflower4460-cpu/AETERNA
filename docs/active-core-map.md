@@ -5,6 +5,26 @@
 - `src/core/AeternaNetwork.js` — live CPU state holder and thin packet-flow orchestration.
 - `src/types/packets.ts` — shared packet contracts for perception, prediction, rewrite, mode, organism, action, and dynamics.
 
+## Phase 5: Separated Engines
+
+AETERNA now uses specialized engines to separate concerns:
+
+- `src/core/DynamicsEngine.ts` — torus wave propagation and flow (currently delegates to dynamicCore.ts).
+- `src/core/PredictionCore.ts` — prediction error computation and mismatch detection.
+- `src/core/PlasticityEngine.ts` — rewrite/adaptation logic (placeholder for future integration).
+- `src/core/NoiseField.ts` — baseline noise generation and stochastic fluctuations.
+- `src/core/OrganismRuntime.ts` — engine coordinator (currently minimal, will grow).
+
+## State Type Definitions
+
+- `src/types/worldState.ts` — external world state (environment, touch inputs, sensory streams).
+- `src/types/organismState.ts` — internal organism state (buffers, living state, homeostasis, energy, mode, action).
+- `src/types/presentationState.ts` — observer-side visualization (camera, renderer, debug UI, render buffers).
+
+## Core Constants and Helpers
+
+- `src/core/coreConstants.ts` — centralized signal IDs, enums (MODE_STATE, ACTION_STATE, TOUCH_PATTERN, etc.), and helper functions (clampFinite, clamp01, sigmoid, relu).
+
 ## Core physiology modules
 
 - `src/mode/baselineActivity.ts` — baseline activity + residue packet stage.
@@ -40,6 +60,8 @@ AeternaNetwork still keeps the live torus buffers, organism scalars, touch trace
 It now delegates the visible step order to packet-oriented stage files and mostly applies returned packets when building the public `updateDynamics()` result.
 Touch-derived pattern and direction fields are handed into body/action stages as packet data instead of being reread from unrelated module state.
 
+**Phase 5 Addition**: AeternaNetwork now initializes and holds references to specialized engines (DynamicsEngine, PredictionCore, PlasticityEngine, NoiseField, OrganismRuntime), though these engines are not yet actively used in the update loop. This provides the infrastructure for gradual responsibility migration.
+
 ## Where to touch active code first
 
 - Update flow / packet order: `src/core/AeternaNetwork.js`
@@ -48,3 +70,5 @@ Touch-derived pattern and direction fields are handed into body/action stages as
 - Mode / organism / action packet changes: `src/mode/modeController.ts`, `src/organism/bodyState.ts`, `src/organism/actionDecision.ts`
 - Dynamics / metrics / render packet changes: `src/core/torusDynamics.ts`, `src/core/torusMetrics.ts`, `src/core/torusGeometry.ts`
 - Bridge-facing numeric packet mapping: `src/types/packets.ts`, `src/types/torusState.ts`, `src/bridge/bridge.ts`
+- **Engine logic**: `src/core/DynamicsEngine.ts`, `src/core/PredictionCore.ts`, `src/core/PlasticityEngine.ts`, `src/core/NoiseField.ts`, `src/core/OrganismRuntime.ts`
+
