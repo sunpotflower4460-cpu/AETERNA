@@ -1,6 +1,7 @@
 import { PHI } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
 import { MODE_DYNAMICS } from './aeternaTuning.ts';
+import { clampFinite, clamp01 } from './coreConstants.ts';
 import { autoPredictAndError, injectPredictionError, runTorusDynamicsStage, triggerNoise, updatePredictionError } from './torusDynamics.ts';
 import { computeIntegrationProxy, computeLargestCluster, computeMeanLocalPredError, computeMeanPredictionError, computePhaseCoherence, runTorusMetricsStage, updateDerivedStateCaches } from './torusMetrics.ts';
 import { buildDormantDebugSummary, initializeDormantNodes, updateDormantNodes } from './dormantNodes.ts';
@@ -23,6 +24,11 @@ import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebug
 import { createInitialLivingState, updateLivingState, getLivingStateDebug, getLivingStateInfluence } from '../organism/livingState.ts';
 import { createTouchExpectationState, updateTouchExpectation, computeTouchSurprise, updateTouchHabituation, getTouchExpectationDebug, getTouchExpectationInfluence } from '../perception/touchExpectation.ts';
 import { createInitialHomeostaticState, updateHomeostaticState, getHomeostaticDebugSummary, getHomeostaticInfluence } from '../organism/survivalState.ts';
+import { createDynamicsEngine } from './DynamicsEngine.ts';
+import { createPredictionCore } from './PredictionCore.ts';
+import { createPlasticityEngine } from './PlasticityEngine.ts';
+import { createNoiseField } from './NoiseField.ts';
+import { createOrganismRuntime } from './OrganismRuntime.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -44,8 +50,24 @@ export class AeternaNetwork {
         this.initializeTouchExpectationState();
         this.initializeHomeostaticState();
         this.initializeTemporaryWorkBuffers();
+        this.initializeEngines();
 
         this.generate();
+    }
+
+    initializeEngines() {
+        // Phase 5: Initialize separated engines
+        // These engines will gradually take over responsibilities from AeternaNetwork
+        this.dynamicsEngine = createDynamicsEngine();
+        this.predictionCore = createPredictionCore();
+        this.plasticityEngine = createPlasticityEngine();
+        this.noiseField = createNoiseField();
+        this.organismRuntime = createOrganismRuntime({
+            dynamicsEngine: this.dynamicsEngine,
+            predictionCore: this.predictionCore,
+            plasticityEngine: this.plasticityEngine,
+            noiseField: this.noiseField,
+        });
     }
 
     initializeGeometryRenderState() {
@@ -244,14 +266,13 @@ export class AeternaNetwork {
     }
 
     clampFinite(value, min, max, fallback = 0) {
-        if (!Number.isFinite(value)) return fallback;
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
+        // Delegate to centralized helper
+        return clampFinite(value, min, max, fallback);
     }
 
     clamp01(value, fallback = 0) {
-        return this.clampFinite(value, 0, 1, fallback);
+        // Delegate to centralized helper
+        return clamp01(value, fallback);
     }
 
     getTouchDirectionArray(direction = this.touchDirectionVector) {
