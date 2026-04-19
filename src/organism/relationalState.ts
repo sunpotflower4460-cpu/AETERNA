@@ -65,7 +65,7 @@ export interface PartnerPattern {
  * Initialize relational state
  * Starts with neutral values - no partner trace yet
  */
-export function createInitialRelationalState(numNodes = 72): RelationalState {
+export function createInitialRelationalState(_numNodes = 72): RelationalState {
   const signatureSize = 8;  // Simplified touch style signature dimension
 
   return {
@@ -107,7 +107,7 @@ export function updateRelationalState(
     hasPartnerInteraction = false,
     partnerStability = 0.5,
     partnerConsistency = 0.5,
-    partnerNovelty = 0.0,
+    _partnerNovelty = 0.0,
     touchCentroid = -1,
     touchStrength = 0.0,
   }: {
