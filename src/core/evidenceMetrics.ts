@@ -31,6 +31,15 @@ export interface EvidenceMetrics {
 
   // Composite self-origin candidate score
   selfOriginCandidateScore: number;  // [PROXY] Aggregate evidence strength
+
+  // Phase 8: Relational evidence
+  partnerTraceStrength: number;  // [DERIVED] Long-term partner trace accumulation
+  partnerFamiliarity: number;  // [DERIVED] Repeated interaction with same partner
+  partnerValence: number;  // [DERIVED] Positive/negative tilt of partner interactions
+  boundaryPermeability: number;  // [DERIVED] Partner-specific boundary openness
+  partnerAbsenceDrift: number;  // [DERIVED] Slow drift when familiar partner absent
+  relationalInfluenceScore: number;  // [PROXY] Relational impact on organism state
+  protoCommunicationPressure: number;  // [DERIVED] Internal pressure toward state leakage
 }
 
 /**
@@ -285,6 +294,21 @@ export function updateEvidenceMetrics(
     nonInstrumentalRate
   );
 
+  // Phase 8: Extract relational evidence if available
+  let relationalEvidence = {
+    partnerTraceStrength: 0,
+    partnerFamiliarity: 0,
+    partnerValence: 0,
+    boundaryPermeability: 0.5,
+    partnerAbsenceDrift: 0,
+    relationalInfluenceScore: 0,
+    protoCommunicationPressure: 0,
+  };
+
+  if (network.relationalState) {
+    relationalEvidence = computeRelationalEvidence(network.relationalState);
+  }
+
   return {
     identityConsistencyScore: identityConsistency,
     selfPreservationEvidenceScore: selfPreservation,
@@ -292,5 +316,61 @@ export function updateEvidenceMetrics(
     historyDependentDivergence: historyDivergence,
     nonInstrumentalActionRate: nonInstrumentalRate,
     selfOriginCandidateScore: selfOriginCandidate,
+    partnerTraceStrength: relationalEvidence.partnerTraceStrength,
+    partnerFamiliarity: relationalEvidence.partnerFamiliarity,
+    partnerValence: relationalEvidence.partnerValence,
+    boundaryPermeability: relationalEvidence.boundaryPermeability,
+    partnerAbsenceDrift: relationalEvidence.partnerAbsenceDrift,
+    relationalInfluenceScore: relationalEvidence.relationalInfluenceScore,
+    protoCommunicationPressure: relationalEvidence.protoCommunicationPressure,
+  };
+}
+
+/**
+ * Phase 8: Compute relational evidence
+ * Quantifies observable relational traces
+ *
+ * [DERIVED] and [PROXY] metrics for relational proto-self
+ */
+export function computeRelationalEvidence(relationalState: any): {
+  partnerTraceStrength: number;
+  partnerFamiliarity: number;
+  partnerValence: number;
+  boundaryPermeability: number;
+  partnerAbsenceDrift: number;
+  relationalInfluenceScore: number;
+  protoCommunicationPressure: number;
+} {
+  const clamp = (v: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, Number.isFinite(v) ? v : 0));
+
+  // Direct extraction from relational state
+  const partnerTraceStrength = clamp(relationalState.partnerTraceStrength, 0, 1);
+  const partnerFamiliarity = clamp(relationalState.partnerFamiliarity, 0, 1);
+  const partnerValence = clamp(relationalState.partnerValence, -0.5, 0.5);
+  const boundaryPermeability = clamp(relationalState.boundaryPermeability, 0, 1);
+  const partnerAbsenceDrift = clamp(relationalState.partnerAbsenceDrift, 0, 1);
+  const protoCommunicationPressure = clamp(relationalState.protoCommunicationPressure, 0, 1);
+
+  // Compute relational influence score [PROXY]
+  // Measures how much relational state affects organism
+  const relationalInfluenceScore = clamp(
+    partnerTraceStrength * 0.3 +
+    partnerFamiliarity * 0.25 +
+    Math.abs(partnerValence) * 0.2 +
+    Math.abs(boundaryPermeability - 0.5) * 0.15 +
+    partnerAbsenceDrift * 0.1,
+    0,
+    1,
+  );
+
+  return {
+    partnerTraceStrength,
+    partnerFamiliarity,
+    partnerValence,
+    boundaryPermeability,
+    partnerAbsenceDrift,
+    relationalInfluenceScore,
+    protoCommunicationPressure,
   };
 }

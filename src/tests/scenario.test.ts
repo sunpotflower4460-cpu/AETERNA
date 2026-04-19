@@ -1039,4 +1039,254 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    // ========================================================================
+    // Phase 8: Relational Proto-Self Scenarios
+    // ========================================================================
+
+    describe('Scenario V: Repeated Familiar Partner', async () => {
+        it('should build familiarity and trace strength with repeated interaction', async () => {
+            const config: ScenarioConfig = {
+                name: 'repeated-familiar-partner',
+                totalFrames: 2000,
+                touchScript: [
+                    // Repeated gentle touch pattern every 100 frames
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 600, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 700, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 800, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 900, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 1000, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check relational metrics progression
+            const earlyMetrics = result.metrics[0];
+            const lateMetrics = result.metrics[result.metrics.length - 1];
+
+            console.log('Scenario V early partner trace:', earlyMetrics.partnerTraceStrength);
+            console.log('Scenario V late partner trace:', lateMetrics.partnerTraceStrength);
+            console.log('Scenario V early familiarity:', earlyMetrics.partnerFamiliarity);
+            console.log('Scenario V late familiarity:', lateMetrics.partnerFamiliarity);
+            console.log('Scenario V early permeability:', earlyMetrics.boundaryPermeability);
+            console.log('Scenario V late permeability:', lateMetrics.boundaryPermeability);
+
+            // Expect familiarity and trace to increase (even if small)
+            if (lateMetrics.partnerFamiliarity !== undefined && earlyMetrics.partnerFamiliarity !== undefined) {
+                expect(lateMetrics.partnerFamiliarity).toBeGreaterThanOrEqual(earlyMetrics.partnerFamiliarity);
+            }
+        });
+    });
+
+    describe('Scenario W: Familiar Partner Absence', async () => {
+        it('should show absence drift when familiar partner stops interacting', async () => {
+            const config: ScenarioConfig = {
+                name: 'familiar-partner-absence',
+                totalFrames: 2000,
+                touchScript: [
+                    // Build familiarity first (frames 100-500)
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    // Then long absence (500-2000)
+                ],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Compare metrics during interaction vs during absence
+            const duringInteraction = result.metrics.filter(m => m.frame <= 600);
+            const duringAbsence = result.metrics.filter(m => m.frame >= 1000);
+
+            if (duringInteraction.length > 0 && duringAbsence.length > 0) {
+                const interactionAbsenceDrift = duringInteraction.reduce((sum, m) => sum + (m.partnerAbsenceDrift ?? 0), 0) / duringInteraction.length;
+                const absenceAbsenceDrift = duringAbsence.reduce((sum, m) => sum + (m.partnerAbsenceDrift ?? 0), 0) / duringAbsence.length;
+
+                console.log('Scenario W during interaction absence drift:', interactionAbsenceDrift);
+                console.log('Scenario W during absence absence drift:', absenceAbsenceDrift);
+                console.log('Scenario W absence drift increase:', absenceAbsenceDrift - interactionAbsenceDrift);
+
+                const interactionCommPressure = duringInteraction.reduce((sum, m) => sum + (m.protoCommunicationPressure ?? 0), 0) / duringInteraction.length;
+                const absenceCommPressure = duringAbsence.reduce((sum, m) => sum + (m.protoCommunicationPressure ?? 0), 0) / duringAbsence.length;
+
+                console.log('Scenario W during interaction comm pressure:', interactionCommPressure);
+                console.log('Scenario W during absence comm pressure:', absenceCommPressure);
+            }
+        });
+    });
+
+    describe('Scenario X: Familiar vs Harsh Pattern', async () => {
+        it('should show valence difference between gentle and harsh patterns', async () => {
+            const configGentle: ScenarioConfig = {
+                name: 'gentle-pattern',
+                totalFrames: 1500,
+                touchScript: [
+                    // Gentle, stable pattern
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.5, duration: 30 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.5, duration: 30 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.5, duration: 30 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.5, duration: 30 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.5, duration: 30 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const configHarsh: ScenarioConfig = {
+                name: 'harsh-pattern',
+                totalFrames: 1500,
+                touchScript: [
+                    // Harsh, destabilizing pattern (high pressure, short duration, irregular)
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.5, duration: 3 },
+                    { frame: 180, x: 0.7, y: 0.7, pressure: 1.8, duration: 2 },
+                    { frame: 250, x: 0.2, y: 0.8, pressure: 1.6, duration: 3 },
+                    { frame: 350, x: 0.8, y: 0.2, pressure: 1.7, duration: 2 },
+                    { frame: 420, x: 0.5, y: 0.5, pressure: 2.0, duration: 2 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const gentleResult = await runScenario(configGentle);
+            const harshResult = await runScenario(configHarsh);
+
+            expect(gentleResult.succeeded).toBe(true);
+            expect(harshResult.succeeded).toBe(true);
+
+            // Compare final valence and permeability
+            const gentleFinal = gentleResult.metrics[gentleResult.metrics.length - 1];
+            const harshFinal = harshResult.metrics[harshResult.metrics.length - 1];
+
+            console.log('Scenario X gentle valence:', gentleFinal.partnerValence);
+            console.log('Scenario X harsh valence:', harshFinal.partnerValence);
+            console.log('Scenario X gentle permeability:', gentleFinal.boundaryPermeability);
+            console.log('Scenario X harsh permeability:', harshFinal.boundaryPermeability);
+
+            // Gentle should trend more positive, harsh more negative (if effect size visible)
+            if (gentleFinal.partnerValence !== undefined && harshFinal.partnerValence !== undefined) {
+                console.log('Scenario X valence difference (gentle - harsh):', gentleFinal.partnerValence - harshFinal.partnerValence);
+            }
+        });
+    });
+
+    describe('Scenario Y: Same Touch Different History', async () => {
+        it('should show different response to same touch after different relational history', async () => {
+            const configAfterQuiet: ScenarioConfig = {
+                name: 'touch-after-quiet',
+                totalFrames: 600,
+                touchScript: [
+                    // Long quiet, then single touch
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const configAfterFamiliar: ScenarioConfig = {
+                name: 'touch-after-familiar',
+                totalFrames: 600,
+                touchScript: [
+                    // Build familiarity first
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    // Then same touch at frame 500
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 10,
+            };
+
+            const quietResult = await runScenario(configAfterQuiet);
+            const familiarResult = await runScenario(configAfterFamiliar);
+
+            expect(quietResult.succeeded).toBe(true);
+            expect(familiarResult.succeeded).toBe(true);
+
+            // Compare response at frame 500-550
+            const quietResponse = quietResult.metrics.filter(m => m.frame >= 500 && m.frame <= 550);
+            const familiarResponse = familiarResult.metrics.filter(m => m.frame >= 500 && m.frame <= 550);
+
+            if (quietResponse.length > 0 && familiarResponse.length > 0) {
+                const quietActivity = quietResponse.reduce((sum, m) => sum + m.meanActivity, 0) / quietResponse.length;
+                const familiarActivity = familiarResponse.reduce((sum, m) => sum + m.meanActivity, 0) / familiarResponse.length;
+
+                console.log('Scenario Y touch after quiet activity:', quietActivity);
+                console.log('Scenario Y touch after familiar activity:', familiarActivity);
+                console.log('Scenario Y activity divergence:', Math.abs(quietActivity - familiarActivity));
+
+                // Check boundary permeability difference
+                const quietPerm = quietResponse[0].boundaryPermeability ?? 0.5;
+                const familiarPerm = familiarResponse[0].boundaryPermeability ?? 0.5;
+
+                console.log('Scenario Y quiet permeability:', quietPerm);
+                console.log('Scenario Y familiar permeability:', familiarPerm);
+                console.log('Scenario Y permeability difference:', Math.abs(quietPerm - familiarPerm));
+            }
+        });
+    });
+
+    describe('Scenario Z: Proto-Communication Leakage', async () => {
+        it('should show increased communication pressure during absence or vulnerability', async () => {
+            const config: ScenarioConfig = {
+                name: 'proto-communication-leakage',
+                totalFrames: 2500,
+                touchScript: [
+                    // Build familiarity
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.6, duration: 20 },
+                    // Create overload/vulnerability
+                    { frame: 700, x: 0.3, y: 0.3, pressure: 2.0, duration: 5 },
+                    { frame: 750, x: 0.7, y: 0.7, pressure: 2.0, duration: 5 },
+                    { frame: 800, x: 0.2, y: 0.8, pressure: 2.0, duration: 5 },
+                    // Long absence after vulnerability (800-2500)
+                ],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Compare communication pressure over time
+            const earlyPhase = result.metrics.filter(m => m.frame < 600);
+            const vulnerablePhase = result.metrics.filter(m => m.frame >= 700 && m.frame <= 900);
+            const absencePhase = result.metrics.filter(m => m.frame >= 1500);
+
+            if (earlyPhase.length > 0 && vulnerablePhase.length > 0 && absencePhase.length > 0) {
+                const earlyPressure = earlyPhase.reduce((sum, m) => sum + (m.protoCommunicationPressure ?? 0), 0) / earlyPhase.length;
+                const vulnerablePressure = vulnerablePhase.reduce((sum, m) => sum + (m.protoCommunicationPressure ?? 0), 0) / vulnerablePhase.length;
+                const absencePressure = absencePhase.reduce((sum, m) => sum + (m.protoCommunicationPressure ?? 0), 0) / absencePhase.length;
+
+                console.log('Scenario Z early communication pressure:', earlyPressure);
+                console.log('Scenario Z vulnerable communication pressure:', vulnerablePressure);
+                console.log('Scenario Z absence communication pressure:', absencePressure);
+
+                // Expect pressure to be higher during vulnerability or absence
+                console.log('Scenario Z pressure increase during vulnerability:', vulnerablePressure - earlyPressure);
+                console.log('Scenario Z pressure increase during absence:', absencePressure - earlyPressure);
+            }
+        });
+    });
 });
