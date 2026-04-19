@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { HEART_CLOCK_HZ, PULSE_STRENGTH } from '../constants/aeternaConstants.js';
 import { updateLivingState, getLivingStateInfluence } from './livingState.ts';
 import { updateHomeostaticState, getHomeostaticInfluence } from './survivalState.ts';
+import { updateRelationalState, getRelationalInfluence } from './relationalState.ts';
 
 export function updateHeartbeat() {
     const nowMs = performance.now();
@@ -52,6 +53,41 @@ export function updateHeartbeat() {
                 activeTouchCount: 0,  // will be updated during dynamics
                 meanRawTouch: network.rawTouch ?
                     Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0,
+                simTime: network.simTime ?? 0,
+            }
+        );
+    }
+
+    // Phase 8: Update relational state on every heartbeat tick
+    if (state.network && state.network.relationalState) {
+        const network = state.network;
+
+        // Count active touches
+        const activeTouchCount = network.rawTouch ?
+            Array.from(network.rawTouch).filter(t => t > 0.1).length : 0;
+
+        // Compute mean touch intensity
+        const touchIntensity = network.rawTouch && activeTouchCount > 0 ?
+            Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0;
+
+        // Get touch surprise from touch expectation
+        const touchSurprise = network.touchSurpriseMetrics ?
+            network.touchSurpriseMetrics.totalSurprise : 0;
+
+        // Get touch pattern scores if available
+        const touchPattern = network.touchPatternScores ?? null;
+
+        updateRelationalState(
+            network.relationalState,
+            network,
+            {
+                activeTouchCount,
+                touchIntensity,
+                touchSurprise,
+                touchPattern,
+                stability: network.stability ?? 0.5,
+                overload: network.overload ?? 0,
+                recoveryDrive: network.homeostaticState?.recoveryDrive ?? 0,
                 simTime: network.simTime ?? 0,
             }
         );

@@ -293,6 +293,20 @@ function buildMetricsSnapshot(
         snapshot.consecutiveQuietFrames = network.homeostaticState.consecutiveQuietFrames;
     }
 
+    // Phase 8: Add relational state metrics
+    if (network.relationalState) {
+        snapshot.partnerTraceStrength = network.relationalState.partnerTraceStrength;
+        snapshot.partnerFamiliarity = network.relationalState.partnerFamiliarity;
+        snapshot.partnerValence = network.relationalState.partnerValence;
+        snapshot.partnerAbsenceDrift = network.relationalState.partnerAbsenceDrift;
+        snapshot.boundaryPermeability = network.relationalState.boundaryPermeability;
+        snapshot.relationalStabilityBias = network.relationalState.relationalStabilityBias;
+        snapshot.protoCommunicationPressure = network.relationalState.protoCommunicationPressure;
+        snapshot.partnerInteractionRhythm = network.relationalState.partnerInteractionRhythm;
+        snapshot.partnerContinuityConfidence = network.relationalState.partnerContinuityConfidence;
+        snapshot.totalPartnerInteractions = network.relationalState.totalPartnerInteractions;
+    }
+
     return snapshot;
 }
 

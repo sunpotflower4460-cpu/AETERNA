@@ -11,6 +11,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { getRelationalInfluence } from './relationalState.ts';
+
 /**
  * Persistent living state interface
  * These variables define the "current lived condition" of the organism
@@ -221,6 +223,40 @@ export function updateLivingState(
     0,
     1,
   );
+
+  // Phase 8: Apply weak relational influence to living state
+  // This is where partner traces subtly affect organism slow variables
+  if (network.relationalState) {
+    const relInfluence = getRelationalInfluence(network.relationalState);
+
+    // Touch need baseline: familiar positive partner increases openness
+    livingState.touchNeedBaseline = clamp(
+      livingState.touchNeedBaseline * relInfluence.touchNeedBaselineModifier,
+      0.2,
+      0.8,
+    );
+
+    // Long baseline tone: absence drift affects tone
+    livingState.longBaselineTone = clamp(
+      livingState.longBaselineTone * relInfluence.longBaselineToneModifier,
+      0.05,
+      0.25,
+    );
+
+    // Prediction sensitivity: familiarity reduces surprise sensitivity
+    livingState.predictionSensitivity = clamp(
+      livingState.predictionSensitivity * relInfluence.predictionSensitivityModifier,
+      0.2,
+      0.9,
+    );
+
+    // Preferred ergodicity: very weak relational coherence effect
+    livingState.preferredErgodicity = clamp(
+      livingState.preferredErgodicity * relInfluence.preferredErgodicityModifier,
+      0.2,
+      0.8,
+    );
+  }
 }
 
 /**

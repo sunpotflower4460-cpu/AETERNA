@@ -24,6 +24,7 @@ import { createInitialEnergyFlowState, updateEnergyFlowState, getEnergyFlowDebug
 import { createInitialLivingState, updateLivingState, getLivingStateDebug, getLivingStateInfluence } from '../organism/livingState.ts';
 import { createTouchExpectationState, updateTouchExpectation, computeTouchSurprise, updateTouchHabituation, getTouchExpectationDebug, getTouchExpectationInfluence } from '../perception/touchExpectation.ts';
 import { createInitialHomeostaticState, updateHomeostaticState, getHomeostaticDebugSummary, getHomeostaticInfluence } from '../organism/survivalState.ts';
+import { createInitialRelationalState, updateRelationalState, getRelationalDebugSummary, getRelationalInfluence, getProtoCommunicationLeakage } from '../organism/relationalState.ts';
 import { createDynamicsEngine } from './DynamicsEngine.ts';
 import { createPredictionCore } from './PredictionCore.ts';
 import { createPlasticityEngine } from './PlasticityEngine.ts';
@@ -49,6 +50,7 @@ export class AeternaNetwork {
         this.initializeLivingState();
         this.initializeTouchExpectationState();
         this.initializeHomeostaticState();
+        this.initializeRelationalState();
         this.initializeTemporaryWorkBuffers();
         this.initializeEngines();
 
@@ -254,6 +256,17 @@ export class AeternaNetwork {
 
     initializeHomeostaticState() {
         this.homeostaticState = createInitialHomeostaticState();
+    }
+
+    initializeRelationalState() {
+        // Phase 8: Relational proto-self state
+        this.relationalState = createInitialRelationalState(this.numNodes);
+        this.protoCommunicationLeakage = {
+            leakagePressure: 0,
+            absenceSignal: 0,
+            boundaryTension: 0,
+            relationalCoherence: 0,
+        };
     }
 
     initializeTemporaryWorkBuffers() {
