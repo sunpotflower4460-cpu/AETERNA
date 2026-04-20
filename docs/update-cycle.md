@@ -191,6 +191,24 @@ When testing alternative update orders:
 
 Compare behavioral outcomes against this baseline order.
 
+## Beautiful Loop L1 - Observer Stages (v0.5)
+
+### Interoception Stage (Observer)
+- **Location**: TBD (not yet integrated into main loop)
+- **Role**: Observer-only packet generation
+- **Call**: `runInteroceptionStage(organismSnapshot)`
+- **Output**: `InteroceptionPacket` (energySense, overloadSense, coherenceSense, boundarySense, restorationSense, perturbationPressure)
+- **Important**: Does NOT modify dynamics or organism state. Pure observation layer.
+
+### Self/World Model Stage (Observer)
+- **Location**: TBD (not yet integrated into main loop)
+- **Role**: Observer-only proto-self/world boundary packet
+- **Call**: `runSelfWorldModelStage(interoceptionPacket, organismSnapshot)`
+- **Output**: `SelfWorldModelPacket` (selfCoherence, selfContinuity, worldPressure, relationEngagement)
+- **Important**: Does NOT modify dynamics or organism state. Pure observation layer.
+
+**BL-L1 Design Note**: These stages are added as auxiliary observers in v0.5. They run AFTER the main update cycle completes and produce packets for debugging/analysis. They do NOT yet feed back into organism dynamics. Future BL-L2/L3 will connect the loop.
+
 ## Implementation Notes
 
 - Update cycle is **not** directly exposed to external control currently

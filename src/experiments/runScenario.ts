@@ -9,6 +9,9 @@ import { AeternaNetwork } from '../core/AeternaNetwork.js';
 import { PhysicalDisk } from '../core/PhysicalDisk.js';
 import { TouchMemory } from '../perception/TouchMemory.js';
 import { updateHomeostaticState } from '../organism/survivalState.ts';
+import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
+import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
+import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -86,6 +89,18 @@ export interface MetricsSnapshot {
     homeostaticStress?: number;
     preferredStabilityBand?: number;
     consecutiveQuietFrames?: number;
+    // Beautiful Loop L1: Interoception packet metrics
+    bl_energySense?: number;
+    bl_overloadSense?: number;
+    bl_coherenceSense?: number;
+    bl_boundarySense?: number;
+    bl_restorationSense?: number;
+    bl_perturbationPressure?: number;
+    // Beautiful Loop L1: Self/World model packet metrics
+    bl_selfCoherence?: number;
+    bl_selfContinuity?: number;
+    bl_worldPressure?: number;
+    bl_relationEngagement?: number;
 }
 
 export interface ScenarioResult {
@@ -211,6 +226,30 @@ function applyTouchScript(
 }
 
 /**
+ * Build OrganismSnapshot from network state for BL-L1 packet generation
+ */
+function buildOrganismSnapshot(
+    frame: number,
+    network: AeternaNetwork,
+    dyn: any // eslint-disable-line @typescript-eslint/no-explicit-any
+): OrganismSnapshot {
+    return {
+        timestamp: frame,
+        energy: dyn.energy ?? 1.0,
+        overload: dyn.overload ?? 0,
+        coherence: dyn.stability ?? 1.0,
+        boundary: network.homeostaticState?.boundaryIntegrity ?? 1.0,
+        modeState: dyn.modeState ?? 'wake',
+        touchExpectationConfidence: network.touchExpectation?.touchExpectationConfidence ?? 0.5,
+        recentPerturbationPressure: dyn.meanPredictionError ?? 0,
+        meanPredictionError: dyn.meanPredictionError ?? 0,
+        restorationBias: network.homeostaticState?.restorationBias ?? 0.5,
+        coherenceMemory: network.livingState?.coherenceMemory ?? 0.5,
+        recentTouchActivity: dyn.meanRawTouch ?? 0,
+    };
+}
+
+/**
  * Build metrics snapshot from current state
  */
 function buildMetricsSnapshot(
@@ -291,6 +330,27 @@ function buildMetricsSnapshot(
         snapshot.homeostaticStress = network.homeostaticState.homeostaticStress;
         snapshot.preferredStabilityBand = network.homeostaticState.preferredStabilityBand;
         snapshot.consecutiveQuietFrames = network.homeostaticState.consecutiveQuietFrames;
+    }
+
+    // Beautiful Loop L1: Generate observer packets
+    try {
+        const organismSnapshot = buildOrganismSnapshot(frame, network, dyn);
+        const interoPacket = runInteroceptionStage(organismSnapshot);
+        const selfWorldPacket = runSelfWorldModelStage(interoPacket, organismSnapshot);
+
+        snapshot.bl_energySense = interoPacket.energySense;
+        snapshot.bl_overloadSense = interoPacket.overloadSense;
+        snapshot.bl_coherenceSense = interoPacket.coherenceSense;
+        snapshot.bl_boundarySense = interoPacket.boundarySense;
+        snapshot.bl_restorationSense = interoPacket.restorationSense;
+        snapshot.bl_perturbationPressure = interoPacket.perturbationPressure;
+
+        snapshot.bl_selfCoherence = selfWorldPacket.selfCoherence;
+        snapshot.bl_selfContinuity = selfWorldPacket.selfContinuity;
+        snapshot.bl_worldPressure = selfWorldPacket.worldPressure;
+        snapshot.bl_relationEngagement = selfWorldPacket.relationEngagement;
+    } catch (e) {
+        // If BL-L1 packet generation fails, skip silently (observer role only)
     }
 
     return snapshot;
