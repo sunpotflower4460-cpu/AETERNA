@@ -336,7 +336,8 @@ function buildMetricsSnapshot(
     try {
         const organismSnapshot = buildOrganismSnapshot(frame, network, dyn);
         const interoPacket = runInteroceptionStage(organismSnapshot);
-        const selfWorldPacket = runSelfWorldModelStage(interoPacket, organismSnapshot);
+        // BL-L2: Pass previous packet for continuity calculation
+        const selfWorldPacket = runSelfWorldModelStage(interoPacket, organismSnapshot, network.lastSelfWorldModelPacket ?? null);
 
         snapshot.bl_energySense = interoPacket.energySense;
         snapshot.bl_overloadSense = interoPacket.overloadSense;
