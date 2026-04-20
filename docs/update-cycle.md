@@ -194,20 +194,30 @@ Compare behavioral outcomes against this baseline order.
 ## Beautiful Loop L1 - Observer Stages (v0.5)
 
 ### Interoception Stage (Observer)
-- **Location**: TBD (not yet integrated into main loop)
+- **Location**: AeternaNetwork.js:496 (in updateDynamics, after autoPredictAndError)
 - **Role**: Observer-only packet generation
 - **Call**: `runInteroceptionStage(organismSnapshot)`
 - **Output**: `InteroceptionPacket` (energySense, overloadSense, coherenceSense, boundarySense, restorationSense, perturbationPressure)
 - **Important**: Does NOT modify dynamics or organism state. Pure observation layer.
 
 ### Self/World Model Stage (Observer)
-- **Location**: TBD (not yet integrated into main loop)
+- **Location**: AeternaNetwork.js:497 (in updateDynamics, after interoception)
 - **Role**: Observer-only proto-self/world boundary packet
-- **Call**: `runSelfWorldModelStage(interoceptionPacket, organismSnapshot)`
+- **Call**: `runSelfWorldModelStage(interoceptionPacket, organismSnapshot, lastSelfWorldModelPacket)`
 - **Output**: `SelfWorldModelPacket` (selfCoherence, selfContinuity, worldPressure, relationEngagement)
 - **Important**: Does NOT modify dynamics or organism state. Pure observation layer.
 
 **BL-L1 Design Note**: These stages are added as auxiliary observers in v0.5. They run AFTER the main update cycle completes and produce packets for debugging/analysis. They do NOT yet feed back into organism dynamics. Future BL-L2/L3 will connect the loop.
+
+**BL-L2 Update (v0.5)**: As of Beautiful Loop L2, these stages are now fully integrated into the main loop:
+- Packets are generated every tick after all core updates complete
+- `lastInteroceptionPacket` and `lastSelfWorldModelPacket` are stored in AeternaNetwork state
+- `selfContinuity` now uses previous frame packet for continuity calculation
+- `relationEngagement` is minimally dynamic, including recent touch activity
+- Packets are exposed in `updateDynamics` return value (bl_* fields)
+- Packets are displayed in observer UI and included in scenario summaries
+- **Still observer-side only** - packets do not yet modulate organism dynamics (planned for BL-L3)
+
 
 ## Implementation Notes
 

@@ -29,6 +29,8 @@ import { createPredictionCore } from './PredictionCore.ts';
 import { createPlasticityEngine } from './PlasticityEngine.ts';
 import { createNoiseField } from './NoiseField.ts';
 import { createOrganismRuntime } from './OrganismRuntime.ts';
+import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
+import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -49,6 +51,7 @@ export class AeternaNetwork {
         this.initializeLivingState();
         this.initializeTouchExpectationState();
         this.initializeHomeostaticState();
+        this.initializeBeautifulLoopState();
         this.initializeTemporaryWorkBuffers();
         this.initializeEngines();
 
@@ -256,6 +259,14 @@ export class AeternaNetwork {
         this.homeostaticState = createInitialHomeostaticState();
     }
 
+    initializeBeautifulLoopState() {
+        // Beautiful Loop L2: Observer packet state holders
+        // These track previous frame packets to enable continuity calculation
+        // and provide history for future modulation (L3+)
+        this.lastInteroceptionPacket = null;
+        this.lastSelfWorldModelPacket = null;
+    }
+
     initializeTemporaryWorkBuffers() {
         this.largestClusterNodes = new Uint8Array(this.numNodes);
         this.injectedNodes = [];
@@ -433,6 +444,28 @@ export class AeternaNetwork {
         };
     }
 
+    /**
+     * Build OrganismSnapshot for Beautiful Loop packet generation
+     * BL-L2: This snapshot provides minimal organism state to packet stages
+     * without exposing full network internals.
+     */
+    buildOrganismSnapshot(organismPacket, predictionPacket, perceptionPacket) {
+        return {
+            timestamp: this.simTime,
+            energy: organismPacket.energy,
+            overload: organismPacket.overload,
+            coherence: organismPacket.stability,
+            boundary: this.homeostaticState?.boundaryIntegrity ?? 1.0,
+            modeState: this.modeState,
+            touchExpectationConfidence: this.touchExpectation?.touchExpectationConfidence ?? 0.5,
+            recentPerturbationPressure: predictionPacket.meanPredictionError,
+            meanPredictionError: predictionPacket.meanPredictionError,
+            restorationBias: this.homeostaticState?.restorationBias ?? 0.5,
+            coherenceMemory: this.livingState?.coherenceMemory ?? 0.5,
+            recentTouchActivity: perceptionPacket.rawTouchMean,
+        };
+    }
+
     updateDynamics(diskNodeIdx, activeTouches) {
         this.injectedNodes = [];
         this.simTime++;
@@ -455,6 +488,17 @@ export class AeternaNetwork {
         const dormantDebug = buildDormantDebugSummary(this);
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
+
+        // Beautiful Loop L2: Run observer packet stages
+        // These generate interoception and self/world model packets
+        // Observer role only - no modulation back to dynamics yet
+        const organismSnapshot = this.buildOrganismSnapshot(organismPacket, predictionPacket, perceptionPacket);
+        const interoceptionPacket = runInteroceptionStage(organismSnapshot);
+        const selfWorldModelPacket = runSelfWorldModelStage(interoceptionPacket, organismSnapshot, this.lastSelfWorldModelPacket);
+
+        // Store for next frame
+        this.lastInteroceptionPacket = interoceptionPacket;
+        this.lastSelfWorldModelPacket = selfWorldModelPacket;
 
         return {
             ignitionRatio: metricsPacket.clusterRatio,
@@ -563,6 +607,17 @@ export class AeternaNetwork {
             touchAbsenceError: this.touchExpectation?.absenceError ?? 0,
             isTouchHolding: this.touchExpectation?.isHolding ? 1 : 0,
             touchHoldDuration: this.touchExpectation?.holdDuration ?? 0,
+            // Beautiful Loop L2: Observer packets
+            bl_energySense: interoceptionPacket.energySense,
+            bl_overloadSense: interoceptionPacket.overloadSense,
+            bl_coherenceSense: interoceptionPacket.coherenceSense,
+            bl_boundarySense: interoceptionPacket.boundarySense,
+            bl_restorationSense: interoceptionPacket.restorationSense,
+            bl_perturbationPressure: interoceptionPacket.perturbationPressure,
+            bl_selfCoherence: selfWorldModelPacket.selfCoherence,
+            bl_selfContinuity: selfWorldModelPacket.selfContinuity,
+            bl_worldPressure: selfWorldModelPacket.worldPressure,
+            bl_relationEngagement: selfWorldModelPacket.relationEngagement,
         };
     }
 }
