@@ -117,7 +117,7 @@ describe('Beautiful Loop L2 - Loop Integration', () => {
         expect(continuity2).toBeLessThanOrEqual(1);
     });
 
-    it('should show continuity difference between quiet and overload scenarios', () => {
+    it('should show continuity difference between quiet and overload scenarios', async () => {
         const activeTouches = new Map();
 
         // Run quiet frames
