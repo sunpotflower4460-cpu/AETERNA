@@ -31,6 +31,13 @@ import { createNoiseField } from './NoiseField.ts';
 import { createOrganismRuntime } from './OrganismRuntime.ts';
 import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
+import {
+    computeBeautifulLoopModulation,
+    smoothModulation,
+    clampModulation,
+    createDefaultModulationConfig,
+    createZeroModulation,
+} from './beautifulLoopModulation.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -265,6 +272,14 @@ export class AeternaNetwork {
         // and provide history for future modulation (L3+)
         this.lastInteroceptionPacket = null;
         this.lastSelfWorldModelPacket = null;
+
+        // Beautiful Loop L3: Modulation state
+        // Configuration for packet → organism modulation
+        this.blModulationConfig = createDefaultModulationConfig();
+        // Last modulation bundle for smoothing
+        this.lastModulation = createZeroModulation();
+        // Current modulation bundle (computed each frame)
+        this.currentModulation = createZeroModulation();
     }
 
     initializeTemporaryWorkBuffers() {
@@ -496,6 +511,20 @@ export class AeternaNetwork {
         const interoceptionPacket = runInteroceptionStage(organismSnapshot);
         const selfWorldModelPacket = runSelfWorldModelStage(interoceptionPacket, organismSnapshot, this.lastSelfWorldModelPacket);
 
+        // Beautiful Loop L3: Compute thin modulation from packets
+        // This returns weak bias deltas to organism core
+        const rawModulation = computeBeautifulLoopModulation(
+            interoceptionPacket,
+            selfWorldModelPacket,
+            this.lastSelfWorldModelPacket,
+            this.blModulationConfig
+        );
+        // Apply smoothing to prevent sudden jumps
+        const smoothedModulation = smoothModulation(rawModulation, this.lastModulation, this.blModulationConfig.smoothingFactor);
+        // Clamp to safety bounds
+        this.currentModulation = clampModulation(smoothedModulation);
+        this.lastModulation = this.currentModulation;
+
         // Store for next frame
         this.lastInteroceptionPacket = interoceptionPacket;
         this.lastSelfWorldModelPacket = selfWorldModelPacket;
@@ -618,6 +647,13 @@ export class AeternaNetwork {
             bl_selfContinuity: selfWorldModelPacket.selfContinuity,
             bl_worldPressure: selfWorldModelPacket.worldPressure,
             bl_relationEngagement: selfWorldModelPacket.relationEngagement,
+            // Beautiful Loop L3: Modulation deltas
+            bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
+            bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,
+            bl_rewritePressureDelta: this.currentModulation.rewritePressureDelta,
+            bl_restorationBiasDelta: this.currentModulation.restorationBiasDelta,
+            bl_touchOpennessDelta: this.currentModulation.touchOpennessDelta,
+            bl_modulationEnabled: this.blModulationConfig.enabled,
         };
     }
 }

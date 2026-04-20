@@ -77,6 +77,7 @@ export function createInitialLivingState(): LivingState {
  * Key principle: slow drift, not instant response
  *
  * Phase 8: Now incorporates weak relational influences
+ * Phase BL-L3: Now accepts Beautiful Loop modulation deltas
  */
 export function updateLivingState(
   livingState: LivingState,
@@ -91,6 +92,7 @@ export function updateLivingState(
     stability = 0.5,
     overload = 0,
     relationalInfluence = null,
+    blModulation = null,
   }: {
     arousal?: number;
     coherence?: number;
@@ -106,6 +108,10 @@ export function updateLivingState(
       longBaselineToneModifier?: number;
       restorationBiasModifier?: number;
       boundaryIntegrityModifier?: number;
+    } | null;
+    blModulation?: {
+      touchOpennessDelta?: number;
+      noveltyBiasDelta?: number;
     } | null;
   } = {},
 ): void {
@@ -183,6 +189,7 @@ export function updateLivingState(
   );
 
   // 7. Prediction sensitivity: adapts based on prediction errors
+  // BL-L3: Weakly influenced by novelty bias delta from self/world packet
   const sensitivitySmoothing = 0.002;
   const errorLevel = clamp(predictionError, 0, 2);
 
@@ -192,7 +199,9 @@ export function updateLivingState(
     surpriseInfluence = network.touchSurpriseMetrics.totalSurprise * 0.08;
   }
 
-  const sensitivityTarget = clamp(0.5 + errorLevel * 0.1 + surpriseInfluence, 0.3, 0.8);
+  // BL-L3: Apply novelty bias delta (weak modulation)
+  const blNoveltyDelta = blModulation?.noveltyBiasDelta ?? 0;
+  const sensitivityTarget = clamp(0.5 + errorLevel * 0.1 + surpriseInfluence + blNoveltyDelta, 0.3, 0.8);
   livingState.predictionSensitivity = clamp(
     livingState.predictionSensitivity * (1 - sensitivitySmoothing) +
       sensitivityTarget * sensitivitySmoothing,
@@ -202,10 +211,13 @@ export function updateLivingState(
 
   // 8. Touch need baseline: adapts based on touch history
   // Phase 8: Weakly influenced by relational familiarity
+  // BL-L3: Weakly influenced by relation engagement from self/world packet
   const touchSmoothing = 0.001;
   const touchPresence = activeTouchCount > 0 ? 1 : 0;
   const relationalTouchModifier = relationalInfluence?.touchNeedBaselineModifier ?? 1.0;
-  const touchTarget = clamp((0.5 - touchPresence * 0.1) * relationalTouchModifier, 0.2, 0.8);
+  // BL-L3: Apply touch openness delta
+  const blTouchDelta = blModulation?.touchOpennessDelta ?? 0;
+  const touchTarget = clamp((0.5 - touchPresence * 0.1 + blTouchDelta) * relationalTouchModifier, 0.2, 0.8);
   livingState.touchNeedBaseline = clamp(
     livingState.touchNeedBaseline * (1 - touchSmoothing) +
       touchTarget * touchSmoothing,

@@ -74,6 +74,7 @@ export function createInitialHomeostaticState(): HomeostaticState {
 /**
  * Update homeostatic state each tick
  * This is the core of Phase 4 - gradual pressure accumulation
+ * Phase BL-L3: Now accepts Beautiful Loop modulation deltas
  */
 export function updateHomeostaticState(
   state: HomeostaticState,
@@ -88,6 +89,7 @@ export function updateHomeostaticState(
     activeTouchCount = 0,
     meanRawTouch = 0,
     simTime = 0,
+    blModulation = null,
   }: {
     arousal?: number;
     predictionError?: number;
@@ -98,6 +100,10 @@ export function updateHomeostaticState(
     activeTouchCount?: number;
     meanRawTouch?: number;
     simTime?: number;
+    blModulation?: {
+      restorationBiasDelta?: number;
+      withdrawBiasDelta?: number;
+    } | null;
   } = {},
 ): HomeostaticState {
   const clamp = (v: number, min: number, max: number) =>
@@ -186,6 +192,7 @@ export function updateHomeostaticState(
 
   // 4. Update restorationBias
   // Increases during stable periods, strengthens after recovery
+  // BL-L3: Weakly influenced by interoception packet feedback
   const wasStable = stability > 0.6;
   const isRecovering = recoveryDrive > 0.3;
   const restorationRise = clamp(
@@ -196,8 +203,10 @@ export function updateHomeostaticState(
     0.05,
   );
   const restorationDecay = 0.002;
+  // BL-L3: Apply thin modulation delta if available
+  const blRestorationDelta = blModulation?.restorationBiasDelta ?? 0;
   const newRestoration = clamp(
-    state.restorationBias + restorationRise - restorationDecay,
+    state.restorationBias + restorationRise - restorationDecay + blRestorationDelta,
     0.3,
     0.9,
   );

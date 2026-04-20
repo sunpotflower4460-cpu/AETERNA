@@ -218,6 +218,19 @@ Compare behavioral outcomes against this baseline order.
 - Packets are displayed in observer UI and included in scenario summaries
 - **Still observer-side only** - packets do not yet modulate organism dynamics (planned for BL-L3)
 
+**BL-L3 Update (v0.5)**: As of Beautiful Loop L3, the loop is now thinly closed:
+- **Modulation computation** happens after packet generation (AeternaNetwork.js:514-526)
+- `computeBeautifulLoopModulation()` creates weak bias deltas from packets
+- Modulation is smoothed via EMA and clamped to safety bounds
+- **Connection points** (3 total):
+  - `noveltyBiasDelta` → `LivingState.predictionSensitivity` (via heartbeat)
+  - `touchOpennessDelta` → `LivingState.touchNeedBaseline` (via heartbeat)
+  - `restorationBiasDelta` → `HomeostaticState.restorationBias` (via heartbeat)
+- Modulation deltas exposed in return packet (bl_*Delta fields)
+- **Critical constraint**: Modulation is WEAK (all deltas < ±0.10), organism core remains primary driver
+- **Ablation support**: Can be disabled via `blModulationConfig.enabled = false`
+- See `docs/beautiful-loop-l3-notes.md` for full details
+
 
 ## Implementation Notes
 

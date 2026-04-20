@@ -16,6 +16,12 @@ export function updateHeartbeat() {
             (network.touchOnset ? Math.max(...Array.from(network.touchOnset)) : 0) * 0.6 +
             (network.touchNovelty ? Math.max(...Array.from(network.touchNovelty)) : 0) * 0.4;
 
+        // BL-L3: Pass current modulation if available
+        const blModulation = network.currentModulation ? {
+            touchOpennessDelta: network.currentModulation.touchOpennessDelta,
+            noveltyBiasDelta: network.currentModulation.noveltyBiasDelta,
+        } : null;
+
         updateLivingState(network.livingState, network, {
             arousal: network.currGenFiring ?? 0,
             coherence: network.cachedPhaseCoherence ?? 0.5,
@@ -27,6 +33,7 @@ export function updateHeartbeat() {
             recentPerturbationIntensity,
             stability: network.stability ?? 0.5,
             overload: network.overload ?? 0,
+            blModulation,
         });
     }
 
@@ -37,6 +44,12 @@ export function updateHeartbeat() {
         // Compute novelty level from touch
         const noveltyLevel = network.touchNovelty ?
             Math.max(...Array.from(network.touchNovelty)) : 0;
+
+        // BL-L3: Pass current modulation if available
+        const blModulation = network.currentModulation ? {
+            restorationBiasDelta: network.currentModulation.restorationBiasDelta,
+            withdrawBiasDelta: network.currentModulation.withdrawBiasDelta,
+        } : null;
 
         network.homeostaticState = updateHomeostaticState(
             network.homeostaticState,
@@ -53,6 +66,7 @@ export function updateHeartbeat() {
                 meanRawTouch: network.rawTouch ?
                     Array.from(network.rawTouch).reduce((a, b) => a + b, 0) / network.numNodes : 0,
                 simTime: network.simTime ?? 0,
+                blModulation,
             }
         );
     }
