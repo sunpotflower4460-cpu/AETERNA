@@ -607,6 +607,17 @@ export class AeternaNetwork {
             touchAbsenceError: this.touchExpectation?.absenceError ?? 0,
             isTouchHolding: this.touchExpectation?.isHolding ? 1 : 0,
             touchHoldDuration: this.touchExpectation?.holdDuration ?? 0,
+            // Beautiful Loop L2: Observer packets
+            bl_energySense: interoceptionPacket.energySense,
+            bl_overloadSense: interoceptionPacket.overloadSense,
+            bl_coherenceSense: interoceptionPacket.coherenceSense,
+            bl_boundarySense: interoceptionPacket.boundarySense,
+            bl_restorationSense: interoceptionPacket.restorationSense,
+            bl_perturbationPressure: interoceptionPacket.perturbationPressure,
+            bl_selfCoherence: selfWorldModelPacket.selfCoherence,
+            bl_selfContinuity: selfWorldModelPacket.selfContinuity,
+            bl_worldPressure: selfWorldModelPacket.worldPressure,
+            bl_relationEngagement: selfWorldModelPacket.relationEngagement,
         };
     }
 }

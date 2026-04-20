@@ -193,6 +193,18 @@ export function updateMetricsUI(dyn, engineState) {
     updateUIRow(UI['row-pre-c'], UI['val-pre-c'], pre.C?'✓':'–', pre.C); updateUIRow(UI['row-pre-d'], UI['val-pre-d'], pre.D?'✓':'–', pre.D); updateUIRow(UI['row-pre-e'], UI['val-pre-e'], preE?'✓':'–', preE);
     updateUIRow(UI['row-total'], UI['val-total'], `${(pre.A?1:0)+(pre.B?1:0)+(pre.C?1:0)+(pre.D?1:0)+(preE?1:0)}/5`, (pre.A?1:0)+(pre.B?1:0)+(pre.C?1:0)+(pre.D?1:0)+(preE?1:0)===5);
 
+    // Beautiful Loop L2: Observer packets (minimal display, not intrusive)
+    if (UI['val-bl-energy-sense'])      UI['val-bl-energy-sense'].innerText      = (dyn.bl_energySense      || 0).toFixed(3);
+    if (UI['val-bl-overload-sense'])    UI['val-bl-overload-sense'].innerText    = (dyn.bl_overloadSense    || 0).toFixed(3);
+    if (UI['val-bl-coherence-sense'])   UI['val-bl-coherence-sense'].innerText   = (dyn.bl_coherenceSense   || 0).toFixed(3);
+    if (UI['val-bl-boundary-sense'])    UI['val-bl-boundary-sense'].innerText    = (dyn.bl_boundarySense    || 0).toFixed(3);
+    if (UI['val-bl-restoration-sense']) UI['val-bl-restoration-sense'].innerText = (dyn.bl_restorationSense || 0).toFixed(3);
+    if (UI['val-bl-perturbation-pressure']) UI['val-bl-perturbation-pressure'].innerText = (dyn.bl_perturbationPressure || 0).toFixed(3);
+    if (UI['val-bl-self-coherence'])    UI['val-bl-self-coherence'].innerText    = (dyn.bl_selfCoherence    || 0).toFixed(3);
+    if (UI['val-bl-self-continuity'])   UI['val-bl-self-continuity'].innerText   = (dyn.bl_selfContinuity   || 0).toFixed(3);
+    if (UI['val-bl-world-pressure'])    UI['val-bl-world-pressure'].innerText    = (dyn.bl_worldPressure    || 0).toFixed(3);
+    if (UI['val-bl-relation-engagement']) UI['val-bl-relation-engagement'].innerText = (dyn.bl_relationEngagement || 0).toFixed(3);
+
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];
     if(badge) {

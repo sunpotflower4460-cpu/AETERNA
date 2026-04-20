@@ -115,6 +115,15 @@ export interface ScenarioResult {
         peakActivity: number;
         modeTransitions: number;
         actionTransitions: number;
+        // Beautiful Loop L2: Observer packet summaries
+        avgEnergySense?: number;
+        avgOverloadSense?: number;
+        avgSelfCoherence?: number;
+        avgSelfContinuity?: number;
+        avgWorldPressure?: number;
+        avgRelationEngagement?: number;
+        maxPerturbationPressure?: number;
+        minPerturbationPressure?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -503,6 +512,42 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         failureReason = `Activity exploded to ${peakActivity.toFixed(2)}`;
     }
 
+    // Beautiful Loop L2: Compute packet summaries from metrics
+    let avgEnergySense = 0;
+    let avgOverloadSense = 0;
+    let avgSelfCoherence = 0;
+    let avgSelfContinuity = 0;
+    let avgWorldPressure = 0;
+    let avgRelationEngagement = 0;
+    let maxPerturbationPressure = 0;
+    let minPerturbationPressure = Infinity;
+    let packetCount = 0;
+
+    for (const m of metrics) {
+        if (m.bl_energySense !== undefined) {
+            avgEnergySense += m.bl_energySense;
+            avgOverloadSense += m.bl_overloadSense ?? 0;
+            avgSelfCoherence += m.bl_selfCoherence ?? 0;
+            avgSelfContinuity += m.bl_selfContinuity ?? 0;
+            avgWorldPressure += m.bl_worldPressure ?? 0;
+            avgRelationEngagement += m.bl_relationEngagement ?? 0;
+            if (m.bl_perturbationPressure !== undefined) {
+                maxPerturbationPressure = Math.max(maxPerturbationPressure, m.bl_perturbationPressure);
+                minPerturbationPressure = Math.min(minPerturbationPressure, m.bl_perturbationPressure);
+            }
+            packetCount++;
+        }
+    }
+
+    if (packetCount > 0) {
+        avgEnergySense /= packetCount;
+        avgOverloadSense /= packetCount;
+        avgSelfCoherence /= packetCount;
+        avgSelfContinuity /= packetCount;
+        avgWorldPressure /= packetCount;
+        avgRelationEngagement /= packetCount;
+    }
+
     return {
         config,
         metrics,
@@ -515,6 +560,14 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             peakActivity,
             modeTransitions,
             actionTransitions,
+            avgEnergySense: packetCount > 0 ? avgEnergySense : undefined,
+            avgOverloadSense: packetCount > 0 ? avgOverloadSense : undefined,
+            avgSelfCoherence: packetCount > 0 ? avgSelfCoherence : undefined,
+            avgSelfContinuity: packetCount > 0 ? avgSelfContinuity : undefined,
+            avgWorldPressure: packetCount > 0 ? avgWorldPressure : undefined,
+            avgRelationEngagement: packetCount > 0 ? avgRelationEngagement : undefined,
+            maxPerturbationPressure: packetCount > 0 ? maxPerturbationPressure : undefined,
+            minPerturbationPressure: packetCount > 0 && minPerturbationPressure !== Infinity ? minPerturbationPressure : undefined,
         },
         succeeded,
         failureReason,
