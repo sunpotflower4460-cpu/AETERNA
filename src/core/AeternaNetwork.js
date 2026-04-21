@@ -33,6 +33,8 @@ import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
+import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
+import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -59,6 +61,7 @@ export class AeternaNetwork {
         this.initializeEnergyFlowState();
         this.initializeLivingState();
         this.initializeTouchExpectationState();
+        this.initializeTouchBackactionState();
         this.initializeHomeostaticState();
         this.initializeBeautifulLoopState();
         this.initializeTemporaryWorkBuffers();
@@ -262,6 +265,15 @@ export class AeternaNetwork {
             releaseSurprise: 0,
             totalSurprise: 0,
         };
+    }
+
+    initializeTouchBackactionState() {
+        this.touchBackactionEnabled = true;
+        this.familiarityBackactionEnabled = true;
+        this.touchBackactionState = null;
+        this.lastOpenStateSnapshot = null;
+        this.lastFeltState = null;
+        this.lastNeedMotivationState = null;
     }
 
     initializeHomeostaticState() {
@@ -529,6 +541,41 @@ export class AeternaNetwork {
             selfWorldModelPacket
         );
 
+        // Q1-2: Maintain last mixed states for backaction derivation
+        try {
+            const neutralReplayState = {
+                timestamp: this.simTime,
+                replayPressure: 0,
+                replayReadiness: 0,
+                consolidationGain: 0,
+                activeReplayCount: 0,
+                recentReplaySalience: 0,
+                restConsolidationDepth: 0,
+                replaySuppression: 1,
+                lastReplayCategory: null,
+            };
+            const needMotivation = deriveNeedMotivation(
+                organismSnapshot,
+                feltState,
+                arousalAwarenessState,
+                neutralReplayState,
+                this.livingState,
+                this.energyFlowState,
+                this.homeostaticState,
+                selfWorldModelPacket
+            );
+            this.lastNeedMotivationState = needMotivation;
+            this.lastOpenStateSnapshot = deriveOpenStateSnapshot(
+                feltState,
+                arousalAwarenessState,
+                needMotivation
+            );
+        } catch (e) {
+            // keep previous mixed-state snapshot if derivation fails
+        }
+
+        this.lastFeltState = feltState;
+
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
         const rawModulation = computeBeautifulLoopModulation(
@@ -655,6 +702,15 @@ export class AeternaNetwork {
             touchAbsenceError: this.touchExpectation?.absenceError ?? 0,
             isTouchHolding: this.touchExpectation?.isHolding ? 1 : 0,
             touchHoldDuration: this.touchExpectation?.holdDuration ?? 0,
+            touchBackactionGain: this.touchBackactionState?.backactionGain ?? 1,
+            touchBackactionSurpriseGain: this.touchBackactionState?.surpriseGain ?? 1,
+            touchBackactionBoundaryModulation: this.touchBackactionState?.boundaryModulation ?? 1,
+            touchBackactionOpennessModulation: this.touchBackactionState?.opennessModulation ?? 1,
+            touchBackactionCoherenceShift: this.touchBackactionState?.coherenceShift ?? 0,
+            touchBackactionAwarenessCoupling: this.touchBackactionState?.awarenessCoupling ?? 0,
+            touchBackactionOverloadAmplification: this.touchBackactionState?.overloadAmplification ?? 0,
+            touchBackactionFamiliarityDamping: this.touchBackactionState?.familiarityDamping ?? 0,
+            touchBackactionEnabled: this.touchBackactionEnabled !== false,
             // Beautiful Loop L2: Observer packets
             bl_energySense: interoceptionPacket.energySense,
             bl_overloadSense: interoceptionPacket.overloadSense,

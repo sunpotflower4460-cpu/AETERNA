@@ -10,6 +10,7 @@ import {
   updateRawTouchField,
   updateTouchPerception,
 } from './touchPerception.ts';
+import { deriveTouchBackaction } from './deriveTouchBackaction.ts';
 import { updateTouchExpectation, computeTouchSurprise, updateTouchHabituation } from './touchExpectation.ts';
 
 export { addGaussianTouch, mapTouchToSurfaceIndex, updateRawTouchField, updateTouchPerception, projectTouchToNetwork };
@@ -22,6 +23,22 @@ export function captureTouchSensoryInput(network: any, activeTouches: Map<any, a
     updateTouchExpectation(network, network.touchExpectation, activeTouches, network.simTime);
     network.touchSurpriseMetrics = computeTouchSurprise(network, network.touchExpectation, activeTouches, network.simTime);
     updateTouchHabituation(network, network.touchExpectation, activeTouches);
+  }
+
+  // Q1-2: Derive touch backaction (state-dependent weighting)
+  if (network.touchBackactionEnabled !== false) {
+    network.touchBackactionState = deriveTouchBackaction({
+      timestamp: network.simTime,
+      openStateSnapshot: network.lastOpenStateSnapshot ?? null,
+      feltState: network.lastFeltState ?? null,
+      arousalAwareness: network.lastArousalAwarenessState ?? null,
+      needMotivation: network.lastNeedMotivationState ?? null,
+      expectationState: network.touchExpectation ?? null,
+      surpriseMetrics: network.touchSurpriseMetrics ?? null,
+      familiarityBackactionEnabled: network.familiarityBackactionEnabled,
+    });
+  } else {
+    network.touchBackactionState = null;
   }
 
   return {
