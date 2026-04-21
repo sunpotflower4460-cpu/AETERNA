@@ -11,6 +11,7 @@ import { TouchMemory } from '../perception/TouchMemory.js';
 import { updateHomeostaticState } from '../organism/survivalState.ts';
 import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
+import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 
 export interface TouchEvent {
@@ -101,6 +102,14 @@ export interface MetricsSnapshot {
     bl_selfContinuity?: number;
     bl_worldPressure?: number;
     bl_relationEngagement?: number;
+    // A1: Felt-state vector metrics
+    felt_depletion?: number;
+    felt_overload?: number;
+    felt_coherence?: number;
+    felt_boundaryIntegrity?: number;
+    felt_restorationReadiness?: number;
+    felt_perturbationLoad?: number;
+    felt_openness?: number;
 }
 
 export interface ScenarioResult {
@@ -124,6 +133,16 @@ export interface ScenarioResult {
         avgRelationEngagement?: number;
         maxPerturbationPressure?: number;
         minPerturbationPressure?: number;
+        // A1: Felt-state summaries
+        avgDepletion?: number;
+        avgOverload?: number;
+        avgCoherence?: number;
+        avgBoundaryIntegrity?: number;
+        avgRestorationReadiness?: number;
+        avgPerturbationLoad?: number;
+        avgOpenness?: number;
+        maxOverload?: number;
+        minCoherence?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -359,6 +378,25 @@ function buildMetricsSnapshot(
         snapshot.bl_selfContinuity = selfWorldPacket.selfContinuity;
         snapshot.bl_worldPressure = selfWorldPacket.worldPressure;
         snapshot.bl_relationEngagement = selfWorldPacket.relationEngagement;
+
+        // A1: Derive and collect felt-state vector
+        if (network.livingState && network.homeostaticState && network.energyFlowState) {
+            const feltState = deriveFeltState(
+                organismSnapshot,
+                network.livingState,
+                network.homeostaticState,
+                network.energyFlowState,
+                selfWorldPacket
+            );
+
+            snapshot.felt_depletion = feltState.depletion;
+            snapshot.felt_overload = feltState.overload;
+            snapshot.felt_coherence = feltState.coherence;
+            snapshot.felt_boundaryIntegrity = feltState.boundaryIntegrity;
+            snapshot.felt_restorationReadiness = feltState.restorationReadiness;
+            snapshot.felt_perturbationLoad = feltState.perturbationLoad;
+            snapshot.felt_openness = feltState.openness;
+        }
     } catch (e) {
         // If BL-L1 packet generation fails, skip silently (observer role only)
     }
@@ -523,6 +561,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let minPerturbationPressure = Infinity;
     let packetCount = 0;
 
+    // A1: Felt-state summary accumulators
+    let avgDepletion = 0;
+    let avgOverload = 0;
+    let avgCoherence = 0;
+    let avgBoundaryIntegrity = 0;
+    let avgRestorationReadiness = 0;
+    let avgPerturbationLoad = 0;
+    let avgOpenness = 0;
+    let maxOverload = 0;
+    let minCoherence = Infinity;
+    let feltCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -537,6 +587,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             packetCount++;
         }
+
+        // A1: Accumulate felt-state metrics
+        if (m.felt_depletion !== undefined) {
+            avgDepletion += m.felt_depletion;
+            avgOverload += m.felt_overload ?? 0;
+            avgCoherence += m.felt_coherence ?? 0;
+            avgBoundaryIntegrity += m.felt_boundaryIntegrity ?? 0;
+            avgRestorationReadiness += m.felt_restorationReadiness ?? 0;
+            avgPerturbationLoad += m.felt_perturbationLoad ?? 0;
+            avgOpenness += m.felt_openness ?? 0;
+            if (m.felt_overload !== undefined) {
+                maxOverload = Math.max(maxOverload, m.felt_overload);
+            }
+            if (m.felt_coherence !== undefined) {
+                minCoherence = Math.min(minCoherence, m.felt_coherence);
+            }
+            feltCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -546,6 +614,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgSelfContinuity /= packetCount;
         avgWorldPressure /= packetCount;
         avgRelationEngagement /= packetCount;
+    }
+
+    // A1: Compute felt-state averages
+    if (feltCount > 0) {
+        avgDepletion /= feltCount;
+        avgOverload /= feltCount;
+        avgCoherence /= feltCount;
+        avgBoundaryIntegrity /= feltCount;
+        avgRestorationReadiness /= feltCount;
+        avgPerturbationLoad /= feltCount;
+        avgOpenness /= feltCount;
     }
 
     return {
@@ -568,6 +647,16 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgRelationEngagement: packetCount > 0 ? avgRelationEngagement : undefined,
             maxPerturbationPressure: packetCount > 0 ? maxPerturbationPressure : undefined,
             minPerturbationPressure: packetCount > 0 && minPerturbationPressure !== Infinity ? minPerturbationPressure : undefined,
+            // A1: Felt-state summaries
+            avgDepletion: feltCount > 0 ? avgDepletion : undefined,
+            avgOverload: feltCount > 0 ? avgOverload : undefined,
+            avgCoherence: feltCount > 0 ? avgCoherence : undefined,
+            avgBoundaryIntegrity: feltCount > 0 ? avgBoundaryIntegrity : undefined,
+            avgRestorationReadiness: feltCount > 0 ? avgRestorationReadiness : undefined,
+            avgPerturbationLoad: feltCount > 0 ? avgPerturbationLoad : undefined,
+            avgOpenness: feltCount > 0 ? avgOpenness : undefined,
+            maxOverload: feltCount > 0 ? maxOverload : undefined,
+            minCoherence: feltCount > 0 && minCoherence !== Infinity ? minCoherence : undefined,
         },
         succeeded,
         failureReason,

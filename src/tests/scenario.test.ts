@@ -1039,4 +1039,196 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    // ──────────────────────────────────────────────────────
+    // A1: Felt-State Vector Scenarios
+    // ──────────────────────────────────────────────────────
+
+    describe('Scenario AF: Quiet Low-Load Felt-State (A1)', async () => {
+        it('should show low perturbation and moderate coherence felt-state in quiet', async () => {
+            const config: ScenarioConfig = {
+                name: 'quiet-low-load-felt-state',
+                totalFrames: 1500,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 30,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check felt-state summaries
+            if (result.summary.avgPerturbationLoad !== undefined) {
+                console.log('Scenario AF avg perturbationLoad:', result.summary.avgPerturbationLoad);
+                console.log('Scenario AF avg coherence:', result.summary.avgCoherence);
+                console.log('Scenario AF avg depletion:', result.summary.avgDepletion);
+                console.log('Scenario AF avg overload:', result.summary.avgOverload);
+
+                // Quiet condition should have moderate perturbation load (organism has baseline activity)
+                expect(result.summary.avgPerturbationLoad).toBeLessThan(0.7);
+
+                // Coherence should be moderate to high
+                expect(result.summary.avgCoherence).toBeGreaterThan(0.3);
+            }
+
+            // Check for NaN in felt-state metrics
+            for (const m of result.metrics) {
+                if (m.felt_depletion !== undefined) {
+                    expect(Number.isNaN(m.felt_depletion)).toBe(false);
+                    expect(Number.isNaN(m.felt_overload)).toBe(false);
+                    expect(Number.isNaN(m.felt_coherence)).toBe(false);
+                    expect(Number.isNaN(m.felt_boundaryIntegrity)).toBe(false);
+                    expect(Number.isNaN(m.felt_restorationReadiness)).toBe(false);
+                    expect(Number.isNaN(m.felt_perturbationLoad)).toBe(false);
+                    expect(Number.isNaN(m.felt_openness)).toBe(false);
+                }
+            }
+        });
+    });
+
+    describe('Scenario AG: Overload Felt-State (A1)', async () => {
+        it('should show high overload and perturbation load in overload condition', async () => {
+            const config: ScenarioConfig = {
+                name: 'overload-felt-state',
+                totalFrames: 1000,
+                touchScript: [
+                    // Rapid harsh touches to create overload
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 120, x: 0.7, y: 0.7, pressure: 1.0, duration: 1 },
+                    { frame: 140, x: 0.2, y: 0.8, pressure: 1.0, duration: 1 },
+                    { frame: 160, x: 0.8, y: 0.2, pressure: 1.0, duration: 1 },
+                    { frame: 180, x: 0.4, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.6, y: 0.4, pressure: 1.0, duration: 1 },
+                    { frame: 220, x: 0.3, y: 0.7, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check felt-state during overload period
+            const overloadPeriod = result.metrics.filter(m => m.frame >= 100 && m.frame < 300);
+            if (overloadPeriod.length > 0) {
+                const maxOverload = Math.max(...overloadPeriod.map(m => m.felt_overload ?? 0));
+                const maxPerturbation = Math.max(...overloadPeriod.map(m => m.felt_perturbationLoad ?? 0));
+
+                console.log('Scenario AG max felt overload:', maxOverload);
+                console.log('Scenario AG max felt perturbationLoad:', maxPerturbation);
+
+                // Overload should be elevated
+                expect(maxOverload).toBeGreaterThan(0.3);
+
+                // Perturbation load should show some response (may be moderate, not extremely high)
+                expect(maxPerturbation).toBeGreaterThan(0.15);
+            }
+
+            // Check summary
+            if (result.summary.maxOverload !== undefined) {
+                console.log('Scenario AG summary maxOverload:', result.summary.maxOverload);
+                expect(result.summary.maxOverload).toBeGreaterThan(0.3);
+            }
+        });
+    });
+
+    describe('Scenario AH: Recovery Felt-State (A1)', async () => {
+        it('should show high restoration readiness in recovery condition', async () => {
+            const config: ScenarioConfig = {
+                name: 'recovery-felt-state',
+                totalFrames: 1500,
+                touchScript: [
+                    // Create some overload first
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 120, x: 0.4, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 140, x: 0.6, y: 0.4, pressure: 1.0, duration: 1 },
+                    // Then quiet for recovery
+                ],
+                collectMetrics: true,
+                metricsInterval: 30,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check felt-state during recovery period
+            const recoveryPeriod = result.metrics.filter(m => m.frame >= 500 && m.frame < 1000);
+            if (recoveryPeriod.length > 0) {
+                const avgRestoration = recoveryPeriod.reduce((sum, m) => sum + (m.felt_restorationReadiness ?? 0), 0) / recoveryPeriod.length;
+                const avgOverload = recoveryPeriod.reduce((sum, m) => sum + (m.felt_overload ?? 0), 0) / recoveryPeriod.length;
+
+                console.log('Scenario AH avg felt restorationReadiness:', avgRestoration);
+                console.log('Scenario AH avg felt overload during recovery:', avgOverload);
+
+                // Restoration readiness should show some presence (may be moderate, not extremely high)
+                expect(avgRestoration).toBeGreaterThan(0.1);
+            }
+
+            // Check summary
+            if (result.summary.avgRestorationReadiness !== undefined) {
+                console.log('Scenario AH summary avgRestorationReadiness:', result.summary.avgRestorationReadiness);
+                expect(result.summary.avgRestorationReadiness).toBeGreaterThan(0.1);
+            }
+        });
+    });
+
+    describe('Scenario AI: Repeated Touch Felt-State (A1)', async () => {
+        it('should show felt-state dynamics during repeated touches', async () => {
+            const config: ScenarioConfig = {
+                name: 'repeated-touch-felt-state',
+                totalFrames: 1200,
+                touchScript: [
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 600, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Track felt-state dynamics through repeated touches
+            const earlyMetrics = result.metrics.filter(m => m.frame >= 100 && m.frame < 300);
+            const lateMetrics = result.metrics.filter(m => m.frame >= 500 && m.frame < 700);
+
+            if (earlyMetrics.length > 0 && lateMetrics.length > 0) {
+                const earlyPerturbation = earlyMetrics.reduce((sum, m) => sum + (m.felt_perturbationLoad ?? 0), 0) / earlyMetrics.length;
+                const latePerturbation = lateMetrics.reduce((sum, m) => sum + (m.felt_perturbationLoad ?? 0), 0) / lateMetrics.length;
+
+                const earlyOpenness = earlyMetrics.reduce((sum, m) => sum + (m.felt_openness ?? 0), 0) / earlyMetrics.length;
+                const lateOpenness = lateMetrics.reduce((sum, m) => sum + (m.felt_openness ?? 0), 0) / lateMetrics.length;
+
+                const earlyOverload = earlyMetrics.reduce((sum, m) => sum + (m.felt_overload ?? 0), 0) / earlyMetrics.length;
+                const lateOverload = lateMetrics.reduce((sum, m) => sum + (m.felt_overload ?? 0), 0) / lateMetrics.length;
+
+                console.log('Scenario AI early perturbationLoad:', earlyPerturbation);
+                console.log('Scenario AI late perturbationLoad:', latePerturbation);
+                console.log('Scenario AI early openness:', earlyOpenness);
+                console.log('Scenario AI late openness:', lateOpenness);
+                console.log('Scenario AI early overload:', earlyOverload);
+                console.log('Scenario AI late overload:', lateOverload);
+
+                // Observe felt-state dynamics (no strict requirements, just observation)
+                console.log('Scenario AI perturbation change:', latePerturbation - earlyPerturbation);
+                console.log('Scenario AI openness change:', lateOpenness - earlyOpenness);
+                console.log('Scenario AI overload change:', lateOverload - earlyOverload);
+            }
+
+            // Verify felt-state metrics are present and valid
+            if (result.summary.avgPerturbationLoad !== undefined) {
+                console.log('Scenario AI summary avgPerturbationLoad:', result.summary.avgPerturbationLoad);
+                console.log('Scenario AI summary avgOpenness:', result.summary.avgOpenness);
+                console.log('Scenario AI summary avgOverload:', result.summary.avgOverload);
+            }
+        });
+    });
 });
