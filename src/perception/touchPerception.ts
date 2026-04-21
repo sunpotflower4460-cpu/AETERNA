@@ -40,6 +40,17 @@ export function updateTouchPerception(network: any) {
   const TRACE_DECAY = 0.96;
   const TRACE_INTAKE = 0.04;
 
+  const backactionEnabled = network.touchBackactionEnabled !== false;
+  const backaction = backactionEnabled ? network.touchBackactionState : null;
+  const backactionGain = backaction?.backactionGain ?? 1.0;
+  const surpriseGain = backaction?.surpriseGain ?? 1.0;
+  const boundaryMod = backaction?.boundaryModulation ?? 1.0;
+  const opennessMod = backaction?.opennessModulation ?? 1.0;
+  const coherenceShift = backaction?.coherenceShift ?? 0.0;
+  const awarenessCoupling = backaction?.awarenessCoupling ?? 0.0;
+  const overloadAmplification = backaction?.overloadAmplification ?? 0.0;
+  const familiarityDamping = backaction?.familiarityDamping ?? 0.0;
+
   // Phase 3: Apply touch expectation influence to touch sensitivity
   let touchSensitivityModifier = 1.0;
   if (network.touchExpectation && network.touchSurpriseMetrics) {
@@ -47,34 +58,64 @@ export function updateTouchPerception(network: any) {
     const meanHabituation = network.touchExpectation.touchHabituationField.reduce((a: number, b: number) => a + b, 0) /
                             network.touchExpectation.touchHabituationField.length;
     touchSensitivityModifier = 1.0 - meanHabituation * 0.15;
-    touchSensitivityModifier = Math.max(0.5, Math.min(1.0, touchSensitivityModifier));
+    const familiarityTilt = backactionEnabled ? familiarityDamping * 0.1 : 0.0;
+    touchSensitivityModifier = Math.max(0.5, Math.min(1.0, touchSensitivityModifier - familiarityTilt));
   }
+
+  const backactionTouchGain = backactionEnabled
+    ? network.clampFinite(
+        backactionGain *
+          (1.0 + (boundaryMod - 1.0) * 0.25) *
+          (1.0 + (opennessMod - 1.0) * 0.25) *
+          (1.0 + awarenessCoupling * 0.12),
+        0.7,
+        1.5,
+        1.0,
+      )
+    : 1.0;
 
   const touchSensitivity = (network.currentModeDynamics?.touchSensitivity ?? 1.0) * network.clampFinite(
     1.0 + (network.orientingDrive - 0.18) * 0.12 + (network.stability - 0.58) * 0.04 - Math.max(network.overload - 0.08, 0) * 0.22,
     0.72,
     1.14,
     1.0,
-  ) * touchSensitivityModifier;
+  ) * touchSensitivityModifier * backactionTouchGain;
 
-  const noveltyGain = network.clampFinite(
+  const noveltyGainBase = network.clampFinite(
     1.0 + (network.orientingDrive - 0.18) * 0.08 - Math.max(network.overload - 0.08, 0) * 0.24,
     0.7,
     1.08,
     1.0,
   );
+  const surpriseFactor = backactionEnabled
+    ? network.clampFinite(
+        1.0 + (surpriseGain - 1.0) * 0.35 + overloadAmplification * 0.15,
+        0.7,
+        1.5,
+        1.0,
+      )
+    : 1.0;
+  const noveltyGain = noveltyGainBase * surpriseFactor;
   for (let i = 0; i < network.numNodes; i++) {
     const err = network.rawTouch[i] - network.localPrediction[i];
     // direct behavioral dependency (updateTouchPerception); target for weakening in Phase C
     const noveltyBias = network.priorChannels.novelty[i];
     const recurrenceBias = network.priorChannels.recurrence[i];
     const persistenceBias = network.priorChannels.persistence[i];
-    const traceDecay = network.clampFinite(
+    const baseTraceDecay = network.clampFinite(
       TRACE_DECAY + recurrenceBias * 0.02 + persistenceBias * 0.015 - noveltyBias * 0.015,
       0.9,
       0.995,
       TRACE_DECAY,
     );
+    const traceDecay = backactionEnabled
+      ? network.clampFinite(
+          baseTraceDecay * (1.0 - coherenceShift * 0.5),
+          0.88,
+          0.995,
+          baseTraceDecay,
+        )
+      : baseTraceDecay;
     const traceIntake = network.clampFinite(
       TRACE_INTAKE + noveltyBias * 0.012 + persistenceBias * 0.008,
       0.02,

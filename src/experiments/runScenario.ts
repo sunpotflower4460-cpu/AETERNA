@@ -86,6 +86,15 @@ export interface MetricsSnapshot {
     touchAbsenceError?: number;
     isTouchHolding?: number;
     touchHoldDuration?: number;
+    // Q1-2: Touch backaction metrics
+    touchBackactionGain?: number;
+    touchBackactionSurpriseGain?: number;
+    touchBackactionBoundaryModulation?: number;
+    touchBackactionOpennessModulation?: number;
+    touchBackactionCoherenceShift?: number;
+    touchBackactionAwarenessCoupling?: number;
+    touchBackactionOverloadAmplification?: number;
+    touchBackactionFamiliarityDamping?: number;
     // Phase 4: Homeostatic state metrics
     stabilityIndex?: number;
     boundaryIntegrity?: number;
@@ -213,6 +222,14 @@ export interface ScenarioResult {
         avgStabilityIndex?: number;
         avgMixtureEntropy?: number;
         dominantPoleDistribution?: Record<string, number>;
+        // Q1-2: Touch backaction summaries
+        avgBackactionGain?: number;
+        avgBackactionSurpriseGain?: number;
+        avgBackactionBoundaryModulation?: number;
+        avgBackactionOpennessModulation?: number;
+        avgBackactionCoherenceShift?: number;
+        avgBackactionFamiliarityDamping?: number;
+        maxBackactionOverloadAmplification?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -461,6 +478,17 @@ function buildMetricsSnapshot(
         snapshot.touchMissingSurprise = network.touchSurpriseMetrics.missingTouchSurprise;
         snapshot.touchReleaseSurprise = network.touchSurpriseMetrics.releaseSurprise;
         snapshot.touchTotalSurprise = network.touchSurpriseMetrics.totalSurprise;
+    }
+
+    if (network.touchBackactionState && network.touchBackactionEnabled !== false) {
+        snapshot.touchBackactionGain = network.touchBackactionState.backactionGain;
+        snapshot.touchBackactionSurpriseGain = network.touchBackactionState.surpriseGain;
+        snapshot.touchBackactionBoundaryModulation = network.touchBackactionState.boundaryModulation;
+        snapshot.touchBackactionOpennessModulation = network.touchBackactionState.opennessModulation;
+        snapshot.touchBackactionCoherenceShift = network.touchBackactionState.coherenceShift;
+        snapshot.touchBackactionAwarenessCoupling = network.touchBackactionState.awarenessCoupling;
+        snapshot.touchBackactionOverloadAmplification = network.touchBackactionState.overloadAmplification;
+        snapshot.touchBackactionFamiliarityDamping = network.touchBackactionState.familiarityDamping;
     }
 
     // Phase 4: Add homeostatic state metrics
@@ -890,6 +918,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgMixtureEntropy = 0;
     const dominantPoleCount: Record<string, number> = {};
     let openStateCount = 0;
+    // Q1-2: Touch backaction summary accumulators
+    let avgBackactionGain = 0;
+    let avgBackactionSurpriseGain = 0;
+    let avgBackactionBoundaryModulation = 0;
+    let avgBackactionOpennessModulation = 0;
+    let avgBackactionCoherenceShift = 0;
+    let avgBackactionFamiliarityDamping = 0;
+    let maxBackactionOverloadAmplification = 0;
+    let backactionCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -983,6 +1020,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             dominantPoleCount[pole] = (dominantPoleCount[pole] ?? 0) + 1;
             openStateCount++;
         }
+
+        if (m.touchBackactionGain !== undefined) {
+            avgBackactionGain += m.touchBackactionGain ?? 0;
+            avgBackactionSurpriseGain += m.touchBackactionSurpriseGain ?? 0;
+            avgBackactionBoundaryModulation += m.touchBackactionBoundaryModulation ?? 0;
+            avgBackactionOpennessModulation += m.touchBackactionOpennessModulation ?? 0;
+            avgBackactionCoherenceShift += m.touchBackactionCoherenceShift ?? 0;
+            avgBackactionFamiliarityDamping += m.touchBackactionFamiliarityDamping ?? 0;
+            if (m.touchBackactionOverloadAmplification !== undefined) {
+                maxBackactionOverloadAmplification = Math.max(
+                    maxBackactionOverloadAmplification,
+                    m.touchBackactionOverloadAmplification
+                );
+            }
+            backactionCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1038,6 +1091,16 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     if (openStateCount > 0) {
         avgStabilityIndex /= openStateCount;
         avgMixtureEntropy /= openStateCount;
+    }
+
+    // Q1-2: Compute backaction averages
+    if (backactionCount > 0) {
+        avgBackactionGain /= backactionCount;
+        avgBackactionSurpriseGain /= backactionCount;
+        avgBackactionBoundaryModulation /= backactionCount;
+        avgBackactionOpennessModulation /= backactionCount;
+        avgBackactionCoherenceShift /= backactionCount;
+        avgBackactionFamiliarityDamping /= backactionCount;
     }
 
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
@@ -1104,6 +1167,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgStabilityIndex: openStateCount > 0 ? avgStabilityIndex : undefined,
             avgMixtureEntropy: openStateCount > 0 ? avgMixtureEntropy : undefined,
             dominantPoleDistribution: openStateCount > 0 ? dominantPoleCount : undefined,
+            avgBackactionGain: backactionCount > 0 ? avgBackactionGain : undefined,
+            avgBackactionSurpriseGain: backactionCount > 0 ? avgBackactionSurpriseGain : undefined,
+            avgBackactionBoundaryModulation: backactionCount > 0 ? avgBackactionBoundaryModulation : undefined,
+            avgBackactionOpennessModulation: backactionCount > 0 ? avgBackactionOpennessModulation : undefined,
+            avgBackactionCoherenceShift: backactionCount > 0 ? avgBackactionCoherenceShift : undefined,
+            avgBackactionFamiliarityDamping: backactionCount > 0 ? avgBackactionFamiliarityDamping : undefined,
+            maxBackactionOverloadAmplification: backactionCount > 0 ? maxBackactionOverloadAmplification : undefined,
         },
         succeeded,
         failureReason,
