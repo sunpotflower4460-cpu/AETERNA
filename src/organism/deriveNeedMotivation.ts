@@ -84,8 +84,8 @@ function deriveSafetyNeed(
 function deriveRestorationNeed(
   feltState: FeltStateVector,
   arousalAwareness: ArousalAwarenessState,
-  energyState: OrganismEnergyState,
-  homeostaticState: OrganismHomeostaticState
+  _energyState: OrganismEnergyState,
+  _homeostaticState: OrganismHomeostaticState
 ): number {
   // Need is high when restoration readiness is present BUT not yet recovered
   const restorationReadiness = clampFinite(feltState.restorationReadiness, 0, 1);
@@ -137,7 +137,7 @@ function deriveContactNeed(
 function deriveNoveltyMotivation(
   arousalAwareness: ArousalAwarenessState,
   feltState: FeltStateVector,
-  snapshot: OrganismSnapshot,
+  _snapshot: OrganismSnapshot,
   safetyNeed: number
 ): number {
   // Favorable conditions: moderate arousal
@@ -168,7 +168,7 @@ function deriveRepetitionMotivation(
   replayState: ReplayState,
   arousalAwareness: ArousalAwarenessState,
   feltState: FeltStateVector,
-  snapshot: OrganismSnapshot
+  _snapshot: OrganismSnapshot
 ): number {
   // Primary: recent replay activity indicates familiar pattern reinforcement
   const replayActivity = clampFinite(replayState.recentReplaySalience, 0, 1) * 0.35;
@@ -252,8 +252,8 @@ function deriveSettlingMotivation(
 function deriveWithdrawMotivation(
   safetyNeed: number,
   feltState: FeltStateVector,
-  arousalAwareness: ArousalAwarenessState,
-  snapshot: OrganismSnapshot
+  _arousalAwareness: ArousalAwarenessState,
+  _snapshot: OrganismSnapshot
 ): number {
   // Primary: safety need
   const safetyFactor = clampFinite(safetyNeed, 0, 1.2) * 0.4;

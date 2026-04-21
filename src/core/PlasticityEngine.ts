@@ -19,7 +19,7 @@ export interface IPlasticityEngine {
 }
 
 export class PlasticityEngine implements IPlasticityEngine {
-  updatePlasticity(network: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
+  updatePlasticity(_network: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
     // Placeholder - actual plasticity logic remains in priorRewrite.ts for now
     // This engine will coordinate plasticity updates in future iterations
 
