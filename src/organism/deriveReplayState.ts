@@ -59,7 +59,7 @@ function deriveReplayPressure(
 function deriveReplayReadiness(
   arousalAwareness: ArousalAwarenessState,
   feltState: FeltStateVector,
-  snapshot: OrganismSnapshot
+  _snapshot: OrganismSnapshot
 ): number {
   // Low to moderate arousal
   const arousalOk = arousalAwareness.arousalLevel < 0.5 ? 0.3 : 0.0;
