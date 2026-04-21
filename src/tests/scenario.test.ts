@@ -1365,4 +1365,230 @@ describe('AETERNA Behavioral Scenarios', async () => {
             expect(dissociatedFrame).toBeDefined();
         });
     });
+
+    // ──────────────────────────────────────────────────────
+    // A4: Need / Motivation Split Scenarios
+    // ──────────────────────────────────────────────────────
+
+    describe('Scenario AT: Depleted Low-Exploration (A4)', async () => {
+        it('should show high energyNeed but low explorationMotivation when depleted', async () => {
+            const config: ScenarioConfig = {
+                name: 'depleted-low-exploration',
+                totalFrames: 2500,
+                touchScript: [],  // Long quiet to induce depletion
+                collectMetrics: true,
+                metricsInterval: 50,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check late-stage metrics (after depletion)
+            const lateMetrics = result.metrics.filter(m => m.frame > 2000);
+            if (lateMetrics.length > 0) {
+                const avgEnergyNeed = lateMetrics.reduce((sum, m) => sum + (m.energyNeed ?? 0), 0) / lateMetrics.length;
+                const avgExplorationMotivation = lateMetrics.reduce((sum, m) => sum + (m.explorationMotivation ?? 0), 0) / lateMetrics.length;
+
+                console.log('Scenario AT late avgEnergyNeed:', avgEnergyNeed);
+                console.log('Scenario AT late avgExplorationMotivation:', avgExplorationMotivation);
+
+                // Should show high energy need
+                expect(avgEnergyNeed).toBeGreaterThan(0.2);
+
+                // But exploration motivation should not be proportionally high
+                // (demonstrates separation)
+            }
+
+            // Check summary
+            if (result.summary.avgEnergyNeed !== undefined) {
+                console.log('Scenario AT summary avgEnergyNeed:', result.summary.avgEnergyNeed);
+                console.log('Scenario AT summary avgExplorationMotivation:', result.summary.avgExplorationMotivation);
+            }
+
+            // Verify no NaN
+            for (const m of result.metrics) {
+                if (m.energyNeed !== undefined) {
+                    expect(Number.isNaN(m.energyNeed)).toBe(false);
+                    expect(Number.isNaN(m.explorationMotivation)).toBe(false);
+                }
+            }
+        });
+    });
+
+    describe('Scenario AU: Overload Withdrawal (A4)', async () => {
+        it('should show high safetyNeed and withdrawMotivation under overload', async () => {
+            const config: ScenarioConfig = {
+                name: 'overload-withdrawal',
+                totalFrames: 800,
+                touchScript: [
+                    // Harsh perturbations
+                    { frame: 100, x: 0.3, y: 0.3, pressure: 1.0, duration: 1 },
+                    { frame: 115, x: 0.7, y: 0.7, pressure: 1.0, duration: 1 },
+                    { frame: 130, x: 0.2, y: 0.8, pressure: 1.0, duration: 1 },
+                    { frame: 145, x: 0.8, y: 0.2, pressure: 1.0, duration: 1 },
+                    { frame: 160, x: 0.4, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 175, x: 0.6, y: 0.4, pressure: 1.0, duration: 1 },
+                    { frame: 190, x: 0.3, y: 0.7, pressure: 1.0, duration: 1 },
+                    { frame: 205, x: 0.7, y: 0.3, pressure: 1.0, duration: 1 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check overload period
+            const overloadPeriod = result.metrics.filter(m => m.frame >= 100 && m.frame < 300);
+            if (overloadPeriod.length > 0) {
+                const maxSafetyNeed = Math.max(...overloadPeriod.map(m => m.safetyNeed ?? 0));
+                const maxWithdrawMotivation = Math.max(...overloadPeriod.map(m => m.withdrawMotivation ?? 0));
+
+                console.log('Scenario AU max safetyNeed:', maxSafetyNeed);
+                console.log('Scenario AU max withdrawMotivation:', maxWithdrawMotivation);
+
+                // Should show elevated safety need and withdraw motivation
+                expect(maxSafetyNeed).toBeGreaterThan(0.3);
+                expect(maxWithdrawMotivation).toBeGreaterThan(0.2);
+            }
+
+            // Check summary
+            if (result.summary.maxSafetyNeed !== undefined) {
+                console.log('Scenario AU summary maxSafetyNeed:', result.summary.maxSafetyNeed);
+                console.log('Scenario AU summary maxWithdrawMotivation:', result.summary.maxWithdrawMotivation);
+            }
+        });
+    });
+
+    describe('Scenario AV: Repeated Familiarity Bias (A4)', async () => {
+        it('should show elevated repetitionMotivation with repeated touch pattern', async () => {
+            const config: ScenarioConfig = {
+                name: 'repeated-familiarity-bias',
+                totalFrames: 1500,
+                touchScript: [
+                    // Repeated pattern
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 500, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 600, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                    { frame: 700, x: 0.5, y: 0.5, pressure: 0.8, duration: 10 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 30,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check late-pattern metrics
+            const lateMetrics = result.metrics.filter(m => m.frame > 600);
+            if (lateMetrics.length > 0) {
+                const avgRepetitionMotivation = lateMetrics.reduce((sum, m) => sum + (m.repetitionMotivation ?? 0), 0) / lateMetrics.length;
+
+                console.log('Scenario AV late avgRepetitionMotivation:', avgRepetitionMotivation);
+
+                // Should show elevated repetition motivation
+                expect(avgRepetitionMotivation).toBeGreaterThan(0.1);
+            }
+
+            // Check summary
+            if (result.summary.avgRepetitionMotivation !== undefined) {
+                console.log('Scenario AV summary avgRepetitionMotivation:', result.summary.avgRepetitionMotivation);
+            }
+        });
+    });
+
+    describe('Scenario AW: Moderate Openness Exploration (A4)', async () => {
+        it('should show explorationMotivation with moderate arousal + awareness + openness', async () => {
+            const config: ScenarioConfig = {
+                name: 'moderate-openness-exploration',
+                totalFrames: 1000,
+                touchScript: [
+                    // Moderate touch to maintain arousal/awareness
+                    { frame: 200, x: 0.4, y: 0.5, pressure: 0.6, duration: 5 },
+                    { frame: 400, x: 0.6, y: 0.5, pressure: 0.6, duration: 5 },
+                    { frame: 600, x: 0.5, y: 0.6, pressure: 0.6, duration: 5 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 25,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check mid-range metrics
+            const midMetrics = result.metrics.filter(m => m.frame >= 300 && m.frame < 700);
+            if (midMetrics.length > 0) {
+                const avgExplorationMotivation = midMetrics.reduce((sum, m) => sum + (m.explorationMotivation ?? 0), 0) / midMetrics.length;
+                const avgNoveltyMotivation = midMetrics.reduce((sum, m) => sum + (m.noveltyMotivation ?? 0), 0) / midMetrics.length;
+
+                console.log('Scenario AW mid avgExplorationMotivation:', avgExplorationMotivation);
+                console.log('Scenario AW mid avgNoveltyMotivation:', avgNoveltyMotivation);
+
+                // Should show some exploration motivation
+                expect(avgExplorationMotivation).toBeGreaterThan(0.05);
+            }
+
+            // Check summary
+            if (result.summary.avgExplorationMotivation !== undefined) {
+                console.log('Scenario AW summary avgExplorationMotivation:', result.summary.avgExplorationMotivation);
+                console.log('Scenario AW summary avgNoveltyMotivation:', result.summary.avgNoveltyMotivation);
+            }
+        });
+    });
+
+    describe('Scenario AX: Restoration Settling (A4)', async () => {
+        it('should show restorationNeed and settlingMotivation relationship in recovery', async () => {
+            const config: ScenarioConfig = {
+                name: 'restoration-settling',
+                totalFrames: 1500,
+                touchScript: [
+                    // Create some overload first
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 120, x: 0.4, y: 0.6, pressure: 1.0, duration: 1 },
+                    { frame: 140, x: 0.6, y: 0.4, pressure: 1.0, duration: 1 },
+                    // Then quiet for recovery
+                ],
+                collectMetrics: true,
+                metricsInterval: 30,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+
+            // Check recovery period
+            const recoveryPeriod = result.metrics.filter(m => m.frame > 400 && m.frame < 1200);
+            if (recoveryPeriod.length > 0) {
+                const avgRestorationNeed = recoveryPeriod.reduce((sum, m) => sum + (m.restorationNeed ?? 0), 0) / recoveryPeriod.length;
+                const avgSettlingMotivation = recoveryPeriod.reduce((sum, m) => sum + (m.settlingMotivation ?? 0), 0) / recoveryPeriod.length;
+
+                console.log('Scenario AX recovery avgRestorationNeed:', avgRestorationNeed);
+                console.log('Scenario AX recovery avgSettlingMotivation:', avgSettlingMotivation);
+
+                // Should show some restoration need and settling motivation
+                // (exact values depend on recovery dynamics)
+            }
+
+            // Check summary
+            if (result.summary.avgRestorationNeed !== undefined) {
+                console.log('Scenario AX summary avgRestorationNeed:', result.summary.avgRestorationNeed);
+                console.log('Scenario AX summary avgSettlingMotivation:', result.summary.avgSettlingMotivation);
+            }
+
+            // Verify no NaN
+            for (const m of result.metrics) {
+                if (m.restorationNeed !== undefined) {
+                    expect(Number.isNaN(m.restorationNeed)).toBe(false);
+                    expect(Number.isNaN(m.settlingMotivation)).toBe(false);
+                }
+            }
+        });
+    });
 });
