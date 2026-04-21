@@ -92,7 +92,7 @@ function computeNoveltyBiasDelta(
 ): number {
   if (!interoception || !selfWorld) return 0;
 
-  const { coherenceSense, overloadSense } = interoception;
+  const { overloadSense } = interoception;
   const { selfCoherence, worldPressure } = selfWorld;
 
   // Low coherence + high world pressure → slightly more sensitive to novelty
@@ -147,7 +147,6 @@ function computeRewritePressureDelta(
 ): number {
   if (!interoception || !selfWorld) return 0;
 
-  const { coherenceSense } = interoception;
   const { selfCoherence, selfContinuity } = selfWorld;
 
   // Continuity drop detection

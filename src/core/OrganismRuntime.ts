@@ -40,7 +40,7 @@ export class OrganismRuntime {
    * Run one organism tick
    * Coordinates all engines and returns organism state
    */
-  tick(network: any, inputs: any): any { // eslint-disable-line @typescript-eslint/no-explicit-any
+  tick(_network: any, _inputs: any): any { // eslint-disable-line @typescript-eslint/no-explicit-any
     // For now, this is a placeholder that delegates to the network's existing updateDynamics
     // Future iterations will move more orchestration logic here
 

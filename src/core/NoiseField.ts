@@ -11,6 +11,8 @@
  * and ongoing activity, separated from deterministic dynamics.
  */
 
+import { triggerNoise as triggerNoiseImpl } from './dynamicCore.js';
+
 export interface INoiseField {
   /**
    * Trigger noise injection based on tension and sigma
@@ -22,9 +24,6 @@ export class NoiseField implements INoiseField {
   triggerNoise(network: any, tension: number, sigmaDisplay: number): void { // eslint-disable-line @typescript-eslint/no-explicit-any
     // Actual noise logic remains in dynamicCore.ts for now
     // This is a thin wrapper that will evolve to contain noise logic
-
-    // Import the actual triggerNoise implementation
-    const { triggerNoise: triggerNoiseImpl } = require('./dynamicCore.ts');
     triggerNoiseImpl(network, tension, sigmaDisplay);
   }
 }
