@@ -191,6 +191,26 @@ Scenario summaries now include:
 
 These are for research comparison only and should not be interpreted as human-style awareness claims.
 
+### A3 Replay / Consolidation Additions
+
+Scenario summaries now include:
+- `totalReplayCount`: Total number of replay events across scenario
+- `avgReplayPressure`: Average pressure to initiate replay
+- `avgReplayReadiness`: Average availability for replay to occur
+- `avgConsolidationGain`: Average consolidation strength (always weak, capped at 0.3)
+- `maxActiveReplayCount`: Maximum simultaneous replay traces
+- `avgRecentReplaySalience`: Average salience weight of replay events
+- `avgQueueFillRatio`: Average replay queue occupancy (0-1)
+
+**Important**: These are derived/proxy metrics, NOT direct measurements. They indicate replay/consolidation dynamics but are not "proof" of memory consolidation.
+
+**Classification**:
+- **Derived**: `replayPressure`, `replayReadiness`, `replaySuppression`, `consolidationGain`, `restConsolidationDepth`
+- **Proxy**: `activeReplayCount`, `recentReplaySalience`
+- **Evidence**: `replayQueueSize`, `totalReplayCount`
+
+Replay is intentionally minimal and does not dominate organism dynamics. It is NOT episodic memory or dream演出.
+
 ### Temporal Windows
 - **Short window**: 50 frames (~0.83s @ 60 FPS)
 - **Medium window**: 100 frames (~1.67s)
