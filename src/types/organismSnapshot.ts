@@ -41,4 +41,13 @@ export interface OrganismSnapshot {
 
   /** Recent touch activity level (0-1) */
   recentTouchActivity: number;
+
+  /** Current activity/firing summary (0-1) */
+  currentActivity?: number;
+
+  /** Current ignition / cluster ratio summary (0-1) */
+  ignitionRatio?: number;
+
+  /** Recent touch surprise / mismatch summary (0-1+) */
+  recentTouchSurprise?: number;
 }

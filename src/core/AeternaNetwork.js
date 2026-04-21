@@ -31,6 +31,8 @@ import { createNoiseField } from './NoiseField.ts';
 import { createOrganismRuntime } from './OrganismRuntime.ts';
 import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
+import { deriveFeltState } from '../organism/deriveFeltState.ts';
+import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -280,6 +282,7 @@ export class AeternaNetwork {
         this.lastModulation = createZeroModulation();
         // Current modulation bundle (computed each frame)
         this.currentModulation = createZeroModulation();
+        this.lastArousalAwarenessState = null;
     }
 
     initializeTemporaryWorkBuffers() {
@@ -478,6 +481,9 @@ export class AeternaNetwork {
             restorationBias: this.homeostaticState?.restorationBias ?? 0.5,
             coherenceMemory: this.livingState?.coherenceMemory ?? 0.5,
             recentTouchActivity: perceptionPacket.rawTouchMean,
+            currentActivity: this.currGenFiring ?? 0,
+            ignitionRatio: this.cachedMaxClusterSize ? this.cachedMaxClusterSize / this.numNodes : 0,
+            recentTouchSurprise: this.touchSurpriseMetrics?.totalSurprise ?? 0,
         };
     }
 
@@ -506,10 +512,22 @@ export class AeternaNetwork {
 
         // Beautiful Loop L2: Run observer packet stages
         // These generate interoception and self/world model packets
-        // Observer role only - no modulation back to dynamics yet
         const organismSnapshot = this.buildOrganismSnapshot(organismPacket, predictionPacket, perceptionPacket);
         const interoceptionPacket = runInteroceptionStage(organismSnapshot);
         const selfWorldModelPacket = runSelfWorldModelStage(interoceptionPacket, organismSnapshot, this.lastSelfWorldModelPacket);
+        const feltState = deriveFeltState(
+            organismSnapshot,
+            this.livingState,
+            this.homeostaticState,
+            this.energyFlowState,
+            selfWorldModelPacket
+        );
+        const arousalAwarenessState = deriveArousalAwareness(
+            organismSnapshot,
+            feltState,
+            this.livingState,
+            selfWorldModelPacket
+        );
 
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
@@ -528,6 +546,7 @@ export class AeternaNetwork {
         // Store for next frame
         this.lastInteroceptionPacket = interoceptionPacket;
         this.lastSelfWorldModelPacket = selfWorldModelPacket;
+        this.lastArousalAwarenessState = arousalAwarenessState;
 
         return {
             ignitionRatio: metricsPacket.clusterRatio,
@@ -647,6 +666,13 @@ export class AeternaNetwork {
             bl_selfContinuity: selfWorldModelPacket.selfContinuity,
             bl_worldPressure: selfWorldModelPacket.worldPressure,
             bl_relationEngagement: selfWorldModelPacket.relationEngagement,
+            bl_arousalLevel: arousalAwarenessState.arousalLevel,
+            bl_awarenessWindow: arousalAwarenessState.awarenessWindow,
+            bl_salienceOpenness: arousalAwarenessState.salienceOpenness,
+            bl_foregroundPressure: arousalAwarenessState.foregroundPressure,
+            bl_restDepth: arousalAwarenessState.restDepth,
+            bl_hyperreactivity: arousalAwarenessState.hyperreactivity,
+            bl_settlingWindow: arousalAwarenessState.settlingWindow,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,

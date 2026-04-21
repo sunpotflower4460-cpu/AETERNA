@@ -74,6 +74,13 @@ export function initDOMCache() {
         'val-time-level',        'row-time-level',
         'val-time-persistence',  'row-time-persistence',
         'val-time-active',       'row-time-active',
+        'val-bl-arousal-level',  'row-bl-arousal-level',
+        'val-bl-awareness-window', 'row-bl-awareness-window',
+        'val-bl-salience-openness', 'row-bl-salience-openness',
+        'val-bl-foreground-pressure', 'row-bl-foreground-pressure',
+        'val-bl-rest-depth', 'row-bl-rest-depth',
+        'val-bl-hyperreactivity', 'row-bl-hyperreactivity',
+        'val-bl-settling-window', 'row-bl-settling-window',
         // Phase E1: hierarchical torus
         'val-subtori-count',      'val-subtorus-size',
         'val-upper-size',         'val-sub-mean-activity',

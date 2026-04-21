@@ -12,6 +12,7 @@ import { updateHomeostaticState } from '../organism/survivalState.ts';
 import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 import { deriveFeltState } from '../organism/deriveFeltState.ts';
+import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 
 export interface TouchEvent {
@@ -110,6 +111,14 @@ export interface MetricsSnapshot {
     felt_restorationReadiness?: number;
     felt_perturbationLoad?: number;
     felt_openness?: number;
+    // A2: Arousal / awareness split metrics
+    arousalLevel?: number;
+    awarenessWindow?: number;
+    salienceOpenness?: number;
+    foregroundPressure?: number;
+    restDepth?: number;
+    hyperreactivity?: number;
+    settlingWindow?: number;
 }
 
 export interface ScenarioResult {
@@ -143,6 +152,13 @@ export interface ScenarioResult {
         avgOpenness?: number;
         maxOverload?: number;
         minCoherence?: number;
+        // A2: Arousal / awareness summaries
+        avgArousalLevel?: number;
+        avgAwarenessWindow?: number;
+        avgSalienceOpenness?: number;
+        avgForegroundPressure?: number;
+        maxArousalLevel?: number;
+        minAwarenessWindow?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -274,6 +290,9 @@ function buildOrganismSnapshot(
         restorationBias: network.homeostaticState?.restorationBias ?? 0.5,
         coherenceMemory: network.livingState?.coherenceMemory ?? 0.5,
         recentTouchActivity: dyn.meanRawTouch ?? 0,
+        currentActivity: dyn.arousal ?? 0,
+        ignitionRatio: dyn.ignitionRatio ?? 0,
+        recentTouchSurprise: dyn.touchTotalSurprise ?? 0,
     };
 }
 
@@ -396,6 +415,21 @@ function buildMetricsSnapshot(
             snapshot.felt_restorationReadiness = feltState.restorationReadiness;
             snapshot.felt_perturbationLoad = feltState.perturbationLoad;
             snapshot.felt_openness = feltState.openness;
+
+            const arousalAwareness = deriveArousalAwareness(
+                organismSnapshot,
+                feltState,
+                network.livingState,
+                selfWorldPacket
+            );
+
+            snapshot.arousalLevel = arousalAwareness.arousalLevel;
+            snapshot.awarenessWindow = arousalAwareness.awarenessWindow;
+            snapshot.salienceOpenness = arousalAwareness.salienceOpenness;
+            snapshot.foregroundPressure = arousalAwareness.foregroundPressure;
+            snapshot.restDepth = arousalAwareness.restDepth;
+            snapshot.hyperreactivity = arousalAwareness.hyperreactivity;
+            snapshot.settlingWindow = arousalAwareness.settlingWindow;
         }
     } catch (e) {
         // If BL-L1 packet generation fails, skip silently (observer role only)
@@ -572,6 +606,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxOverload = 0;
     let minCoherence = Infinity;
     let feltCount = 0;
+    let avgArousalLevel = 0;
+    let avgAwarenessWindow = 0;
+    let avgSalienceOpenness = 0;
+    let avgForegroundPressure = 0;
+    let maxArousalLevel = 0;
+    let minAwarenessWindow = Infinity;
+    let arousalAwarenessCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -605,6 +646,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             feltCount++;
         }
+
+        if (m.arousalLevel !== undefined) {
+            avgArousalLevel += m.arousalLevel;
+            avgAwarenessWindow += m.awarenessWindow ?? 0;
+            avgSalienceOpenness += m.salienceOpenness ?? 0;
+            avgForegroundPressure += m.foregroundPressure ?? 0;
+            maxArousalLevel = Math.max(maxArousalLevel, m.arousalLevel);
+            if (m.awarenessWindow !== undefined) {
+                minAwarenessWindow = Math.min(minAwarenessWindow, m.awarenessWindow);
+            }
+            arousalAwarenessCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -625,6 +678,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgRestorationReadiness /= feltCount;
         avgPerturbationLoad /= feltCount;
         avgOpenness /= feltCount;
+    }
+
+    if (arousalAwarenessCount > 0) {
+        avgArousalLevel /= arousalAwarenessCount;
+        avgAwarenessWindow /= arousalAwarenessCount;
+        avgSalienceOpenness /= arousalAwarenessCount;
+        avgForegroundPressure /= arousalAwarenessCount;
     }
 
     return {
@@ -657,6 +717,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgOpenness: feltCount > 0 ? avgOpenness : undefined,
             maxOverload: feltCount > 0 ? maxOverload : undefined,
             minCoherence: feltCount > 0 && minCoherence !== Infinity ? minCoherence : undefined,
+            avgArousalLevel: arousalAwarenessCount > 0 ? avgArousalLevel : undefined,
+            avgAwarenessWindow: arousalAwarenessCount > 0 ? avgAwarenessWindow : undefined,
+            avgSalienceOpenness: arousalAwarenessCount > 0 ? avgSalienceOpenness : undefined,
+            avgForegroundPressure: arousalAwarenessCount > 0 ? avgForegroundPressure : undefined,
+            maxArousalLevel: arousalAwarenessCount > 0 ? maxArousalLevel : undefined,
+            minAwarenessWindow: arousalAwarenessCount > 0 && minAwarenessWindow !== Infinity ? minAwarenessWindow : undefined,
         },
         succeeded,
         failureReason,

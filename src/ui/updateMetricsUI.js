@@ -204,6 +204,13 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-bl-self-continuity'])   UI['val-bl-self-continuity'].innerText   = (dyn.bl_selfContinuity   || 0).toFixed(3);
     if (UI['val-bl-world-pressure'])    UI['val-bl-world-pressure'].innerText    = (dyn.bl_worldPressure    || 0).toFixed(3);
     if (UI['val-bl-relation-engagement']) UI['val-bl-relation-engagement'].innerText = (dyn.bl_relationEngagement || 0).toFixed(3);
+    if (UI['val-bl-arousal-level'])     UI['val-bl-arousal-level'].innerText     = (dyn.bl_arousalLevel     || 0).toFixed(3);
+    if (UI['val-bl-awareness-window'])  UI['val-bl-awareness-window'].innerText  = (dyn.bl_awarenessWindow  || 0).toFixed(3);
+    if (UI['val-bl-salience-openness']) UI['val-bl-salience-openness'].innerText = (dyn.bl_salienceOpenness || 0).toFixed(3);
+    if (UI['val-bl-foreground-pressure']) UI['val-bl-foreground-pressure'].innerText = (dyn.bl_foregroundPressure || 0).toFixed(3);
+    if (UI['val-bl-rest-depth'])        UI['val-bl-rest-depth'].innerText        = (dyn.bl_restDepth        || 0).toFixed(3);
+    if (UI['val-bl-hyperreactivity'])   UI['val-bl-hyperreactivity'].innerText   = (dyn.bl_hyperreactivity  || 0).toFixed(3);
+    if (UI['val-bl-settling-window'])   UI['val-bl-settling-window'].innerText   = (dyn.bl_settlingWindow   || 0).toFixed(3);
 
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];
