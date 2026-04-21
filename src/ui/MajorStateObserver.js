@@ -116,7 +116,11 @@ export class MajorStateObserver {
             sigma: dyn.sigmaDisplay,
             phi: dyn.phiApprox,
             overload: dyn.overload || 0,
-            energy: dyn.energy || 1.0
+            energy: dyn.energy || 1.0,
+            arousalLevel: dyn.bl_arousalLevel || 0,
+            awarenessWindow: dyn.bl_awarenessWindow || 0,
+            salienceOpenness: dyn.bl_salienceOpenness || 0,
+            foregroundPressure: dyn.bl_foregroundPressure || 0
         });
 
         if (this.stateHistory.length > this.maxHistory) {

@@ -1231,4 +1231,138 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    describe('Scenario AJ: Overload High Arousal (A2)', async () => {
+        it('should elevate arousalLevel under repeated perturbation', async () => {
+            const quietConfig: ScenarioConfig = {
+                name: 'quiet-a2-baseline',
+                totalFrames: 700,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+            const overloadConfig: ScenarioConfig = {
+                name: 'overload-high-arousal-a2',
+                totalFrames: 700,
+                touchScript: [
+                    { frame: 100, x: 0.2, y: 0.2, pressure: 1.0, duration: 4 },
+                    { frame: 130, x: 0.8, y: 0.2, pressure: 1.0, duration: 4 },
+                    { frame: 160, x: 0.2, y: 0.8, pressure: 1.0, duration: 4 },
+                    { frame: 190, x: 0.8, y: 0.8, pressure: 1.0, duration: 4 },
+                    { frame: 220, x: 0.5, y: 0.5, pressure: 1.0, duration: 4 },
+                    { frame: 250, x: 0.35, y: 0.65, pressure: 1.0, duration: 4 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const quietResult = await runScenario(quietConfig);
+            const overloadResult = await runScenario(overloadConfig);
+            const preMetrics = overloadResult.metrics.filter(m => m.frame < 80);
+            const overloadMetrics = overloadResult.metrics.filter(m => m.frame >= 100 && m.frame <= 320);
+            const preArousal = preMetrics.reduce((sum, m) => sum + (m.arousalLevel ?? 0), 0) / preMetrics.length;
+            const overloadArousal = overloadMetrics.reduce((sum, m) => sum + (m.arousalLevel ?? 0), 0) / overloadMetrics.length;
+            const preForeground = preMetrics.reduce((sum, m) => sum + (m.foregroundPressure ?? 0), 0) / preMetrics.length;
+            const overloadForeground = overloadMetrics.reduce((sum, m) => sum + (m.foregroundPressure ?? 0), 0) / overloadMetrics.length;
+
+            expect(quietResult.succeeded).toBe(true);
+            expect(overloadResult.succeeded).toBe(true);
+            expect(overloadArousal).toBeGreaterThan(preArousal);
+            expect(overloadForeground).toBeGreaterThan(preForeground);
+        });
+    });
+
+    describe('Scenario AK: Quiet Low Arousal Baseline (A2)', async () => {
+        it('should keep arousal low but non-zero in quiet conditions', async () => {
+            const config: ScenarioConfig = {
+                name: 'quiet-low-arousal-a2',
+                totalFrames: 900,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 30,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+            expect((result.summary.avgArousalLevel ?? 0)).toBeGreaterThan(0.04);
+            expect((result.summary.minAwarenessWindow ?? 0)).toBeGreaterThan(0.04);
+        });
+    });
+
+    describe('Scenario AL: Coherent Moderate Awareness (A2)', async () => {
+        it('should support awarenessWindow in relatively coherent conditions', async () => {
+            const config: ScenarioConfig = {
+                name: 'coherent-moderate-awareness-a2',
+                totalFrames: 700,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+            const earlyWindow = result.metrics
+                .filter(m => m.frame >= 80 && m.frame <= 280)
+                .reduce((sum, m, _, arr) => sum + (m.awarenessWindow ?? 0) / arr.length, 0);
+
+            expect(result.succeeded).toBe(true);
+            expect(earlyWindow).toBeGreaterThan(0.12);
+            expect((result.summary.avgAwarenessWindow ?? 0)).toBeGreaterThan(0.1);
+        });
+    });
+
+    describe('Scenario AM: Depleted Narrowing (A2)', async () => {
+        it('should narrow awarenessWindow as depletion accumulates', async () => {
+            const config: ScenarioConfig = {
+                name: 'depleted-narrowing-a2',
+                totalFrames: 1600,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 40,
+            };
+
+            const result = await runScenario(config);
+            const earlyMetrics = result.metrics.filter(m => m.frame >= 80 && m.frame <= 320);
+            const lateMetrics = result.metrics.filter(m => m.frame >= 1200 && m.frame <= 1560);
+            const earlyAwareness = earlyMetrics.reduce((sum, m) => sum + (m.awarenessWindow ?? 0), 0) / earlyMetrics.length;
+            const lateAwareness = lateMetrics.reduce((sum, m) => sum + (m.awarenessWindow ?? 0), 0) / lateMetrics.length;
+
+            expect(result.succeeded).toBe(true);
+            expect(lateAwareness).toBeLessThan(earlyAwareness);
+        });
+    });
+
+    describe('Scenario AN: High Arousal Low Awareness Dissociation (A2)', async () => {
+        it('should show frames where arousalLevel and awarenessWindow separate', async () => {
+            const config: ScenarioConfig = {
+                name: 'high-arousal-low-awareness-a2',
+                totalFrames: 900,
+                touchScript: [
+                    { frame: 90, x: 0.2, y: 0.2, pressure: 1.0, duration: 6 },
+                    { frame: 120, x: 0.8, y: 0.2, pressure: 1.0, duration: 6 },
+                    { frame: 150, x: 0.2, y: 0.8, pressure: 1.0, duration: 6 },
+                    { frame: 180, x: 0.8, y: 0.8, pressure: 1.0, duration: 6 },
+                    { frame: 210, x: 0.5, y: 0.5, pressure: 1.0, duration: 6 },
+                    { frame: 240, x: 0.5, y: 0.25, pressure: 1.0, duration: 6 },
+                    { frame: 270, x: 0.25, y: 0.5, pressure: 1.0, duration: 6 },
+                ],
+                collectMetrics: true,
+                metricsInterval: 20,
+            };
+
+            const result = await runScenario(config);
+            const dissociatedFrame = result.metrics.find(
+                m =>
+                    (m.arousalLevel ?? 0) > 0.35 &&
+                    (m.awarenessWindow ?? 1) < 0.45 &&
+                    (m.arousalLevel ?? 0) - (m.awarenessWindow ?? 0) > 0.08
+            );
+
+            expect(result.succeeded).toBe(true);
+            expect((result.summary.maxArousalLevel ?? 0)).toBeGreaterThan(
+                result.summary.minAwarenessWindow ?? 0
+            );
+            expect(dissociatedFrame).toBeDefined();
+        });
+    });
 });

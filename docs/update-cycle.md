@@ -207,6 +207,20 @@ Compare behavioral outcomes against this baseline order.
 - **Output**: `SelfWorldModelPacket` (selfCoherence, selfContinuity, worldPressure, relationEngagement)
 - **Important**: Does NOT modify dynamics or organism state. Pure observation layer.
 
+### Felt-State Stage (Observer)
+- **Location**: `AeternaNetwork.js` (after self/world packet generation)
+- **Role**: Derived internal condition view
+- **Call**: `deriveFeltState(organismSnapshot, livingState, homeostaticState, energyFlowState, selfWorldModelPacket)`
+- **Output**: `FeltStateVector` (depletion, overload, coherence, boundaryIntegrity, restorationReadiness, perturbationLoad, openness)
+- **Important**: Read-only organization of existing state. Not a mode driver.
+
+### A2 Arousal / Awareness Stage (Observer)
+- **Location**: `AeternaNetwork.js` (after felt-state derivation)
+- **Role**: Separate activation height from foreground availability
+- **Call**: `deriveArousalAwareness(organismSnapshot, feltState, livingState, selfWorldModelPacket)`
+- **Output**: `ArousalAwarenessState` (arousalLevel, awarenessWindow, salienceOpenness, foregroundPressure, restDepth, hyperreactivity, settlingWindow)
+- **Important**: Observer/metrics layer only in A2. Does not directly switch mode.
+
 **BL-L1 Design Note**: These stages are added as auxiliary observers in v0.5. They run AFTER the main update cycle completes and produce packets for debugging/analysis. They do NOT yet feed back into organism dynamics. Future BL-L2/L3 will connect the loop.
 
 **BL-L2 Update (v0.5)**: As of Beautiful Loop L2, these stages are now fully integrated into the main loop:
@@ -230,6 +244,12 @@ Compare behavioral outcomes against this baseline order.
 - **Critical constraint**: Modulation is WEAK (all deltas < ±0.10), organism core remains primary driver
 - **Ablation support**: Can be disabled via `blModulationConfig.enabled = false`
 - See `docs/beautiful-loop-l3-notes.md` for full details
+
+**A2 Update (v0.5)**: Arousal and awareness-like availability are now separated after felt-state derivation:
+- `arousalLevel` tracks activation / mobilization height
+- `awarenessWindow` tracks foreground availability
+- `salienceOpenness` and `foregroundPressure` expose passage/opening dynamics for observation
+- These values are emitted in runtime/scenario outputs without becoming mode control
 
 
 ## Implementation Notes

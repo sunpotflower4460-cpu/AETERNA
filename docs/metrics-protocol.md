@@ -136,6 +136,17 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Failure Condition**: <0.1 (stuck) or >20 (chaotic)
 - **Limitation**: Current mode system may not transition spontaneously without tuning
 
+#### D.4 Arousal / Awareness Dissociation
+- **Meaning**: Activation height and foreground availability remain separable
+- **Measurement**: Compare `arousalLevel` and `awarenessWindow` during quiet, overload, and depleted runs
+- **Operational Readout**:
+  - overload run: `foregroundPressure` rises and `arousalLevel` increases during perturbation windows
+  - quiet run: `avgArousalLevel` stays above zero baseline
+  - depleted run: late `awarenessWindow` narrows relative to early window
+- **Success Condition**: At least one scenario shows `arousalLevel` and `awarenessWindow` diverging in a stable, finite way
+- **Failure Condition**: The two values collapse into near-equality across all scenarios
+- **Limitation**: These are derived observer quantities, not direct measurements
+
 ### E. Endogenous Action Tendency
 
 **Definition**: The system exhibits spontaneous actions without external stimulus.
@@ -167,6 +178,18 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 ## Measurement Implementation
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).
+
+### A2 Scenario Summary Additions
+
+Scenario summaries now include:
+- `avgArousalLevel`
+- `avgAwarenessWindow`
+- `avgSalienceOpenness`
+- `avgForegroundPressure`
+- `maxArousalLevel`
+- `minAwarenessWindow`
+
+These are for research comparison only and should not be interpreted as human-style awareness claims.
 
 ### Temporal Windows
 - **Short window**: 50 frames (~0.83s @ 60 FPS)

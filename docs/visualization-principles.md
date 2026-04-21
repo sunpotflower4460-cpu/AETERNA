@@ -161,6 +161,7 @@ All metrics displayed in UI must be labeled as one of:
 ### derived
 - Computed from exact measurements using deterministic formula
 - Example: `R/r ratio` (R / r_disk), `sigma` (EMA of currGenFiring / prevGenFiring)
+- Example: `arousalLevel`, `awarenessWindow`, `salienceOpenness`, `foregroundPressure` (derived from existing organism/felt/self-world state)
 
 ### proxy
 - Approximation of a theoretical concept, not the concept itself
@@ -186,6 +187,13 @@ The guide panel provides **observation assistance**, not **interpretation dictat
 - Claiming organism has "consciousness" or "intent"
 - Storytelling or anthropomorphization
 - Replacing observation with演出
+
+### A2 Display Rule
+
+When showing the A2 split:
+- use labels such as `arousalLevel`, `awarenessWindow`, `salienceOpenness`, `foregroundPressure`
+- avoid labels such as "awake", "conscious", "attention", or "self-aware"
+- keep the values in the research/observer layer, not as dramatic UI badges
 
 The guide is a **research assistant**, not a narrator.
 
