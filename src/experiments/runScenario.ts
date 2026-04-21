@@ -16,6 +16,7 @@ import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import { ReplayQueue } from '../organism/replayQueue.ts';
 import { deriveReplayState } from '../organism/deriveReplayState.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
+import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 import type { ReplayState } from '../types/replayState.ts';
 
@@ -142,6 +143,10 @@ export interface MetricsSnapshot {
     explorationMotivation?: number;
     settlingMotivation?: number;
     withdrawMotivation?: number;
+    // Q1-1: Open-State Snapshot metrics
+    openState_stabilityIndex?: number;
+    openState_mixtureEntropy?: number;
+    openState_dominantPole?: string | null;
 }
 
 export interface ScenarioResult {
@@ -204,6 +209,10 @@ export interface ScenarioResult {
         maxSafetyNeed?: number;
         maxNoveltyMotivation?: number;
         maxWithdrawMotivation?: number;
+        // Q1-1: Open-State Snapshot summaries
+        avgStabilityIndex?: number;
+        avgMixtureEntropy?: number;
+        dominantPoleDistribution?: Record<string, number>;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -541,6 +550,17 @@ function buildMetricsSnapshot(
                 snapshot.explorationMotivation = needMotivation.explorationMotivation;
                 snapshot.settlingMotivation = needMotivation.settlingMotivation;
                 snapshot.withdrawMotivation = needMotivation.withdrawMotivation;
+
+                // Q1-1: Derive and collect open-state snapshot
+                const openStateSnapshot = deriveOpenStateSnapshot(
+                    feltState,
+                    arousalAwareness,
+                    needMotivation
+                );
+
+                snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
+                snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
+                snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
             }
         }
 
@@ -865,6 +885,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxWithdrawMotivation = 0;
     let needMotivationCount = 0;
 
+    // Q1-1: Open-State summary accumulators
+    let avgStabilityIndex = 0;
+    let avgMixtureEntropy = 0;
+    const dominantPoleCount: Record<string, number> = {};
+    let openStateCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -948,6 +974,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             needMotivationCount++;
         }
+
+        // Q1-1: Accumulate open-state metrics
+        if (m.openState_stabilityIndex !== undefined) {
+            avgStabilityIndex += m.openState_stabilityIndex;
+            avgMixtureEntropy += m.openState_mixtureEntropy ?? 0;
+            const pole = m.openState_dominantPole ?? 'unknown';
+            dominantPoleCount[pole] = (dominantPoleCount[pole] ?? 0) + 1;
+            openStateCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -997,6 +1032,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgExplorationMotivation /= needMotivationCount;
         avgSettlingMotivation /= needMotivationCount;
         avgWithdrawMotivation /= needMotivationCount;
+    }
+
+    // Q1-1: Compute open-state averages
+    if (openStateCount > 0) {
+        avgStabilityIndex /= openStateCount;
+        avgMixtureEntropy /= openStateCount;
     }
 
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
@@ -1059,6 +1100,10 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             maxSafetyNeed: needMotivationCount > 0 ? maxSafetyNeed : undefined,
             maxNoveltyMotivation: needMotivationCount > 0 ? maxNoveltyMotivation : undefined,
             maxWithdrawMotivation: needMotivationCount > 0 ? maxWithdrawMotivation : undefined,
+            // Q1-1: Open-State summaries
+            avgStabilityIndex: openStateCount > 0 ? avgStabilityIndex : undefined,
+            avgMixtureEntropy: openStateCount > 0 ? avgMixtureEntropy : undefined,
+            dominantPoleDistribution: openStateCount > 0 ? dominantPoleCount : undefined,
         },
         succeeded,
         failureReason,
