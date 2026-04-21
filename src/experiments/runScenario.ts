@@ -15,6 +15,7 @@ import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import { ReplayQueue } from '../organism/replayQueue.ts';
 import { deriveReplayState } from '../organism/deriveReplayState.ts';
+import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 import type { ReplayState } from '../types/replayState.ts';
 
@@ -131,6 +132,16 @@ export interface MetricsSnapshot {
     restConsolidationDepth?: number;
     replaySuppression?: number;
     replayQueueSize?: number;
+    // A4: Need / motivation metrics
+    energyNeed?: number;
+    safetyNeed?: number;
+    restorationNeed?: number;
+    contactNeed?: number;
+    noveltyMotivation?: number;
+    repetitionMotivation?: number;
+    explorationMotivation?: number;
+    settlingMotivation?: number;
+    withdrawMotivation?: number;
 }
 
 export interface ScenarioResult {
@@ -179,6 +190,20 @@ export interface ScenarioResult {
         maxActiveReplayCount?: number;
         avgRecentReplaySalience?: number;
         avgQueueFillRatio?: number;
+        // A4: Need / motivation summaries
+        avgEnergyNeed?: number;
+        avgSafetyNeed?: number;
+        avgRestorationNeed?: number;
+        avgContactNeed?: number;
+        avgNoveltyMotivation?: number;
+        avgRepetitionMotivation?: number;
+        avgExplorationMotivation?: number;
+        avgSettlingMotivation?: number;
+        avgWithdrawMotivation?: number;
+        maxEnergyNeed?: number;
+        maxSafetyNeed?: number;
+        maxNoveltyMotivation?: number;
+        maxWithdrawMotivation?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -493,6 +518,30 @@ function buildMetricsSnapshot(
             snapshot.restDepth = arousalAwareness.restDepth;
             snapshot.hyperreactivity = arousalAwareness.hyperreactivity;
             snapshot.settlingWindow = arousalAwareness.settlingWindow;
+
+            // A4: Derive and collect need/motivation state if replay state available
+            if (replayState) {
+                const needMotivation = deriveNeedMotivation(
+                    organismSnapshot,
+                    feltState,
+                    arousalAwareness,
+                    replayState,
+                    network.livingState,
+                    network.energyFlowState,
+                    network.homeostaticState,
+                    selfWorldPacket
+                );
+
+                snapshot.energyNeed = needMotivation.energyNeed;
+                snapshot.safetyNeed = needMotivation.safetyNeed;
+                snapshot.restorationNeed = needMotivation.restorationNeed;
+                snapshot.contactNeed = needMotivation.contactNeed;
+                snapshot.noveltyMotivation = needMotivation.noveltyMotivation;
+                snapshot.repetitionMotivation = needMotivation.repetitionMotivation;
+                snapshot.explorationMotivation = needMotivation.explorationMotivation;
+                snapshot.settlingMotivation = needMotivation.settlingMotivation;
+                snapshot.withdrawMotivation = needMotivation.withdrawMotivation;
+            }
         }
 
         // A3: Add replay state metrics if available
@@ -800,6 +849,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgQueueSize = 0;
     let replayCount = 0;
 
+    // A4: Need / motivation summary accumulators
+    let avgEnergyNeed = 0;
+    let avgSafetyNeed = 0;
+    let avgRestorationNeed = 0;
+    let avgContactNeed = 0;
+    let avgNoveltyMotivation = 0;
+    let avgRepetitionMotivation = 0;
+    let avgExplorationMotivation = 0;
+    let avgSettlingMotivation = 0;
+    let avgWithdrawMotivation = 0;
+    let maxEnergyNeed = 0;
+    let maxSafetyNeed = 0;
+    let maxNoveltyMotivation = 0;
+    let maxWithdrawMotivation = 0;
+    let needMotivationCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -857,6 +922,32 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             replayCount++;
         }
+
+        // A4: Accumulate need/motivation metrics
+        if (m.energyNeed !== undefined) {
+            avgEnergyNeed += m.energyNeed;
+            avgSafetyNeed += m.safetyNeed ?? 0;
+            avgRestorationNeed += m.restorationNeed ?? 0;
+            avgContactNeed += m.contactNeed ?? 0;
+            avgNoveltyMotivation += m.noveltyMotivation ?? 0;
+            avgRepetitionMotivation += m.repetitionMotivation ?? 0;
+            avgExplorationMotivation += m.explorationMotivation ?? 0;
+            avgSettlingMotivation += m.settlingMotivation ?? 0;
+            avgWithdrawMotivation += m.withdrawMotivation ?? 0;
+            if (m.energyNeed !== undefined) {
+                maxEnergyNeed = Math.max(maxEnergyNeed, m.energyNeed);
+            }
+            if (m.safetyNeed !== undefined) {
+                maxSafetyNeed = Math.max(maxSafetyNeed, m.safetyNeed);
+            }
+            if (m.noveltyMotivation !== undefined) {
+                maxNoveltyMotivation = Math.max(maxNoveltyMotivation, m.noveltyMotivation);
+            }
+            if (m.withdrawMotivation !== undefined) {
+                maxWithdrawMotivation = Math.max(maxWithdrawMotivation, m.withdrawMotivation);
+            }
+            needMotivationCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -893,6 +984,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgConsolidationGain /= replayCount;
         avgRecentReplaySalience /= replayCount;
         avgQueueSize /= replayCount;
+    }
+
+    // A4: Compute need/motivation averages
+    if (needMotivationCount > 0) {
+        avgEnergyNeed /= needMotivationCount;
+        avgSafetyNeed /= needMotivationCount;
+        avgRestorationNeed /= needMotivationCount;
+        avgContactNeed /= needMotivationCount;
+        avgNoveltyMotivation /= needMotivationCount;
+        avgRepetitionMotivation /= needMotivationCount;
+        avgExplorationMotivation /= needMotivationCount;
+        avgSettlingMotivation /= needMotivationCount;
+        avgWithdrawMotivation /= needMotivationCount;
     }
 
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
@@ -941,6 +1045,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             maxActiveReplayCount: replayCount > 0 ? maxActiveReplayCount : undefined,
             avgRecentReplaySalience: replayCount > 0 ? avgRecentReplaySalience : undefined,
             avgQueueFillRatio: replayCount > 0 ? avgQueueFillRatio : undefined,
+            // A4: Need / motivation summaries
+            avgEnergyNeed: needMotivationCount > 0 ? avgEnergyNeed : undefined,
+            avgSafetyNeed: needMotivationCount > 0 ? avgSafetyNeed : undefined,
+            avgRestorationNeed: needMotivationCount > 0 ? avgRestorationNeed : undefined,
+            avgContactNeed: needMotivationCount > 0 ? avgContactNeed : undefined,
+            avgNoveltyMotivation: needMotivationCount > 0 ? avgNoveltyMotivation : undefined,
+            avgRepetitionMotivation: needMotivationCount > 0 ? avgRepetitionMotivation : undefined,
+            avgExplorationMotivation: needMotivationCount > 0 ? avgExplorationMotivation : undefined,
+            avgSettlingMotivation: needMotivationCount > 0 ? avgSettlingMotivation : undefined,
+            avgWithdrawMotivation: needMotivationCount > 0 ? avgWithdrawMotivation : undefined,
+            maxEnergyNeed: needMotivationCount > 0 ? maxEnergyNeed : undefined,
+            maxSafetyNeed: needMotivationCount > 0 ? maxSafetyNeed : undefined,
+            maxNoveltyMotivation: needMotivationCount > 0 ? maxNoveltyMotivation : undefined,
+            maxWithdrawMotivation: needMotivationCount > 0 ? maxWithdrawMotivation : undefined,
         },
         succeeded,
         failureReason,
