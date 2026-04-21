@@ -13,7 +13,10 @@ import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
+import { ReplayQueue } from '../organism/replayQueue.ts';
+import { deriveReplayState } from '../organism/deriveReplayState.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
+import type { ReplayState } from '../types/replayState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -119,6 +122,15 @@ export interface MetricsSnapshot {
     restDepth?: number;
     hyperreactivity?: number;
     settlingWindow?: number;
+    // A3: Replay / consolidation metrics
+    replayPressure?: number;
+    replayReadiness?: number;
+    consolidationGain?: number;
+    activeReplayCount?: number;
+    recentReplaySalience?: number;
+    restConsolidationDepth?: number;
+    replaySuppression?: number;
+    replayQueueSize?: number;
 }
 
 export interface ScenarioResult {
@@ -159,6 +171,14 @@ export interface ScenarioResult {
         avgForegroundPressure?: number;
         maxArousalLevel?: number;
         minAwarenessWindow?: number;
+        // A3: Replay / consolidation summaries
+        totalReplayCount?: number;
+        avgReplayPressure?: number;
+        avgReplayReadiness?: number;
+        avgConsolidationGain?: number;
+        maxActiveReplayCount?: number;
+        avgRecentReplaySalience?: number;
+        avgQueueFillRatio?: number;
     };
     succeeded: boolean;
     failureReason?: string;
@@ -297,13 +317,56 @@ function buildOrganismSnapshot(
 }
 
 /**
+ * Check and add replay candidates based on current state
+ * Only salient events become candidates
+ */
+function checkAndAddReplayCandidates(
+    frame: number,
+    network: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    queue: ReplayQueue
+): void {
+    // Touch surprise candidate
+    if (dyn.touchTotalSurprise && dyn.touchTotalSurprise > 0.5) {
+        queue.addCandidate('touch', dyn.touchTotalSurprise, frame);
+    }
+
+    // General surprise candidate
+    if (dyn.meanPredictionError && dyn.meanPredictionError > 0.6) {
+        queue.addCandidate('surprise', dyn.meanPredictionError, frame);
+    }
+
+    // Restoration candidate (overload recovery)
+    if (network.homeostaticState) {
+        const restorationBias = network.homeostaticState.restorationBias;
+        const overload = dyn.overload ?? 0;
+        if (restorationBias > 0.6 && overload < 0.3) {
+            queue.addCandidate('restoration', restorationBias, frame);
+        }
+    }
+
+    // Repetition candidate (repeated touch pattern)
+    if (dyn.touchRepeatCount && dyn.touchRepeatCount > 5 && dyn.meanTouchHabituation && dyn.meanTouchHabituation > 0.4) {
+        const repetitionSalience = Math.min(1.0, dyn.touchRepeatCount / 10);
+        queue.addCandidate('repetition', repetitionSalience, frame);
+    }
+
+    // Absence candidate (missing expected touch)
+    if (network.touchExpectation && network.touchExpectation.absenceError > 0.4) {
+        queue.addCandidate('absence', network.touchExpectation.absenceError, frame);
+    }
+}
+
+/**
  * Build metrics snapshot from current state
  */
 function buildMetricsSnapshot(
     frame: number,
     network: AeternaNetwork,
     dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    recentMeans: number[]
+    recentMeans: number[],
+    replayState?: ReplayState | null,
+    queueSize?: number
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -431,6 +494,20 @@ function buildMetricsSnapshot(
             snapshot.hyperreactivity = arousalAwareness.hyperreactivity;
             snapshot.settlingWindow = arousalAwareness.settlingWindow;
         }
+
+        // A3: Add replay state metrics if available
+        if (replayState) {
+            snapshot.replayPressure = replayState.replayPressure;
+            snapshot.replayReadiness = replayState.replayReadiness;
+            snapshot.consolidationGain = replayState.consolidationGain;
+            snapshot.activeReplayCount = replayState.activeReplayCount;
+            snapshot.recentReplaySalience = replayState.recentReplaySalience;
+            snapshot.restConsolidationDepth = replayState.restConsolidationDepth;
+            snapshot.replaySuppression = replayState.replaySuppression;
+            if (queueSize !== undefined) {
+                snapshot.replayQueueSize = queueSize;
+            }
+        }
     } catch (e) {
         // If BL-L1 packet generation fails, skip silently (observer role only)
     }
@@ -475,6 +552,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const activeTouches = new Map<number, { x: number; y: number; pressure: number }>();
     const heldTouches = new Map<number, { endFrame: number }>();
 
+    // A3: Initialize replay queue and tracking
+    const replayQueue = new ReplayQueue(50, 0.998);
+    let activeReplayCount = 0;
+    let recentReplaySalience = 0.0;
+    let lastReplayCategory: string | null = null;
+    let totalReplayCount = 0;
+
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
         // Update disk physics (simplified, no rotation visualization)
@@ -518,6 +602,99 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             );
         }
 
+        // A3: Process replay and consolidation
+        // Decay queue and check for salient candidates
+        replayQueue.decay();
+        checkAndAddReplayCandidates(frame, network, dyn, replayQueue);
+
+        // Derive replay state (requires felt state and arousal/awareness)
+        let replayState: ReplayState | null = null;
+        if (network.livingState && network.homeostaticState && network.energyFlowState) {
+            try {
+                const organismSnapshot = buildOrganismSnapshot(frame, network, dyn);
+                const interoPacket = runInteroceptionStage(organismSnapshot);
+                const selfWorldPacket = runSelfWorldModelStage(interoPacket, organismSnapshot, network.lastSelfWorldModelPacket ?? null);
+
+                const feltState = deriveFeltState(
+                    organismSnapshot,
+                    network.livingState,
+                    network.homeostaticState,
+                    network.energyFlowState,
+                    selfWorldPacket
+                );
+
+                const arousalAwareness = deriveArousalAwareness(
+                    organismSnapshot,
+                    feltState,
+                    network.livingState,
+                    selfWorldPacket
+                );
+
+                replayState = deriveReplayState(
+                    organismSnapshot,
+                    feltState,
+                    arousalAwareness,
+                    replayQueue,
+                    activeReplayCount,
+                    recentReplaySalience,
+                    lastReplayCategory
+                );
+
+                // Perform minimal replay if conditions are met
+                activeReplayCount = 0;
+                recentReplaySalience = 0;
+
+                if (replayState.replayReadiness > 0.5 && replayState.replaySuppression < 0.3 && replayState.replayPressure > 0.4) {
+                    const candidates = replayQueue.getCandidatesForReplay(2);
+
+                    for (const candidate of candidates) {
+                        // Minimal replay: weak trace reactivation
+                        // This is intentionally subtle and does not dominate dynamics
+                        activeReplayCount++;
+                        recentReplaySalience += candidate.weight;
+                        lastReplayCategory = candidate.category;
+                        totalReplayCount++;
+
+                        // Apply very weak consolidation influence
+                        if (replayState.consolidationGain > 0.05 && network.livingState) {
+                            const consolidationStrength = replayState.consolidationGain * candidate.weight * 0.01;
+
+                            // Weak influences on slow state
+                            if (candidate.category === 'touch' || candidate.category === 'repetition') {
+                                // Slightly stabilize touch expectation confidence
+                                if (network.touchExpectation) {
+                                    network.touchExpectation.touchExpectationConfidence *= (1.0 + consolidationStrength * 0.5);
+                                    network.touchExpectation.touchExpectationConfidence = Math.min(1.0, network.touchExpectation.touchExpectationConfidence);
+                                }
+                            }
+
+                            if (candidate.category === 'restoration') {
+                                // Slightly strengthen restoration bias
+                                if (network.homeostaticState) {
+                                    network.homeostaticState.restorationBias += consolidationStrength * 0.02;
+                                    network.homeostaticState.restorationBias = Math.min(1.0, network.homeostaticState.restorationBias);
+                                }
+                            }
+
+                            // Very weak influence on longBaselineTone
+                            network.livingState.longBaselineTone += consolidationStrength * 0.005 * (Math.random() - 0.5);
+                            network.livingState.longBaselineTone = Math.max(-0.5, Math.min(0.5, network.livingState.longBaselineTone));
+                        }
+
+                        // Reduce candidate weight after replay
+                        replayQueue.reduceWeight(candidate.id, 0.7);
+                    }
+                }
+
+                // Normalize replay salience
+                if (activeReplayCount > 0) {
+                    recentReplaySalience /= activeReplayCount;
+                }
+            } catch (e) {
+                // Replay derivation failed, skip silently
+            }
+        }
+
         // Collect metrics
         const meanAct = computeMeanActivity(network);
         recentMeans.push(meanAct);
@@ -537,7 +714,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         }
 
         if (collectMetrics && frame % metricsInterval === 0) {
-            metrics.push(buildMetricsSnapshot(frame, network, dyn, recentMeans));
+            metrics.push(buildMetricsSnapshot(frame, network, dyn, recentMeans, replayState, replayQueue.size()));
         }
     }
 
@@ -614,6 +791,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let minAwarenessWindow = Infinity;
     let arousalAwarenessCount = 0;
 
+    // A3: Replay summary accumulators
+    let avgReplayPressure = 0;
+    let avgReplayReadiness = 0;
+    let avgConsolidationGain = 0;
+    let maxActiveReplayCount = 0;
+    let avgRecentReplaySalience = 0;
+    let avgQueueSize = 0;
+    let replayCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -658,6 +844,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             arousalAwarenessCount++;
         }
+
+        // A3: Accumulate replay metrics
+        if (m.replayPressure !== undefined) {
+            avgReplayPressure += m.replayPressure;
+            avgReplayReadiness += m.replayReadiness ?? 0;
+            avgConsolidationGain += m.consolidationGain ?? 0;
+            avgRecentReplaySalience += m.recentReplaySalience ?? 0;
+            avgQueueSize += m.replayQueueSize ?? 0;
+            if (m.activeReplayCount !== undefined) {
+                maxActiveReplayCount = Math.max(maxActiveReplayCount, m.activeReplayCount);
+            }
+            replayCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -686,6 +885,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgSalienceOpenness /= arousalAwarenessCount;
         avgForegroundPressure /= arousalAwarenessCount;
     }
+
+    // A3: Compute replay averages
+    if (replayCount > 0) {
+        avgReplayPressure /= replayCount;
+        avgReplayReadiness /= replayCount;
+        avgConsolidationGain /= replayCount;
+        avgRecentReplaySalience /= replayCount;
+        avgQueueSize /= replayCount;
+    }
+
+    const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
         config,
@@ -723,6 +933,14 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgForegroundPressure: arousalAwarenessCount > 0 ? avgForegroundPressure : undefined,
             maxArousalLevel: arousalAwarenessCount > 0 ? maxArousalLevel : undefined,
             minAwarenessWindow: arousalAwarenessCount > 0 && minAwarenessWindow !== Infinity ? minAwarenessWindow : undefined,
+            // A3: Replay / consolidation summaries
+            totalReplayCount,
+            avgReplayPressure: replayCount > 0 ? avgReplayPressure : undefined,
+            avgReplayReadiness: replayCount > 0 ? avgReplayReadiness : undefined,
+            avgConsolidationGain: replayCount > 0 ? avgConsolidationGain : undefined,
+            maxActiveReplayCount: replayCount > 0 ? maxActiveReplayCount : undefined,
+            avgRecentReplaySalience: replayCount > 0 ? avgRecentReplaySalience : undefined,
+            avgQueueFillRatio: replayCount > 0 ? avgQueueFillRatio : undefined,
         },
         succeeded,
         failureReason,
