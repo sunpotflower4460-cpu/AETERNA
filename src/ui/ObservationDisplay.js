@@ -104,9 +104,9 @@ export class ObservationDisplay {
                 message = '内部緊張が解放されました';
                 break;
             case 'eye_active':
-                message = '自己観測が活性化：システムが自己を認識しています';
-                type = 'critical';
-                duration = 4000;
+                message = '自己観測ノードが活性化：予測誤差が閾値を超えました';
+                type = 'state-change';
+                duration = 3500;
                 break;
             case 'cluster_large':
                 message = '大規模な活動クラスターが形成されました';
