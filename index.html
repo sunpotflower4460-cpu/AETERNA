@@ -267,11 +267,16 @@
             #observation-display {
                 font-size: 12px;
                 padding: 10px 14px;
-                bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+                /* Position above mobile help button and control panel */
+                bottom: auto;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: min(85vw, 350px);
             }
         }
-        @media (min-height: 700px) {
+        @media (min-width: 769px) {
             #observation-display {
+                /* Desktop: position at bottom center */
                 bottom: max(24px, env(safe-area-inset-bottom));
             }
         }
