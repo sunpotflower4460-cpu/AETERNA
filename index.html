@@ -225,6 +225,57 @@
         /* ── Glassmorphism 共通 ── */
         .glass-panel { background: rgba(5, 10, 15, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
 
+        /* ── Japanese Observation Display ── */
+        #observation-display {
+            position: fixed;
+            bottom: max(16px, env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(90vw, 400px);
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(34,211,238,0.4);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.95);
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: center;
+            font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            z-index: 40;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        #observation-display.visible {
+            opacity: 1;
+        }
+        #observation-display.touch-feedback {
+            border-color: rgba(34,211,238,0.8);
+            background: rgba(34,211,238,0.15);
+        }
+        #observation-display.state-change {
+            border-color: rgba(251,191,36,0.8);
+            background: rgba(251,191,36,0.15);
+        }
+        #observation-display.critical {
+            border-color: rgba(239,68,68,0.8);
+            background: rgba(239,68,68,0.15);
+        }
+        @media (max-width: 768px) {
+            #observation-display {
+                font-size: 12px;
+                padding: 10px 14px;
+                bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+            }
+        }
+        @media (min-height: 700px) {
+            #observation-display {
+                bottom: max(24px, env(safe-area-inset-bottom));
+            }
+        }
+
         /* ── セーフエリア対応 ── */
         .pt-safe { padding-top: max(12px, env(safe-area-inset-top, 12px)); }
         .pl-safe { padding-left: max(12px, env(safe-area-inset-left, 12px)); }
@@ -256,6 +307,9 @@
 <body>
     <div id="canvas-container"></div>
     <div id="touch-feedback"></div>
+
+    <!-- Japanese Observation Display -->
+    <div id="observation-display">システムを観測中...</div>
 
     <!-- Mobile Help Button -->
     <div id="mobile-help-btn" onclick="toggleMobileHelp()">?</div>

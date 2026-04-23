@@ -51,6 +51,11 @@ export function handlePointerUp(event) {
         // Visual touch feedback
         showTouchFeedback(event.clientX, event.clientY);
 
+        // Show observation display message
+        if (state.observationDisplay) {
+            state.observationDisplay.showTouchMessage(normX, normY);
+        }
+
         if(state.touchMem && state.network) state.touchMem.recordTouch(normX, normY, state.network.simTime, state.network);
         if(state.raycaster && state.mouse && state.camera && state.particleSystem) {
             state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
@@ -108,6 +113,11 @@ export function applyPreset(name) {
 
     document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`preset-${name}`)?.classList.add('active');
+
+    // Show observation display message
+    if (state.observationDisplay) {
+        state.observationDisplay.showPresetMessage(name);
+    }
 }
 
 export function resetTouchMemory() {
@@ -117,12 +127,20 @@ export function resetTouchMemory() {
         state.touchMem.lastTouchNode = -1;
         state.touchMem.lastTouchTime = -Infinity;
     }
+    // Show observation display message
+    if (state.observationDisplay) {
+        state.observationDisplay.showResetMessage();
+    }
 }
 
 export function injectMassiveError() {
     if (!state.network) return;
     const randomIdx = Math.floor(Math.random() * state.network.numNodes);
     state.network.injectPredictionError(randomIdx);
+    // Show observation display message
+    if (state.observationDisplay) {
+        state.observationDisplay.showInjectionMessage();
+    }
 }
 
 export function toggleVisualLayer() {

@@ -216,6 +216,8 @@ export function updateMetricsUI(dyn, engineState) {
     const badge = UI['system-state-badge'];
     if(badge) {
         let stateTxt = 'QUIET', colorClass = 'text-white/50 border-white/50';
+        let prevState = badge.innerText;
+
         if (sig > 1.18 && dyn.arousal > 0.04) {
             stateTxt = 'OVERDRIVE'; colorClass = 'text-orange-400 border-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.5)]';
         } else if (dyn.arousal > 0.03 && dyn.ignitionRatio < 0.02) {
@@ -227,6 +229,34 @@ export function updateMetricsUI(dyn, engineState) {
         } else if (dyn.arousal > 0.015 && dyn.phaseCoherence > 0.15 && dyn.ignitionRatio > 0.02) {
             stateTxt = 'COHERENT'; colorClass = 'text-emerald-300 border-emerald-300';
         }
-        badge.className = `inline-block px-2 py-0.5 rounded text-[9px] font-bold border ${colorClass} tracking-widest`; badge.innerText = stateTxt;
+        badge.className = `inline-block px-2 py-0.5 rounded text-[9px] font-bold border ${colorClass} tracking-widest`;
+        badge.innerText = stateTxt;
+
+        // Update observation display when state changes
+        if (state.observationDisplay && prevState !== stateTxt) {
+            state.observationDisplay.showStateChange(stateTxt, sig);
+        }
+    }
+
+    // Update observation display for other important events
+    if (state.observationDisplay) {
+        // Check for integration change
+        state.observationDisplay.showIntegrationChange(dyn.phiApprox);
+
+        // Check for mode change (every 180 frames to avoid spam)
+        if (state.network && state.network.simTime % 180 === 0) {
+            if (dyn.modeState && state.observationDisplay.lastModeState !== dyn.modeState) {
+                state.observationDisplay.showModeChange(dyn.modeState);
+                state.observationDisplay.lastModeState = dyn.modeState;
+            }
+        }
+
+        // Check for action state change (every 120 frames)
+        if (state.network && state.network.simTime % 120 === 0) {
+            if (dyn.actionState && state.observationDisplay.lastActionState !== dyn.actionState) {
+                state.observationDisplay.showActionState(dyn.actionState);
+                state.observationDisplay.lastActionState = dyn.actionState;
+            }
+        }
     }
 }
