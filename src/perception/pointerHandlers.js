@@ -47,6 +47,10 @@ export function handlePointerMove(event) {
 export function handlePointerUp(event) {
     if (state.activeTouches.size === 1 && !state.isDragging && event.target.tagName === 'CANVAS') {
         const normX = event.clientX / window.innerWidth; const normY = event.clientY / window.innerHeight;
+
+        // Visual touch feedback
+        showTouchFeedback(event.clientX, event.clientY);
+
         if(state.touchMem && state.network) state.touchMem.recordTouch(normX, normY, state.network.simTime, state.network);
         if(state.raycaster && state.mouse && state.camera && state.particleSystem) {
             state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
@@ -59,6 +63,20 @@ export function handlePointerUp(event) {
     if (state.activeTouches.size < 2) state.pinchStartDist = 0;
 }
 
+// ── Visual Touch Feedback ──────────────────
+function showTouchFeedback(x, y) {
+    const feedback = document.getElementById('touch-feedback');
+    if (!feedback) return;
+
+    feedback.style.left = x + 'px';
+    feedback.style.top = y + 'px';
+    feedback.classList.add('active');
+
+    setTimeout(() => {
+        feedback.classList.remove('active');
+    }, 300);
+}
+
 // ── Action Handlers (button / preset) ──────────────────
 
 export function applyPreset(name) {
@@ -67,19 +85,27 @@ export function applyPreset(name) {
     state.disk.omega_t = p.omega_t;
     state.disk.omega_p = p.omega_p;
     state.disk.r_disk  = p.r;
-    
+
     const sliderT = document.getElementById('slider-omega-t');
     const sliderP = document.getElementById('slider-omega-p');
     const sliderR = document.getElementById('slider-r');
-    if(sliderT) { sliderT.value = p.omega_t; updateSliderTrack(sliderT, 1.0, 20.0); document.getElementById('slider-val-omega-t').innerText = p.omega_t.toFixed(2); }
-    if(sliderP) { sliderP.value = p.omega_p; updateSliderTrack(sliderP, 0.0, 5.0); document.getElementById('slider-val-omega-p').innerText = p.omega_p.toFixed(2); }
-    if(sliderR) { 
-        sliderR.value = p.r; 
-        updateSliderTrack(sliderR, 0.5, 3.0); 
-        document.getElementById('slider-val-r').innerText = p.r.toFixed(2); 
+    if(sliderT) {
+        sliderT.value = p.omega_t;
+        updateSliderTrack(sliderT, 1.0, 20.0);
+        document.getElementById('slider-val-omega-t').innerText = p.omega_t.toFixed(2) + ' Hz';
+    }
+    if(sliderP) {
+        sliderP.value = p.omega_p;
+        updateSliderTrack(sliderP, 0.0, 5.0);
+        document.getElementById('slider-val-omega-p').innerText = p.omega_p.toFixed(2) + ' Hz';
+    }
+    if(sliderR) {
+        sliderR.value = p.r;
+        updateSliderTrack(sliderR, 0.5, 3.0);
+        document.getElementById('slider-val-r').innerText = p.r.toFixed(2);
         if (state.network) state.network.updateRadius(p.r);
     }
-    
+
     document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`preset-${name}`)?.classList.add('active');
 }
