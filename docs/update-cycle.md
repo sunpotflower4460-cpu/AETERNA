@@ -6,6 +6,10 @@ This document defines the order of operations within a single frame/tick of AETE
 
 This is not just documentation—it is a research artifact that prevents "code order = theory order" conflation and provides a baseline for comparing different update sequences.
 
+## Scope Boundary
+
+The organism loop is responsible for **flow, perturbation reception, prediction, repair, replay, and survival-like regulation**. It is **not** the layer that directly performs semantic interpretation. Observable packets produced here may be structured later, but AETERNA itself should not be read as assigning labels, object identity, or language meaning.
+
 ## Entry Point
 
 **File**: `src/organism/actionLoop.js`
@@ -163,6 +167,7 @@ This is not just documentation—it is a research artifact that prevents "code o
 - **Responsibility**: Bridge torus state to signal runtime (every 100ms)
 - **Call**: `maybeBridgeSignal(now, dyn, engineState)`
 - **Effect**: Sends packet to signal runtime, updates guide panel
+- **Boundary**: Any later semantic structuring belongs to the bridge-side/runtime layer, not to the organism loop itself
 
 ### 11. Final Render
 - **Location**: `actionLoop.js:30`

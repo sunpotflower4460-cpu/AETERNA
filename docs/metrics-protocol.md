@@ -6,6 +6,36 @@ This document defines the observable metrics used to evaluate "life-likeness" an
 
 These metrics are not arbitrary performance indicators. They are **operationalized definitions** of what it means for a system to exhibit ongoing, self-sustaining, history-dependent, perturbation-responsive behavior—the minimal criteria for a primitive living system.
 
+## Vocabulary Boundary
+
+To avoid over-reading observations as meaning, AETERNA metrics should keep **observation vocabulary** and **semantic vocabulary** separate.
+
+### Observation Vocabulary
+
+Use pre-semantic observational terms such as:
+
+- knot
+- basin
+- recurrence locus
+- collapse profile
+- recovery profile
+- long-lived anomaly
+- proto-point candidate
+
+These describe detectable organization or persistence in the field. They do not, by themselves, imply objecthood or linguistic meaning.
+
+### Semantic Vocabulary
+
+Do **not** treat the following as internal AETERNA metric vocabulary:
+
+- label
+- object identity
+- same-object
+- concept
+- language meaning
+
+If later layers introduce such terms, they must be interpreted as downstream structuring rather than direct AETERNA observables.
+
 ## Metric Categories
 
 ### A. Ongoingness

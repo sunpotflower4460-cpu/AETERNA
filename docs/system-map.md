@@ -4,12 +4,18 @@
 - `src/perception/` — touch memory and live pointer/touch perception.
 - `src/organism/` — shared runtime state, heartbeat, disk updates, organism action loop.
 - `src/bridge/` — torus packetization and Signal Runtime bridge entry.
-- `src/signal/` — current prediction / proto-meaning / utterance pipeline used by the bridge.
+- `src/signal/` — bridge-side structuring/runtime layer built on emitted packets; not the AETERNA organism core itself.
 - `src/render/` — reality visual layer and scene-side visualization.
 - `src/ui/` — guide panel, DOM cache, metrics UI, debug panels.
 - `src/types/` — shared active TypeScript contracts, including **worldState**, **organismState**, and **presentationState**.
 - `src/utils/` — local UI and math helpers.
 - `archive/` — inactive prototypes, preserved notes, and old references.
+
+## Boundary Fix (Phase 0)
+
+- AETERNA proper is the **core / organism / perception / replay / survival** side that maintains a life-like field before meaning.
+- AETERNA may emit observable patterns and derived packets, but it does **not** directly assign semantic labels or object identity.
+- Semantic structuring belongs to bridge-side or later layers, even when those layers consume AETERNA outputs.
 
 ## Architecture Updates (Phase 5)
 
@@ -34,4 +40,3 @@ State is now clearly separated into three layers:
 ### Core Constants
 
 - **coreConstants.ts** (`src/core/coreConstants.ts`) - Centralized IDs, enums, and helper functions
-

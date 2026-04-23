@@ -1,5 +1,10 @@
 # Current Roadmap
 
+- Phase 0: Purification Policy Freeze
+  - role freeze
+  - implementation-boundary freeze
+  - observation-vocabulary freeze
+  - AETERNA / Node responsibility freeze
 - PR1 repo hygiene
 - PR2 baseline
 - PR3 local prediction

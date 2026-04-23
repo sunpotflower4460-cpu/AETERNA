@@ -8,6 +8,7 @@
  *
  * Important:
  * - This is NOT episodic memory or autobiographical memory
+ * - This is NOT semantic labeling or object memory
  * - Only high-salience events become candidates
  * - Queue is finite and decays/prunes over time
  * - Replay is trace/pattern reactivation, not event playback

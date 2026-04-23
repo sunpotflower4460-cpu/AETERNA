@@ -523,7 +523,7 @@ export class AeternaNetwork {
         this.autoPredictAndError();
 
         // Beautiful Loop L2: Run observer packet stages
-        // These generate interoception and self/world model packets
+        // These generate pre-semantic observation packets, not semantic interpretation
         const organismSnapshot = this.buildOrganismSnapshot(organismPacket, predictionPacket, perceptionPacket);
         const interoceptionPacket = runInteroceptionStage(organismSnapshot);
         const selfWorldModelPacket = runSelfWorldModelStage(interoceptionPacket, organismSnapshot, this.lastSelfWorldModelPacket);
