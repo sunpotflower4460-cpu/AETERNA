@@ -29,6 +29,12 @@ window.cameraResetView = () => state.cameraControls?.resetView();
 window.cameraTopView = () => state.cameraControls?.topView();
 window.cameraSideView = () => state.cameraControls?.sideView();
 window.cameraFocusTorus = () => state.cameraControls?.focusTorus();
+window.toggleMobileHelp = () => {
+    const overlay = document.getElementById('mobile-help-overlay');
+    if (overlay) {
+        overlay.classList.toggle('visible');
+    }
+};
 
 // ── DOM-ready setup ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -73,13 +79,18 @@ function init() {
             const el = document.getElementById(`slider-${k}`);
             if(el) {
                 el.addEventListener('input', function() {
-                    if(k==='omega-t') state.disk.omega_t = parseFloat(this.value); 
-                    else if(k==='omega-p') state.disk.omega_p = parseFloat(this.value); 
-                    else {
-                        state.disk.r_disk = parseFloat(this.value);
+                    const val = parseFloat(this.value);
+                    if(k==='omega-t') {
+                        state.disk.omega_t = val;
+                        document.getElementById(`slider-val-${k}`).innerText = val.toFixed(2) + ' Hz';
+                    } else if(k==='omega-p') {
+                        state.disk.omega_p = val;
+                        document.getElementById(`slider-val-${k}`).innerText = val.toFixed(2) + ' Hz';
+                    } else {
+                        state.disk.r_disk = val;
                         if (state.network) state.network.updateRadius(state.disk.r_disk);
+                        document.getElementById(`slider-val-${k}`).innerText = val.toFixed(2);
                     }
-                    document.getElementById(`slider-val-${k}`).innerText = parseFloat(this.value).toFixed(2);
                     updateSliderTrack(this, k==='omega-p'?0:k==='omega-t'?1.0:0.5, k==='omega-p'?5:k==='omega-t'?20:3);
                 });
             }
