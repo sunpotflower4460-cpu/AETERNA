@@ -16,6 +16,7 @@ import { GuidePanel } from './ui/GuidePanel.js';
 import { actionLoop } from './organism/actionLoop.js';
 import { CameraControls } from './utils/cameraControls.js';
 import { MajorStateObserver } from './ui/MajorStateObserver.js';
+import { ObservationDisplay } from './ui/ObservationDisplay.js';
 
 // ── Assign globals required by HTML onclick attributes ──
 window.toggleAccordion  = toggleAccordion;
@@ -74,6 +75,7 @@ function init() {
         state.realityVisualLayer = new RealityVisualLayer(state.scene, state.network, state.particleSystem); state.guidePanel = new GuidePanel(state.network);
         state.cameraControls = new CameraControls(state.camera, state.renderer.domElement);
         state.majorStateObserver = new MajorStateObserver();
+        state.observationDisplay = new ObservationDisplay();
 
         ['omega-t', 'omega-p', 'r'].forEach(k => {
             const el = document.getElementById(`slider-${k}`);

@@ -14,17 +14,48 @@ export class GuidePanel {
     updateConfig(provider, key) { this.apiProvider = provider; this.apiKey = key; if(this.providerEl) this.providerEl.innerText = `PROVIDER: ${provider.toUpperCase()}`; }
     update(dynamicsInfo, engineState) {
         const simTime = this.network.simTime; const COOLDOWN = 300; let ev = null;
-        if (engineState === 'WHITE') { this.whiteFrameCount++; if (this.whiteFrameCount >= 3 && (simTime - this.lastEventTime.whiteEngine > COOLDOWN)) { ev = { type: 'white', text: "統合傾向が上昇。局所誤差が全体秩序へ吸収されています。" }; this.lastEventTime.whiteEngine = simTime; } } else { this.whiteFrameCount = 0; }
+        if (engineState === 'WHITE') {
+            this.whiteFrameCount++;
+            if (this.whiteFrameCount >= 3 && (simTime - this.lastEventTime.whiteEngine > COOLDOWN)) {
+                ev = { type: 'white', text: "統合傾向が上昇。局所誤差が全体秩序へ吸収されています。" };
+                this.lastEventTime.whiteEngine = simTime;
+                // Trigger observation display
+                if (state.observationDisplay) {
+                    state.observationDisplay.showNetworkEvent('white_engine');
+                }
+            }
+        } else { this.whiteFrameCount = 0; }
         if (this.network.heartbeatActive) this.lastHeartbeatPulse = simTime;
-        if (this.lastHeartbeatPulse && (simTime - this.lastHeartbeatPulse <= 60) && dynamicsInfo.sigmaDisplay > 1.02 && (simTime - this.lastEventTime.heartbeat > COOLDOWN)) { ev = { type: 'heartbeat', text: "同期パルスがアバランシュを誘発。臨界伝播が発生しています。" }; this.lastEventTime.heartbeat = simTime; }
-        if (state.tensionDuration >= TENSION_90S_FRAMES && state.tensionLoad > 0.3 && (simTime - this.lastEventTime.tension > COOLDOWN)) { ev = { type: 'tension', text: "内部緊張が相転移点に到達。抑圧された予測誤差を解放します。" }; this.lastEventTime.tension = simTime; }
-        
+        if (this.lastHeartbeatPulse && (simTime - this.lastHeartbeatPulse <= 60) && dynamicsInfo.sigmaDisplay > 1.02 && (simTime - this.lastEventTime.heartbeat > COOLDOWN)) {
+            ev = { type: 'heartbeat', text: "同期パルスがアバランシュを誘発。臨界伝播が発生しています。" };
+            this.lastEventTime.heartbeat = simTime;
+            // Trigger observation display
+            if (state.observationDisplay) {
+                state.observationDisplay.showNetworkEvent('heartbeat');
+            }
+        }
+        if (state.tensionDuration >= TENSION_90S_FRAMES && state.tensionLoad > 0.3 && (simTime - this.lastEventTime.tension > COOLDOWN)) {
+            ev = { type: 'tension', text: "内部緊張が相転移点に到達。抑圧された予測誤差を解放します。" };
+            this.lastEventTime.tension = simTime;
+            // Trigger observation display
+            if (state.observationDisplay) {
+                state.observationDisplay.showNetworkEvent('tension_release');
+            }
+        }
+
         let eyeActive = false;
         for(let i=0; i<this.network.numNodes; i++) {
             if(this.network.isEyeNode[i] === 1 && this.network.predictionHistory[i] > this.network.AUTO_ERROR_THRESHOLD) { eyeActive = true; break; }
         }
-        if (eyeActive && (simTime - this.lastEventTime.eye > COOLDOWN)) { ev = { type: 'eye', text: "自己観測ハブが活性化。内部状態の再帰参照が増加しています。" }; this.lastEventTime.eye = simTime; }
-        
+        if (eyeActive && (simTime - this.lastEventTime.eye > COOLDOWN)) {
+            ev = { type: 'eye', text: "自己観測ハブが活性化。内部状態の再帰参照が増加しています。" };
+            this.lastEventTime.eye = simTime;
+            // Trigger observation display
+            if (state.observationDisplay) {
+                state.observationDisplay.showNetworkEvent('eye_active');
+            }
+        }
+
         if ((dynamicsInfo.sigmaDisplay < 0.95 || dynamicsInfo.sigmaDisplay > 1.05) && (simTime - this.lastEventTime.sigma > COOLDOWN)) { ev = { type: 'sigma', text: "臨界範囲を外れました。ホメオスタシスが修正を開始します。" }; this.lastEventTime.sigma = simTime; }
         if (ev) this.handleEvent(ev, dynamicsInfo, engineState);
 
