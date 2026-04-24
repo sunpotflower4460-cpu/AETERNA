@@ -231,7 +231,7 @@ export interface ScenarioResult {
         avgBackactionFamiliarityDamping?: number;
         maxBackactionOverloadAmplification?: number;
         // Phase 1: Ongoingness metrics
-        saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp threshold)
+        saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
         collapseRate: number;        // collapseFrames / totalFrames
         spontaneousIgnitionCount: number;  // times activity rises >0.05 from below quiet-floor

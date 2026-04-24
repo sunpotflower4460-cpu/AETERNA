@@ -272,10 +272,12 @@ export function updateMetricsUI(dyn, engineState) {
 
     // Phase 1: Update ongoingness observer (sec-ongoingness panel)
     const meanAct = dyn.meanActivity || 0;
-    const maxAct = dyn.arousal || 0;  // arousal is firing ratio, use as proxy for activity level
     _ong_totalFrames++;
     if (meanAct < 0.01) _ong_collapseFrames++;
-    if (maxAct > 0.15) _ong_saturationFrames++;  // arousal > 15% firing is high activity
+    // Saturation: use firing ratio (arousal) as UI proxy for high-activity states.
+    // Note: this differs from scenario test saturation (maxActivity > 8.0) which requires
+    // direct buffer access not available here. Arousal > 20% is a UI-only heuristic.
+    if ((dyn.arousal || 0) > 0.20) _ong_saturationFrames++;
     // Quiet baseline: accumulate when no touch active
     const touchCount = dyn.activeTouchCount || 0;
     if (touchCount === 0) {
@@ -297,10 +299,12 @@ export function updateMetricsUI(dyn, engineState) {
         const quietFloor = _ong_quietBaselineCount > 0 ? _ong_quietBaselineSum / _ong_quietBaselineCount : 0;
         const recentMean = _ong_recentMeans.length > 0
             ? _ong_recentMeans.reduce((a, b) => a + b, 0) / _ong_recentMeans.length : 0;
+        // Compute standard deviation of recent means
         const recentVar = _ong_recentMeans.length > 1
             ? _ong_recentMeans.map(x => (x - recentMean) ** 2).reduce((a, b) => a + b, 0) / _ong_recentMeans.length : 0;
+        const recentStdDev = Math.sqrt(recentVar);
         if (UI['val-mean-activity'])    UI['val-mean-activity'].innerText    = recentMean.toFixed(4);
-        if (UI['val-activity-variance']) UI['val-activity-variance'].innerText = recentVar.toFixed(4);
+        if (UI['val-activity-variance']) UI['val-activity-variance'].innerText = recentStdDev.toFixed(4);
         if (UI['val-collapse-rate'])    UI['val-collapse-rate'].innerText    = collapseRate.toFixed(4);
         if (UI['val-saturation-rate'])  UI['val-saturation-rate'].innerText  = satRate.toFixed(4);
         if (UI['val-quiet-floor'])      UI['val-quiet-floor'].innerText      = quietFloor.toFixed(4);

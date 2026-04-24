@@ -1670,7 +1670,8 @@ describe('AETERNA Behavioral Scenarios', async () => {
             const mean = meanActivities.reduce((a, b) => a + b, 0) / meanActivities.length;
             const variance = meanActivities.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / meanActivities.length;
 
-            // Should not be frozen (some variance)
+            // Should not be frozen (some variance present — threshold distinguishes
+            // true activity fluctuation from numerical-precision noise ~1e-15)
             expect(variance).toBeGreaterThan(0.001);
 
             // Should not be unbounded (variance should not explode)
