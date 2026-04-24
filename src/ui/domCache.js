@@ -88,6 +88,13 @@ export function initDOMCache() {
         'val-sub-mean-phi',       'val-upper-mean-activity',
         'val-upper-arousal',      'val-upper-sigma',
         'val-upper-phi',
+        // Phase 1: Ongoingness observer
+        'val-mean-activity',      'row-mean-activity',
+        'val-activity-variance',  'row-activity-variance',
+        'val-collapse-rate',      'row-collapse-rate',
+        'val-saturation-rate',    'row-saturation-rate',
+        'val-quiet-floor',        'row-quiet-floor',
+        'val-ignition-count',     'row-ignition-count',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }

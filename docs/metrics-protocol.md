@@ -44,6 +44,42 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Failure Condition**: Collapse rate > 0.1 (frequent death)
 - **Limitation**: Depends on heartbeat and noise tuning
 
+#### A.5 Saturation Rate (Phase 1)
+- **Meaning**: Frequency of activity hitting the soft-clamp ceiling (runaway tendency)
+- **Measurement**: Count of frames where maxActivity > 8.0 (soft-clamp threshold in dynamicCore)
+- **Formula**: `count(maxActivity > 8.0) / totalFrames`
+- **Success Condition**: Saturation rate < 0.05 (less than 5% of frames)
+- **Failure Condition**: Saturation rate > 0.1 (persistent ceiling contact indicating runaway)
+- **Classification**: Derived
+- **Limitation**: Brief excursions above 8.0 are expected and suppressed by soft-clamp; only sustained saturation indicates runaway
+
+#### A.6 Spontaneous Ignition Count (Phase 1)
+- **Meaning**: Number of times activity spontaneously rises from near-zero to above quiet floor
+- **Measurement**: Count of upward crossings of 0.05 threshold in mean activity
+- **Formula**: `count(meanActivity[t] >= 0.05 AND meanActivity[t-1] < 0.05)`
+- **Success Condition**: > 0 over 1000 frames of no-input run
+- **Failure Condition**: 0 ignitions (system cannot self-restart)
+- **Classification**: Evidence
+- **Limitation**: Threshold is heuristic; low noise may reduce ignition frequency
+
+#### A.7 Quiet Baseline Floor (Phase 1)
+- **Meaning**: Mean activity level maintained when no external touch input is present
+- **Measurement**: Mean of meanActivity over all frames with no active touch
+- **Formula**: `mean(meanActivity[t] for t where activeTouchCount == 0)`
+- **Success Condition**: quietBaselineFloor > 0.05 (not dead; quiet but alive)
+- **Failure Condition**: quietBaselineFloor < 0.01 (system cannot sustain baseline without input)
+- **Classification**: Measured
+- **Limitation**: Value depends on baseline noise and longBaselineTone tuning
+
+#### A.8 Ongoingness Score (Phase 1)
+- **Meaning**: Composite proxy score for sustained, bounded, non-collapsed activity
+- **Measurement**: Derived from collapseRate, saturationRate, and quietBaselineFloor
+- **Formula**: `(1 - min(collapseRate*5, 1)) * 0.5 + (1 - min(saturationRate*20, 1)) * 0.3 + min(quietBaselineFloor/0.2, 1) * 0.2`
+- **Success Condition**: ongoingnessScore > 0.7
+- **Failure Condition**: ongoingnessScore < 0.3
+- **Classification**: Proxy
+- **Limitation**: Weights are heuristic; does not capture pattern richness or history-dependence
+
 ### B. Perturbation Sensitivity
 
 **Definition**: The system responds to external stimuli in a measurable way.
@@ -179,6 +215,23 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).
 
+### Phase 1 Ongoingness Additions
+
+Scenario summaries now include (added in Phase 1):
+- `saturationFrames`: Count of frames where maxActivity > 8.0 (soft-clamp threshold)
+- `saturationRate`: `saturationFrames / totalFrames`
+- `collapseRate`: `collapseFrames / totalFrames`
+- `spontaneousIgnitionCount`: Number of upward threshold crossings (meanActivity crosses 0.05)
+- `quietBaselineFloor`: Mean activity during no-touch frames
+- `ongoingnessScore`: Composite proxy [0–1] combining collapse, saturation, and floor
+
+**Classification**:
+- **Measured**: `quietBaselineFloor`, `saturationFrames`, `collapseFrames`, `spontaneousIgnitionCount`
+- **Derived**: `collapseRate`, `saturationRate`
+- **Proxy**: `ongoingnessScore`
+
+These metrics are the primary evaluation tool for Phase 1 (no-input long-run stability). They should be collected before and after any future mechanism addition to verify the life-field has not weakened.
+
 ### A2 Scenario Summary Additions
 
 Scenario summaries now include:
@@ -232,6 +285,16 @@ An AETERNA organism exhibits **primitive life-likeness** if:
 3. History Dependence: Repeated touch adaptation ratio < 0.8 OR trace divergence > 0.2
 4. Self-Stabilization: Return-to-baseline within 100-500 frames, mode transitions 1-5 per 1000 frames
 5. Endogenous Action: >0.5 spontaneous orients per 1000 quiet frames
+
+### Phase 1 Minimum Viability (生命場としての成立)
+
+Before any of the above, AETERNA must first pass Phase 1 minimum viability:
+- **No collapse**: collapseRate < 0.05 over 5000 no-input ticks
+- **No saturation**: saturationRate < 0.02 over 5000 no-input ticks
+- **No NaN**: nanFrames = 0 at all times
+- **Quiet floor**: quietBaselineFloor > 0.05 (not dead without input)
+- **Bounded**: peakActivity < 50.0 at all times
+- **Not frozen**: activity variance > 0.001 over any 1000-frame window
 
 ## Limitations and Open Questions
 

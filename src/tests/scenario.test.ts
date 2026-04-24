@@ -1591,4 +1591,131 @@ describe('AETERNA Behavioral Scenarios', async () => {
             }
         });
     });
+
+    // ──────────────────────────────────────────────────────
+    // Phase 1: No-Input Ongoingness — 持続する生命場の確認
+    // ──────────────────────────────────────────────────────
+
+    describe('Phase 1: No-Input Ongoingness (5000 ticks)', async () => {
+        it('should not collapse over 5000 no-input ticks', async () => {
+            const config: ScenarioConfig = {
+                name: 'p1-noinput-5000-collapse',
+                totalFrames: 5000,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            expect(result.succeeded).toBe(true);
+            if (!result.succeeded) {
+                console.error('P1 collapse failure:', result.failureReason);
+            }
+
+            // Collapse rate must be low (< 5% of frames)
+            expect(result.summary.collapseRate).toBeLessThan(0.05);
+
+            // Final activity must be non-trivial
+            expect(result.summary.finalMeanActivity).toBeGreaterThan(0.05);
+
+            // No NaN at any point
+            expect(result.summary.nanFrames).toBe(0);
+
+            console.log('P1 no-collapse (5000 ticks):', {
+                collapseRate: result.summary.collapseRate.toFixed(4),
+                collapseFrames: result.summary.collapseFrames,
+                finalMeanActivity: result.summary.finalMeanActivity.toFixed(4),
+                quietBaselineFloor: result.summary.quietBaselineFloor.toFixed(4),
+            });
+        });
+
+        it('should not saturate over 5000 no-input ticks', async () => {
+            const config: ScenarioConfig = {
+                name: 'p1-noinput-5000-saturation',
+                totalFrames: 5000,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            // Saturation rate must be low (< 5% of frames at soft-clamp threshold)
+            // The soft-clamp at ±8.0 allows brief excursions; sustained saturation > 5% indicates runaway
+            expect(result.summary.saturationRate).toBeLessThan(0.05);
+
+            // Peak activity should stay well within bounds
+            expect(result.summary.peakActivity).toBeLessThan(50.0);
+
+            console.log('P1 no-saturation (5000 ticks):', {
+                saturationRate: result.summary.saturationRate.toFixed(4),
+                saturationFrames: result.summary.saturationFrames,
+                peakActivity: result.summary.peakActivity.toFixed(4),
+            });
+        });
+
+        it('should maintain bounded variance over 5000 no-input ticks', async () => {
+            const config: ScenarioConfig = {
+                name: 'p1-noinput-5000-variance',
+                totalFrames: 5000,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 50,
+            };
+
+            const result = await runScenario(config);
+
+            const meanActivities = result.metrics.map(m => m.meanActivity);
+            const mean = meanActivities.reduce((a, b) => a + b, 0) / meanActivities.length;
+            const variance = meanActivities.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / meanActivities.length;
+
+            // Should not be frozen (some variance)
+            expect(variance).toBeGreaterThan(0.001);
+
+            // Should not be unbounded (variance should not explode)
+            expect(variance).toBeLessThan(25.0);
+
+            console.log('P1 variance (5000 ticks):', {
+                variance: variance.toFixed(6),
+                mean: mean.toFixed(4),
+                spontaneousIgnitionCount: result.summary.spontaneousIgnitionCount,
+                ongoingnessScore: result.summary.ongoingnessScore.toFixed(4),
+            });
+        });
+
+        it('should report ongoingness metrics without NaN', async () => {
+            const config: ScenarioConfig = {
+                name: 'p1-noinput-ongoingness-metrics',
+                totalFrames: 2000,
+                touchScript: [],
+                collectMetrics: true,
+                metricsInterval: 100,
+            };
+
+            const result = await runScenario(config);
+
+            // All Phase 1 ongoingness summary fields should be finite numbers
+            expect(Number.isFinite(result.summary.saturationRate)).toBe(true);
+            expect(Number.isFinite(result.summary.collapseRate)).toBe(true);
+            expect(Number.isFinite(result.summary.quietBaselineFloor)).toBe(true);
+            expect(Number.isFinite(result.summary.ongoingnessScore)).toBe(true);
+            expect(Number.isFinite(result.summary.spontaneousIgnitionCount)).toBe(true);
+
+            // ongoingness score should be in [0, 1]
+            expect(result.summary.ongoingnessScore).toBeGreaterThanOrEqual(0);
+            expect(result.summary.ongoingnessScore).toBeLessThanOrEqual(1);
+
+            // quiet baseline floor should be > 0 (some activity present without touch)
+            expect(result.summary.quietBaselineFloor).toBeGreaterThan(0);
+
+            console.log('P1 ongoingness metrics:', {
+                ongoingnessScore: result.summary.ongoingnessScore.toFixed(4),
+                collapseRate: result.summary.collapseRate.toFixed(4),
+                saturationRate: result.summary.saturationRate.toFixed(4),
+                quietBaselineFloor: result.summary.quietBaselineFloor.toFixed(4),
+                spontaneousIgnitionCount: result.summary.spontaneousIgnitionCount,
+            });
+        });
+    });
 });

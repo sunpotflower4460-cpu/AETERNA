@@ -740,6 +740,23 @@
                           </div>
                       </div>
                   </div>
+                  <!-- Phase 1: Ongoingness observer (研究観測用) -->
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-ongoingness', 'icon-ongoingness')">
+                          <span class="tracking-wider">ONGOINGNESS</span>
+                          <svg id="icon-ongoingness" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-ongoingness" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between has-tooltip" data-tooltip="Mean |activity| over last 100 frames. >0.1 = ongoing, <0.01 = collapsed (Phase 1)" id="row-mean-activity"><span>Mean activity</span><span id="val-mean-activity" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Std-dev of mean activity over last 100 frames. >0.05 = not frozen (Phase 1)" id="row-activity-variance"><span>Variance (100fr)</span><span id="val-activity-variance" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Running collapse rate: fraction of frames with meanActivity < 0.01 (Phase 1)" id="row-collapse-rate"><span>Collapse rate</span><span id="val-collapse-rate" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Running saturation rate: fraction of frames with maxActivity > 8.0 soft-clamp (Phase 1)" id="row-saturation-rate"><span>Saturation rate</span><span id="val-saturation-rate" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Mean activity during no-touch frames. Target: > 0.05 (quiet but not dead) (Phase 1)" id="row-quiet-floor"><span>Quiet floor</span><span id="val-quiet-floor" class="text-white">0.0000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="Count of spontaneous ignition events (activity crosses 0.05 threshold upward) (Phase 1)" id="row-ignition-count"><span>Ignitions</span><span id="val-ignition-count" class="text-white">0</span></div>
+                          </div>
+                      </div>
+                  </div>
               </div>
             </div>
         </div>

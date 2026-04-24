@@ -230,6 +230,13 @@ export interface ScenarioResult {
         avgBackactionCoherenceShift?: number;
         avgBackactionFamiliarityDamping?: number;
         maxBackactionOverloadAmplification?: number;
+        // Phase 1: Ongoingness metrics
+        saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp threshold)
+        saturationRate: number;      // saturationFrames / totalFrames
+        collapseRate: number;        // collapseFrames / totalFrames
+        spontaneousIgnitionCount: number;  // times activity rises >0.05 from below quiet-floor
+        quietBaselineFloor: number;  // mean activity during frames with no touch input
+        ongoingnessScore: number;    // derived proxy: 0–1 score for sustained non-collapse activity
     };
     succeeded: boolean;
     failureReason?: string;
@@ -649,6 +656,14 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const activeTouches = new Map<number, { x: number; y: number; pressure: number }>();
     const heldTouches = new Map<number, { endFrame: number }>();
 
+    // Phase 1: Ongoingness tracking
+    let saturationFrames = 0;
+    let spontaneousIgnitionCount = 0;
+    let quietBaselineSum = 0;
+    let quietBaselineCount = 0;
+    // Track whether we were below quiet-floor threshold last frame for ignition detection
+    let prevBelowFloor = false;
+
     // A3: Initialize replay queue and tracking
     const replayQueue = new ReplayQueue(50, 0.998);
     let activeReplayCount = 0;
@@ -801,6 +816,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         if (meanAct < 0.01) collapseFrames++;
         if (hasNaN(network)) nanFrames++;
 
+        // Phase 1: Ongoingness tracking
+        const maxAct = computeMaxActivity(network);
+        if (maxAct > 8.0) saturationFrames++;
+
+        // Count spontaneous ignitions: activity rises by >0.05 from below quiet-floor (0.05)
+        const QUIET_FLOOR = 0.05;
+        if (prevBelowFloor && meanAct >= QUIET_FLOOR) {
+            spontaneousIgnitionCount++;
+        }
+        prevBelowFloor = meanAct < QUIET_FLOOR;
+
+        // Accumulate quiet baseline floor when no touch is active
+        if (activeTouches.size === 0) {
+            quietBaselineSum += meanAct;
+            quietBaselineCount++;
+        }
+
         if (dyn.modeState !== lastModeState) {
             modeTransitions++;
             lastModeState = dyn.modeState;
@@ -842,6 +874,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             meanResponseAmplitude = responses.reduce((a, b) => a + b, 0) / responses.length;
         }
     }
+
+    // Phase 1: Compute ongoingness summary metrics
+    const saturationRate = config.totalFrames > 0 ? saturationFrames / config.totalFrames : 0;
+    const collapseRate = config.totalFrames > 0 ? collapseFrames / config.totalFrames : 0;
+    const quietBaselineFloor = quietBaselineCount > 0 ? quietBaselineSum / quietBaselineCount : 0;
+    // Ongoingness score: proxy combining no-collapse, no-saturation, and activity presence
+    // 1.0 = never collapsed, never saturated, maintained baseline
+    // Penalise for collapse rate and saturation rate; reward for quietBaselineFloor above 0.05
+    const ongoingnessScore = Math.max(0, Math.min(1,
+        (1 - Math.min(collapseRate * 5, 1)) * 0.5 +   // collapse penalty (weight 0.5)
+        (1 - Math.min(saturationRate * 20, 1)) * 0.3 + // saturation penalty (weight 0.3)
+        Math.min(quietBaselineFloor / 0.2, 1) * 0.2    // floor reward (weight 0.2)
+    ));
 
     // Determine success
     let succeeded = true;
@@ -1174,6 +1219,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgBackactionCoherenceShift: backactionCount > 0 ? avgBackactionCoherenceShift : undefined,
             avgBackactionFamiliarityDamping: backactionCount > 0 ? avgBackactionFamiliarityDamping : undefined,
             maxBackactionOverloadAmplification: backactionCount > 0 ? maxBackactionOverloadAmplification : undefined,
+            // Phase 1: Ongoingness metrics
+            saturationFrames,
+            saturationRate,
+            collapseRate,
+            spontaneousIgnitionCount,
+            quietBaselineFloor,
+            ongoingnessScore,
         },
         succeeded,
         failureReason,
