@@ -258,3 +258,24 @@ Compare behavioral outcomes against this baseline order.
 - dt is fixed at ~1/60s (requestAnimationFrame)
 - Some stages are throttled (UI: 15 FPS, guide: 10 FPS, bridge: 10 Hz)
 - All stages must complete within one frame (~16.67ms @ 60 FPS)
+
+## Phase 2: Perturbation Reception (外乱受容)
+
+### Design Principle
+
+Input enters as a **perturbation** onto an already-flowing life-field, not as a trigger that starts the field.
+
+- Baseline activity runs continuously regardless of external input
+- Touch and other inputs arrive as disturbances (外乱) superimposed on ongoing dynamics
+- Prediction mismatch is state-dependent: the same touch in different organism states produces different mismatch
+- Mismatch connects to collapse / recovery / shift as downstream outcomes
+- Semantic interpretation is NOT performed at this stage
+
+### Perturbation Path (Phase 2)
+
+1. **Baseline flows** (`runBaselineActivityStage` → `updateHeartbeat` → endogenous noise) — always on
+2. **Perturbation arrives** (touch/sound/light/motion enters as disturbance on baseline)
+3. **PerturbationEvent derived** (`derivePerturbationEvent`) — magnitude, novelty, expectedness, locality
+4. **PredictionMismatchState derived** (`derivePredictionMismatch`) — state-dependent mismatch quality
+5. **Downstream**: mismatch connects to collapse risk, recovery pull, boundary stress
+6. **Observer reads** mismatch metrics without modifying organism dynamics

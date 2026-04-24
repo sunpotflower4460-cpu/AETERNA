@@ -19,6 +19,8 @@ import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 import type { ReplayState } from '../types/replayState.ts';
+import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
+import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -156,6 +158,14 @@ export interface MetricsSnapshot {
     openState_stabilityIndex?: number;
     openState_mixtureEntropy?: number;
     openState_dominantPole?: string | null;
+    // Phase 2: Perturbation mismatch metrics
+    p2_mismatchLevel?: number;
+    p2_surprisePressure?: number;
+    p2_boundaryStress?: number;
+    p2_recoveryPull?: number;
+    p2_perturbationMagnitude?: number;
+    p2_perturbationNovelty?: number;
+    p2_perturbationExpectedness?: number;
 }
 
 export interface ScenarioResult {
@@ -230,6 +240,12 @@ export interface ScenarioResult {
         avgBackactionCoherenceShift?: number;
         avgBackactionFamiliarityDamping?: number;
         maxBackactionOverloadAmplification?: number;
+        // Phase 2: Perturbation mismatch summaries
+        avgMismatchLevel?: number;
+        avgSurprisePressure?: number;
+        avgBoundaryStress?: number;
+        avgRecoveryPull?: number;
+        maxMismatchLevel?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -612,6 +628,38 @@ function buildMetricsSnapshot(
                 snapshot.replayQueueSize = queueSize;
             }
         }
+
+        // Phase 2: Derive perturbation event and mismatch if touch is active
+        if ((dyn.activeTouchCount ?? 0) > 0 || (dyn.meanTouchNovelty ?? 0) > 0.01) {
+            try {
+                const familiarity = snapshot.meanTouchHabituation ?? 0;
+                const perturbEvent = derivePerturbationEvent('touch', dyn.meanRawTouch ?? 0, {
+                    overload: snapshot.overload ?? 0,
+                    boundaryIntegrity: snapshot.boundaryIntegrity ?? 0.8,
+                    openness: snapshot.felt_openness ?? 0.5,
+                    familiarity,
+                    repetitionCount: familiarity * 10,
+                    baselineLevel: snapshot.baselineLevel ?? 0,
+                });
+                snapshot.p2_perturbationMagnitude = perturbEvent.magnitude;
+                snapshot.p2_perturbationNovelty = perturbEvent.novelty;
+                snapshot.p2_perturbationExpectedness = perturbEvent.expectedness;
+
+                const mismatch = derivePredictionMismatch(perturbEvent, {
+                    overload: snapshot.overload ?? 0,
+                    boundaryIntegrity: snapshot.boundaryIntegrity ?? 0.8,
+                    restorationBias: snapshot.restorationBias ?? 0.5,
+                    coherenceMemory: snapshot.coherenceMemory ?? 0.5,
+                    stability: snapshot.stability ?? 0.5,
+                }, snapshot.meanPredictionError ?? 0);
+                snapshot.p2_mismatchLevel = mismatch.mismatchLevel;
+                snapshot.p2_surprisePressure = mismatch.surprisePressure;
+                snapshot.p2_boundaryStress = mismatch.boundaryStress;
+                snapshot.p2_recoveryPull = mismatch.recoveryPull;
+            } catch (_e) {
+                // observer role: skip silently
+            }
+        }
     } catch (e) {
         // If BL-L1 packet generation fails, skip silently (observer role only)
     }
@@ -973,6 +1021,14 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxBackactionOverloadAmplification = 0;
     let backactionCount = 0;
 
+    // Phase 2: Mismatch summary accumulators
+    let avgMismatchLevel = 0;
+    let avgSurprisePressure = 0;
+    let avgBoundaryStress = 0;
+    let avgRecoveryPull = 0;
+    let maxMismatchLevel = 0;
+    let mismatchCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -1081,6 +1137,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             backactionCount++;
         }
+
+        if (m.p2_mismatchLevel !== undefined) {
+            avgMismatchLevel += m.p2_mismatchLevel;
+            avgSurprisePressure += m.p2_surprisePressure ?? 0;
+            avgBoundaryStress += m.p2_boundaryStress ?? 0;
+            avgRecoveryPull += m.p2_recoveryPull ?? 0;
+            maxMismatchLevel = Math.max(maxMismatchLevel, m.p2_mismatchLevel);
+            mismatchCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1146,6 +1211,14 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgBackactionOpennessModulation /= backactionCount;
         avgBackactionCoherenceShift /= backactionCount;
         avgBackactionFamiliarityDamping /= backactionCount;
+    }
+
+    // Phase 2: Compute mismatch averages
+    if (mismatchCount > 0) {
+        avgMismatchLevel /= mismatchCount;
+        avgSurprisePressure /= mismatchCount;
+        avgBoundaryStress /= mismatchCount;
+        avgRecoveryPull /= mismatchCount;
     }
 
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
@@ -1226,6 +1299,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             spontaneousIgnitionCount,
             quietBaselineFloor,
             ongoingnessScore,
+            // Phase 2: Perturbation mismatch summaries
+            avgMismatchLevel: mismatchCount > 0 ? avgMismatchLevel : undefined,
+            avgSurprisePressure: mismatchCount > 0 ? avgSurprisePressure : undefined,
+            avgBoundaryStress: mismatchCount > 0 ? avgBoundaryStress : undefined,
+            avgRecoveryPull: mismatchCount > 0 ? avgRecoveryPull : undefined,
+            maxMismatchLevel: mismatchCount > 0 ? maxMismatchLevel : undefined,
         },
         succeeded,
         failureReason,

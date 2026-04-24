@@ -35,3 +35,28 @@ State is now clearly separated into three layers:
 
 - **coreConstants.ts** (`src/core/coreConstants.ts`) - Centralized IDs, enums, and helper functions
 
+
+## Phase 2: Perturbation Types (外乱受容)
+
+- **`src/types/perturbationEvent.ts`** — PerturbationEvent: structured perturbation descriptor (magnitude, novelty, expectedness, locality)
+- **`src/types/predictionMismatchState.ts`** — PredictionMismatchState: state-dependent mismatch quality (mismatchLevel, surprisePressure, boundaryStress, recoveryPull)
+- **`src/perception/derivePerturbationEvent.ts`** — pure helper: derives PerturbationEvent from raw input + organism state
+- **`src/prediction/derivePredictionMismatch.ts`** — pure helper: derives PredictionMismatchState from PerturbationEvent + organism state (state-dependent)
+- **`src/tests/scenario/perturbationComparisonScenario.ts`** — headless comparison: same touch under different states
+- **`src/tests/behavioral/perturbationMismatch.test.ts`** — behavioral tests for perturbation/mismatch
+
+### Input → Perturbation Model
+
+```
+External Input
+     ↓
+derivePerturbationEvent(rawInput, currentState)
+     ↓
+PerturbationEvent { magnitude, novelty, expectedness, locality, ... }
+     ↓
+derivePredictionMismatch(event, currentState, baselinePredictionError)
+     ↓
+PredictionMismatchState { mismatchLevel, surprisePressure, boundaryStress, recoveryPull }
+     ↓
+Observer (metrics / scenario) — does NOT feed back into organism core
+```
