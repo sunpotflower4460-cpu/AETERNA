@@ -3,6 +3,16 @@ import { UI, updateUIRow } from './domCache.js';
 import { PHI } from '../constants/aeternaConstants.js';
 import { updateStateTrends } from './trendSparkline.js';
 
+// Phase 1: Running ongoingness accumulators for the live observer
+let _ong_totalFrames = 0;
+let _ong_collapseFrames = 0;
+let _ong_saturationFrames = 0;
+let _ong_quietBaselineSum = 0;
+let _ong_quietBaselineCount = 0;
+let _ong_ignitionCount = 0;
+let _ong_prevBelowFloor = false;
+let _ong_recentMeans = /** @type {number[]} */ ([]);
+
 function formatDormantEvents(events) {
     if (!Array.isArray(events) || events.length === 0) return '—';
     return events.slice(0, 3).map(event => `node:${event.node}@time:${event.timestamp}`).join(' | ');
@@ -258,5 +268,46 @@ export function updateMetricsUI(dyn, engineState) {
                 state.observationDisplay.lastActionState = dyn.actionState;
             }
         }
+    }
+
+    // Phase 1: Update ongoingness observer (sec-ongoingness panel)
+    const meanAct = dyn.meanActivity || 0;
+    _ong_totalFrames++;
+    if (meanAct < 0.01) _ong_collapseFrames++;
+    // Saturation: use firing ratio (arousal) as UI proxy for high-activity states.
+    // Note: this differs from scenario test saturation (maxActivity > 8.0) which requires
+    // direct buffer access not available here. Arousal > 20% is a UI-only heuristic.
+    if ((dyn.arousal || 0) > 0.20) _ong_saturationFrames++;
+    // Quiet baseline: accumulate when no touch active
+    const touchCount = dyn.activeTouchCount || 0;
+    if (touchCount === 0) {
+        _ong_quietBaselineSum += meanAct;
+        _ong_quietBaselineCount++;
+    }
+    // Ignition detection
+    const QUIET_FLOOR = 0.05;
+    if (_ong_prevBelowFloor && meanAct >= QUIET_FLOOR) _ong_ignitionCount++;
+    _ong_prevBelowFloor = meanAct < QUIET_FLOOR;
+    // Maintain recent means window (100 frames)
+    _ong_recentMeans.push(meanAct);
+    if (_ong_recentMeans.length > 100) _ong_recentMeans.shift();
+
+    // Update ongoingness display every 30 frames to limit DOM churn
+    if (_ong_totalFrames % 30 === 0) {
+        const collapseRate = _ong_totalFrames > 0 ? _ong_collapseFrames / _ong_totalFrames : 0;
+        const satRate = _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0;
+        const quietFloor = _ong_quietBaselineCount > 0 ? _ong_quietBaselineSum / _ong_quietBaselineCount : 0;
+        const recentMean = _ong_recentMeans.length > 0
+            ? _ong_recentMeans.reduce((a, b) => a + b, 0) / _ong_recentMeans.length : 0;
+        // Compute standard deviation of recent means
+        const recentVar = _ong_recentMeans.length > 1
+            ? _ong_recentMeans.map(x => (x - recentMean) ** 2).reduce((a, b) => a + b, 0) / _ong_recentMeans.length : 0;
+        const recentStdDev = Math.sqrt(recentVar);
+        if (UI['val-mean-activity'])    UI['val-mean-activity'].innerText    = recentMean.toFixed(4);
+        if (UI['val-activity-variance']) UI['val-activity-variance'].innerText = recentStdDev.toFixed(4);
+        if (UI['val-collapse-rate'])    UI['val-collapse-rate'].innerText    = collapseRate.toFixed(4);
+        if (UI['val-saturation-rate'])  UI['val-saturation-rate'].innerText  = satRate.toFixed(4);
+        if (UI['val-quiet-floor'])      UI['val-quiet-floor'].innerText      = quietFloor.toFixed(4);
+        if (UI['val-ignition-count'])   UI['val-ignition-count'].innerText   = String(_ong_ignitionCount);
     }
 }
