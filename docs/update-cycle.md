@@ -251,6 +251,15 @@ Compare behavioral outcomes against this baseline order.
 - `salienceOpenness` and `foregroundPressure` expose passage/opening dynamics for observation
 - These values are emitted in runtime/scenario outputs without becoming mode control
 
+### Phase 3 Recovery Loop (Observer + weak homeostatic coupling)
+
+- After perturbation, mismatch pressure rises (`meanPredictionError`, perturbation packet).
+- Mismatch is folded into recovery-layer observables (`recoveryPressure`, `relaxationLevel`, `stabilizationPull`, `collapseRisk`).
+- `restorationBias`, boundary integrity, and self-preservation bias contribute weakly to boundary repair tendency.
+- Recovery outcomes are tracked as **observer vocabulary** (`recover`, `shift`, `degrade`, `partial_repair`) for scenario analysis.
+- Collapse distinctions are tracked as `soft_collapse`, `hard_collapse`, or `runaway`.
+- This loop is **pre-semantic**: it is about life-field recovery/collapse mechanics, not semantic interpretation or node-level meaning assignment.
+
 
 ## Implementation Notes
 

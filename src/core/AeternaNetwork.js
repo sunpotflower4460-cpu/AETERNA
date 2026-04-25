@@ -35,6 +35,7 @@ import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
+import { classifyCollapseMode, classifyRecoveryTrajectory, deriveRecoveryState } from '../organism/deriveRecoveryState.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -295,6 +296,7 @@ export class AeternaNetwork {
         // Current modulation bundle (computed each frame)
         this.currentModulation = createZeroModulation();
         this.lastArousalAwarenessState = null;
+        this.recentPerturbationHistory = [];
     }
 
     initializeTemporaryWorkBuffers() {
@@ -575,6 +577,32 @@ export class AeternaNetwork {
         }
 
         this.lastFeltState = feltState;
+        this.recentPerturbationHistory.push(predictionPacket.meanPredictionError || 0);
+        if (this.recentPerturbationHistory.length > 180) this.recentPerturbationHistory.shift();
+
+        const recoveryState = deriveRecoveryState({
+            timestamp: this.simTime,
+            meanPredictionError: predictionPacket.meanPredictionError,
+            perturbationLoad: interoceptionPacket.perturbationPressure,
+            boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 1,
+            restorationBias: this.homeostaticState?.restorationBias ?? 0.5,
+            stability: organismPacket.stability,
+            overload: organismPacket.overload,
+            depletion: feltState.depletion,
+            selfPreservationBias: this.homeostaticState?.selfPreservationBias ?? 0.5,
+            replaySuppression: 1 - arousalAwarenessState.salienceOpenness,
+            touchOpennessDamping: 1 - feltState.openness,
+            recentPerturbationHistory: this.recentPerturbationHistory,
+        });
+        const recoveryTrajectory = classifyRecoveryTrajectory(recoveryState, {
+            stability: organismPacket.stability,
+            boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 1,
+        });
+        const collapseMode = classifyCollapseMode(recoveryState, {
+            meanActivity: metricsPacket.arousal,
+            maxActivity: Math.abs(metricsPacket.sigma) * 8,
+            boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 1,
+        });
 
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
@@ -729,6 +757,16 @@ export class AeternaNetwork {
             bl_restDepth: arousalAwarenessState.restDepth,
             bl_hyperreactivity: arousalAwarenessState.hyperreactivity,
             bl_settlingWindow: arousalAwarenessState.settlingWindow,
+            recoveryPressure: recoveryState.recoveryPressure,
+            relaxationLevel: recoveryState.relaxationLevel,
+            stabilizationPull: recoveryState.stabilizationPull,
+            collapseRisk: recoveryState.collapseRisk,
+            restorationBias: recoveryState.restorationBias,
+            boundaryRepairPressure: recoveryState.boundaryRepairPressure ?? 0,
+            selfPreservationDrive: recoveryState.selfPreservationDrive ?? 0,
+            overloadDrain: recoveryState.overloadDrain ?? 0,
+            recoveryTrajectory,
+            collapseMode,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,
