@@ -35,3 +35,24 @@
 - baseline を派手にしすぎない
 - quiet 時の消失と long-run の暴走を避ける
 - observer は研究用であり、本体因果を壊さない
+
+## Phase 2: 外乱受容と prediction mismatch の純化
+
+**目的**: 入力を生命場を開始するトリガーではなく、すでに流れている場を乱す perturbation として整理し、prediction mismatch を state-dependent に立てられるようにする。
+
+**Phase 2 の完了条件**:
+- PerturbationEvent 型がある
+- PredictionMismatchState 型がある
+- perturbation 導出 helper がある
+- mismatch 導出 helper がある
+- same touch, different state の最小差が確認できる
+- scenario / observer / metrics / docs に反映されている
+- build が通る
+- organism core の意味を壊していない
+
+**優先方針**:
+- no behavior break
+- touch pipeline を全面置換しない
+- input は ongoing baseline に重なる perturbation
+- mismatch は state-dependent
+- semantic interpretation に進まない
