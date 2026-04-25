@@ -224,6 +224,50 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Failure Condition**: Zero action bursts without touch
 - **Limitation**: May require tuning of endogenous action drives
 
+### F. Perturbation Mismatch (Phase 2)
+
+**Definition**: The quality of prediction error arising from external perturbation, dependent on organism state.
+
+#### F.1 Mismatch Level
+- **Meaning**: Degree of prediction mismatch induced by perturbation
+- **Measurement**: `derivePredictionMismatch` output `mismatchLevel`
+- **Formula**: `baselinePredictionError * (1 + novelty * 0.5) * (1 + overload * 0.3) * (1 - expectedness * 0.25) + novelty * overload * 0.2`
+- **Classification**: Derived
+- **Note**: State-dependent — same touch produces higher mismatch under overload
+
+#### F.2 Surprise Pressure
+- **Meaning**: Pressure from unexpected input given current state
+- **Measurement**: `derivePredictionMismatch` output `surprisePressure`
+- **Formula**: `novelty * (1 + overload * 0.4) * (1 - coherenceMemory * 0.3)`
+- **Classification**: Derived
+- **Note**: Decreases with familiarity and coherence
+
+#### F.3 Boundary Stress
+- **Meaning**: Stress on organism boundary from perturbation contact
+- **Measurement**: `derivePredictionMismatch` output `boundaryStress`
+- **Classification**: Derived
+
+#### F.4 Recovery Pull
+- **Meaning**: Pull toward recovery/restoration after mismatch
+- **Measurement**: `derivePredictionMismatch` output `recoveryPull`
+- **Formula**: `restorationBias * (1 - overload * 0.5) * stability`
+- **Classification**: Derived
+
+#### F.5 Perturbation Novelty
+- **Meaning**: How unexpected the perturbation is given familiarity
+- **Measurement**: `derivePerturbationEvent` output `novelty`
+- **Classification**: Derived
+
+#### F.6 Perturbation Expectedness
+- **Meaning**: How expected the perturbation is (inverse of surprise)
+- **Measurement**: `derivePerturbationEvent` output `expectedness`
+- **Classification**: Derived
+
+**Metric Categories**:
+- **Measured**: `perturbationMagnitude` (raw input magnitude)
+- **Derived**: `mismatchLevel`, `boundaryStress`, `perturbationNovelty`, `perturbationExpectedness`
+- **Proxy**: `surprisePressure`, `recoveryPull`
+
 ## Measurement Implementation
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).
