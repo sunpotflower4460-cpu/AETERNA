@@ -17,8 +17,10 @@ import { ReplayQueue } from '../organism/replayQueue.ts';
 import { deriveReplayState } from '../organism/deriveReplayState.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
+import { classifyCollapseMode, classifyRecoveryTrajectory, deriveRecoveryState } from '../organism/deriveRecoveryState.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
 import type { ReplayState } from '../types/replayState.ts';
+import type { RecoveryState, RecoveryTrajectoryLabel, CollapseModeLabel } from '../types/recoveryState.ts';
 import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
 import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
 
@@ -158,6 +160,15 @@ export interface MetricsSnapshot {
     openState_stabilityIndex?: number;
     openState_mixtureEntropy?: number;
     openState_dominantPole?: string | null;
+    // Phase 3: Recovery profile metrics
+    recoveryPressure?: number;
+    relaxationLevel?: number;
+    stabilizationPull?: number;
+    boundaryRepairPressure?: number;
+    selfPreservationDrive?: number;
+    overloadDrain?: number;
+    recoveryTrajectory?: RecoveryTrajectoryLabel;
+    collapseMode?: CollapseModeLabel;
     // Phase 2: Perturbation mismatch metrics
     p2_mismatchLevel?: number;
     p2_surprisePressure?: number;
@@ -240,6 +251,23 @@ export interface ScenarioResult {
         avgBackactionCoherenceShift?: number;
         avgBackactionFamiliarityDamping?: number;
         maxBackactionOverloadAmplification?: number;
+        avgRecoveryPressure?: number;
+        avgRelaxationLevel?: number;
+        avgStabilizationPull?: number;
+        avgRecoveryCollapseRisk?: number;
+        avgBoundaryRepairPressure?: number;
+        avgSelfPreservationDrive?: number;
+        avgOverloadDrain?: number;
+        recoveryFrameCount?: number;
+        shiftFrameCount?: number;
+        degradeFrameCount?: number;
+        partialRepairFrameCount?: number;
+        softCollapseFrames?: number;
+        hardCollapseFrames?: number;
+        runawayFrames?: number;
+        avgRecoveryTime?: number;
+        avgSettlingTime?: number;
+        repeatedOverloadDegradationSlope?: number;
         // Phase 2: Perturbation mismatch summaries
         avgMismatchLevel?: number;
         avgSurprisePressure?: number;
@@ -440,7 +468,10 @@ function buildMetricsSnapshot(
     dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     recentMeans: number[],
     replayState?: ReplayState | null,
-    queueSize?: number
+    queueSize?: number,
+    recoveryState?: RecoveryState | null,
+    recoveryTrajectory?: RecoveryTrajectoryLabel,
+    collapseMode?: CollapseModeLabel,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -609,9 +640,9 @@ function buildMetricsSnapshot(
                     needMotivation
                 );
 
-                snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
-                snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
-                snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
+        snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
+        snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
+        snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
             }
         }
 
@@ -627,6 +658,16 @@ function buildMetricsSnapshot(
             if (queueSize !== undefined) {
                 snapshot.replayQueueSize = queueSize;
             }
+        }
+        if (recoveryState) {
+            snapshot.recoveryPressure = recoveryState.recoveryPressure;
+            snapshot.relaxationLevel = recoveryState.relaxationLevel;
+            snapshot.stabilizationPull = recoveryState.stabilizationPull;
+            snapshot.boundaryRepairPressure = recoveryState.boundaryRepairPressure;
+            snapshot.selfPreservationDrive = recoveryState.selfPreservationDrive;
+            snapshot.overloadDrain = recoveryState.overloadDrain;
+            snapshot.recoveryTrajectory = recoveryTrajectory;
+            snapshot.collapseMode = collapseMode;
         }
 
         // Phase 2: Derive perturbation event and mismatch if touch is active
@@ -718,6 +759,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let recentReplaySalience = 0.0;
     let lastReplayCategory: string | null = null;
     let totalReplayCount = 0;
+    const recentPerturbationHistory: number[] = [];
+    const perturbationPeaks: number[] = [];
+    const degradationPeaks: number[] = [];
+    const recoveryTimes: number[] = [];
+    const settlingTimes: number[] = [];
+    let activePerturbationStart: number | null = null;
+    let activeSettlingStart: number | null = null;
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -857,6 +905,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
         // Collect metrics
         const meanAct = computeMeanActivity(network);
+        const maxAct = computeMaxActivity(network);
         recentMeans.push(meanAct);
         if (recentMeans.length > 100) recentMeans.shift();
         activityHistory.push(meanAct);
@@ -865,8 +914,54 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         if (hasNaN(network)) nanFrames++;
 
         // Phase 1: Ongoingness tracking
-        const maxAct = computeMaxActivity(network);
         if (maxAct > 8.0) saturationFrames++;
+
+        const perturbationPressure = dyn.meanPredictionError ?? 0;
+        recentPerturbationHistory.push(perturbationPressure);
+        if (recentPerturbationHistory.length > 240) recentPerturbationHistory.shift();
+
+        let recoveryState: RecoveryState | null = null;
+        let recoveryTrajectory: RecoveryTrajectoryLabel = 'shift';
+        let collapseMode: CollapseModeLabel = 'stable';
+        if (network.homeostaticState && network.livingState && network.energyFlowState) {
+            recoveryState = deriveRecoveryState({
+                timestamp: frame,
+                meanPredictionError: perturbationPressure,
+                perturbationLoad: dyn.meanPredictionError ?? 0,
+                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+                restorationBias: network.homeostaticState.restorationBias,
+                stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
+                overload: dyn.overload ?? network.homeostaticState.overloadLevel,
+                depletion: 1 - (network.energyFlowState.energyReserve ?? 1),
+                selfPreservationBias: network.homeostaticState.selfPreservationBias,
+                replaySuppression: replayState?.replaySuppression ?? 0,
+                touchOpennessDamping: 1 - (network.livingState.touchNeedBaseline ?? 0.5),
+                recentPerturbationHistory,
+            });
+            recoveryTrajectory = classifyRecoveryTrajectory(recoveryState, {
+                stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
+                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+            });
+            collapseMode = classifyCollapseMode(recoveryState, {
+                meanActivity: meanAct,
+                maxActivity: maxAct,
+                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+            });
+
+            if (perturbationPressure > 0.5 && activePerturbationStart === null) activePerturbationStart = frame;
+            if (activePerturbationStart !== null && recoveryTrajectory === 'recover' && recoveryState.relaxationLevel > 0.55) {
+                recoveryTimes.push(frame - activePerturbationStart);
+                activePerturbationStart = null;
+                activeSettlingStart = frame;
+            }
+            if (activeSettlingStart !== null && recoveryState.relaxationLevel > 0.62 && recoveryState.stabilizationPull > 0.58) {
+                settlingTimes.push(frame - activeSettlingStart);
+                activeSettlingStart = null;
+            }
+
+            if (perturbationPressure > 0.55) perturbationPeaks.push(perturbationPressure);
+            if (recoveryTrajectory === 'degrade') degradationPeaks.push(recoveryState.collapseRisk);
+        }
 
         // Count spontaneous ignitions: activity rises by >0.05 from below quiet-floor (0.05)
         const QUIET_FLOOR = 0.05;
@@ -891,7 +986,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         }
 
         if (collectMetrics && frame % metricsInterval === 0) {
-            metrics.push(buildMetricsSnapshot(frame, network, dyn, recentMeans, replayState, replayQueue.size()));
+            metrics.push(buildMetricsSnapshot(
+                frame,
+                network,
+                dyn,
+                recentMeans,
+                replayState,
+                replayQueue.size(),
+                recoveryState,
+                recoveryTrajectory,
+                collapseMode,
+            ));
         }
     }
 
@@ -1020,6 +1125,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgBackactionFamiliarityDamping = 0;
     let maxBackactionOverloadAmplification = 0;
     let backactionCount = 0;
+    let avgRecoveryPressure = 0;
+    let avgRelaxationLevel = 0;
+    let avgStabilizationPull = 0;
+    let avgRecoveryCollapseRisk = 0;
+    let avgBoundaryRepairPressure = 0;
+    let avgSelfPreservationDrive = 0;
+    let avgOverloadDrain = 0;
+    let recoveryProfileCount = 0;
+    let recoveryFrameCount = 0;
+    let shiftFrameCount = 0;
+    let degradeFrameCount = 0;
+    let partialRepairFrameCount = 0;
+    let softCollapseFrames = 0;
+    let hardCollapseFrames = 0;
+    let runawayFrames = 0;
 
     // Phase 2: Mismatch summary accumulators
     let avgMismatchLevel = 0;
@@ -1138,6 +1258,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             backactionCount++;
         }
 
+        if (m.recoveryPressure !== undefined) {
+            avgRecoveryPressure += m.recoveryPressure ?? 0;
+            avgRelaxationLevel += m.relaxationLevel ?? 0;
+            avgStabilizationPull += m.stabilizationPull ?? 0;
+            avgRecoveryCollapseRisk += m.collapseRisk ?? 0;
+            avgBoundaryRepairPressure += m.boundaryRepairPressure ?? 0;
+            avgSelfPreservationDrive += m.selfPreservationDrive ?? 0;
+            avgOverloadDrain += m.overloadDrain ?? 0;
+            if (m.recoveryTrajectory === 'recover') recoveryFrameCount++;
+            if (m.recoveryTrajectory === 'shift') shiftFrameCount++;
+            if (m.recoveryTrajectory === 'degrade') degradeFrameCount++;
+            if (m.recoveryTrajectory === 'partial_repair') partialRepairFrameCount++;
+            if (m.collapseMode === 'soft_collapse') softCollapseFrames++;
+            if (m.collapseMode === 'hard_collapse') hardCollapseFrames++;
+            if (m.collapseMode === 'runaway') runawayFrames++;
+            recoveryProfileCount++;
+        }
         if (m.p2_mismatchLevel !== undefined) {
             avgMismatchLevel += m.p2_mismatchLevel;
             avgSurprisePressure += m.p2_surprisePressure ?? 0;
@@ -1212,6 +1349,39 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgBackactionCoherenceShift /= backactionCount;
         avgBackactionFamiliarityDamping /= backactionCount;
     }
+    if (recoveryProfileCount > 0) {
+        avgRecoveryPressure /= recoveryProfileCount;
+        avgRelaxationLevel /= recoveryProfileCount;
+        avgStabilizationPull /= recoveryProfileCount;
+        avgRecoveryCollapseRisk /= recoveryProfileCount;
+        avgBoundaryRepairPressure /= recoveryProfileCount;
+        avgSelfPreservationDrive /= recoveryProfileCount;
+        avgOverloadDrain /= recoveryProfileCount;
+    }
+
+    const avgRecoveryTime = recoveryTimes.length > 0
+        ? recoveryTimes.reduce((sum, value) => sum + value, 0) / recoveryTimes.length
+        : undefined;
+    const avgSettlingTime = settlingTimes.length > 0
+        ? settlingTimes.reduce((sum, value) => sum + value, 0) / settlingTimes.length
+        : undefined;
+    const repeatedOverloadDegradationSlope = (() => {
+        if (perturbationPeaks.length < 2 || degradationPeaks.length < 2) return undefined;
+        const n = Math.min(perturbationPeaks.length, degradationPeaks.length, 8);
+        const xs = perturbationPeaks.slice(-n);
+        const ys = degradationPeaks.slice(-n);
+        const xMean = xs.reduce((sum, value) => sum + value, 0) / n;
+        const yMean = ys.reduce((sum, value) => sum + value, 0) / n;
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < n; i++) {
+            const dx = xs[i] - xMean;
+            numerator += dx * (ys[i] - yMean);
+            denominator += dx * dx;
+        }
+        if (denominator < 1e-6) return undefined;
+        return numerator / denominator;
+    })();
 
     // Phase 2: Compute mismatch averages
     if (mismatchCount > 0) {
@@ -1292,6 +1462,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgBackactionCoherenceShift: backactionCount > 0 ? avgBackactionCoherenceShift : undefined,
             avgBackactionFamiliarityDamping: backactionCount > 0 ? avgBackactionFamiliarityDamping : undefined,
             maxBackactionOverloadAmplification: backactionCount > 0 ? maxBackactionOverloadAmplification : undefined,
+            avgRecoveryPressure: recoveryProfileCount > 0 ? avgRecoveryPressure : undefined,
+            avgRelaxationLevel: recoveryProfileCount > 0 ? avgRelaxationLevel : undefined,
+            avgStabilizationPull: recoveryProfileCount > 0 ? avgStabilizationPull : undefined,
+            avgRecoveryCollapseRisk: recoveryProfileCount > 0 ? avgRecoveryCollapseRisk : undefined,
+            avgBoundaryRepairPressure: recoveryProfileCount > 0 ? avgBoundaryRepairPressure : undefined,
+            avgSelfPreservationDrive: recoveryProfileCount > 0 ? avgSelfPreservationDrive : undefined,
+            avgOverloadDrain: recoveryProfileCount > 0 ? avgOverloadDrain : undefined,
+            recoveryFrameCount: recoveryProfileCount > 0 ? recoveryFrameCount : undefined,
+            shiftFrameCount: recoveryProfileCount > 0 ? shiftFrameCount : undefined,
+            degradeFrameCount: recoveryProfileCount > 0 ? degradeFrameCount : undefined,
+            partialRepairFrameCount: recoveryProfileCount > 0 ? partialRepairFrameCount : undefined,
+            softCollapseFrames: recoveryProfileCount > 0 ? softCollapseFrames : undefined,
+            hardCollapseFrames: recoveryProfileCount > 0 ? hardCollapseFrames : undefined,
+            runawayFrames: recoveryProfileCount > 0 ? runawayFrames : undefined,
+            avgRecoveryTime,
+            avgSettlingTime,
+            repeatedOverloadDegradationSlope,
             // Phase 1: Ongoingness metrics
             saturationFrames,
             saturationRate,

@@ -148,6 +148,19 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 
 **Definition**: The system recovers from perturbations or transitions between stable states.
 
+#### D.0 Recovery Profile Core (Phase 3)
+- **`recoveryPressure`** (Derived): Current pressure returning toward viable basin after mismatch.
+- **`relaxationLevel`** (Derived): Degree of actual de-tensioning after disturbance.
+- **`stabilizationPull`** (Derived): Pull toward a stable band (original or shifted).
+- **`collapseRisk`** (Derived): Composite risk of degradation/collapse under current load.
+- **`boundaryRepairPressure`** (Proxy): Weak boundary-support tendency under restoration/self-preservation.
+- **`selfPreservationDrive`** (Proxy): Minimal non-personified drift toward anti-collapse operation.
+- **`overloadDrain`** (Measured/Derived hybrid): How much overload/depletion is currently eating viability.
+- **`recoveryTrajectory`** (Observer vocabulary): `recover | shift | degrade | partial_repair`.
+- **`collapseMode`** (Observer vocabulary): `stable | soft_collapse | hard_collapse | runaway`.
+
+**Important**: trajectory/collapse labels are observation tags for scenario comparison, not runtime semantic mode switches.
+
 #### D.1 Return-to-Baseline Time
 - **Meaning**: Time to recover homeostatic baseline after large perturbation
 - **Measurement**: Frames to return within 10% of pre-perturbation baseline
@@ -275,6 +288,27 @@ Scenario summaries now include (added in Phase 1):
 - **Proxy**: `ongoingnessScore`
 
 These metrics are the primary evaluation tool for Phase 1 (no-input long-run stability). They should be collected before and after any future mechanism addition to verify the life-field has not weakened.
+
+### Phase 3 Recovery Additions
+
+Scenario summaries now include:
+- `avgRecoveryPressure`
+- `avgRelaxationLevel`
+- `avgStabilizationPull`
+- `avgRecoveryCollapseRisk`
+- `avgBoundaryRepairPressure`
+- `avgSelfPreservationDrive`
+- `avgOverloadDrain`
+- `recoveryFrameCount`, `shiftFrameCount`, `degradeFrameCount`, `partialRepairFrameCount`
+- `softCollapseFrames`, `hardCollapseFrames`, `runawayFrames`
+- `avgRecoveryTime`
+- `avgSettlingTime`
+- `repeatedOverloadDegradationSlope`
+
+**Classification**:
+- **Measured**: raw activity, boundary integrity deltas, overload level, touch/mismatch load
+- **Derived**: `recoveryPressure`, `relaxationLevel`, `stabilizationPull`, `collapseRisk`, recovery/settling times
+- **Proxy**: `selfPreservationDrive`, `boundaryRepairPressure`, degradation slope
 
 ### A2 Scenario Summary Additions
 

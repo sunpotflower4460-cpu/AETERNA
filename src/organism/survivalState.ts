@@ -213,16 +213,31 @@ export function updateHomeostaticState(
 
   // 5. Update boundaryIntegrity
   // Decreases under chaos/overload, increases during coherent periods
+  const mismatchBoundaryStress = clamp(
+    predictionError * 0.0012 + perturbationSurprise * 0.0009 + noveltyLevel * 0.0006,
+    0,
+    0.004,
+  );
   const boundaryDegradation = clamp(
     (newOverload > 0.7 ? (newOverload - 0.7) * 0.003 : 0) +
     (predictionError > 1.5 ? (predictionError - 1.5) * 0.002 : 0) +
-    (clusterRatio < 0.2 ? (0.2 - clusterRatio) * 0.001 : 0),
+    (clusterRatio < 0.2 ? (0.2 - clusterRatio) * 0.001 : 0) +
+    mismatchBoundaryStress,
     0,
     0.01,
   );
+  const boundaryRepairPressure = clamp(
+    newRestoration * 0.45 +
+    state.selfPreservationBias * 0.3 +
+    newStability * 0.2 -
+    newOverload * 0.25,
+    0,
+    1,
+  );
   const boundaryRecovery = clamp(
     (phaseCoherence > 0.5 ? phaseCoherence * 0.0015 : 0) +
-    (newStability > 0.6 ? (newStability - 0.6) * 0.002 : 0),
+    (newStability > 0.6 ? (newStability - 0.6) * 0.002 : 0) +
+    boundaryRepairPressure * 0.0012,
     0,
     0.005,
   );
