@@ -331,3 +331,34 @@ Input enters as a **perturbation** onto an already-flowing life-field, not as a 
 4. **PredictionMismatchState derived** (`derivePredictionMismatch`) — state-dependent mismatch quality
 5. **Downstream**: mismatch connects to collapse risk, recovery pull, boundary stress
 6. **Observer reads** mismatch metrics without modifying organism dynamics
+
+## W-Series: Body-World Closure（設計境界のみ、W0 固定済み）
+
+AETERNA は内側だけでなく世界と閉じる方向へ進む。意味形成はしない。
+
+将来の update cycle に追加される予定の段階（W1〜W8）。
+
+### 将来ループ（W3 以降で段階的に追加）
+
+```
+Torus Life Field (現在のループ)
+↓
+Body Surface (W1)
+↓
+Actuation Pulse (W2)
+↓
+World Medium — simulated world から始める (W3)
+↓
+Sensory Return (W4)
+↓
+Reafference Comparison (W5)
+↓
+Perturbation + Mismatch (既存)
+↓
+Torus Life Field
+```
+
+- W0: docs のみ固定。runtime 変更なし。
+- W1〜W8: 段階的に実装。
+- proto-neuron は W7 で観測開始。最初から置かない。
+- real sensor は後段（W3 は simulated world のみ）。

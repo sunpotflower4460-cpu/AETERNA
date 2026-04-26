@@ -571,3 +571,27 @@ Scenario packet summaries include:
 - **Measured**: `packetGeneratedCount`, `semanticLeakTotal`, `nonFiniteFieldsTotal`
 - **Derived**: `allPacketsClean`, `fieldStateFiniteFraction`
 - **Proxy**: `avgConfidence`, `protoPointPresentFraction`, `lastFieldState`, `lastPatternCandidates`
+
+
+## W-Series: Body-World Closure Metrics（W6 以降）
+
+> **Status**: W0 — 定義の固定のみ。W6（Body-World Closure Metrics）まで実装しない。
+
+AETERNA が世界と閉じた循環を持つ生命場として機能しているかを見るための研究指標。
+これらは意識の証明ではない。exact claim をしない。
+
+詳細定義は `docs/body-world-closure-metrics.md` を参照。
+
+### 追加予定の指標（W6）
+
+| 指標名 | 意味 | 分類 |
+|---|---|---|
+| `loopGain` | 作用が世界を経由して戻る際の増幅・減衰比 | Derived |
+| `roundTripDelay` | Actuation Pulse から Sensory Return までの遅延 | Measured |
+| `returnStrength` | Sensory Return の強度 | Measured |
+| `selfCausedMatch` | 自己起因と判断される戻り入力の割合 | Derived |
+| `worldMismatch` | 外界独自変化の差分強度 | Derived |
+| `closureStability` | 閉ループの安定度 | Derived |
+| `closureDrift` | 閉ループ中心点のゆっくりとした移動 | Proxy |
+| `unresolvedReturn` | 帰属不明の Sensory Return の量 | Derived |
+| `feedbackSaturationRisk` | フィードバック飽和・暴走リスク | Proxy |
