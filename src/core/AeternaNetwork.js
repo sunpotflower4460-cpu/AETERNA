@@ -33,6 +33,7 @@ import { runInteroceptionStage } from '../stages/runInteroceptionStage.ts';
 import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
+import { deriveTraceState } from '../organism/deriveTraceState.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import { classifyCollapseMode, classifyRecoveryTrajectory, deriveRecoveryState } from '../organism/deriveRecoveryState.ts';
@@ -296,7 +297,10 @@ export class AeternaNetwork {
         // Current modulation bundle (computed each frame)
         this.currentModulation = createZeroModulation();
         this.lastArousalAwarenessState = null;
+        this.lastTraceState = null;
         this.recentPerturbationHistory = [];
+        this.recentRecoveryHistory = [];
+        this.recentPatternHistory = [];
     }
 
     initializeTemporaryWorkBuffers() {
@@ -603,6 +607,25 @@ export class AeternaNetwork {
             maxActivity: Math.abs(metricsPacket.sigma) * 8,
             boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 1,
         });
+        const traceState = deriveTraceState({
+            timestamp: this.simTime,
+            recentPerturbationHistory: this.recentPerturbationHistory,
+            mismatchHistory: this.recentPerturbationHistory,
+            recoveryHistory: this.recentRecoveryHistory,
+            repeatedPatternHistory: this.recentPatternHistory,
+            externalInputLevel: perceptionPacket.rawTouchMean,
+            arousalLevel: arousalAwarenessState.arousalLevel,
+            awarenessWindow: arousalAwarenessState.awarenessWindow,
+            restDepth: arousalAwarenessState.restDepth,
+            settlingWindow: arousalAwarenessState.settlingWindow,
+            restorationReadiness: feltState.restorationReadiness,
+            boundaryIntegrity: feltState.boundaryIntegrity,
+            collapseRisk: recoveryState.collapseRisk,
+        });
+        this.recentRecoveryHistory.push(recoveryState.recoveryPressure);
+        if (this.recentRecoveryHistory.length > 180) this.recentRecoveryHistory.shift();
+        this.recentPatternHistory.push(Math.min(1, (perceptionPacket.touchRepeatCount || 0) / 8));
+        if (this.recentPatternHistory.length > 180) this.recentPatternHistory.shift();
 
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
@@ -622,6 +645,7 @@ export class AeternaNetwork {
         this.lastInteroceptionPacket = interoceptionPacket;
         this.lastSelfWorldModelPacket = selfWorldModelPacket;
         this.lastArousalAwarenessState = arousalAwarenessState;
+        this.lastTraceState = traceState;
 
         return {
             ignitionRatio: metricsPacket.clusterRatio,
@@ -757,6 +781,14 @@ export class AeternaNetwork {
             bl_restDepth: arousalAwarenessState.restDepth,
             bl_hyperreactivity: arousalAwarenessState.hyperreactivity,
             bl_settlingWindow: arousalAwarenessState.settlingWindow,
+            traceStrength: traceState.traceStrength,
+            recurrenceWeight: traceState.recurrenceWeight,
+            salienceResidue: traceState.salienceResidue,
+            replayReadiness: traceState.replayReadiness,
+            replaySuppression: traceState.replaySuppression,
+            recentPatternWeight: traceState.recentPatternWeight ?? 0,
+            settlingResidue: traceState.settlingResidue ?? 0,
+            recoveryLinkedResidue: traceState.recoveryLinkedResidue ?? 0,
             recoveryPressure: recoveryState.recoveryPressure,
             relaxationLevel: recoveryState.relaxationLevel,
             stabilizationPull: recoveryState.stabilizationPull,

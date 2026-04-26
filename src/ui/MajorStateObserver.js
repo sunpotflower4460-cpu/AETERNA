@@ -79,6 +79,14 @@ export class MajorStateObserver {
             processes.push({ type: 'recovery_degrading', score: dyn.collapseRisk || 0.5, label: 'DEGRADING' });
         }
 
+        if ((dyn.activeTouchCount || 0) === 0 && (dyn.traceStrength || 0) > 0.28 && (dyn.replaySuppression || 1) < 0.6) {
+            processes.push({
+                type: 'trace_echo_ready',
+                score: (dyn.traceStrength || 0) * Math.max(0.2, 1 - (dyn.replaySuppression || 0)),
+                label: 'TRACE ECHO'
+            });
+        }
+
         if (processes.length === 0) {
             if (dyn.arousal < 0.01) {
                 return { type: 'quiet', label: 'QUIET', color: '#6b7280' };
@@ -119,6 +127,7 @@ export class MajorStateObserver {
             'recovery_soft_collapse': '#fb7185', // rose
             'recovery_hard_collapse': '#ef4444', // red
             'recovery_runaway': '#f43f5e',       // strong red
+            'trace_echo_ready': '#38bdf8',       // sky
             'quiet': '#6b7280',                  // gray
             'low_drift': '#9ca3af'               // light gray
         };
@@ -143,6 +152,9 @@ export class MajorStateObserver {
             awarenessWindow: dyn.bl_awarenessWindow || 0,
             salienceOpenness: dyn.bl_salienceOpenness || 0,
             foregroundPressure: dyn.bl_foregroundPressure || 0,
+            traceStrength: dyn.traceStrength || 0,
+            recurrenceWeight: dyn.recurrenceWeight || 0,
+            replaySuppression: dyn.replaySuppression || 0,
             recoveryPressure: dyn.recoveryPressure || 0,
             collapseRisk: dyn.collapseRisk || 0,
             stabilizationPull: dyn.stabilizationPull || 0

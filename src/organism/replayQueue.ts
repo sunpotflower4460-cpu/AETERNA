@@ -20,14 +20,20 @@ export interface ReplayCandidate {
   /** Timestamp when candidate was created */
   timestamp: number;
 
-  /** Category of salient event */
-  category: 'touch' | 'surprise' | 'restoration' | 'repetition' | 'absence';
+  /** Category of trace/pattern pressure */
+  category: 'mismatch' | 'recurrence' | 'recovery' | 'boundary' | 'settling';
 
   /** Salience score (0-1+) */
   salience: number;
 
   /** Replay weight (decays over time) */
   weight: number;
+
+  /** Current trace-pressure support for this candidate */
+  traceStrength: number;
+
+  /** Repetition-linked support for this candidate */
+  recurrenceWeight: number;
 
   /** Optional local signature for pattern matching */
   localSignature?: number[];
@@ -54,25 +60,42 @@ export class ReplayQueue {
     category: ReplayCandidate['category'],
     salience: number,
     timestamp: number,
-    localSignature?: number[]
+    localSignature?: number[],
+    traceStrength = 0,
+    recurrenceWeight = 0
   ): void {
-    // Only add if salience is above threshold
-    const MIN_SALIENCE_THRESHOLD = 0.3;
+    const MIN_SALIENCE_THRESHOLD = 0.22;
     if (salience < MIN_SALIENCE_THRESHOLD) return;
 
-    // Create candidate
+    const mergedCandidate = this.findMergeTarget(category, localSignature);
+    if (mergedCandidate) {
+      mergedCandidate.timestamp = timestamp;
+      mergedCandidate.salience = Math.min(1.5, Math.max(mergedCandidate.salience, salience));
+      mergedCandidate.traceStrength = Math.min(1.5, Math.max(mergedCandidate.traceStrength, traceStrength));
+      mergedCandidate.recurrenceWeight = Math.min(1.2, Math.max(mergedCandidate.recurrenceWeight, recurrenceWeight));
+      mergedCandidate.weight = Math.min(
+        1.5,
+        mergedCandidate.weight * 0.78 +
+        salience * 0.16 +
+        traceStrength * 0.04 +
+        recurrenceWeight * 0.02,
+      );
+      return;
+    }
+
     const candidate: ReplayCandidate = {
       id: `replay_${this.nextId++}`,
       timestamp,
       category,
       salience: Math.min(1.5, salience),
-      weight: salience,
+      weight: Math.min(1.5, salience * 0.72 + traceStrength * 0.2 + recurrenceWeight * 0.08),
+      traceStrength: Math.min(1.5, traceStrength),
+      recurrenceWeight: Math.min(1.2, recurrenceWeight),
       localSignature,
     };
 
     this.candidates.push(candidate);
 
-    // Prune if over capacity
     if (this.candidates.length > this.maxCandidates) {
       this.pruneLowest();
     }
@@ -84,9 +107,10 @@ export class ReplayQueue {
   decay(): void {
     for (const candidate of this.candidates) {
       candidate.weight *= this.decayRate;
+      candidate.traceStrength *= 0.999;
+      candidate.recurrenceWeight *= 0.9995;
     }
 
-    // Remove candidates with very low weight
     this.candidates = this.candidates.filter(c => c.weight > 0.01);
   }
 
@@ -113,6 +137,7 @@ export class ReplayQueue {
     const candidate = this.candidates.find(c => c.id === id);
     if (candidate) {
       candidate.weight *= factor;
+      candidate.traceStrength *= Math.min(1, factor + 0.08);
     }
   }
 
@@ -162,5 +187,26 @@ export class ReplayQueue {
     }
 
     this.candidates.splice(lowestIndex, 1);
+  }
+
+  private findMergeTarget(
+    category: ReplayCandidate['category'],
+    localSignature?: number[],
+  ): ReplayCandidate | undefined {
+    return this.candidates.find(candidate =>
+      candidate.category === category &&
+      this.isSimilarSignature(candidate.localSignature, localSignature),
+    );
+  }
+
+  private isSimilarSignature(a?: number[], b?: number[]): boolean {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    let totalDiff = 0;
+    for (let i = 0; i < a.length; i++) {
+      totalDiff += Math.abs(a[i] - b[i]);
+    }
+    return totalDiff / a.length < 0.12;
   }
 }

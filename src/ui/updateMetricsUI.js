@@ -221,6 +221,14 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-bl-rest-depth'])        UI['val-bl-rest-depth'].innerText        = (dyn.bl_restDepth        || 0).toFixed(3);
     if (UI['val-bl-hyperreactivity'])   UI['val-bl-hyperreactivity'].innerText   = (dyn.bl_hyperreactivity  || 0).toFixed(3);
     if (UI['val-bl-settling-window'])   UI['val-bl-settling-window'].innerText   = (dyn.bl_settlingWindow   || 0).toFixed(3);
+    if (UI['val-trace-strength'])         UI['val-trace-strength'].innerText         = (dyn.traceStrength || 0).toFixed(3);
+    if (UI['val-recurrence-weight'])      UI['val-recurrence-weight'].innerText      = (dyn.recurrenceWeight || 0).toFixed(3);
+    if (UI['val-salience-residue'])       UI['val-salience-residue'].innerText       = (dyn.salienceResidue || 0).toFixed(3);
+    if (UI['val-trace-replay-readiness']) UI['val-trace-replay-readiness'].innerText = (dyn.replayReadiness || 0).toFixed(3);
+    if (UI['val-trace-replay-suppression']) UI['val-trace-replay-suppression'].innerText = (dyn.replaySuppression || 0).toFixed(3);
+    if (UI['val-recent-pattern-weight'])  UI['val-recent-pattern-weight'].innerText  = (dyn.recentPatternWeight || 0).toFixed(3);
+    if (UI['val-settling-residue'])       UI['val-settling-residue'].innerText       = (dyn.settlingResidue || 0).toFixed(3);
+    if (UI['val-recovery-linked-residue']) UI['val-recovery-linked-residue'].innerText = (dyn.recoveryLinkedResidue || 0).toFixed(3);
     if (UI['val-recovery-pressure'])      UI['val-recovery-pressure'].innerText      = (dyn.recoveryPressure        || 0).toFixed(3);
     if (UI['val-relaxation-level'])       UI['val-relaxation-level'].innerText       = (dyn.relaxationLevel         || 0).toFixed(3);
     if (UI['val-stabilization-pull'])     UI['val-stabilization-pull'].innerText     = (dyn.stabilizationPull       || 0).toFixed(3);

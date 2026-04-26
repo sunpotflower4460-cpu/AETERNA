@@ -325,22 +325,30 @@ These are for research comparison only and should not be interpreted as human-st
 ### A3 Replay / Consolidation Additions
 
 Scenario summaries now include:
+- `avgTraceStrength`: Mean residue strength remaining in the field
+- `avgRecurrenceWeight`: Mean recurrence-linked remaining weight
+- `avgSalienceResidue`: Mean salient mismatch residue
 - `totalReplayCount`: Total number of replay events across scenario
 - `avgReplayPressure`: Average pressure to initiate replay
 - `avgReplayReadiness`: Average availability for replay to occur
-- `avgConsolidationGain`: Average consolidation strength (always weak, capped at 0.3)
+- `avgConsolidationGain`: Average consolidation strength (always weak)
 - `maxActiveReplayCount`: Maximum simultaneous replay traces
 - `avgRecentReplaySalience`: Average salience weight of replay events
+- `avgRecentPatternWeight`: Mean lingering weight of the recent local pattern
+- `avgSettlingResidue`: Mean quiet-settling residue
+- `avgRecoveryLinkedResidue`: Mean recovery-linked residue
+- `avgWeakConsolidationDelta`: Mean weak post-replay slow-state delta
+- `avgReplayContributionToStabilization`: Mean replay contribution toward stabilization
 - `avgQueueFillRatio`: Average replay queue occupancy (0-1)
 
-**Important**: These are derived/proxy metrics, NOT direct measurements. They indicate replay/consolidation dynamics but are not "proof" of memory consolidation.
+**Important**: These are derived/proxy metrics, NOT direct measurements. They indicate trace / replay / weak consolidation dynamics but are not "proof" of memory or semantic recall.
 
 **Classification**:
-- **Derived**: `replayPressure`, `replayReadiness`, `replaySuppression`, `consolidationGain`, `restConsolidationDepth`
-- **Proxy**: `activeReplayCount`, `recentReplaySalience`
-- **Evidence**: `replayQueueSize`, `totalReplayCount`
+- **Measured**: `totalReplayCount`, `activeReplayCount`, raw local activity resurgence, `replayQueueSize`
+- **Derived**: `traceStrength`, `recurrenceWeight`, `salienceResidue`, `replayReadiness`, `replaySuppression`, `consolidationGain`, `restConsolidationDepth`
+- **Proxy**: `recentPatternWeight`, `settlingResidue`, `recoveryLinkedResidue`, `recentReplaySalience`, `weakConsolidationDelta`, `replayContributionToStabilization`
 
-Replay is intentionally minimal and does not dominate organism dynamics. It is NOT episodic memory or dream演出.
+Replay is intentionally minimal and does not dominate organism dynamics. It is NOT episodic memory, not event playback, and not dream演出.
 
 ### Temporal Windows
 - **Short window**: 50 frames (~0.83s @ 60 FPS)

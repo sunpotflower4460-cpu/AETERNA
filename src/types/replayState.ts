@@ -15,7 +15,10 @@
  */
 
 /**
- * ReplayState - Current replay/consolidation availability and activity
+ * ReplayState - Current replay reactivation availability and activity
+ *
+ * Trace itself lives in TraceState. ReplayState only describes whether that
+ * residue is currently close to weak reactivation and what replay did this frame.
  */
 export interface ReplayState {
   /** Frame timestamp */

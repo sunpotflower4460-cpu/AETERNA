@@ -260,6 +260,16 @@ Compare behavioral outcomes against this baseline order.
 - Collapse distinctions are tracked as `soft_collapse`, `hard_collapse`, or `runaway`.
 - This loop is **pre-semantic**: it is about life-field recovery/collapse mechanics, not semantic interpretation or node-level meaning assignment.
 
+### Phase 4 Trace / Replay Loop (pre-semantic residue reactivation)
+
+- After perturbation and mismatch, the field may retain a weak **trace** rather than a remembered event.
+- Stronger mismatch, repeated perturbation, boundary stress, and recovery-linked return all contribute to residue staying slightly longer.
+- When external input is low and the field is quiet enough, that trace may weakly re-activate as **replay**.
+- Replay is a **low-intensity pattern resurgence**, not full event reconstruction and not semantic recall.
+- Replay is suppressed while live input / arousal dominate, so it does not take over the main loop.
+- After replay, only tiny slow-state deltas remain (weak consolidation): slightly easier recurrence, slight restoration/stabilization bias, slight settling residue.
+- Semantic interpretation is outside this loop's responsibility.
+
 
 ## Implementation Notes
 

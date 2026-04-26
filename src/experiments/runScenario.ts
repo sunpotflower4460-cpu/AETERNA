@@ -14,6 +14,7 @@ import { runSelfWorldModelStage } from '../stages/runSelfWorldModelStage.ts';
 import { deriveFeltState } from '../organism/deriveFeltState.ts';
 import { deriveArousalAwareness } from '../organism/deriveArousalAwareness.ts';
 import { ReplayQueue } from '../organism/replayQueue.ts';
+import { deriveTraceState } from '../organism/deriveTraceState.ts';
 import { deriveReplayState } from '../organism/deriveReplayState.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
@@ -25,6 +26,7 @@ import type {
     OrganismLivingState,
 } from '../types/organismState.ts';
 import type { ReplayState } from '../types/replayState.ts';
+import type { TraceState } from '../types/traceState.ts';
 import type { RecoveryState, RecoveryTrajectoryLabel, CollapseModeLabel } from '../types/recoveryState.ts';
 import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
 import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
@@ -146,6 +148,9 @@ export interface MetricsSnapshot {
     hyperreactivity?: number;
     settlingWindow?: number;
     // A3: Replay / consolidation metrics
+    traceStrength?: number;
+    recurrenceWeight?: number;
+    salienceResidue?: number;
     replayPressure?: number;
     replayReadiness?: number;
     consolidationGain?: number;
@@ -153,6 +158,11 @@ export interface MetricsSnapshot {
     recentReplaySalience?: number;
     restConsolidationDepth?: number;
     replaySuppression?: number;
+    recentPatternWeight?: number;
+    settlingResidue?: number;
+    recoveryLinkedResidue?: number;
+    weakConsolidationDelta?: number;
+    replayContributionToStabilization?: number;
     replayQueueSize?: number;
     // A4: Need / motivation metrics
     energyNeed?: number;
@@ -226,12 +236,20 @@ export interface ScenarioResult {
         maxArousalLevel?: number;
         minAwarenessWindow?: number;
         // A3: Replay / consolidation summaries
+        avgTraceStrength?: number;
+        avgRecurrenceWeight?: number;
+        avgSalienceResidue?: number;
         totalReplayCount?: number;
         avgReplayPressure?: number;
         avgReplayReadiness?: number;
         avgConsolidationGain?: number;
         maxActiveReplayCount?: number;
         avgRecentReplaySalience?: number;
+        avgRecentPatternWeight?: number;
+        avgSettlingResidue?: number;
+        avgRecoveryLinkedResidue?: number;
+        avgWeakConsolidationDelta?: number;
+        avgReplayContributionToStabilization?: number;
         avgQueueFillRatio?: number;
         // A4: Need / motivation summaries
         avgEnergyNeed?: number;
@@ -292,6 +310,11 @@ export interface ScenarioResult {
     };
     succeeded: boolean;
     failureReason?: string;
+}
+
+function clampFinite(value: number, min: number, max: number): number {
+    if (!Number.isFinite(value)) return min;
+    return Math.max(min, Math.min(max, value));
 }
 
 /**
@@ -446,36 +469,95 @@ function checkAndAddReplayCandidates(
     frame: number,
     network: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    queue: ReplayQueue
+    queue: ReplayQueue,
+    traceState: TraceState,
+    recoveryState: RecoveryState | null,
 ): void {
-    // Touch surprise candidate
-    if (dyn.touchTotalSurprise && dyn.touchTotalSurprise > 0.5) {
-        queue.addCandidate('touch', dyn.touchTotalSurprise, frame);
+    const mismatchPressure = Math.max(dyn.touchTotalSurprise ?? 0, dyn.meanPredictionError ?? 0);
+    if (mismatchPressure > 0.42) {
+        queue.addCandidate(
+            'mismatch',
+            mismatchPressure,
+            frame,
+            [
+                clampFinite(dyn.meanPredictionError ?? 0, 0, 1),
+                clampFinite(dyn.touchTotalSurprise ?? 0, 0, 1),
+                clampFinite(traceState.salienceResidue, 0, 1),
+            ],
+            traceState.traceStrength,
+            traceState.recurrenceWeight,
+        );
     }
 
-    // General surprise candidate
-    if (dyn.meanPredictionError && dyn.meanPredictionError > 0.6) {
-        queue.addCandidate('surprise', dyn.meanPredictionError, frame);
+    const recurrencePressure = Math.min(
+        1,
+        clampFinite((dyn.touchRepeatCount ?? 0) / 8, 0, 1) * 0.65 +
+        clampFinite(dyn.meanTouchHabituation ?? 0, 0, 1) * 0.35,
+    );
+    if (recurrencePressure > 0.26 || traceState.recurrenceWeight > 0.38) {
+        queue.addCandidate(
+            'recurrence',
+            Math.max(recurrencePressure, traceState.recurrenceWeight * 0.8),
+            frame,
+            [
+                clampFinite(dyn.touchRepeatCount ?? 0, 0, 8) / 8,
+                clampFinite(dyn.meanTouchHabituation ?? 0, 0, 1),
+                clampFinite(traceState.recurrenceWeight, 0, 1),
+            ],
+            traceState.traceStrength,
+            traceState.recurrenceWeight,
+        );
     }
 
-    // Restoration candidate (overload recovery)
-    if (network.homeostaticState) {
-        const restorationBias = network.homeostaticState.restorationBias;
-        const overload = dyn.overload ?? 0;
-        if (restorationBias > 0.6 && overload < 0.3) {
-            queue.addCandidate('restoration', restorationBias, frame);
-        }
+    const recoveryPressure = recoveryState?.recoveryPressure ?? 0;
+    if (recoveryPressure > 0.46 && (traceState.recoveryLinkedResidue ?? 0) > 0.18) {
+        queue.addCandidate(
+            'recovery',
+            Math.min(1, recoveryPressure * 0.7 + (traceState.recoveryLinkedResidue ?? 0) * 0.45),
+            frame,
+            [
+                clampFinite(recoveryPressure, 0, 1),
+                clampFinite(recoveryState?.stabilizationPull ?? 0, 0, 1),
+                clampFinite(traceState.recoveryLinkedResidue ?? 0, 0, 1),
+            ],
+            traceState.traceStrength,
+            traceState.recurrenceWeight,
+        );
     }
 
-    // Repetition candidate (repeated touch pattern)
-    if (dyn.touchRepeatCount && dyn.touchRepeatCount > 5 && dyn.meanTouchHabituation && dyn.meanTouchHabituation > 0.4) {
-        const repetitionSalience = Math.min(1.0, dyn.touchRepeatCount / 10);
-        queue.addCandidate('repetition', repetitionSalience, frame);
+    const boundaryStress = Math.max(
+        0,
+        1 - clampFinite(network.homeostaticState?.boundaryIntegrity ?? 1, 0, 1),
+    );
+    if (boundaryStress > 0.22 && (mismatchPressure > 0.28 || traceState.salienceResidue > 0.22)) {
+        queue.addCandidate(
+            'boundary',
+            Math.min(1, boundaryStress * 0.65 + traceState.salienceResidue * 0.35),
+            frame,
+            [
+                clampFinite(boundaryStress, 0, 1),
+                clampFinite(traceState.salienceResidue, 0, 1),
+                clampFinite(traceState.traceStrength, 0, 1),
+            ],
+            traceState.traceStrength,
+            traceState.recurrenceWeight,
+        );
     }
 
-    // Absence candidate (missing expected touch)
-    if (network.touchExpectation && network.touchExpectation.absenceError > 0.4) {
-        queue.addCandidate('absence', network.touchExpectation.absenceError, frame);
+    const settlingResidue = traceState.settlingResidue ?? 0;
+    if ((dyn.activeTouchCount ?? 0) === 0 && settlingResidue > 0.18 && traceState.traceStrength > 0.22) {
+        queue.addCandidate(
+            'settling',
+            Math.min(1, settlingResidue * 0.7 + traceState.traceStrength * 0.3),
+            frame,
+            [
+                clampFinite(settlingResidue, 0, 1),
+                clampFinite(traceState.traceStrength, 0, 1),
+                clampFinite(traceState.recoveryLinkedResidue ?? 0, 0, 1),
+            ],
+            traceState.traceStrength,
+            traceState.recurrenceWeight,
+        );
     }
 }
 
@@ -487,8 +569,11 @@ function buildMetricsSnapshot(
     network: AeternaNetwork,
     dyn: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     recentMeans: number[],
+    traceState?: TraceState | null,
     replayState?: ReplayState | null,
     queueSize?: number,
+    weakConsolidationDelta = 0,
+    replayContributionToStabilization = 0,
     recoveryState?: RecoveryState | null,
     recoveryTrajectory?: RecoveryTrajectoryLabel,
     collapseMode?: CollapseModeLabel,
@@ -666,7 +751,15 @@ function buildMetricsSnapshot(
             }
         }
 
-        // A3: Add replay state metrics if available
+        if (traceState) {
+            snapshot.traceStrength = traceState.traceStrength;
+            snapshot.recurrenceWeight = traceState.recurrenceWeight;
+            snapshot.salienceResidue = traceState.salienceResidue;
+            snapshot.recentPatternWeight = traceState.recentPatternWeight;
+            snapshot.settlingResidue = traceState.settlingResidue;
+            snapshot.recoveryLinkedResidue = traceState.recoveryLinkedResidue;
+        }
+
         if (replayState) {
             snapshot.replayPressure = replayState.replayPressure;
             snapshot.replayReadiness = replayState.replayReadiness;
@@ -675,6 +768,8 @@ function buildMetricsSnapshot(
             snapshot.recentReplaySalience = replayState.recentReplaySalience;
             snapshot.restConsolidationDepth = replayState.restConsolidationDepth;
             snapshot.replaySuppression = replayState.replaySuppression;
+            snapshot.weakConsolidationDelta = weakConsolidationDelta;
+            snapshot.replayContributionToStabilization = replayContributionToStabilization;
             if (queueSize !== undefined) {
                 snapshot.replayQueueSize = queueSize;
             }
@@ -781,12 +876,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let lastReplayCategory: string | null = null;
     let totalReplayCount = 0;
     const recentPerturbationHistory: number[] = [];
+    const recentMismatchHistory: number[] = [];
+    const recentRecoveryHistory: number[] = [];
+    const repeatedPatternHistory: number[] = [];
     const perturbationPeaks: number[] = [];
     const degradationPeaks: number[] = [];
     const recoveryTimes: number[] = [];
     const settlingTimes: number[] = [];
     let activePerturbationStart: number | null = null;
     let activeSettlingStart: number | null = null;
+    let traceState: TraceState | null = null;
+    let lastWeakConsolidationDelta = 0;
+    let lastReplayContributionToStabilization = 0;
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -831,13 +932,26 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             );
         }
 
-        // A3: Process replay and consolidation
-        // Decay queue and check for salient candidates
-        replayQueue.decay();
-        checkAndAddReplayCandidates(frame, network, dyn, replayQueue);
+        const meanAct = computeMeanActivity(network);
+        const maxAct = computeMaxActivity(network);
+        recentMeans.push(meanAct);
+        if (recentMeans.length > 100) recentMeans.shift();
+        activityHistory.push(meanAct);
 
-        // Derive replay state (requires felt state and arousal/awareness)
+        if (meanAct < 0.01) collapseFrames++;
+        if (hasNaN(network)) nanFrames++;
+
+        if (maxAct > 8.0) saturationFrames++;
+
+        const perturbationPressure = dyn.meanPredictionError ?? 0;
+        traceState = null;
         let replayState: ReplayState | null = null;
+        let recoveryState: RecoveryState | null = null;
+        let recoveryTrajectory: RecoveryTrajectoryLabel = 'shift';
+        let collapseMode: CollapseModeLabel = 'stable';
+        lastWeakConsolidationDelta = 0;
+        lastReplayContributionToStabilization = 0;
+
         if (network.livingState && network.homeostaticState && network.energyFlowState) {
             try {
                 const organismSnapshot = buildOrganismSnapshot(frame, network, dyn);
@@ -859,116 +973,173 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                     selfWorldPacket
                 );
 
+                traceState = deriveTraceState({
+                    timestamp: frame,
+                    recentPerturbationHistory,
+                    mismatchHistory: recentMismatchHistory,
+                    recoveryHistory: recentRecoveryHistory,
+                    repeatedPatternHistory,
+                    externalInputLevel: dyn.meanRawTouch ?? 0,
+                    arousalLevel: arousalAwareness.arousalLevel,
+                    awarenessWindow: arousalAwareness.awarenessWindow,
+                    restDepth: arousalAwareness.restDepth,
+                    settlingWindow: arousalAwareness.settlingWindow,
+                    restorationReadiness: feltState.restorationReadiness,
+                    boundaryIntegrity: feltState.boundaryIntegrity,
+                    collapseRisk: network.homeostaticState.collapseRisk ?? 0,
+                });
+
+                recoveryState = deriveRecoveryState({
+                    timestamp: frame,
+                    meanPredictionError: perturbationPressure,
+                    perturbationLoad: dyn.meanPredictionError ?? 0,
+                    boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+                    restorationBias: network.homeostaticState.restorationBias,
+                    stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
+                    overload: dyn.overload ?? network.homeostaticState.overloadLevel,
+                    depletion: 1 - (network.energyFlowState.energyReserve ?? 1),
+                    selfPreservationBias: network.homeostaticState.selfPreservationBias,
+                    replaySuppression: traceState.replaySuppression,
+                    touchOpennessDamping: 1 - (network.livingState.touchNeedBaseline ?? 0.5),
+                    recentPerturbationHistory,
+                });
+                recoveryTrajectory = classifyRecoveryTrajectory(recoveryState, {
+                    stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
+                    boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+                });
+                collapseMode = classifyCollapseMode(recoveryState, {
+                    meanActivity: meanAct,
+                    maxActivity: maxAct,
+                    boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
+                });
+
+                replayQueue.decay();
+                checkAndAddReplayCandidates(frame, network, dyn, replayQueue, traceState, recoveryState);
+
                 replayState = deriveReplayState(
                     organismSnapshot,
                     feltState,
                     arousalAwareness,
+                    traceState,
                     replayQueue,
                     activeReplayCount,
                     recentReplaySalience,
-                    lastReplayCategory
+                    lastReplayCategory,
+                    recoveryState,
                 );
 
-                // Perform minimal replay if conditions are met
                 activeReplayCount = 0;
                 recentReplaySalience = 0;
 
-                if (replayState.replayReadiness > 0.5 && replayState.replaySuppression < 0.3 && replayState.replayPressure > 0.4) {
-                    const candidates = replayQueue.getCandidatesForReplay(2);
+                const quietGate = (dyn.activeTouchCount ?? 0) === 0;
+                const collapseGate = (recoveryState?.collapseRisk ?? 0) < 0.88;
+
+                if (
+                    quietGate &&
+                    collapseGate &&
+                    replayState.replayReadiness > 0.42 &&
+                    replayState.replaySuppression < 0.58 &&
+                    replayState.replayPressure > 0.36
+                ) {
+                    const candidates = replayQueue.getCandidatesForReplay(traceState.replayReadiness > 0.72 ? 2 : 1);
 
                     for (const candidate of candidates) {
-                        // Minimal replay: weak trace reactivation
-                        // This is intentionally subtle and does not dominate dynamics
                         activeReplayCount++;
                         recentReplaySalience += candidate.weight;
                         lastReplayCategory = candidate.category;
                         totalReplayCount++;
 
-                        // Apply very weak consolidation influence
-                        if (replayState.consolidationGain > 0.05 && network.livingState) {
-                            const consolidationStrength = replayState.consolidationGain * candidate.weight * 0.01;
+                        const consolidationStrength = replayState.consolidationGain * candidate.weight * 0.0025;
+                        lastWeakConsolidationDelta += consolidationStrength;
 
-                            // Weak influences on slow state
-                            if (candidate.category === 'touch' || candidate.category === 'repetition') {
-                                // Slightly stabilize touch expectation confidence
-                                if (network.touchExpectation) {
-                                    network.touchExpectation.touchExpectationConfidence *= (1.0 + consolidationStrength * 0.5);
-                                    network.touchExpectation.touchExpectationConfidence = Math.min(1.0, network.touchExpectation.touchExpectationConfidence);
-                                }
-                            }
-
-                            if (candidate.category === 'restoration') {
-                                // Slightly strengthen restoration bias
-                                if (network.homeostaticState) {
-                                    network.homeostaticState.restorationBias += consolidationStrength * 0.02;
-                                    network.homeostaticState.restorationBias = Math.min(1.0, network.homeostaticState.restorationBias);
-                                }
-                            }
-
-                            // Very weak influence on longBaselineTone
-                            network.livingState.longBaselineTone += consolidationStrength * 0.005 * (Math.random() - 0.5);
-                            network.livingState.longBaselineTone = Math.max(-0.5, Math.min(0.5, network.livingState.longBaselineTone));
+                        if (network.touchExpectation) {
+                            const familiarityNudge = consolidationStrength * (
+                                candidate.category === 'mismatch' ? 0.4 :
+                                candidate.category === 'recurrence' ? 0.6 : 0.2
+                            );
+                            network.touchExpectation.touchExpectationConfidence = clampFinite(
+                                network.touchExpectation.touchExpectationConfidence + familiarityNudge,
+                                0,
+                                1,
+                            );
                         }
 
-                        // Reduce candidate weight after replay
-                        replayQueue.reduceWeight(candidate.id, 0.7);
+                        if (network.homeostaticState) {
+                            if (candidate.category === 'recovery' || candidate.category === 'settling') {
+                                network.homeostaticState.restorationBias = clampFinite(
+                                    network.homeostaticState.restorationBias + consolidationStrength * 1.3,
+                                    0,
+                                    1,
+                                );
+                                lastReplayContributionToStabilization += consolidationStrength * 1.4;
+                            }
+
+                            if (candidate.category === 'boundary') {
+                                network.homeostaticState.selfPreservationBias = clampFinite(
+                                    network.homeostaticState.selfPreservationBias + consolidationStrength,
+                                    0,
+                                    1,
+                                );
+                                lastReplayContributionToStabilization += consolidationStrength;
+                            }
+                        }
+
+                        if (network.livingState) {
+                            if (candidate.category === 'recurrence') {
+                                network.livingState.residueBias = clampFinite(
+                                    network.livingState.residueBias + consolidationStrength * 1.5,
+                                    0,
+                                    1.5,
+                                );
+                                network.livingState.recentHistoryBias = clampFinite(
+                                    network.livingState.recentHistoryBias + consolidationStrength,
+                                    0,
+                                    1.5,
+                                );
+                            } else if (candidate.category === 'settling') {
+                                network.livingState.longBaselineTone = clampFinite(
+                                    network.livingState.longBaselineTone + consolidationStrength * 0.08,
+                                    -0.5,
+                                    0.5,
+                                );
+                                network.livingState.coherenceMemory = clampFinite(
+                                    network.livingState.coherenceMemory + consolidationStrength * 0.5,
+                                    0,
+                                    1,
+                                );
+                            } else if (candidate.category === 'mismatch') {
+                                network.livingState.predictionSensitivity = clampFinite(
+                                    network.livingState.predictionSensitivity + consolidationStrength * 0.8,
+                                    0,
+                                    1.5,
+                                );
+                            }
+                        }
+
+                        replayQueue.reduceWeight(
+                            candidate.id,
+                            clampFinite(0.82 - (traceState.recurrenceWeight * 0.08), 0.62, 0.84),
+                        );
                     }
                 }
 
-                // Normalize replay salience
                 if (activeReplayCount > 0) {
                     recentReplaySalience /= activeReplayCount;
                 }
+
+                recentPerturbationHistory.push(perturbationPressure);
+                if (recentPerturbationHistory.length > 240) recentPerturbationHistory.shift();
+                recentMismatchHistory.push(Math.max(dyn.touchTotalSurprise ?? 0, dyn.meanPredictionError ?? 0));
+                if (recentMismatchHistory.length > 240) recentMismatchHistory.shift();
+                recentRecoveryHistory.push(recoveryState.recoveryPressure);
+                if (recentRecoveryHistory.length > 240) recentRecoveryHistory.shift();
+                repeatedPatternHistory.push(clampFinite((dyn.touchRepeatCount ?? 0) / 8, 0, 1));
+                if (repeatedPatternHistory.length > 240) repeatedPatternHistory.shift();
             } catch (e) {
                 // Replay derivation failed, skip silently
             }
         }
-
-        // Collect metrics
-        const meanAct = computeMeanActivity(network);
-        const maxAct = computeMaxActivity(network);
-        recentMeans.push(meanAct);
-        if (recentMeans.length > 100) recentMeans.shift();
-        activityHistory.push(meanAct);
-
-        if (meanAct < 0.01) collapseFrames++;
-        if (hasNaN(network)) nanFrames++;
-
-        // Phase 1: Ongoingness tracking
-        if (maxAct > 8.0) saturationFrames++;
-
-        const perturbationPressure = dyn.meanPredictionError ?? 0;
-        recentPerturbationHistory.push(perturbationPressure);
-        if (recentPerturbationHistory.length > 240) recentPerturbationHistory.shift();
-
-        let recoveryState: RecoveryState | null = null;
-        let recoveryTrajectory: RecoveryTrajectoryLabel = 'shift';
-        let collapseMode: CollapseModeLabel = 'stable';
-        if (network.homeostaticState && network.livingState && network.energyFlowState) {
-            recoveryState = deriveRecoveryState({
-                timestamp: frame,
-                meanPredictionError: perturbationPressure,
-                perturbationLoad: dyn.meanPredictionError ?? 0,
-                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
-                restorationBias: network.homeostaticState.restorationBias,
-                stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
-                overload: dyn.overload ?? network.homeostaticState.overloadLevel,
-                depletion: 1 - (network.energyFlowState.energyReserve ?? 1),
-                selfPreservationBias: network.homeostaticState.selfPreservationBias,
-                replaySuppression: replayState?.replaySuppression ?? 0,
-                touchOpennessDamping: 1 - (network.livingState.touchNeedBaseline ?? 0.5),
-                recentPerturbationHistory,
-            });
-            recoveryTrajectory = classifyRecoveryTrajectory(recoveryState, {
-                stability: dyn.stability ?? network.homeostaticState.stabilityIndex,
-                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
-            });
-            collapseMode = classifyCollapseMode(recoveryState, {
-                meanActivity: meanAct,
-                maxActivity: maxAct,
-                boundaryIntegrity: network.homeostaticState.boundaryIntegrity,
-            });
-
+        if (recoveryState) {
             if (perturbationPressure > 0.5 && activePerturbationStart === null) activePerturbationStart = frame;
             if (activePerturbationStart !== null && recoveryTrajectory === 'recover' && recoveryState.relaxationLevel > 0.55) {
                 recoveryTimes.push(frame - activePerturbationStart);
@@ -1012,8 +1183,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 network,
                 dyn,
                 recentMeans,
+                traceState,
                 replayState,
                 replayQueue.size(),
+                lastWeakConsolidationDelta,
+                lastReplayContributionToStabilization,
                 recoveryState,
                 recoveryTrajectory,
                 collapseMode,
@@ -1108,11 +1282,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let arousalAwarenessCount = 0;
 
     // A3: Replay summary accumulators
+    let avgTraceStrength = 0;
+    let avgRecurrenceWeight = 0;
+    let avgSalienceResidue = 0;
     let avgReplayPressure = 0;
     let avgReplayReadiness = 0;
     let avgConsolidationGain = 0;
     let maxActiveReplayCount = 0;
     let avgRecentReplaySalience = 0;
+    let avgRecentPatternWeight = 0;
+    let avgSettlingResidue = 0;
+    let avgRecoveryLinkedResidue = 0;
+    let avgWeakConsolidationDelta = 0;
+    let avgReplayContributionToStabilization = 0;
     let avgQueueSize = 0;
     let replayCount = 0;
 
@@ -1217,10 +1399,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
         // A3: Accumulate replay metrics
         if (m.replayPressure !== undefined) {
+            avgTraceStrength += m.traceStrength ?? 0;
+            avgRecurrenceWeight += m.recurrenceWeight ?? 0;
+            avgSalienceResidue += m.salienceResidue ?? 0;
             avgReplayPressure += m.replayPressure;
             avgReplayReadiness += m.replayReadiness ?? 0;
             avgConsolidationGain += m.consolidationGain ?? 0;
             avgRecentReplaySalience += m.recentReplaySalience ?? 0;
+            avgRecentPatternWeight += m.recentPatternWeight ?? 0;
+            avgSettlingResidue += m.settlingResidue ?? 0;
+            avgRecoveryLinkedResidue += m.recoveryLinkedResidue ?? 0;
+            avgWeakConsolidationDelta += m.weakConsolidationDelta ?? 0;
+            avgReplayContributionToStabilization += m.replayContributionToStabilization ?? 0;
             avgQueueSize += m.replayQueueSize ?? 0;
             if (m.activeReplayCount !== undefined) {
                 maxActiveReplayCount = Math.max(maxActiveReplayCount, m.activeReplayCount);
@@ -1335,10 +1525,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // A3: Compute replay averages
     if (replayCount > 0) {
+        avgTraceStrength /= replayCount;
+        avgRecurrenceWeight /= replayCount;
+        avgSalienceResidue /= replayCount;
         avgReplayPressure /= replayCount;
         avgReplayReadiness /= replayCount;
         avgConsolidationGain /= replayCount;
         avgRecentReplaySalience /= replayCount;
+        avgRecentPatternWeight /= replayCount;
+        avgSettlingResidue /= replayCount;
+        avgRecoveryLinkedResidue /= replayCount;
+        avgWeakConsolidationDelta /= replayCount;
+        avgReplayContributionToStabilization /= replayCount;
         avgQueueSize /= replayCount;
     }
 
@@ -1452,11 +1650,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             minAwarenessWindow: arousalAwarenessCount > 0 && minAwarenessWindow !== Infinity ? minAwarenessWindow : undefined,
             // A3: Replay / consolidation summaries
             totalReplayCount,
+            avgTraceStrength: replayCount > 0 ? avgTraceStrength : undefined,
+            avgRecurrenceWeight: replayCount > 0 ? avgRecurrenceWeight : undefined,
+            avgSalienceResidue: replayCount > 0 ? avgSalienceResidue : undefined,
             avgReplayPressure: replayCount > 0 ? avgReplayPressure : undefined,
             avgReplayReadiness: replayCount > 0 ? avgReplayReadiness : undefined,
             avgConsolidationGain: replayCount > 0 ? avgConsolidationGain : undefined,
             maxActiveReplayCount: replayCount > 0 ? maxActiveReplayCount : undefined,
             avgRecentReplaySalience: replayCount > 0 ? avgRecentReplaySalience : undefined,
+            avgRecentPatternWeight: replayCount > 0 ? avgRecentPatternWeight : undefined,
+            avgSettlingResidue: replayCount > 0 ? avgSettlingResidue : undefined,
+            avgRecoveryLinkedResidue: replayCount > 0 ? avgRecoveryLinkedResidue : undefined,
+            avgWeakConsolidationDelta: replayCount > 0 ? avgWeakConsolidationDelta : undefined,
+            avgReplayContributionToStabilization: replayCount > 0 ? avgReplayContributionToStabilization : undefined,
             avgQueueFillRatio: replayCount > 0 ? avgQueueFillRatio : undefined,
             // A4: Need / motivation summaries
             avgEnergyNeed: needMotivationCount > 0 ? avgEnergyNeed : undefined,
