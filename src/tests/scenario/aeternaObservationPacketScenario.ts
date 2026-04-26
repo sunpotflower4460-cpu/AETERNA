@@ -52,15 +52,16 @@ export interface AeternaPacketScenarioOutcome {
   };
 }
 
+/** A single metrics snapshot entry from ScenarioResult.metrics. */
+type MetricsSnapshotEntry = ScenarioResult['metrics'][number];
+
 /**
  * Build an AeternaExportInput from a ScenarioResult metrics snapshot.
  * This simulates what the live organism loop would produce.
  */
 function buildExportInput(
   frame: number,
-  metrics: ReturnType<typeof runScenario> extends Promise<infer R>
-    ? R extends { metrics: Array<infer M> } ? M : never
-    : never,
+  metrics: MetricsSnapshotEntry,
   result: ScenarioResult,
 ): AeternaExportInput {
   // Compute collapse and saturation rates from summary
@@ -71,61 +72,61 @@ function buildExportInput(
 
   return {
     timestamp: frame,
-    meanActivity: (metrics as Record<string, number>).meanActivity ?? 0,
-    activityVariance: (metrics as Record<string, number>).variance ?? 0,
+    meanActivity: metrics.meanActivity ?? 0,
+    activityVariance: metrics.variance ?? 0,
     collapseRate,
     saturationRate,
     quietBaselineFloor,
-    phaseCoherence: (metrics as Record<string, number>).phaseCoherence ?? undefined,
-    boundaryIntegrity: (metrics as Record<string, number>).boundaryIntegrity ?? 1,
-    collapseRisk: (metrics as Record<string, number>).collapseRisk ?? 0,
-    competitionStability: (metrics as Record<string, number>).pc_competitionStability ?? undefined,
-    traceState: (metrics as Record<string, unknown>).traceStrength != null
+    phaseCoherence: metrics.phaseCoherence ?? undefined,
+    boundaryIntegrity: metrics.boundaryIntegrity ?? 1,
+    collapseRisk: metrics.collapseRisk ?? 0,
+    competitionStability: metrics.pc_competitionStability ?? undefined,
+    traceState: metrics.traceStrength != null
       ? {
           timestamp: frame,
-          traceStrength: (metrics as Record<string, number>).traceStrength ?? 0,
-          recurrenceWeight: (metrics as Record<string, number>).recurrenceWeight ?? 0,
-          salienceResidue: (metrics as Record<string, number>).salienceResidue ?? 0,
-          replayReadiness: (metrics as Record<string, number>).replayReadiness ?? 0,
+          traceStrength: metrics.traceStrength ?? 0,
+          recurrenceWeight: metrics.recurrenceWeight ?? 0,
+          salienceResidue: metrics.salienceResidue ?? 0,
+          replayReadiness: metrics.replayReadiness ?? 0,
           replaySuppression: 0,
         }
       : null,
-    recoveryState: (metrics as Record<string, unknown>).recoveryPressure != null
+    recoveryState: metrics.recoveryPressure != null
       ? {
           timestamp: frame,
-          recoveryPressure: (metrics as Record<string, number>).recoveryPressure ?? 0,
-          relaxationLevel: (metrics as Record<string, number>).relaxationLevel ?? 0,
-          stabilizationPull: (metrics as Record<string, number>).stabilizationPull ?? 0,
-          collapseRisk: (metrics as Record<string, number>).collapseRisk ?? 0,
-          restorationBias: (metrics as Record<string, number>).restorationBias ?? 0.5,
+          recoveryPressure: metrics.recoveryPressure ?? 0,
+          relaxationLevel: metrics.relaxationLevel ?? 0,
+          stabilizationPull: metrics.stabilizationPull ?? 0,
+          collapseRisk: metrics.collapseRisk ?? 0,
+          restorationBias: metrics.restorationBias ?? 0.5,
         }
       : null,
-    observationPatternState: (metrics as Record<string, unknown>).obs_knotCount != null
+    observationPatternState: metrics.obs_knotCount != null
       ? {
           timestamp: frame,
-          knotCount: (metrics as Record<string, number>).obs_knotCount ?? 0,
-          pathCount: (metrics as Record<string, number>).obs_pathCount ?? 0,
-          recurrenceLocusCount: (metrics as Record<string, number>).obs_recurrenceLocusCount ?? 0,
-          basinCount: (metrics as Record<string, number>).obs_basinCount ?? 0,
-          longLivedAnomalyCount: (metrics as Record<string, number>).obs_longLivedAnomalyCount ?? 0,
-          protoPointCandidateCount: (metrics as Record<string, number>).obs_protoPointCandidateCount ?? 0,
-          observationConfidence: (metrics as Record<string, number>).obs_observationConfidence ?? undefined,
+          knotCount: metrics.obs_knotCount ?? 0,
+          pathCount: metrics.obs_pathCount ?? 0,
+          recurrenceLocusCount: metrics.obs_recurrenceLocusCount ?? 0,
+          basinCount: metrics.obs_basinCount ?? 0,
+          longLivedAnomalyCount: metrics.obs_longLivedAnomalyCount ?? 0,
+          protoPointCandidateCount: metrics.obs_protoPointCandidateCount ?? 0,
+          observationConfidence: metrics.obs_observationConfidence ?? undefined,
         }
       : null,
-    pressureCompetitionState: (metrics as Record<string, unknown>).pc_safetyPressure != null
+    pressureCompetitionState: metrics.pc_safetyPressure != null
       ? {
           timestamp: frame,
-          safetyPressure: (metrics as Record<string, number>).pc_safetyPressure ?? 0,
-          restorationPressure: (metrics as Record<string, number>).pc_restorationPressure ?? 0,
-          noveltyPressure: (metrics as Record<string, number>).pc_noveltyPressure ?? 0,
-          repetitionPressure: (metrics as Record<string, number>).pc_repetitionPressure ?? 0,
-          explorationPressure: (metrics as Record<string, number>).pc_explorationPressure ?? 0,
-          withdrawalPressure: (metrics as Record<string, number>).pc_withdrawalPressure ?? 0,
-          dominantPressure: (metrics as Record<string, unknown>).pc_dominantPressure as string | null ?? null,
-          competitionEntropy: (metrics as Record<string, number>).pc_competitionEntropy ?? 0,
-          competitionStability: (metrics as Record<string, number>).pc_competitionStability ?? 0,
-          annealingTemperature: (metrics as Record<string, number>).pc_annealingTemperature ?? 0,
-          pressureEnergy: (metrics as Record<string, number>).pc_pressureEnergy ?? undefined,
+          safetyPressure: metrics.pc_safetyPressure ?? 0,
+          restorationPressure: metrics.pc_restorationPressure ?? 0,
+          noveltyPressure: metrics.pc_noveltyPressure ?? 0,
+          repetitionPressure: metrics.pc_repetitionPressure ?? 0,
+          explorationPressure: metrics.pc_explorationPressure ?? 0,
+          withdrawalPressure: metrics.pc_withdrawalPressure ?? 0,
+          dominantPressure: metrics.pc_dominantPressure ?? null,
+          competitionEntropy: metrics.pc_competitionEntropy ?? 0,
+          competitionStability: metrics.pc_competitionStability ?? 0,
+          annealingTemperature: metrics.pc_annealingTemperature ?? 0,
+          pressureEnergy: metrics.pc_pressureEnergy ?? undefined,
         }
       : null,
     totalFrames,

@@ -89,20 +89,28 @@ function sanitizeNumeric(
 }
 
 /**
- * Recursively strip forbidden fields from an object (deep scan).
+ * Recursively strip forbidden fields from an object or array (deep scan).
  * Returns list of forbidden field names found.
  */
 function stripForbiddenFields(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  obj: Record<string, any>,
+  obj: Record<string, any> | Array<any>,
   forbidden: readonly string[],
   found: string[],
 ): void {
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      if (item !== null && typeof item === 'object') {
+        stripForbiddenFields(item as Record<string, unknown>, forbidden, found);
+      }
+    }
+    return;
+  }
   for (const key of Object.keys(obj)) {
     if ((forbidden as readonly string[]).includes(key)) {
       found.push(key);
       delete obj[key];
-    } else if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+    } else if (obj[key] !== null && typeof obj[key] === 'object') {
       stripForbiddenFields(obj[key] as Record<string, unknown>, forbidden, found);
     }
   }
@@ -118,15 +126,13 @@ export function sanitizeAeternaObservationPacket(
   raw: AeternaObservationPacket,
 ): SanitizeResult {
   // Deep clone to avoid mutating input
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const packet: AeternaObservationPacket = JSON.parse(JSON.stringify(raw)) as any;
+  const packet: AeternaObservationPacket = structuredClone(raw);
 
   const forbiddenFieldsFound: string[] = [];
   const nonFiniteFieldsFixed: string[] = [];
 
   // 1. Strip forbidden semantic fields (deep scan)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  stripForbiddenFields(packet as unknown as Record<string, any>, AETERNA_PACKET_FORBIDDEN_FIELDS, forbiddenFieldsFound);
+  stripForbiddenFields(packet as unknown as Record<string, unknown>, AETERNA_PACKET_FORBIDDEN_FIELDS, forbiddenFieldsFound);
 
   // 2. Enforce source
   packet.source = 'aeterna';

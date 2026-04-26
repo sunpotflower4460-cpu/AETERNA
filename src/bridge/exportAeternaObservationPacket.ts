@@ -92,10 +92,10 @@ function clamp01(v: number): number {
  * All inputs are optional; safe defaults are used for missing values.
  *
  * Formula (heuristic proxy):
- *   base = (1 - collapseRate * 5, clamped 0-1) * 0.5
- *         + (1 - saturationRate * 20, clamped 0-1) * 0.3
- *         + min(quietBaselineFloor / 0.2, 1) * 0.2
- *   adjusted = base * (1 - collapseRisk * 0.3)
+ *   base = clamp01(1 - collapseRate * 5) * 0.5
+ *         + clamp01(1 - saturationRate * 20) * 0.3
+ *         + clamp01(quietBaselineFloor / 0.2) * 0.2
+ *   result = clamp01(base * (1 - collapseRisk * 0.3))
  */
 function deriveOngoingness(input: AeternaExportInput): number {
   const collapseRate = clamp01(input.collapseRate ?? 0);
