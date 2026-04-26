@@ -4,7 +4,7 @@ import { runRecoveryProfilesScenarioSuite } from '../scenario/recoveryProfilesSc
 describe('Phase 3 Recovery / Self-Preservation profiles', () => {
   it('exposes recover/shift/degrade trajectories and collapse distinctions', async () => {
     const outcomes = await runRecoveryProfilesScenarioSuite();
-    expect(outcomes.length).toBeGreaterThanOrEqual(6);
+    expect(outcomes.length).toBeGreaterThanOrEqual(7);
 
     const summaries = outcomes.map((outcome) => outcome.result.summary);
 
@@ -34,5 +34,17 @@ describe('Phase 3 Recovery / Self-Preservation profiles', () => {
         expect(summary.avgSettlingTime).toBeGreaterThan(0);
       }
     }
+
+    const strongRestoration = outcomes.find((outcome) => outcome.name === 'same-perturbation-strong-restoration-bias');
+    const weakRestoration = outcomes.find((outcome) => outcome.name === 'same-perturbation-weak-restoration-bias');
+    expect(strongRestoration).toBeDefined();
+    expect(weakRestoration).toBeDefined();
+
+    expect((strongRestoration?.result.summary.avgRecoveryPressure ?? 0))
+      .toBeGreaterThan((weakRestoration?.result.summary.avgRecoveryPressure ?? 0));
+    expect((strongRestoration?.result.summary.avgBoundaryRepairPressure ?? 0))
+      .toBeGreaterThan((weakRestoration?.result.summary.avgBoundaryRepairPressure ?? 0));
+    expect((strongRestoration?.result.summary.avgRecoveryCollapseRisk ?? 1))
+      .toBeLessThan((weakRestoration?.result.summary.avgRecoveryCollapseRisk ?? 1));
   });
 });

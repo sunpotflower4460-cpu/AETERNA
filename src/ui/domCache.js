@@ -95,6 +95,16 @@ export function initDOMCache() {
         'val-saturation-rate',    'row-saturation-rate',
         'val-quiet-floor',        'row-quiet-floor',
         'val-ignition-count',     'row-ignition-count',
+        // Phase 3: Recovery observer
+        'val-recovery-pressure',      'row-recovery-pressure',
+        'val-relaxation-level',       'row-relaxation-level',
+        'val-stabilization-pull',     'row-stabilization-pull',
+        'val-recovery-collapse-risk', 'row-recovery-collapse-risk',
+        'val-boundary-repair-pressure', 'row-boundary-repair-pressure',
+        'val-self-preservation-drive', 'row-self-preservation-drive',
+        'val-overload-drain',         'row-overload-drain',
+        'val-recovery-trajectory',    'row-recovery-trajectory',
+        'val-collapse-mode',          'row-collapse-mode',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }
