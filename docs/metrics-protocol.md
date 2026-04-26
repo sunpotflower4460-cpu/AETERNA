@@ -1022,3 +1022,57 @@ observer / debug での表示区分:
 - proto-neuron is not a semantic node
 - confidence is not meaning confidence
 - W7 does not place runtime neuron nodes or bridge to Node-AI-Z
+
+---
+
+## W8 Closed-Loop Scenario Summary Metrics
+
+W8 で導入した `ClosedLoopScenarioSummary` の指標一覧。
+
+これらは閉ループ生命場の成立度を測る研究指標である。意識・主観性・知性の証明ではない。
+
+### Measured（直接計測）
+
+| Metric | 意味 |
+|---|---|
+| `ticks` | 実行した tick 数 |
+| `pulseCount` | 発射された Actuation Pulse の数 |
+| `sensoryReturnCount` | 受け取った Sensory Return パケットの数 |
+| `reafferenceCount` | Reafference Comparison を計算したフレーム数 |
+| `protoNeuronCandidateCount` | 観測された proto-neuron candidate の数（observer-side） |
+| `stableProtoNeuronCandidateCount` | 安定した候補の数（stabilizing + persistent lifecycle） |
+| `semanticLeakCount` | semantic leak が検出されたフレーム数（必ず 0 であること） |
+| `nanOrInfinityCount` | NaN / Infinity が検出されたフレーム数（必ず 0 であること） |
+| `worldOnlyReturnCount` | AETERNA の pulse なしで world 由来の return が来た数 |
+| `selfMatchedReturnCount` | selfCausedMatch が閾値以上だったフレーム数 |
+| `unresolvedReturnCount` | unresolvedReturn が高かったフレーム数 |
+| `closureFailureCount` | closureStability が 0.25 未満になったフレーム数 |
+
+### Derived（計算値）
+
+| Metric | 意味 |
+|---|---|
+| `averageLoopGain` | loopGain の平均（> 1.0 は増幅リスク） |
+| `averageClosureStability` | closureStability の平均（高いほど安定した閉ループ） |
+| `averageClosureDrift` | closureDrift の平均（高いほど変質傾向） |
+| `averageRoundTripDelay` | roundTripDelay の平均 |
+| `averageSelfCausedMatch` | selfCausedMatch の平均 |
+| `averageWorldCausedDifference` | worldCausedDifference の平均 |
+| `averageProtoNeuronConfidence` | proto-neuron candidate の confidence 平均 |
+| `averageClosureCoupling` | closure coupling proxy の平均 |
+
+### Proxy（間接指標）
+
+| Metric | 意味 |
+|---|---|
+| `maxFeedbackSaturationRisk` | feedbackSaturationRisk の最大値（閉ループ暴走リスク） |
+
+### 重要注意
+
+- `semanticLeakCount` は 0 でなければならない（必須条件）
+- `nanOrInfinityCount` は 0 でなければならない（必須条件）
+- `maxFeedbackSaturationRisk` が高くても「暴走した」ではなく「リスクが観測された」
+- `averageProtoNeuronConfidence` は意味の確信度ではない
+- proto-neuron candidate は observer-side のまま — runtime neuron node への変換は行わない
+- W8 の summary は "生命証明" や "意識あり" と表示してはならない
+- 表示ラベルは「Closed-Loop Scenario Summary」とすること

@@ -356,3 +356,51 @@ unresolvedReturn: 帰属不明の proxy
 ```
 
 すべて [0, 1] の連続値であり、意味ラベルではない。
+
+## W8: Closed-Loop Scenario Tests（追記）
+
+W8 では、W1〜W7 で導入した全要素が、全体として一つの閉ループになっているかを、
+複数の scenario 条件で検証した。
+
+### W8 の位置づけ
+
+W8 は **閉ループ生命場としての成立度を測る研究テスト** である。
+
+- 意識の証明ではない
+- 知性の証明ではない
+- Body-World Closure が scenario 上で成立しているかの検証
+
+### 検証した閉ループ
+
+```
+BodySurfaceState (W1)
+↓
+ActuationPulse (W2)
+↓
+WorldMediumState (W3)
+↓
+SensoryReturnPacket (W4)
+↓
+ReafferenceComparisonState (W5)
+↓
+BodyWorldClosureState (W6)
+↓
+ProtoNeuronObservationState (W7, observer-side)
+```
+
+### W8 で確認したこと
+
+- no world return: pulse を出しても return が来ない場合、loopGain が低い
+- delayed return: 遅れて return が来る場合、roundTripDelay が上がる
+- amplified return: return が増幅される場合、feedbackSaturationRisk が上がる
+- world only: AETERNA の pulse なしで world が変化する場合、worldCausedDifference が上がる
+- repeated self-pulse: 反復 pulse で closureStability が安定しやすい
+- semantic leak: 全 scenario で semanticLeakCount = 0
+
+### W8 でやらなかったこと
+
+- runtime neuron node の配置
+- semantic node の追加
+- Node bridge 本格接続
+- consciousness claim
+- self awareness 表現

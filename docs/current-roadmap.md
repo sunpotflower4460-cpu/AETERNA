@@ -51,7 +51,7 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 | **W5** | Reafference Comparison 導入 | 未着手 |
 | **W6** | Body-World Closure Metrics | 未着手 |
 | **W7** | Emergent Proto-Neuron Observation | ✅ observer-side candidate observation |
-| **W8** | Closed-Loop Scenario Tests | 未着手 |
+| **W8** | Closed-Loop Scenario Tests | ✅ scenario / behavioral tests / docs |
 
 ### W0 完了条件
 
@@ -96,3 +96,17 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 - semantic leak test がある
 - runtime neuron node を配置していない
 - Node bridge を本格実装していない
+
+### W8 完了条件
+
+- `ClosedLoopScenarioSummary` 型がある ✅
+- `runClosedLoopScenario` / `runClosedLoopScenarioSuite` がある ✅
+- W8-A〜W8-J の 10 scenario がある ✅
+- `semanticLeakCount = 0` が全 scenario で検証される ✅
+- `nanOrInfinityCount = 0` が全 scenario で検証される ✅
+- behavioral tests がある ✅
+- docs に W8 の位置づけが追記されている ✅
+- runtime neuron node 未配置 ✅
+- Node bridge 未実装 ✅
+- semantic / consciousness claim なし ✅
+- build が通る ✅
