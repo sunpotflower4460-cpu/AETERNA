@@ -215,20 +215,12 @@ World Medium (W3)
 ↓
 [Sensory Return] ← W4 で導入
 ↓
+[Reafference Comparison] ← W5 で導入
+↓
 Perturbation + Mismatch
 ↓
 Torus Life Field
 ```
-
-注意：W4 では、
-
-```
-Sensory Return
-↓
-Reafference Comparison
-```
-
-にはまだ進まない。Reafference Comparison は W5 の責務である。
 
 ### W4 で実装したこと
 
@@ -288,3 +280,72 @@ simulatedEcho
 - semantic node / object label / language meaning は含まない
 - 既存の boundary / recovery / pressure / perturbation と自然につながる
 - 既存の touch pipeline を全面置換しない
+
+## W5: Reafference Comparison 導入（完了）
+
+W5 では、Actuation Pulse と Sensory Return を比較する Reafference Comparison を導入した。
+
+### Reafference Comparison の位置づけ
+
+```
+Torus Life Field
+↓
+Body Surface (W1)
+↓
+Actuation Pulse (W2)
+↓
+World Medium (W3)
+↓
+Sensory Return (W4)
+↓
+[Reafference Comparison] ← W5 で導入
+↓
+(Perturbation + Mismatch)
+↓
+Torus Life Field
+```
+
+W5 で、最小限の閉ループ比較が入った。
+ただし、W5 では reafference の結果を本体 dynamics に強く返していない。
+
+### W5 で実装したこと
+
+- `ReafferenceComparisonState` 型定義（8 必須 + 4 optional）
+- `deriveReafferenceComparison()` 関数
+  - Actuation Pulse から expectedReturn を導出
+  - Sensory Return から actualReturn を導出
+  - returnMismatch を計算
+  - selfCausedMatch / worldCausedDifference / unresolvedReturn を proxy として導出
+- scenario / behavioral tests (W5-A〜G)
+
+### W5 で実装していないこと
+
+まだ以下は実装していない：
+
+- Reafference Comparison の本体 dynamics への feedback（微弱にも戻していない）
+- observer / metrics への表示
+- proto-neuron 実装（W7+）
+- semantic node / object label / same-object detection
+- teacher binding / LLM teacher
+
+### Reafference Comparison は自己認識ではない
+
+Reafference Comparison は **pre-semantic comparison** である。
+
+- 言語的な「私がやった」判断ではない
+- selfCausedMatch / worldCausedDifference は proxy indicator であって意味判断ではない
+- 自己同一性・自己認識とは無関係
+- efference copy 的な比較だが、意味化しない
+
+W5 で導出されるのは：
+
+```
+expectedReturn: pulse から予測される戻り
+actualReturn: 実際に戻った return
+returnMismatch: expected と actual の差分
+selfCausedMatch: 自分由来と思われる proxy
+worldCausedDifference: 外界由来と思われる proxy
+unresolvedReturn: 帰属不明の proxy
+```
+
+すべて [0, 1] の連続値であり、意味ラベルではない。

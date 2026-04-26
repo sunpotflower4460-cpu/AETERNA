@@ -859,3 +859,134 @@ observer / debug での表示区分:
 - World Medium 本実装（W3 で導入予定）
 - Sensory Return 本実装（W4 で導入予定）
 - Reafference Comparison（W5 で導入予定）
+
+## W5. Reafference Comparison Metrics
+
+**Definition**: Metrics derived from comparing AETERNA's Actuation Pulse with Sensory Return from World Medium. These are pre-semantic comparison metrics, not self-awareness or semantic judgments.
+
+### W5.1 Expected Return (Derived)
+- **Meaning**: Predicted strength of sensory return based on Actuation Pulse
+- **Measurement**: Derived from pulse intensity, coherence, outputReadiness, locality
+- **Formula**: `intensity*0.4 + coherence*0.2 + outputReadiness*0.2 + locality*0.2`
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: expectedReturn > 0 when pulse exists
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Simple linear combination; does not model world dynamics
+
+### W5.2 Actual Return (Measured)
+- **Meaning**: Actual strength of sensory return received from World Medium
+- **Measurement**: Average of `(intensity * worldOriginStrength)` across SensoryReturnPackets
+- **Range**: 0–1
+- **Classification**: Measured
+- **Success Condition**: actualReturn > 0 when World Medium shows significant change
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Averaged across channels; does not distinguish channel-specific returns
+
+### W5.3 Return Delay (Measured)
+- **Meaning**: Temporal delay between pulse and return
+- **Measurement**: Average of `returnDelayHint` from SensoryReturnPackets
+- **Range**: 0–1
+- **Classification**: Measured
+- **Success Condition**: returnDelay < 0.5 for typical feedback
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Proxy value from World Medium feedbackDelay, not actual measured latency
+
+### W5.4 Return Mismatch (Derived)
+- **Meaning**: Difference between expected and actual return
+- **Measurement**: `abs(expectedReturn - actualReturn)`
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: Low mismatch when pulse-return correspondence is good
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Absolute difference; does not distinguish attenuation vs amplification
+
+### W5.5 Self-Caused Match (Proxy)
+- **Meaning**: Proxy indicator for how much return appears to be caused by AETERNA's pulse
+- **Measurement**: Weighted combination of:
+  - Channel correspondence (0.35)
+  - Match quality (1 - mismatch) (0.3)
+  - Reasonable delay (0.2)
+  - Medium stability (0.15)
+- **Range**: 0–1
+- **Classification**: Proxy
+- **Success Condition**: High when pulse and return correspond well
+- **Failure Condition**: NaN or out of range
+- **Limitation**: NOT a semantic "I did this" judgment; purely proxy indicator
+- **Important**: This is pre-semantic comparison, not self-awareness
+
+### W5.6 World-Caused Difference (Proxy)
+- **Meaning**: Proxy indicator for how much return appears to be caused by independent world dynamics
+- **Measurement**: Weighted combination of:
+  - No pulse but strong return (0.4)
+  - Amplification (actualReturn > expectedReturn) (0.3)
+  - Unusual delay (0.15)
+  - Medium instability (0.1)
+  - Motion drift (0.05)
+- **Range**: 0–1
+- **Classification**: Proxy
+- **Success Condition**: High when return appears independent of pulse
+- **Failure Condition**: NaN or out of range
+- **Limitation**: NOT a semantic "world did this" judgment; purely proxy indicator
+- **Important**: This is pre-semantic comparison, not semantic interpretation
+
+### W5.7 Unresolved Return (Proxy)
+- **Meaning**: Ambiguous return that cannot be clearly attributed to self or world
+- **Measurement**: High when both selfCausedMatch and worldCausedDifference are low
+- **Range**: 0–1
+- **Classification**: Proxy
+- **Success Condition**: High when attribution is unclear
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Residual category; does not provide actionable information
+
+### W5.8 Comparison Confidence (Proxy)
+- **Meaning**: Reliability of the reafference comparison
+- **Measurement**: Weighted combination of:
+  - Pulse and return both exist (0.3)
+  - Medium stability (0.25)
+  - Clear timing (0.2)
+  - Good channel match (0.25)
+- **Range**: 0–1
+- **Classification**: Proxy
+- **Success Condition**: High when comparison is unambiguous
+- **Failure Condition**: NaN or out of range
+- **Limitation**: Confidence is a proxy, not a proof
+
+### W5.9 Pulse-Return Correlation (Derived, Optional)
+- **Meaning**: Channel correspondence between pulse and return
+- **Measurement**: Score based on channel matching (visual → simulatedLight = 1.0, etc.)
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: High when channels correspond
+- **Limitation**: Simple rule-based matching
+
+### W5.10 Return Attenuation (Derived, Optional)
+- **Meaning**: How much return was dampened compared to expected
+- **Measurement**: `max(0, expectedReturn - actualReturn)`
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: High when world dampens the return
+- **Limitation**: Simple subtraction
+
+### W5.11 Return Amplification (Derived, Optional)
+- **Meaning**: How much return was amplified compared to expected
+- **Measurement**: `max(0, actualReturn - expectedReturn)`
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: High when world amplifies the return
+- **Limitation**: Simple subtraction
+
+### W5.12 Delayed Echo Score (Derived, Optional)
+- **Meaning**: Proxy for returns with significant delay
+- **Measurement**: `returnDelay * actualReturn` when returnDelay > 0.6
+- **Range**: 0–1
+- **Classification**: Derived
+- **Success Condition**: High when delayed returns are strong
+- **Limitation**: Simple product
+
+**Important Notes for W5 Metrics**:
+- All W5 metrics are **pre-semantic** — they are not self-awareness or semantic judgments
+- selfCausedMatch / worldCausedDifference are **proxy indicators**, not meaning assignments
+- W5 does **not** feed back into organism dynamics in current implementation
+- These metrics are **observer-side only** for research and debugging
+- No semantic node / object label / teacher binding / LLM teacher involved

@@ -332,17 +332,51 @@ update simulated world medium
 ↓
 derive sensory return ← W4
 ↓
-optional weak perturbation injection
+derive reafference comparison ← W5
 ↓
-future reafference comparison (W5+)
+optional weak perturbation injection
 ```
 
 **Important constraints**:
 - Sensory Return is **not semantic input**
 - It is world-side signal, not meaning or interpretation
 - Conversion to perturbation is **weak** to avoid overwhelming organism
-- No self/world distinction yet (W5)
+- Reafference Comparison is added in W5 (see below)
 - Real sensors not connected yet (later phase)
+
+### W5 Reafference Comparison (pre-semantic pulse-return comparison, observer-side)
+
+- After deriving Sensory Return, `deriveReafferenceComparison` may run to compare pulse and return.
+- `deriveReafferenceComparison(pulse, returns, world, dt)` is a **pure function** that:
+  - Takes optional `ActuationPulse`, `SensoryReturnPacket[]`, and `WorldMediumState`
+  - Returns `ReafferenceComparisonState`
+  - Compares what was output (expectedReturn from pulse) vs what came back (actualReturn from returns)
+  - Derives proxy indicators: selfCausedMatch, worldCausedDifference, unresolvedReturn
+- Reafference Comparison is **pre-semantic comparison**, not self-awareness or semantic judgment.
+- **W5 does NOT feed back to organism dynamics** — comparison result is observer-side only.
+- selfCausedMatch / worldCausedDifference are **proxy indicators**, not meaning judgments.
+
+Recommended position in update cycle:
+
+```
+update simulated world medium
+↓
+derive sensory return
+↓
+derive reafference comparison ← W5
+↓
+optional weak perturbation injection (future)
+↓
+observer / debug / metrics
+```
+
+**Important constraints**:
+- Reafference Comparison is **not self-awareness**
+- selfCausedMatch / worldCausedDifference are proxy values, not semantic "I did this" judgments
+- W5 does **not** feed back into organism dynamics (even weakly)
+- This is efference-copy-like comparison, but pre-semantic
+- No proto-neuron implementation in W5
+- No semantic node / object label / teacher binding
 
 ### Phase 5 Observation Layer (observer-side pattern candidates, read-only)
 
