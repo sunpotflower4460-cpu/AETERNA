@@ -250,6 +250,22 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-actuation-generated-count']) UI['val-actuation-generated-count'].innerText = `${dyn.actuationPulseGeneratedCount || 0}`;
     if (UI['val-actuation-null-count'])   UI['val-actuation-null-count'].innerText   = `${dyn.actuationPulseNullCount || 0}`;
 
+    // W3+W4+W5: World Medium, Sensory Return, Reafference Comparison
+    // Display pre-semantic pulse-return comparison metrics
+    if (UI['val-world-ambient-light'])      UI['val-world-ambient-light'].innerText      = (dyn.worldAmbientLight     || 0).toFixed(3);
+    if (UI['val-world-medium-stability'])   UI['val-world-medium-stability'].innerText   = (dyn.worldMediumStability  || 0).toFixed(3);
+    if (UI['val-world-pulse-impact'])       UI['val-world-pulse-impact'].innerText       = (dyn.worldLastPulseImpact  || 0).toFixed(3);
+    if (UI['val-world-turbulence'])         UI['val-world-turbulence'].innerText         = (dyn.worldTurbulence       || 0).toFixed(3);
+    if (UI['val-sensory-return-count'])     UI['val-sensory-return-count'].innerText     = `${dyn.sensoryReturnPacketCount || 0}`;
+    if (UI['val-reafference-expected-return']) UI['val-reafference-expected-return'].innerText = (dyn.reafferenceExpectedReturn || 0).toFixed(3);
+    if (UI['val-reafference-actual-return'])   UI['val-reafference-actual-return'].innerText   = (dyn.reafferenceActualReturn   || 0).toFixed(3);
+    if (UI['val-reafference-return-delay'])    UI['val-reafference-return-delay'].innerText    = (dyn.reafferenceReturnDelay    || 0).toFixed(3);
+    if (UI['val-reafference-return-mismatch']) UI['val-reafference-return-mismatch'].innerText = (dyn.reafferenceReturnMismatch || 0).toFixed(3);
+    if (UI['val-reafference-self-caused'])     UI['val-reafference-self-caused'].innerText     = (dyn.reafferenceSelfCausedMatch || 0).toFixed(3);
+    if (UI['val-reafference-world-caused'])    UI['val-reafference-world-caused'].innerText    = (dyn.reafferenceWorldCausedDifference || 0).toFixed(3);
+    if (UI['val-reafference-unresolved'])      UI['val-reafference-unresolved'].innerText      = (dyn.reafferenceUnresolvedReturn || 0).toFixed(3);
+    if (UI['val-reafference-confidence'])      UI['val-reafference-confidence'].innerText      = (dyn.reafferenceComparisonConfidence || 0).toFixed(3);
+
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];
     if(badge) {
