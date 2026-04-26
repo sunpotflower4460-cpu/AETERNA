@@ -200,7 +200,9 @@ export class ReplayQueue {
   }
 
   private isSimilarSignature(a?: number[], b?: number[]): boolean {
-    if (!a || !b || a.length !== b.length) return !a && !b;
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
     let totalDiff = 0;
     for (let i = 0; i < a.length; i++) {
       totalDiff += Math.abs(a[i] - b[i]);
