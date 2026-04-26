@@ -270,6 +270,16 @@ Compare behavioral outcomes against this baseline order.
 - After replay, only tiny slow-state deltas remain (weak consolidation): slightly easier recurrence, slight restoration/stabilization bias, slight settling residue.
 - Semantic interpretation is outside this loop's responsibility.
 
+### Phase 5 Observation Layer (observer-side pattern candidates, read-only)
+
+- After trace / replay, the observer layer may detect structural candidates in the life-field.
+- `deriveObservationPatterns` runs as a **pure function** after all core updates — it reads state and returns derived proxy counts.
+- Observation layer is **strictly read-only**: it does not modify organism state, does not drive actions, does not assign semantic meaning.
+- Observation vocabulary (knot, path, recurrence locus, basin, proto-point candidate, etc.) is **research shorthand**, not semantic labeling.
+- Proto-point candidates are field structural observations, not semantic nodes, and are not passed to any teacher or LLM.
+- See `docs/observation-vocabulary.md` for full vocabulary definitions.
+- Node bridge (Phase 8+) is out of scope for this phase.
+
 
 ## Implementation Notes
 
