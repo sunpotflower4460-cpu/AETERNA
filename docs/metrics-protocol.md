@@ -447,3 +447,58 @@ Before any of the above, AETERNA must first pass Phase 1 minimum viability:
 - **Derived from**: history length, state availability, finite-value check
 - **Range**: 0–1; not a probability
 - **Classification**: Observer-side quality proxy
+
+---
+
+## Phase 7: Proto-Point Observation Metrics (Observer-Side Proxy)
+
+**Phase 7: proto-point の観測導入** adds detailed per-candidate observation metrics for
+proto-point structural candidates. These are NOT behavior drivers. They are strictly
+read-only observer-side proxies derived from existing state.
+
+### Important Constraints
+
+- All proto-point observation metrics are **observer-side derived proxies**.
+- They are **strictly read-only**: they do NOT modify organism core dynamics.
+- Candidates are NOT semantic nodes, labels, concepts, or object identifiers.
+- No Node bridge is implemented. Phase 8+ only.
+- All sub-scores labeled [PROXY] or [DERIVED] — not confirmed measurements.
+- See `docs/proto-point-observation-principles.md` for full principles.
+
+### P7.1 Proto-Point Candidate Count (proxy)
+- **Meaning**: Number of currently observable proto-point candidates above confidence threshold
+- **Derived from**: Multi-criteria proxy conditions: recurrenceWeight, traceStrength, replayReadiness, knotCount, basinCount, activityContrast
+- **Range**: 0–3 (maximum 3 virtual region slots)
+- **Classification**: Observer-side proxy count
+
+### P7.2 Stable Candidate Count (proxy)
+- **Meaning**: Number of candidates with persistence ≥ 5 ticks AND confidence ≥ 0.40
+- **Derived from**: Per-candidate persistence counter + confidence score
+- **Classification**: Observer-side proxy count
+
+### P7.3 Average Confidence (proxy)
+- **Meaning**: Mean confidence score across all current candidates
+- **Formula**: `0.20*recurrenceScore + 0.20*traceAffinity + 0.20*replayAffinity + 0.15*localContrast + 0.15*knotOverlap + 0.10*basinOverlap`
+- **Range**: 0–1; not a probability
+- **Classification**: Observer-side derived proxy
+
+### P7.4 Max Confidence (proxy)
+- **Meaning**: Highest confidence score among current candidates
+- **Range**: 0–1
+- **Classification**: Observer-side derived proxy
+
+### P7.5 Candidate Lifecycle (observer-side)
+- **Meaning**: Observer-side tracking of candidate age and stability
+- **Stages**: `new` (1st tick) → `recurring` (2–7 ticks) → `persistent` (≥8 ticks + confidence >0.40) → `decaying` (conditions no longer met)
+- **Critical**: Lifecycle is observer-side only. Does NOT affect organism runtime behavior.
+- **Classification**: Observer-side tracking
+
+### P7.6 Sub-Scores (proxy)
+Each candidate carries individual sub-scores:
+- **recurrenceScore** [PROXY]: How much the region repeatedly re-activates
+- **traceAffinity** [PROXY]: Trace/residue overlap
+- **replayAffinity** [PROXY]: Replay re-entry accessibility
+- **localContrast** [PROXY]: Salience above ambient field
+- **knotOverlap** [PROXY]: Overlap with Phase 5 knot candidates
+- **basinOverlap** [PROXY]: Overlap with Phase 5 basin candidates
+- **anomalyOverlap** [PROXY]: Overlap with long-lived anomaly candidates
