@@ -860,9 +860,9 @@ observer / debug での表示区分:
 - Sensory Return 本実装（W4 で導入予定）
 - Reafference Comparison（W5 で導入予定）
 
-## W5. Reafference Comparison Metrics
+## W5. Reafference Comparison Metrics (Implemented)
 
-**Definition**: Metrics derived from comparing AETERNA's Actuation Pulse with Sensory Return from World Medium. These are pre-semantic comparison metrics, not self-awareness or semantic judgments.
+**Definition**: Metrics derived from comparing AETERNA's Actuation Pulse with Sensory Return from World Medium. These are pre-semantic comparison metrics, not self-awareness or semantic judgments. **Status**: Implemented and integrated into AeternaNetwork runtime and observer UI.
 
 ### W5.1 Expected Return (Derived)
 - **Meaning**: Predicted strength of sensory return based on Actuation Pulse
@@ -987,6 +987,9 @@ observer / debug での表示区分:
 **Important Notes for W5 Metrics**:
 - All W5 metrics are **pre-semantic** — they are not self-awareness or semantic judgments
 - selfCausedMatch / worldCausedDifference are **proxy indicators**, not meaning assignments
-- W5 does **not** feed back into organism dynamics in current implementation
-- These metrics are **observer-side only** for research and debugging
+- W5 **is observation-centric** — feedback to organism dynamics is intentionally minimal
+- These metrics are **integrated in AeternaNetwork** and displayed in observer UI
+- All metrics are available in the dynamics packet returned by updateDynamics()
 - No semantic node / object label / teacher binding / LLM teacher involved
+- Implemented in `src/closure/deriveReafferenceComparison.ts`
+- Tests in `src/tests/behavioral/reafferenceComparison.test.ts` and `src/tests/scenario/reafferenceComparisonScenario.ts`

@@ -344,28 +344,29 @@ optional weak perturbation injection
 - Reafference Comparison is added in W5 (see below)
 - Real sensors not connected yet (later phase)
 
-### W5 Reafference Comparison (pre-semantic pulse-return comparison, observer-side)
+### W5 Reafference Comparison (pre-semantic pulse-return comparison, implemented in AeternaNetwork)
 
-- After deriving Sensory Return, `deriveReafferenceComparison` may run to compare pulse and return.
+- After deriving Sensory Return, `deriveReafferenceComparison` runs to compare pulse and return.
 - `deriveReafferenceComparison(pulse, returns, world, dt)` is a **pure function** that:
   - Takes optional `ActuationPulse`, `SensoryReturnPacket[]`, and `WorldMediumState`
   - Returns `ReafferenceComparisonState`
   - Compares what was output (expectedReturn from pulse) vs what came back (actualReturn from returns)
   - Derives proxy indicators: selfCausedMatch, worldCausedDifference, unresolvedReturn
 - Reafference Comparison is **pre-semantic comparison**, not self-awareness or semantic judgment.
-- **W5 does NOT feed back to organism dynamics** — comparison result is observer-side only.
+- **W5 is observation-centric** — comparison result is primarily for observer/metrics display.
 - selfCausedMatch / worldCausedDifference are **proxy indicators**, not meaning judgments.
+- Feedback to organism dynamics is intentionally minimal to avoid overwhelming existing behavior.
 
-Recommended position in update cycle:
+Actual position in update cycle (implemented):
 
 ```
-update simulated world medium
+update simulated world medium (W3)
 ↓
-derive sensory return
+derive sensory return (W4)
 ↓
-derive reafference comparison ← W5
+derive reafference comparison (W5) ← integrated in AeternaNetwork.updateDynamics
 ↓
-optional weak perturbation injection (future)
+beautiful loop modulation (L3)
 ↓
 observer / debug / metrics
 ```

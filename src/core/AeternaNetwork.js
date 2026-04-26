@@ -42,6 +42,9 @@ import { deriveBodySurfaceState } from '../body/deriveBodySurfaceState.ts';
 import { deriveActuationPulse } from '../actuation/deriveActuationPulse.ts';
 import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
 import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
+import { updateWorldMedium } from '../world/updateWorldMedium.ts';
+import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
+import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -315,6 +318,28 @@ export class AeternaNetwork {
             visual: 0,
             simulatedForce: 0,
         };
+
+        // W3+W4+W5: World Medium, Sensory Return, Reafference Comparison
+        // World Medium state (simulated external environment)
+        this.worldMediumState = {
+            timestamp: 0,
+            ambientLight: 0.5,
+            ambientNoise: 0.2,
+            surfaceResistance: 0.4,
+            echoLevel: 0.25,
+            motionDrift: 0.2,
+            fieldTemperature: 0.35,
+            feedbackDelay: 0.2,
+            lastPulseImpact: 0,
+            mediumStability: 0.7,
+            visualResidue: 0,
+            forceResidue: 0,
+            worldTurbulence: 0.15,
+            returnReadiness: 0.3,
+        };
+        this.previousWorldMediumState = null;
+        this.lastSensoryReturnPackets = [];
+        this.lastReafferenceComparisonState = null;
     }
 
     initializeTemporaryWorkBuffers() {
@@ -714,6 +739,43 @@ export class AeternaNetwork {
             this.actuationPulseNullCount++;
         }
 
+        // W3: Update World Medium (simulated external environment)
+        // World receives Actuation Pulse and changes state accordingly
+        const dt = 1 / 60; // Standard frame delta time
+        this.previousWorldMediumState = this.worldMediumState;
+        this.worldMediumState = updateWorldMedium(
+            this.worldMediumState,
+            this.lastActuationPulse,
+            dt
+        );
+
+        // W4: Derive Sensory Return from World Medium state changes
+        // Compare current and previous World Medium to generate sensory return packets
+        this.lastSensoryReturnPackets = deriveSensoryReturn(
+            this.worldMediumState,
+            this.previousWorldMediumState,
+            dt
+        );
+
+        // W5: Derive Reafference Comparison
+        // Compare Actuation Pulse (what was sent) with Sensory Return (what came back)
+        // This is pre-semantic comparison, NOT self-awareness
+        this.lastReafferenceComparisonState = deriveReafferenceComparison(
+            this.lastActuationPulse,
+            this.lastSensoryReturnPackets,
+            this.worldMediumState,
+            dt
+        );
+
+        // W5: Optional weak feedback from reafference comparison
+        // Currently observation-only; feedback intentionally minimal to avoid
+        // overwhelming organism dynamics. Future phases may add subtle bias.
+        // Candidates for future weak feedback:
+        // - returnMismatch → slight prediction mismatch bias (if >0.7)
+        // - selfCausedMatch → slight mismatch dampening (if >0.8)
+        // - worldCausedDifference → slight novelty/surprise boost (if >0.7)
+        // W5 keeps these as metrics only, not as active modulators.
+
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
         const rawModulation = computeBeautifulLoopModulation(
@@ -899,6 +961,35 @@ export class AeternaNetwork {
             actuationPulseNullCount: this.actuationPulseNullCount,
             actuationPulseVisualCount: this.actuationPulseChannelCounts.visual,
             actuationPulseSimulatedForceCount: this.actuationPulseChannelCounts.simulatedForce,
+            // W3: World Medium state
+            worldAmbientLight: this.worldMediumState.ambientLight,
+            worldAmbientNoise: this.worldMediumState.ambientNoise,
+            worldSurfaceResistance: this.worldMediumState.surfaceResistance,
+            worldEchoLevel: this.worldMediumState.echoLevel,
+            worldMotionDrift: this.worldMediumState.motionDrift,
+            worldFieldTemperature: this.worldMediumState.fieldTemperature,
+            worldFeedbackDelay: this.worldMediumState.feedbackDelay,
+            worldLastPulseImpact: this.worldMediumState.lastPulseImpact,
+            worldMediumStability: this.worldMediumState.mediumStability,
+            worldVisualResidue: this.worldMediumState.visualResidue ?? 0,
+            worldForceResidue: this.worldMediumState.forceResidue ?? 0,
+            worldTurbulence: this.worldMediumState.worldTurbulence ?? 0,
+            worldReturnReadiness: this.worldMediumState.returnReadiness ?? 0,
+            // W4: Sensory Return metrics
+            sensoryReturnPacketCount: this.lastSensoryReturnPackets.length,
+            // W5: Reafference Comparison (pre-semantic pulse-return comparison)
+            reafferenceExpectedReturn: this.lastReafferenceComparisonState?.expectedReturn ?? 0,
+            reafferenceActualReturn: this.lastReafferenceComparisonState?.actualReturn ?? 0,
+            reafferenceReturnDelay: this.lastReafferenceComparisonState?.returnDelay ?? 0,
+            reafferenceReturnMismatch: this.lastReafferenceComparisonState?.returnMismatch ?? 0,
+            reafferenceSelfCausedMatch: this.lastReafferenceComparisonState?.selfCausedMatch ?? 0,
+            reafferenceWorldCausedDifference: this.lastReafferenceComparisonState?.worldCausedDifference ?? 0,
+            reafferenceUnresolvedReturn: this.lastReafferenceComparisonState?.unresolvedReturn ?? 0,
+            reafferenceComparisonConfidence: this.lastReafferenceComparisonState?.comparisonConfidence ?? 0,
+            reafferencePulseReturnCorrelation: this.lastReafferenceComparisonState?.pulseReturnCorrelation ?? 0,
+            reafferenceReturnAttenuation: this.lastReafferenceComparisonState?.returnAttenuation ?? 0,
+            reafferenceReturnAmplification: this.lastReafferenceComparisonState?.returnAmplification ?? 0,
+            reafferenceDelayedEchoScore: this.lastReafferenceComparisonState?.delayedEchoScore ?? 0,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,

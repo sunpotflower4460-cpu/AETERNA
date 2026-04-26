@@ -317,16 +317,23 @@ W5 で、最小限の閉ループ比較が入った。
   - returnMismatch を計算
   - selfCausedMatch / worldCausedDifference / unresolvedReturn を proxy として導出
 - scenario / behavioral tests (W5-A〜G)
+- AeternaNetwork.js への統合
+  - World Medium state の初期化・管理
+  - updateDynamics 内で W3→W4→W5 の順序で処理
+- observer / metrics UI への表示追加
+  - World Medium 状態
+  - Sensory Return パケット数
+  - Reafference Comparison 全指標
 
 ### W5 で実装していないこと
 
 まだ以下は実装していない：
 
-- Reafference Comparison の本体 dynamics への feedback（微弱にも戻していない）
-- observer / metrics への表示
+- 強い feedback ループ（観測中心、feedback は意図的に最小限に保つ）
 - proto-neuron 実装（W7+）
 - semantic node / object label / same-object detection
 - teacher binding / LLM teacher
+- Node bridge 本格接続
 
 ### Reafference Comparison は自己認識ではない
 

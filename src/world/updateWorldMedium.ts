@@ -85,7 +85,7 @@ export function updateWorldMedium(
   let returnReadiness = smoothDecay(world.returnReadiness ?? 0.3, 0.3, 0.2, dt);
 
   // feedbackDelay slowly returns to baseline
-  const feedbackDelay = smoothDecay(world.feedbackDelay, 0.2, 0.1, dt);
+  let feedbackDelay = smoothDecay(world.feedbackDelay, 0.2, 0.1, dt);
 
   // --- Apply Actuation Pulse effects (if present) ---
   if (pulse !== null) {

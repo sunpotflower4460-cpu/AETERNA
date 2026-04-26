@@ -1,6 +1,6 @@
 # Reafference Comparison Spec
 
-> **Status**: W5 — Reafference Comparison 最小実装完了
+> **Status**: W5 — Reafference Comparison 実装完了・統合済み
 
 ## Reafference Comparison とは
 
@@ -171,12 +171,44 @@ HIGH になる条件:
 ### まだ実装していないこと
 
 W5 では以下を実装していない:
-- Reafference Comparison の本体 dynamics への feedback（微弱にも戻していない）
-- observer / metrics への表示
+- 強い feedback ループ（観測中心、feedback は意図的に弱く保つ）
 - proto-neuron 実装
 - semantic node / object label / same-object detection
 - teacher binding / LLM teacher
 - Node bridge 本格接続
+
+## W5 統合内容（新規追加）
+
+### AeternaNetwork 統合
+
+`src/core/AeternaNetwork.js`:
+- World Medium state を初期化・管理
+- updateDynamics 内で以下の順序で処理:
+  1. Actuation Pulse 導出
+  2. World Medium 更新（updateWorldMedium）
+  3. Sensory Return 導出（deriveSensoryReturn）
+  4. Reafference Comparison 導出（deriveReafferenceComparison）
+- 観測中心のアプローチ: feedback は意図的に最小限に保つ
+
+### Metrics UI 統合
+
+`src/ui/updateMetricsUI.js`:
+- W3+W4+W5 セクション追加
+- World Medium 状態表示（light, stability, pulse impact, turbulence）
+- Sensory Return パケット数表示
+- Reafference Comparison 指標表示:
+  - expectedReturn / actualReturn
+  - returnDelay / returnMismatch
+  - selfCausedMatch / worldCausedDifference
+  - unresolvedReturn / comparisonConfidence
+
+### Feedback 方針
+
+W5 では observation-only:
+- returnMismatch → prediction mismatch への feedback は実装せず
+- selfCausedMatch / worldCausedDifference は metrics として観測のみ
+- 将来の W6+ で必要に応じて微弱 feedback を追加可能
+- コメントで候補箇所を記載済み
 
 ## 禁止事項
 
