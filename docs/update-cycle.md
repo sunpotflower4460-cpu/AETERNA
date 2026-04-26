@@ -280,6 +280,17 @@ Compare behavioral outcomes against this baseline order.
 - See `docs/observation-vocabulary.md` for full vocabulary definitions.
 - Node bridge (Phase 8+) is out of scope for this phase.
 
+### Phase 7 Proto-Point Observation Layer (observer-side detailed candidates, read-only)
+
+- After Phase 5 observation pattern derivation, `deriveProtoPointCandidates` generates detailed per-candidate records.
+- It takes `ObservationPatternState` + trace/replay/recovery state as input and returns `ProtoPointObservationState`.
+- Each `ProtoPointCandidate` carries per-slot sub-scores: recurrenceScore, traceAffinity, replayAffinity, localContrast, knotOverlap, basinOverlap.
+- Confidence is a weighted proxy: `0.20*recurrenceScore + 0.20*traceAffinity + 0.20*replayAffinity + 0.15*localContrast + 0.15*knotOverlap + 0.10*basinOverlap`.
+- Observer-side lifecycle is tracked (`new` / `recurring` / `persistent` / `decaying`) but does NOT affect organism dynamics.
+- **Strictly read-only**: does not modify organism state, does not drive actions, no Node bridge.
+- Candidates are NOT semantic nodes, labels, concepts, or object identifiers.
+- See `docs/proto-point-observation-principles.md` for full principles.
+
 
 ## Implementation Notes
 

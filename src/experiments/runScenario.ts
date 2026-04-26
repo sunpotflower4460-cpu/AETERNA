@@ -33,6 +33,8 @@ import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch
 import { deriveObservationPatterns } from '../observer/deriveObservationPatterns.ts';
 import type { ObservationPatternState } from '../types/observationPatternState.ts';
 import { derivePressureCompetition } from '../organism/derivePressureCompetition.ts';
+import { deriveProtoPointCandidates } from '../observer/deriveProtoPointCandidates.ts';
+import type { ProtoPointObservationState } from '../types/protoPointObservationState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -221,6 +223,13 @@ export interface MetricsSnapshot {
     pc_competitionStability?: number;
     pc_annealingTemperature?: number;
     pc_pressureEnergy?: number;
+    // Phase 7: Proto-point observation state (observer-side proxy, read-only)
+    pp_candidateCount?: number;
+    pp_stableCandidateCount?: number;
+    pp_averageConfidence?: number;
+    pp_maxConfidence?: number;
+    pp_newCandidateCount?: number;
+    pp_decayedCandidateCount?: number;
 }
 
 export interface ScenarioResult {
@@ -349,6 +358,16 @@ export interface ScenarioResult {
         avgAnnealingTemperature?: number;
         avgPressureEnergy?: number;
         dominantPressureDistribution?: Record<string, number>;
+        // Phase 7: Proto-point observation summaries (observer-side proxy, read-only)
+        avgProtoPointCandidateCount2?: number;
+        avgProtoPointStableCandidateCount?: number;
+        avgProtoPointAverageConfidence?: number;
+        maxProtoPointConfidence?: number;
+        avgProtoPointLifetime?: number;
+        recurrenceSupportedCandidateFrames?: number;
+        replaySupportedCandidateFrames?: number;
+        basinOverlapCandidateFrames?: number;
+        protoPointPersistentFrames?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -627,6 +646,7 @@ function buildMetricsSnapshot(
     recoveryTrajectory?: RecoveryTrajectoryLabel,
     collapseMode?: CollapseModeLabel,
     observationPatternState?: ObservationPatternState | null,
+    protoPointObservationState?: ProtoPointObservationState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -899,6 +919,16 @@ function buildMetricsSnapshot(
         snapshot.obs_observationConfidence = observationPatternState.observationConfidence;
     }
 
+    // Phase 7: Add proto-point observation state (observer-side proxy, read-only)
+    if (protoPointObservationState) {
+        snapshot.pp_candidateCount = protoPointObservationState.candidateCount;
+        snapshot.pp_stableCandidateCount = protoPointObservationState.stableCandidateCount;
+        snapshot.pp_averageConfidence = protoPointObservationState.averageConfidence;
+        snapshot.pp_maxConfidence = protoPointObservationState.maxConfidence;
+        snapshot.pp_newCandidateCount = protoPointObservationState.newCandidateCount;
+        snapshot.pp_decayedCandidateCount = protoPointObservationState.decayedCandidateCount;
+    }
+
     return snapshot;
 }
 
@@ -970,6 +1000,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // Phase 5: Observation pattern state (observer-side proxy, read-only)
     let lastObservationPatternState: ObservationPatternState | null = null;
+
+    // Phase 7: Proto-point observation state (observer-side proxy, read-only)
+    let lastProtoPointObservationState: ProtoPointObservationState | null = null;
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -1276,6 +1309,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             // Observer derivation failed — skip silently, no core impact
         }
 
+        // Phase 7: Derive proto-point candidates (observer-side proxy, read-only, no core impact)
+        try {
+            lastProtoPointObservationState = deriveProtoPointCandidates({
+                timestamp: frame,
+                traceState,
+                replayState,
+                recoveryState,
+                observationPatternState: lastObservationPatternState,
+                activityHistory,
+                recentPerturbationHistory,
+                meanActivity: meanAct,
+                baselineActivity: quietBaselineCount > 0 ? quietBaselineSum / quietBaselineCount : meanAct,
+                previousState: lastProtoPointObservationState,
+            });
+        } catch (_e) {
+            // Observer derivation failed — skip silently, no core impact
+        }
+
         if (collectMetrics && frame % metricsInterval === 0) {
             metrics.push(buildMetricsSnapshot(
                 frame,
@@ -1291,6 +1342,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 recoveryTrajectory,
                 collapseMode,
                 lastObservationPatternState,
+                lastProtoPointObservationState,
             ));
         }
     }
@@ -1478,6 +1530,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const dominantPressureCount: Record<string, number> = {};
     let pressureCompetitionCount = 0;
 
+    // Phase 7: Proto-point observation summary accumulators
+    let ppAvgCandidateCount = 0;
+    let ppAvgStableCandidateCount = 0;
+    let ppAvgAverageConfidence = 0;
+    let ppMaxConfidence = 0;
+    let ppLifetimeSum = 0;
+    let ppLifetimeCount = 0;
+    let ppRecurrenceSupportedFrames = 0;
+    let ppReplaySupportedFrames = 0;
+    let ppBasinOverlapFrames = 0;
+    let ppPersistentFrames = 0;
+    let ppCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -1653,6 +1718,34 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             dominantPressureCount[dp] = (dominantPressureCount[dp] ?? 0) + 1;
             pressureCompetitionCount++;
         }
+
+        // Phase 7: Accumulate proto-point observation metrics
+        if (m.pp_candidateCount !== undefined) {
+            ppAvgCandidateCount += m.pp_candidateCount;
+            ppAvgStableCandidateCount += m.pp_stableCandidateCount ?? 0;
+            ppAvgAverageConfidence += m.pp_averageConfidence ?? 0;
+            if ((m.pp_maxConfidence ?? 0) > ppMaxConfidence) {
+                ppMaxConfidence = m.pp_maxConfidence ?? 0;
+            }
+            if ((m.pp_candidateCount ?? 0) > 0) {
+                // Rough lifetime proxy: use persistence × candidateCount (not exact)
+                ppLifetimeSum += 1;
+                ppLifetimeCount++;
+            }
+            if ((m.pp_candidateCount ?? 0) > 0 && (m.recurrenceWeight ?? 0) > 0.25) {
+                ppRecurrenceSupportedFrames++;
+            }
+            if ((m.pp_candidateCount ?? 0) > 0 && (m.replayReadiness ?? 0) > 0.25) {
+                ppReplaySupportedFrames++;
+            }
+            if ((m.pp_candidateCount ?? 0) > 0 && (m.obs_basinCount ?? 0) > 0) {
+                ppBasinOverlapFrames++;
+            }
+            if ((m.pp_stableCandidateCount ?? 0) > 0) {
+                ppPersistentFrames++;
+            }
+            ppCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1796,6 +1889,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgPressureEnergy /= pressureCompetitionCount;
     }
 
+    // Phase 7: Compute proto-point observation averages
+    if (ppCount > 0) {
+        ppAvgCandidateCount /= ppCount;
+        ppAvgStableCandidateCount /= ppCount;
+        ppAvgAverageConfidence /= ppCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -1928,6 +2028,16 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgAnnealingTemperature: pressureCompetitionCount > 0 ? avgAnnealingTemperature : undefined,
             avgPressureEnergy: pressureCompetitionCount > 0 ? avgPressureEnergy : undefined,
             dominantPressureDistribution: pressureCompetitionCount > 0 ? dominantPressureCount : undefined,
+            // Phase 7: Proto-point observation summaries (observer-side proxy, read-only)
+            avgProtoPointCandidateCount2: ppCount > 0 ? ppAvgCandidateCount : undefined,
+            avgProtoPointStableCandidateCount: ppCount > 0 ? ppAvgStableCandidateCount : undefined,
+            avgProtoPointAverageConfidence: ppCount > 0 ? ppAvgAverageConfidence : undefined,
+            maxProtoPointConfidence: ppCount > 0 ? ppMaxConfidence : undefined,
+            avgProtoPointLifetime: ppLifetimeCount > 0 ? ppLifetimeSum / ppLifetimeCount : undefined,
+            recurrenceSupportedCandidateFrames: ppCount > 0 ? ppRecurrenceSupportedFrames : undefined,
+            replaySupportedCandidateFrames: ppCount > 0 ? ppReplaySupportedFrames : undefined,
+            basinOverlapCandidateFrames: ppCount > 0 ? ppBasinOverlapFrames : undefined,
+            protoPointPersistentFrames: ppCount > 0 ? ppPersistentFrames : undefined,
         },
         succeeded,
         failureReason,

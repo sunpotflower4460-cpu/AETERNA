@@ -192,3 +192,26 @@ When reading observation pattern output:
 ## Phase Reference
 
 This vocabulary is introduced in **Phase 5: Observation Layer Purification** and will remain observer-side vocabulary through at least Phase 7. Node bridge (Phase 8+) is explicitly out of scope for this phase.
+
+---
+
+## Phase 7 Addition: Detailed Proto-Point Observation
+
+**Phase 7: proto-point の観測導入** extends the proto-point candidate vocabulary with
+per-candidate detail. The `ProtoPointObservationState` provides:
+
+- Per-candidate records (`ProtoPointCandidate`) with individual sub-scores
+- Observer-side lifecycle tracking (`new` / `recurring` / `persistent` / `decaying`)
+- Confidence distribution (average, max)
+- Stable/persistent candidate counts
+
+This complements the coarse `protoPointCandidateCount` in `ObservationPatternState`.
+
+**Phase 7 proto-point observation does NOT**:
+- Assign semantic labels or categories
+- Bridge to any Node system (Phase 8+ only)
+- Affect organism dynamics
+- Detect same-object relations
+- Use LLM teacher outputs
+
+See `docs/proto-point-observation-principles.md` for full Phase 7 principles.
