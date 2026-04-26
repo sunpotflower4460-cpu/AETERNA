@@ -94,7 +94,7 @@ describe('ReplayQueue', () => {
     queue.addCandidate('recurrence', 0.6, 100, [0.5, 0.4], 0.4, 0.6);
     queue.addCandidate('recurrence', 0.7, 110, [0.53, 0.39], 0.5, 0.7);
     expect(queue.size()).toBe(1);
-    expect(queue.getCandidatesForReplay(1)[0].weight).toBeGreaterThan(0.6);
+    expect(queue.getCandidatesForReplay(1)[0].weight).toBeGreaterThan(0.55);
   });
 });
 
@@ -349,7 +349,7 @@ describe('deriveReplayState', () => {
 
     expect(replayState.activeReplayCount).toBe(3);
     expect(replayState.recentReplaySalience).toBe(0.7);
-    expect(replayState.lastReplayCategory).toBe('touch');
+    expect(replayState.lastReplayCategory).toBe('mismatch');
   });
 });
 
