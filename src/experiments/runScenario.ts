@@ -39,6 +39,18 @@ import { deriveBodySurfaceState } from '../body/deriveBodySurfaceState.ts';
 import type { BodySurfaceState } from '../types/bodySurfaceState.ts';
 import { deriveActuationPulse } from '../actuation/deriveActuationPulse.ts';
 import type { ActuationPulse, ActuationPulseChannel } from '../types/actuationPulse.ts';
+import { initializeWorldMediumState } from '../world/initializeWorldMediumState.ts';
+import { updateWorldMedium } from '../world/updateWorldMedium.ts';
+import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
+import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
+import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
+import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
+import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
+import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
+import type { WorldMediumState } from '../types/worldMediumState.ts';
+import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
+import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
+import type { BodyWorldClosureState } from '../types/bodyWorldClosureState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -60,6 +72,7 @@ export interface ScenarioConfig {
     initialHomeostaticState?: Partial<OrganismHomeostaticState>;
     initialLivingState?: Partial<OrganismLivingState>;
     initialEnergyState?: Partial<OrganismEnergyState>;
+    initialWorldMediumState?: Partial<WorldMediumState>;
 }
 
 export interface MetricsSnapshot {
@@ -234,6 +247,18 @@ export interface MetricsSnapshot {
     pp_maxConfidence?: number;
     pp_newCandidateCount?: number;
     pp_decayedCandidateCount?: number;
+    // W7: Proto-neuron observation state (observer-side proxy, read-only)
+    pn_candidateCount?: number;
+    pn_stableCandidateCount?: number;
+    pn_averageConfidence?: number;
+    pn_maxConfidence?: number;
+    pn_averageExcitability?: number;
+    pn_averagePropagation?: number;
+    pn_averageTraceRetention?: number;
+    pn_averageClosureCoupling?: number;
+    pn_averageCoActivationScore?: number;
+    pn_coActivationClusterCount?: number;
+    pn_repeatedCoActivationCount?: number;
     // W1: Body Surface (Boundary Layer) — derived / proxy, read-only
     bs_boundaryIntegrity?: number;
     bs_surfaceSensitivity?: number;
@@ -396,6 +421,20 @@ export interface ScenarioResult {
         replaySupportedCandidateFrames?: number;
         basinOverlapCandidateFrames?: number;
         protoPointPersistentFrames?: number;
+        // W7: Proto-neuron observation summaries (observer-side proxy, read-only)
+        avgProtoNeuronCandidateCount?: number;
+        avgProtoNeuronStableCandidateCount?: number;
+        avgProtoNeuronConfidence?: number;
+        maxProtoNeuronConfidence?: number;
+        avgProtoNeuronExcitability?: number;
+        avgProtoNeuronPropagation?: number;
+        avgProtoNeuronTraceRetention?: number;
+        avgProtoNeuronClosureCoupling?: number;
+        avgProtoNeuronCoActivationScore?: number;
+        protoNeuronCoActivationClusterCount?: number;
+        protoNeuronRepeatedCoActivationCount?: number;
+        protoNeuronStrongestCoActivationPair?: ProtoNeuronCoActivationPairSummary | null;
+        protoNeuronLastCandidates?: ProtoNeuronCandidate[];
         // W1: Body Surface (Boundary Layer) summaries — derived / proxy, read-only
         avgBsBoundaryIntegrity?: number;
         avgBsSurfaceSensitivity?: number;
@@ -701,6 +740,7 @@ function buildMetricsSnapshot(
     collapseMode?: CollapseModeLabel,
     observationPatternState?: ObservationPatternState | null,
     protoPointObservationState?: ProtoPointObservationState | null,
+    protoNeuronObservationState?: ProtoNeuronObservationState | null,
     bodySurfaceState?: BodySurfaceState | null,
     actuationPulse?: ActuationPulse | null,
     actuationPulseGeneratedCount = 0,
@@ -987,6 +1027,21 @@ function buildMetricsSnapshot(
         snapshot.pp_decayedCandidateCount = protoPointObservationState.decayedCandidateCount;
     }
 
+    // W7: Add proto-neuron observation state (observer-side proxy, read-only)
+    if (protoNeuronObservationState) {
+        snapshot.pn_candidateCount = protoNeuronObservationState.candidateCount;
+        snapshot.pn_stableCandidateCount = protoNeuronObservationState.stableCandidateCount;
+        snapshot.pn_averageConfidence = protoNeuronObservationState.averageConfidence;
+        snapshot.pn_maxConfidence = protoNeuronObservationState.maxConfidence;
+        snapshot.pn_averageExcitability = protoNeuronObservationState.averageExcitability;
+        snapshot.pn_averagePropagation = protoNeuronObservationState.averagePropagation;
+        snapshot.pn_averageTraceRetention = protoNeuronObservationState.averageTraceRetention;
+        snapshot.pn_averageClosureCoupling = protoNeuronObservationState.averageClosureCoupling;
+        snapshot.pn_averageCoActivationScore = protoNeuronObservationState.averageCoActivationScore;
+        snapshot.pn_coActivationClusterCount = protoNeuronObservationState.coActivationClusterCount;
+        snapshot.pn_repeatedCoActivationCount = protoNeuronObservationState.repeatedCoActivationCount;
+    }
+
     // W1: Add Body Surface state (Boundary Layer — derived / proxy, read-only)
     if (bodySurfaceState) {
         snapshot.bs_boundaryIntegrity = bodySurfaceState.boundaryIntegrity;
@@ -1090,6 +1145,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // Phase 7: Proto-point observation state (observer-side proxy, read-only)
     let lastProtoPointObservationState: ProtoPointObservationState | null = null;
+
+    // W7: Proto-neuron observation state (observer-side proxy, read-only)
+    let lastProtoNeuronObservationState: ProtoNeuronObservationState | null = null;
+
+    // W3–W6: world-loop observer state (read-only)
+    let worldMediumState: WorldMediumState = {
+        ...initializeWorldMediumState(),
+        ...(config.initialWorldMediumState ?? {}),
+    };
+    let lastSensoryReturns: SensoryReturnPacket[] = [];
+    let lastReafferenceComparisonState: ReafferenceComparisonState | null = null;
+    let lastBodyWorldClosureState: BodyWorldClosureState | null = null;
+    const recentLocalPropagationHistory: number[] = [];
+    let previousMeanActivity = 0;
 
     // W1: Body Surface state (Boundary Layer — derived / proxy, read-only)
     let lastBodySurfaceState: BodySurfaceState | null = null;
@@ -1492,6 +1561,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 clampFinite((dyn.bl_settlingWindow ?? 0), 0, 1) * 0.25,
             );
 
+            const localPropagationProxy = clamp01(
+                clampFinite(Math.abs(meanAct - previousMeanActivity) * 2.5, 0, 1) * 0.40 +
+                clampFinite((dyn.ignitionRatio ?? 0), 0, 1) * 0.20 +
+                clampFinite((lastObservationPatternState?.pathCount ?? 0) / 2, 0, 1) * 0.25 +
+                clampFinite(1 - (lastActuationPulse?.locality ?? 1), 0, 1) * 0.15,
+            );
+            recentLocalPropagationHistory.push(localPropagationProxy);
+            if (recentLocalPropagationHistory.length > 40) recentLocalPropagationHistory.shift();
+
             const frameOngoingness = clamp01(
                 (1 - clampFinite(collapseFrames / Math.max(frame + 1, 1) * 5, 0, 1)) * 0.45 +
                 (1 - clampFinite(saturationFrames / Math.max(frame + 1, 1) * 12, 0, 1)) * 0.25 +
@@ -1520,11 +1598,47 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             } else {
                 actuationPulseNullCount++;
             }
+
+            const previousWorldMediumState = worldMediumState;
+            worldMediumState = updateWorldMedium(worldMediumState, lastActuationPulse, dt);
+            lastSensoryReturns = deriveSensoryReturn(worldMediumState, previousWorldMediumState, dt);
+            lastReafferenceComparisonState = deriveReafferenceComparison(lastActuationPulse, lastSensoryReturns, worldMediumState, dt);
+            lastBodyWorldClosureState = deriveBodyWorldClosureState({
+                timestamp: frame,
+                actuationPulse: lastActuationPulse,
+                sensoryReturns: lastSensoryReturns,
+                worldMediumState,
+                reafferenceComparisonState: lastReafferenceComparisonState,
+                ongoingness: frameOngoingness,
+                previousState: lastBodyWorldClosureState,
+            });
+
+            lastProtoNeuronObservationState = deriveProtoNeuronCandidates({
+                timestamp: frame,
+                traceState,
+                replayState,
+                recoveryState,
+                observationPatternState: lastObservationPatternState,
+                protoPointObservationState: lastProtoPointObservationState,
+                bodyWorldClosureState: lastBodyWorldClosureState,
+                reafferenceComparisonState: lastReafferenceComparisonState,
+                pressureCompetitionState: bsPressureState,
+                actuationPulse: lastActuationPulse,
+                activityHistory,
+                localPropagationHistory: recentLocalPropagationHistory,
+                meanActivity: meanAct,
+                baselineActivity: quietBaselineCount > 0 ? quietBaselineSum / quietBaselineCount : meanAct,
+                ongoingness: frameOngoingness,
+                previousState: lastProtoNeuronObservationState,
+            });
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
+            lastProtoNeuronObservationState = null;
             actuationPulseNullCount++;
         }
+
+        previousMeanActivity = meanAct;
 
         if (collectMetrics && frame % metricsInterval === 0) {
             metrics.push(buildMetricsSnapshot(
@@ -1542,6 +1656,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 collapseMode,
                 lastObservationPatternState,
                 lastProtoPointObservationState,
+                lastProtoNeuronObservationState,
                 lastBodySurfaceState,
                 lastActuationPulse,
                 actuationPulseGeneratedCount,
@@ -1745,6 +1860,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let ppBasinOverlapFrames = 0;
     let ppPersistentFrames = 0;
     let ppCount = 0;
+
+    // W7: Proto-neuron observation summary accumulators
+    let pnAvgCandidateCount = 0;
+    let pnAvgStableCandidateCount = 0;
+    let pnAvgConfidence = 0;
+    let pnMaxConfidence = 0;
+    let pnAvgExcitability = 0;
+    let pnAvgPropagation = 0;
+    let pnAvgTraceRetention = 0;
+    let pnAvgClosureCoupling = 0;
+    let pnAvgCoActivationScore = 0;
+    let pnClusterSum = 0;
+    let pnRepeatedCoActivationCount = 0;
+    let pnCount = 0;
 
     // W1: Body Surface summary accumulators
     let avgBsBoundaryIntegrity = 0;
@@ -1971,6 +2100,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             ppCount++;
         }
 
+        // W7: Accumulate proto-neuron observation metrics
+        if (m.pn_candidateCount !== undefined) {
+            pnAvgCandidateCount += m.pn_candidateCount;
+            pnAvgStableCandidateCount += m.pn_stableCandidateCount ?? 0;
+            pnAvgConfidence += m.pn_averageConfidence ?? 0;
+            pnMaxConfidence = Math.max(pnMaxConfidence, m.pn_maxConfidence ?? 0);
+            pnAvgExcitability += m.pn_averageExcitability ?? 0;
+            pnAvgPropagation += m.pn_averagePropagation ?? 0;
+            pnAvgTraceRetention += m.pn_averageTraceRetention ?? 0;
+            pnAvgClosureCoupling += m.pn_averageClosureCoupling ?? 0;
+            pnAvgCoActivationScore += m.pn_averageCoActivationScore ?? 0;
+            pnClusterSum += m.pn_coActivationClusterCount ?? 0;
+            pnRepeatedCoActivationCount += m.pn_repeatedCoActivationCount ?? 0;
+            pnCount++;
+        }
+
         // W1: Accumulate Body Surface metrics
         if (m.bs_boundaryIntegrity !== undefined) {
             avgBsBoundaryIntegrity += m.bs_boundaryIntegrity;
@@ -2152,6 +2297,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         ppAvgAverageConfidence /= ppCount;
     }
 
+    // W7: Compute proto-neuron observation averages
+    if (pnCount > 0) {
+        pnAvgCandidateCount /= pnCount;
+        pnAvgStableCandidateCount /= pnCount;
+        pnAvgConfidence /= pnCount;
+        pnAvgExcitability /= pnCount;
+        pnAvgPropagation /= pnCount;
+        pnAvgTraceRetention /= pnCount;
+        pnAvgClosureCoupling /= pnCount;
+        pnAvgCoActivationScore /= pnCount;
+    }
+
     // W1: Compute Body Surface averages
     if (bsCount > 0) {
         avgBsBoundaryIntegrity /= bsCount;
@@ -2319,6 +2476,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             replaySupportedCandidateFrames: ppCount > 0 ? ppReplaySupportedFrames : undefined,
             basinOverlapCandidateFrames: ppCount > 0 ? ppBasinOverlapFrames : undefined,
             protoPointPersistentFrames: ppCount > 0 ? ppPersistentFrames : undefined,
+            avgProtoNeuronCandidateCount: pnCount > 0 ? pnAvgCandidateCount : undefined,
+            avgProtoNeuronStableCandidateCount: pnCount > 0 ? pnAvgStableCandidateCount : undefined,
+            avgProtoNeuronConfidence: pnCount > 0 ? pnAvgConfidence : undefined,
+            maxProtoNeuronConfidence: pnCount > 0 ? pnMaxConfidence : undefined,
+            avgProtoNeuronExcitability: pnCount > 0 ? pnAvgExcitability : undefined,
+            avgProtoNeuronPropagation: pnCount > 0 ? pnAvgPropagation : undefined,
+            avgProtoNeuronTraceRetention: pnCount > 0 ? pnAvgTraceRetention : undefined,
+            avgProtoNeuronClosureCoupling: pnCount > 0 ? pnAvgClosureCoupling : undefined,
+            avgProtoNeuronCoActivationScore: pnCount > 0 ? pnAvgCoActivationScore : undefined,
+            protoNeuronCoActivationClusterCount: pnCount > 0 ? pnClusterSum : undefined,
+            protoNeuronRepeatedCoActivationCount: pnCount > 0 ? pnRepeatedCoActivationCount : undefined,
+            protoNeuronStrongestCoActivationPair: lastProtoNeuronObservationState?.strongestCoActivationPair ?? null,
+            protoNeuronLastCandidates: lastProtoNeuronObservationState?.candidates ?? [],
             // W1: Body Surface (Boundary Layer) summaries — derived / proxy, read-only
             avgBsBoundaryIntegrity: bsCount > 0 ? avgBsBoundaryIntegrity : undefined,
             avgBsSurfaceSensitivity: bsCount > 0 ? avgBsSurfaceSensitivity : undefined,

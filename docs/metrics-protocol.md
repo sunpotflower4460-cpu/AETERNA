@@ -993,3 +993,32 @@ observer / debug での表示区分:
 - No semantic node / object label / teacher binding / LLM teacher involved
 - Implemented in `src/closure/deriveReafferenceComparison.ts`
 - Tests in `src/tests/behavioral/reafferenceComparison.test.ts` and `src/tests/scenario/reafferenceComparisonScenario.ts`
+
+
+### W7. Emergent Proto-Neuron Observation
+
+**Definition**: Observer-side derived/proxy metrics for naturally arising pre-semantic excitable loci inside the body-world closed loop.
+
+**Measured**
+- local activation count
+- propagation count
+- repeated co-activation count
+
+**Derived**
+- excitability
+- localPropagation
+- traceRetention
+- recurrenceScore
+- coActivationScore
+
+**Proxy**
+- weakPlasticityScore
+- closureCoupling
+- confidence
+- proto-neuron stability
+
+**Important**
+- proto-neuron observation is read-only
+- proto-neuron is not a semantic node
+- confidence is not meaning confidence
+- W7 does not place runtime neuron nodes or bridge to Node-AI-Z

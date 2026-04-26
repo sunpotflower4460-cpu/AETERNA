@@ -76,3 +76,10 @@
 - W6: Body-World Closure Metrics の基本実装
 - W7: proto-neuron 観測との組み合わせ
 - W8: 閉ループシナリオテストへの活用
+
+
+### closureCoupling（W7 observer proxy）
+- **意味**: proto-neuron candidate が body-world loop とどれだけ結びついて立ち上がっているか
+- **分類**: Proxy
+- **入力例**: `loopGain`, `returnStrength`, `returnMismatch`, `selfCausedMatch`, `worldMismatch`, `closureDrift`, `closureStability`
+- **注意**: proto-neuron の意味の確信ではなく、閉ループ由来の立ち上がり proxy

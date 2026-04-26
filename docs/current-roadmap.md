@@ -50,7 +50,7 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 | **W4** | Sensory Return 導入 | 未着手 |
 | **W5** | Reafference Comparison 導入 | 未着手 |
 | **W6** | Body-World Closure Metrics | 未着手 |
-| **W7** | Emergent Proto-Neuron Observation | 未着手 |
+| **W7** | Emergent Proto-Neuron Observation | ✅ observer-side candidate observation |
 | **W8** | Closed-Loop Scenario Tests | 未着手 |
 
 ### W0 完了条件
@@ -85,3 +85,14 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 - input は ongoing baseline に重なる perturbation
 - mismatch は state-dependent
 - semantic interpretation に進まない
+
+
+### W7 完了条件
+
+- `ProtoNeuronCandidate` / `ProtoNeuronObservationState` がある
+- `deriveProtoNeuronCandidates` がある
+- excitability / refractory / propagation / trace / recurrence / co-activation / weak plasticity / closure coupling が導出される
+- observer / metrics / scenario summary に proto-neuron 観測が反映される
+- semantic leak test がある
+- runtime neuron node を配置していない
+- Node bridge を本格実装していない

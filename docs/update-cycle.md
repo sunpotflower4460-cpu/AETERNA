@@ -471,3 +471,11 @@ Torus Life Field
 - W1〜W8: 段階的に実装。
 - proto-neuron は W7 で観測開始。最初から置かない。
 - real sensor は後段（W3 は simulated world のみ）。
+
+
+### W7 Proto-Neuron Observation Stage (Observer / scenario-debug path)
+- **Location**: `src/experiments/runScenario.ts`
+- **Role**: Derive observer-side proto-neuron candidates after proto-point, actuation, world-medium, sensory-return, reafference, and closure metrics are available
+- **Call**: `deriveProtoNeuronCandidates(...)`
+- **Output**: `ProtoNeuronObservationState`
+- **Important**: Read-only. Does not feed back into organism dynamics, does not place runtime neurons, and does not add semantics.

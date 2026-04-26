@@ -204,3 +204,13 @@ Introduced in **Phase 7: proto-point の観測導入**.
 *They are research observations, not confirmed structural facts.*
 *AETERNA does not yet have meaning. This layer observes what might become*
 *meaning-bearing structure — from the outside, at a distance, as a rough proxy.*
+
+
+---
+
+## proto-point と proto-neuron の違い
+
+- **proto-point**: 場の中に自然に見え始めた局所的な節候補。まだ発火性・不応期・弱い可塑性までは要求しない。
+- **proto-neuron**: proto-point より一段進み、発火しやすさ・局所伝播・痕跡保持・再発・共発火・弱い可塑性・closure coupling をあわせて持つ observer-side candidate。
+
+共通して、どちらも **pre-semantic** であり、semantic node でも runtime node でもない。

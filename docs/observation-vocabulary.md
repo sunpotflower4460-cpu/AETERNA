@@ -215,3 +215,30 @@ This complements the coarse `protoPointCandidateCount` in `ObservationPatternSta
 - Use LLM teacher outputs
 
 See `docs/proto-point-observation-principles.md` for full Phase 7 principles.
+
+
+---
+
+### proto-neuron candidate
+
+proto-point より一段進み、  
+発火しやすさ・不応期的挙動・局所伝播・痕跡保持・再発・共発火・弱い可塑性・closure coupling が重なった **pre-semantic excitable locus**。
+
+**Definition**: An observer-side candidate for a naturally arising excitable field locus inside the closed body-world loop. It is still not a semantic node, concept, object, or label.
+
+**Proxy conditions**:
+- `excitability` from repeated rise above local baseline
+- `refractoryPattern` from suppression/recovery cadence
+- `localPropagation` from propagation/path support
+- `traceRetention` from trace/residue persistence
+- `recurrenceScore` from repeated re-entry
+- `coActivationScore` from concurrent rise with other candidates
+- `weakPlasticityScore` from repeated co-activation + replay/consolidation support
+- `closureCoupling` from loopGain / returnMismatch / closureDrift / self/world loop signals
+
+**What it is not**:
+- a semantic node
+- a neural-network runtime node
+- a Node-AI-Z semantic node
+- a concept, label, category, or same-object detector
+- a trigger that changes organism action
