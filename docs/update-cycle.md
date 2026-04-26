@@ -299,7 +299,11 @@ derive actuation pulse
 ↓
 update simulated world medium (external)
 ↓
-observer / future sensory return (W4+)
+derive sensory return (W4+)
+↓
+optional weak perturbation injection
+↓
+future reafference comparison (W5+)
 ```
 
 **Important constraints**:
@@ -308,6 +312,37 @@ observer / future sensory return (W4+)
 - Actuation Pulse is the only channel from AETERNA to World Medium
 - Sensory Return (World Medium → AETERNA) is deferred to W4
 - No semantic interpretation occurs in World Medium
+
+### W4 Sensory Return Derivation (pre-semantic world signal, weak connection to perturbation pipeline)
+
+- After updating World Medium, `deriveSensoryReturn` may run to generate return packets.
+- `deriveSensoryReturn(currentWorld, previousWorld, dt)` is a **pure function** that:
+  - Compares current and previous `WorldMediumState`
+  - Returns array of `SensoryReturnPacket[]`
+  - Generates packets only when World Medium shows significant change
+  - Maps World Medium changes to sensory channels (simulatedLight / simulatedNoise / simulatedPressure / simulatedMotion / simulatedEcho)
+- Sensory Return packets are **pre-semantic signals** from World Medium, not semantic input.
+- Packets can optionally be converted to `PerturbationEvent` via `sensoryReturnToPerturbation()` for **weak connection** to perturbation pipeline.
+- **W4 does NOT perform Reafference Comparison** (self-caused vs world-caused distinction is W5).
+
+Recommended position in update cycle:
+
+```
+update simulated world medium
+↓
+derive sensory return ← W4
+↓
+optional weak perturbation injection
+↓
+future reafference comparison (W5+)
+```
+
+**Important constraints**:
+- Sensory Return is **not semantic input**
+- It is world-side signal, not meaning or interpretation
+- Conversion to perturbation is **weak** to avoid overwhelming organism
+- No self/world distinction yet (W5)
+- Real sensors not connected yet (later phase)
 
 ### Phase 5 Observation Layer (observer-side pattern candidates, read-only)
 

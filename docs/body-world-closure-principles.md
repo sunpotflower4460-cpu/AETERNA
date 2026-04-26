@@ -197,3 +197,94 @@ World Medium は AETERNA の一部ではなく、AETERNA の作用を受ける�
 - semantic node / object label / language meaning は含まない
 - 既存の boundary / recovery / pressure / perturbation と自然につながる
 - 既存の touch pipeline を全面置換しない
+
+## W4: Sensory Return 導入（完了）
+
+W4 では、World Medium の変化を AETERNA に戻す Sensory Return を導入した。
+
+### Sensory Return の位置づけ
+
+```
+Torus Life Field
+↓
+Body Surface (W1)
+↓
+Actuation Pulse (W2)
+↓
+World Medium (W3)
+↓
+[Sensory Return] ← W4 で導入
+↓
+Perturbation + Mismatch
+↓
+Torus Life Field
+```
+
+注意：W4 では、
+
+```
+Sensory Return
+↓
+Reafference Comparison
+```
+
+にはまだ進まない。Reafference Comparison は W5 の責務である。
+
+### W4 で実装したこと
+
+- `SensoryReturnPacket` 型定義（9 項目 + optional 5 項目）
+- `deriveSensoryReturn()` 関数
+  - World Medium の変化から Sensory Return packet を生成
+  - 変化が小さい時は packet を出さない
+  - 複数 channel を同時に返せる
+- `sensoryReturnToPerturbation()` 関数
+  - PerturbationEvent への弱い変換
+  - overwhelming しない設計
+- scenario / behavioral tests (W4-A〜F)
+
+### W4 で実装していないこと
+
+まだ以下は実装していない：
+
+- Reafference Comparison（W5）
+- self-caused / world-caused 判定（W5）
+- real sensor 接続（後段）
+- semantic interpretation（禁止）
+
+### Sensory Return は意味入力ではない
+
+Sensory Return は World Medium から戻る **pre-semantic simulated signal** である。
+
+- 意味ノードではない
+- object label ではない
+- same-object detection ではない
+- teacher binding ではない
+- language meaning ではない
+
+W4 で戻るのは：
+
+```
+simulatedLight
+simulatedNoise
+simulatedPressure
+simulatedMotion
+simulatedEcho
+```
+
+のような、世界側から返ってきた pre-semantic sensory signal である。
+
+### W1 の実装内容
+
+- `src/types/bodySurfaceState.ts`: BodySurfaceState 型定義
+- `src/body/deriveBodySurfaceState.ts`: 既存 state からの純粋導出関数
+
+### W1 の設計原則
+
+- Body Surface は UI ではない
+- Body Surface は身体境界・膜・皮膚のような pre-semantic layer である
+- 入力（外乱の受け取り）と出力準備（outputReadiness）の両方に関係する
+- W1 では出力本体（Actuation Pulse）は実装しない
+- outputReadiness は W2 Actuation Pulse の準備値として計算のみ行う
+- semantic node / object label / language meaning は含まない
+- 既存の boundary / recovery / pressure / perturbation と自然につながる
+- 既存の touch pipeline を全面置換しない

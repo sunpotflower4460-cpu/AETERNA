@@ -63,7 +63,13 @@ Sensory Return は Reafference Comparison によって処理される。
   - Actuation Pulse による影響（visual / simulatedForce）
   - 自然減衰・ドリフト
   - scenario / behavioral tests
-- W4: Sensory Return 導入（未実装）
+- ✅ W4: Sensory Return 導入（完了）
+  - `SensoryReturnPacket` 型定義
+  - `deriveSensoryReturn()` 導出関数
+  - `sensoryReturnToPerturbation()` 変換関数
+  - World Medium の変化から pre-semantic signal を生成
+  - perturbation pipeline への弱い接続
+  - scenario / behavioral tests
 - W5: Reafference Comparison 導入（未実装）
 - （後段）: real sensor との接続
 
@@ -140,6 +146,63 @@ pulse がない時も、World Medium は以下の自然変化を持つ：
 - まだ Sensory Return を AETERNA に返さない
 - まだ Reafference Comparison を実装しない
 - semantic interpretation を行わない
+
+## W4 実装内容（W4: Sensory Return）
+
+### ファイル構成
+
+- `src/types/sensoryReturnPacket.ts` — SensoryReturnPacket 型定義
+- `src/perception/deriveSensoryReturn.ts` — World Medium 変化から Sensory Return 生成
+- `src/perception/sensoryReturnToPerturbation.ts` — PerturbationEvent への変換関数
+- `src/tests/scenario/sensoryReturnScenario.ts` — W4-A〜F シナリオテスト
+- `src/tests/behavioral/sensoryReturn.test.ts` — ユニットテスト
+
+### SensoryReturnPacket 項目
+
+| フィールド名 | 意味 | 範囲 |
+|---|---|---|
+| `timestamp` | フレームタイムスタンプ | number |
+| `channel` | 感覚チャンネル（simulatedLight / simulatedNoise / simulatedPressure / simulatedMotion / simulatedEcho） | enum |
+| `intensity` | 戻り信号の強さ | 0–1 |
+| `novelty` | 前回までとの新規性 | 0–1 |
+| `locality` | 局所性（local 変化か global 変化か） | 0–1 |
+| `rhythm` | 周期性・リズム性 | 0–1 |
+| `worldOriginStrength` | World Medium 由来である強度（W4 では self/world 判定なし） | 0–1 |
+| `returnDelayHint` | 遅延ヒント（feedbackDelay から導出） | 0–1 |
+| `mediumStabilityHint` | World Medium 安定度ヒント | 0–1 |
+
+### World Medium から Sensory Return への対応
+
+| World Medium フィールド | Sensory Return Channel |
+|---|---|
+| `ambientLight` + `visualResidue` | simulatedLight |
+| `ambientNoise` + `worldTurbulence` | simulatedNoise |
+| `surfaceResistance` + `forceResidue` | simulatedPressure |
+| `motionDrift` + `fieldTemperature` | simulatedMotion |
+| `echoLevel` + `lastPulseImpact` | simulatedEcho |
+
+### W4 設計原則
+
+- Sensory Return は **意味入力ではない**
+- World Medium から戻る **pre-semantic signal** として扱う
+- W4 では **simulated return のみ**（real sensor はまだ使わない）
+- **Reafference Comparison はまだ本実装しない**（W5）
+- World Medium の変化が小さい時は packet を出さない
+- 複数 channel を同時に返せる
+- NaN / Infinity を出さない
+- すべての値を [0, 1] 範囲に維持
+- PerturbationEvent への変換は **弱い**（overwhelming しない）
+
+### W4 で実装していないこと
+
+以下は W4 では実装していない：
+
+- Reafference Comparison（W5）
+- self-caused / world-caused 判定（W5）
+- real camera / mic / IMU 接続（後段）
+- semantic interpretation（禁止）
+- proto-neuron 実装（Phase 7+）
+- Node bridge 本格接続（Phase 8+）
 
 ## 禁止事項
 
