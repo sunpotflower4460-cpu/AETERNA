@@ -1,5 +1,5 @@
 import type { WorldMediumState } from '../types/worldMediumState.ts';
-import type { SensoryReturnPacket, SensoryReturnChannel } from '../types/sensoryReturnPacket.ts';
+import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 
 /**
  * deriveSensoryReturn
@@ -62,7 +62,7 @@ function computeRhythm(
 export function deriveSensoryReturn(
   currentWorld: WorldMediumState,
   previousWorld: WorldMediumState | null,
-  dt: number,
+  _dt: number,
 ): SensoryReturnPacket[] {
   const packets: SensoryReturnPacket[] = [];
 
@@ -108,8 +108,6 @@ export function deriveSensoryReturn(
       const novelty = computeChangeNovelty(lightDelta, worldTurbulence, mediumStability);
       const locality = computeLocality(lightDelta, visualResidue, currentWorld.motionDrift);
 
-      const previousLightDelta = previousWorld ?
-        (previousWorld.ambientLight - (previousWorld.ambientLight)) : 0; // Approximation
       const rhythm = computeRhythm(0, lightDelta, mediumStability);
 
       const worldOriginStrength = clamp01(
