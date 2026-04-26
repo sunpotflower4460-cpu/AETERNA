@@ -19,6 +19,11 @@ import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import { classifyCollapseMode, classifyRecoveryTrajectory, deriveRecoveryState } from '../organism/deriveRecoveryState.ts';
 import type { OrganismSnapshot } from '../types/organismSnapshot.ts';
+import type {
+    OrganismEnergyState,
+    OrganismHomeostaticState,
+    OrganismLivingState,
+} from '../types/organismState.ts';
 import type { ReplayState } from '../types/replayState.ts';
 import type { RecoveryState, RecoveryTrajectoryLabel, CollapseModeLabel } from '../types/recoveryState.ts';
 import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
@@ -41,6 +46,9 @@ export interface ScenarioConfig {
     segments?: number;  // network size (default 72)
     collectMetrics?: boolean;  // whether to collect detailed metrics (default true)
     metricsInterval?: number;  // frames between metric snapshots (default 10)
+    initialHomeostaticState?: Partial<OrganismHomeostaticState>;
+    initialLivingState?: Partial<OrganismLivingState>;
+    initialEnergyState?: Partial<OrganismEnergyState>;
 }
 
 export interface MetricsSnapshot {
@@ -308,6 +316,18 @@ async function setupStateForHeadless(disk: PhysicalDisk): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { state } = await import('../organism/state.js') as any;
     state.disk = disk;
+}
+
+function applyScenarioStateOverrides(network: AeternaNetwork, config: ScenarioConfig): void {
+    if (config.initialHomeostaticState && network.homeostaticState) {
+        Object.assign(network.homeostaticState, config.initialHomeostaticState);
+    }
+    if (config.initialLivingState && network.livingState) {
+        Object.assign(network.livingState, config.initialLivingState);
+    }
+    if (config.initialEnergyState && network.energyFlowState) {
+        Object.assign(network.energyFlowState, config.initialEnergyState);
+    }
 }
 
 /**
@@ -724,6 +744,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const network = new AeternaNetwork(segments);
     const disk = new PhysicalDisk();
     const touchMem = new TouchMemory(segments);
+    applyScenarioStateOverrides(network, config);
 
     // Setup state.disk for dynamicCore
     await setupStateForHeadless(disk);

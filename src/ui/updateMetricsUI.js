@@ -221,6 +221,15 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-bl-rest-depth'])        UI['val-bl-rest-depth'].innerText        = (dyn.bl_restDepth        || 0).toFixed(3);
     if (UI['val-bl-hyperreactivity'])   UI['val-bl-hyperreactivity'].innerText   = (dyn.bl_hyperreactivity  || 0).toFixed(3);
     if (UI['val-bl-settling-window'])   UI['val-bl-settling-window'].innerText   = (dyn.bl_settlingWindow   || 0).toFixed(3);
+    if (UI['val-recovery-pressure'])      UI['val-recovery-pressure'].innerText      = (dyn.recoveryPressure        || 0).toFixed(3);
+    if (UI['val-relaxation-level'])       UI['val-relaxation-level'].innerText       = (dyn.relaxationLevel         || 0).toFixed(3);
+    if (UI['val-stabilization-pull'])     UI['val-stabilization-pull'].innerText     = (dyn.stabilizationPull       || 0).toFixed(3);
+    if (UI['val-recovery-collapse-risk']) UI['val-recovery-collapse-risk'].innerText = (dyn.collapseRisk            || 0).toFixed(3);
+    if (UI['val-boundary-repair-pressure']) UI['val-boundary-repair-pressure'].innerText = (dyn.boundaryRepairPressure || 0).toFixed(3);
+    if (UI['val-self-preservation-drive']) UI['val-self-preservation-drive'].innerText = (dyn.selfPreservationDrive   || 0).toFixed(3);
+    if (UI['val-overload-drain'])         UI['val-overload-drain'].innerText         = (dyn.overloadDrain           || 0).toFixed(3);
+    if (UI['val-recovery-trajectory'])    UI['val-recovery-trajectory'].innerText    = dyn.recoveryTrajectory || 'shift';
+    if (UI['val-collapse-mode'])          UI['val-collapse-mode'].innerText          = dyn.collapseMode || 'stable';
 
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];

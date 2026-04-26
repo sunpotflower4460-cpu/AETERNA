@@ -63,6 +63,22 @@ export class MajorStateObserver {
             processes.push({ type: 'repeated_touch_habituation', score: Math.min(dyn.touchRepeatCount / 10, 1.0), label: 'REPEATED TOUCH' });
         }
 
+        if (dyn.collapseMode === 'runaway') {
+            processes.push({ type: 'recovery_runaway', score: Math.max(dyn.collapseRisk || 0, 0.8), label: 'RUNAWAY RISK' });
+        } else if (dyn.collapseMode === 'hard_collapse') {
+            processes.push({ type: 'recovery_hard_collapse', score: Math.max(dyn.collapseRisk || 0, 0.75), label: 'HARD COLLAPSE' });
+        } else if (dyn.collapseMode === 'soft_collapse') {
+            processes.push({ type: 'recovery_soft_collapse', score: Math.max(dyn.collapseRisk || 0, 0.55), label: 'SOFT COLLAPSE' });
+        }
+
+        if (dyn.recoveryTrajectory === 'recover' && dyn.recoveryPressure > 0.55) {
+            processes.push({ type: 'recovery_returning', score: dyn.recoveryPressure, label: 'RETURNING' });
+        } else if (dyn.recoveryTrajectory === 'partial_repair' && dyn.boundaryRepairPressure > 0.45) {
+            processes.push({ type: 'recovery_partial_repair', score: dyn.boundaryRepairPressure, label: 'PARTIAL REPAIR' });
+        } else if (dyn.recoveryTrajectory === 'degrade') {
+            processes.push({ type: 'recovery_degrading', score: dyn.collapseRisk || 0.5, label: 'DEGRADING' });
+        }
+
         if (processes.length === 0) {
             if (dyn.arousal < 0.01) {
                 return { type: 'quiet', label: 'QUIET', color: '#6b7280' };
@@ -97,6 +113,12 @@ export class MajorStateObserver {
             'action_active': '#60a5fa',          // blue
             'low_energy_drift': '#9ca3af',       // gray
             'repeated_touch_habituation': '#86efac', // light green
+            'recovery_returning': '#22c55e',     // green
+            'recovery_partial_repair': '#2dd4bf', // teal
+            'recovery_degrading': '#f97316',     // orange
+            'recovery_soft_collapse': '#fb7185', // rose
+            'recovery_hard_collapse': '#ef4444', // red
+            'recovery_runaway': '#f43f5e',       // strong red
             'quiet': '#6b7280',                  // gray
             'low_drift': '#9ca3af'               // light gray
         };
@@ -120,7 +142,10 @@ export class MajorStateObserver {
             arousalLevel: dyn.bl_arousalLevel || 0,
             awarenessWindow: dyn.bl_awarenessWindow || 0,
             salienceOpenness: dyn.bl_salienceOpenness || 0,
-            foregroundPressure: dyn.bl_foregroundPressure || 0
+            foregroundPressure: dyn.bl_foregroundPressure || 0,
+            recoveryPressure: dyn.recoveryPressure || 0,
+            collapseRisk: dyn.collapseRisk || 0,
+            stabilizationPull: dyn.stabilizationPull || 0
         });
 
         if (this.stateHistory.length > this.maxHistory) {

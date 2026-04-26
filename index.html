@@ -757,6 +757,25 @@
                           </div>
                       </div>
                   </div>
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-recovery-field', 'icon-recovery-field')">
+                          <span class="tracking-wider">RECOVERY FIELD</span>
+                          <svg id="icon-recovery-field" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-recovery-field" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Current return pressure after mismatch / disturbance." id="row-recovery-pressure"><span>Recovery pressure</span><span id="val-recovery-pressure" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Degree to which tension is actually loosening." id="row-relaxation-level"><span>Relaxation level</span><span id="val-relaxation-level" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Pull toward a viable stable band." id="row-stabilization-pull"><span>Stabilization pull</span><span id="val-stabilization-pull" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Composite risk of degrade / collapse under current load." id="row-recovery-collapse-risk"><span>Collapse risk</span><span id="val-recovery-collapse-risk" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Weak boundary-support tendency from restoration and self-preservation." id="row-boundary-repair-pressure"><span>Boundary repair</span><span id="val-boundary-repair-pressure" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Minimal non-personified anti-collapse drift." id="row-self-preservation-drive"><span>Self-preserve drive</span><span id="val-self-preservation-drive" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] How much overload / depletion is currently eating viability." id="row-overload-drain"><span>Overload drain</span><span id="val-overload-drain" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[OBSERVER] Recovery-path vocabulary only: recover / shift / degrade / partial_repair." id="row-recovery-trajectory"><span>Trajectory</span><span id="val-recovery-trajectory" class="text-white">shift</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[OBSERVER] Collapse distinction only: stable / soft_collapse / hard_collapse / runaway." id="row-collapse-mode"><span>Collapse mode</span><span id="val-collapse-mode" class="text-white">stable</span></div>
+                          </div>
+                      </div>
+                  </div>
               </div>
             </div>
         </div>

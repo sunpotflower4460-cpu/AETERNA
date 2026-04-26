@@ -30,6 +30,11 @@ export async function runRecoveryProfilesScenarioSuite(): Promise<RecoveryProfil
       name: 'repeated-perturbation-weak-boundary',
       totalFrames: 1000,
       metricsInterval: 5,
+      initialHomeostaticState: {
+        boundaryIntegrity: 0.56,
+        selfPreservationBias: 0.42,
+        restorationBias: 0.44,
+      },
       touchScript: [
         { frame: 140, x: 0.2, y: 0.2, pressure: 1.2, duration: 8 },
         { frame: 260, x: 0.8, y: 0.2, pressure: 1.2, duration: 8 },
@@ -61,9 +66,29 @@ export async function runRecoveryProfilesScenarioSuite(): Promise<RecoveryProfil
       collectMetrics: true,
     },
     {
-      name: 'same-perturbation-strong-vs-weak-restoration-bias',
+      name: 'same-perturbation-strong-restoration-bias',
       totalFrames: 800,
       metricsInterval: 5,
+      initialHomeostaticState: {
+        restorationBias: 0.82,
+        selfPreservationBias: 0.68,
+        boundaryIntegrity: 0.84,
+      },
+      touchScript: [
+        { frame: 140, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+        { frame: 420, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+      ],
+      collectMetrics: true,
+    },
+    {
+      name: 'same-perturbation-weak-restoration-bias',
+      totalFrames: 800,
+      metricsInterval: 5,
+      initialHomeostaticState: {
+        restorationBias: 0.36,
+        selfPreservationBias: 0.4,
+        boundaryIntegrity: 0.7,
+      },
       touchScript: [
         { frame: 140, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
         { frame: 420, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
