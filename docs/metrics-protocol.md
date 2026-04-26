@@ -396,3 +396,54 @@ Before any of the above, AETERNA must first pass Phase 1 minimum viability:
 - **Long-Horizon Metrics**: Stability over 10,000+ frames, attractor drift
 - **Comparative Metrics**: AETERNA vs simpler baselines (random walk, fixed-point attractor)
 - **Ablation Metrics**: Effect size of removing each mechanism (prediction, rewrite, mode, etc.)
+
+---
+
+## Phase 5: Observation Layer Metrics (Observer-Side Proxy)
+
+**Phase 5: Observation Layer Purification** adds a set of observer-side proxy metrics derived from existing state. These are NOT behavior drivers. They are read-only research observations.
+
+### Important Constraints
+
+- Observation metrics are **observer-side derived proxies**, not confirmed structural facts.
+- They are **read-only**: they do not modify organism core dynamics.
+- The vocabulary (knot, path, basin, etc.) is **not semantic**: it does not assign meaning.
+- Proto-point candidate ≠ semantic node. No label is attached.
+- See `docs/observation-vocabulary.md` for full vocabulary definitions.
+
+### P5.1 Knot Count (proxy)
+- **Meaning**: Number of locally recurring activity cluster candidates observed this frame
+- **Derived from**: `recurrenceWeight`, `replayReadiness`, `recentPatternWeight`, replay suppression
+- **Classification**: Observer-side proxy
+
+### P5.2 Path Count (proxy)
+- **Meaning**: Number of propagation channel candidates observed this frame
+- **Derived from**: `recentReplaySalience`, `activeReplayCount`, `consolidationGain`, perturbation history
+- **Classification**: Observer-side proxy
+
+### P5.3 Recurrence Locus Count (proxy)
+- **Meaning**: Number of field regions that re-activate repeatedly across events
+- **Derived from**: `recurrenceWeight`, `recentPatternWeight`, perturbation slope, `traceStrength`
+- **Classification**: Observer-side proxy
+
+### P5.4 Basin Count (proxy)
+- **Meaning**: Number of stability-zone candidates (regions the field returns to)
+- **Derived from**: `stabilizationPull`, `restorationBias`, `relaxationLevel`, `collapseRisk`
+- **Classification**: Observer-side proxy
+
+### P5.5 Long-Lived Anomaly Count (proxy)
+- **Meaning**: Number of persistent deviations above baseline that survive recovery
+- **Derived from**: mean activity vs. baseline margin, `salienceResidue`, `mismatchLevel`
+- **Classification**: Observer-side proxy
+
+### P5.6 Proto-Point Candidate Count (proxy)
+- **Meaning**: Number of field regions that simultaneously meet knot/recurrence + basin/residue + persistence criteria
+- **Derived from**: knotCount OR recurrenceLocusCount; AND basinCount OR `recoveryLinkedResidue`/`settlingResidue`; AND `traceStrength` + `recurrenceWeight` thresholds
+- **Critical**: This is NOT a semantic node. No label is attached. Not passed to any teacher.
+- **Classification**: Observer-side proxy candidate
+
+### P5.7 Observation Confidence (proxy)
+- **Meaning**: Rough signal quality estimate for current observation window
+- **Derived from**: history length, state availability, finite-value check
+- **Range**: 0–1; not a probability
+- **Classification**: Observer-side quality proxy

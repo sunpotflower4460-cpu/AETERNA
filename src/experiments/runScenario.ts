@@ -30,6 +30,8 @@ import type { TraceState } from '../types/traceState.ts';
 import type { RecoveryState, RecoveryTrajectoryLabel, CollapseModeLabel } from '../types/recoveryState.ts';
 import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
 import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
+import { deriveObservationPatterns } from '../observer/deriveObservationPatterns.ts';
+import type { ObservationPatternState } from '../types/observationPatternState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -195,6 +197,17 @@ export interface MetricsSnapshot {
     p2_perturbationMagnitude?: number;
     p2_perturbationNovelty?: number;
     p2_perturbationExpectedness?: number;
+    // Phase 5: Observation pattern state (observer-side proxy, read-only)
+    obs_knotCount?: number;
+    obs_pathCount?: number;
+    obs_recurrenceLocusCount?: number;
+    obs_basinCount?: number;
+    obs_longLivedAnomalyCount?: number;
+    obs_protoPointCandidateCount?: number;
+    obs_collapseProfileCount?: number;
+    obs_recoveryProfileCount?: number;
+    obs_stableAttractorCandidateCount?: number;
+    obs_observationConfidence?: number;
 }
 
 export interface ScenarioResult {
@@ -300,6 +313,17 @@ export interface ScenarioResult {
         avgBoundaryStress?: number;
         avgRecoveryPull?: number;
         maxMismatchLevel?: number;
+        // Phase 5: Observation pattern summaries (observer-side proxy, read-only)
+        avgKnotCount?: number;
+        avgPathCount?: number;
+        avgRecurrenceLocusCount?: number;
+        avgBasinCount?: number;
+        avgLongLivedAnomalyCount?: number;
+        avgProtoPointCandidateCount?: number;
+        maxProtoPointCandidateCount?: number;
+        avgObservationConfidence?: number;
+        protoPointEmergenceFrames?: number;
+        repeatedEmergenceCount?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -577,6 +601,7 @@ function buildMetricsSnapshot(
     recoveryState?: RecoveryState | null,
     recoveryTrajectory?: RecoveryTrajectoryLabel,
     collapseMode?: CollapseModeLabel,
+    observationPatternState?: ObservationPatternState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -820,6 +845,20 @@ function buildMetricsSnapshot(
         // If BL-L1 packet generation fails, skip silently (observer role only)
     }
 
+    // Phase 5: Add observation pattern state (observer-side proxy, read-only)
+    if (observationPatternState) {
+        snapshot.obs_knotCount = observationPatternState.knotCount;
+        snapshot.obs_pathCount = observationPatternState.pathCount;
+        snapshot.obs_recurrenceLocusCount = observationPatternState.recurrenceLocusCount;
+        snapshot.obs_basinCount = observationPatternState.basinCount;
+        snapshot.obs_longLivedAnomalyCount = observationPatternState.longLivedAnomalyCount;
+        snapshot.obs_protoPointCandidateCount = observationPatternState.protoPointCandidateCount;
+        snapshot.obs_collapseProfileCount = observationPatternState.collapseProfileCount;
+        snapshot.obs_recoveryProfileCount = observationPatternState.recoveryProfileCount;
+        snapshot.obs_stableAttractorCandidateCount = observationPatternState.stableAttractorCandidateCount;
+        snapshot.obs_observationConfidence = observationPatternState.observationConfidence;
+    }
+
     return snapshot;
 }
 
@@ -888,6 +927,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let traceState: TraceState | null = null;
     let lastWeakConsolidationDelta = 0;
     let lastReplayContributionToStabilization = 0;
+
+    // Phase 5: Observation pattern state (observer-side proxy, read-only)
+    let lastObservationPatternState: ObservationPatternState | null = null;
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -1177,6 +1219,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             lastActionState = dyn.actionState;
         }
 
+        // Phase 5: Derive observation patterns (observer-side proxy, read-only, no core impact)
+        try {
+            lastObservationPatternState = deriveObservationPatterns({
+                timestamp: frame,
+                traceState,
+                replayState,
+                recoveryState,
+                mismatchState: null,
+                activityHistory,
+                recentPerturbationHistory,
+                meanActivity: meanAct,
+                baselineActivity: quietBaselineCount > 0 ? quietBaselineSum / quietBaselineCount : meanAct,
+            });
+        } catch (_e) {
+            // Observer derivation failed — skip silently, no core impact
+        }
+
         if (collectMetrics && frame % metricsInterval === 0) {
             metrics.push(buildMetricsSnapshot(
                 frame,
@@ -1191,6 +1250,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 recoveryState,
                 recoveryTrajectory,
                 collapseMode,
+                lastObservationPatternState,
             ));
         }
     }
@@ -1352,6 +1412,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxMismatchLevel = 0;
     let mismatchCount = 0;
 
+    // Phase 5: Observation pattern summary accumulators
+    let avgKnotCount = 0;
+    let avgPathCount = 0;
+    let avgRecurrenceLocusCount = 0;
+    let avgBasinCount = 0;
+    let avgLongLivedAnomalyCount = 0;
+    let avgProtoPointCandidateCount = 0;
+    let maxProtoPointCandidateCount = 0;
+    let avgObservationConfidence = 0;
+    let protoPointEmergenceFrames = 0;
+    let obsCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -1494,6 +1566,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             maxMismatchLevel = Math.max(maxMismatchLevel, m.p2_mismatchLevel);
             mismatchCount++;
         }
+
+        // Phase 5: Accumulate observation pattern metrics
+        if (m.obs_knotCount !== undefined) {
+            avgKnotCount += m.obs_knotCount;
+            avgPathCount += m.obs_pathCount ?? 0;
+            avgRecurrenceLocusCount += m.obs_recurrenceLocusCount ?? 0;
+            avgBasinCount += m.obs_basinCount ?? 0;
+            avgLongLivedAnomalyCount += m.obs_longLivedAnomalyCount ?? 0;
+            avgProtoPointCandidateCount += m.obs_protoPointCandidateCount ?? 0;
+            avgObservationConfidence += m.obs_observationConfidence ?? 0;
+            if ((m.obs_protoPointCandidateCount ?? 0) > 0) protoPointEmergenceFrames++;
+            if ((m.obs_protoPointCandidateCount ?? 0) > maxProtoPointCandidateCount) {
+                maxProtoPointCandidateCount = m.obs_protoPointCandidateCount ?? 0;
+            }
+            obsCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1610,6 +1698,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgRecoveryPull /= mismatchCount;
     }
 
+    // Phase 5: Compute observation pattern averages
+    if (obsCount > 0) {
+        avgKnotCount /= obsCount;
+        avgPathCount /= obsCount;
+        avgRecurrenceLocusCount /= obsCount;
+        avgBasinCount /= obsCount;
+        avgLongLivedAnomalyCount /= obsCount;
+        avgProtoPointCandidateCount /= obsCount;
+        avgObservationConfidence /= obsCount;
+    }
+    // repeatedEmergenceCount: how many distinct frames had proto-point emergence (already tracked above)
+    const repeatedEmergenceCount = protoPointEmergenceFrames;
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -1719,6 +1820,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgBoundaryStress: mismatchCount > 0 ? avgBoundaryStress : undefined,
             avgRecoveryPull: mismatchCount > 0 ? avgRecoveryPull : undefined,
             maxMismatchLevel: mismatchCount > 0 ? maxMismatchLevel : undefined,
+            // Phase 5: Observation pattern summaries (observer-side proxy, read-only)
+            avgKnotCount: obsCount > 0 ? avgKnotCount : undefined,
+            avgPathCount: obsCount > 0 ? avgPathCount : undefined,
+            avgRecurrenceLocusCount: obsCount > 0 ? avgRecurrenceLocusCount : undefined,
+            avgBasinCount: obsCount > 0 ? avgBasinCount : undefined,
+            avgLongLivedAnomalyCount: obsCount > 0 ? avgLongLivedAnomalyCount : undefined,
+            avgProtoPointCandidateCount: obsCount > 0 ? avgProtoPointCandidateCount : undefined,
+            maxProtoPointCandidateCount: obsCount > 0 ? maxProtoPointCandidateCount : undefined,
+            avgObservationConfidence: obsCount > 0 ? avgObservationConfidence : undefined,
+            protoPointEmergenceFrames: obsCount > 0 ? protoPointEmergenceFrames : undefined,
+            repeatedEmergenceCount: obsCount > 0 ? repeatedEmergenceCount : undefined,
         },
         succeeded,
         failureReason,
