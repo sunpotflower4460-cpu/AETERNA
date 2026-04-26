@@ -109,6 +109,27 @@ World Medium  ← W3 で導入
 Body Surface は、外界からの perturbation を受け取り、
 将来的に外界へ Actuation Pulse を返すための身体境界である。
 
+## W2: Actuation Pulse 導入
+
+W2 では、Body Surface の `outputReadiness` を自然に使いながら、
+`visual` / `simulatedForce` の最小 Actuation Pulse を observer-side に導出する。
+
+```
+Torus Life Field
+↓
+Body Surface
+↓
+Actuation Pulse  ← W2 で導出
+↓
+World Medium     ← まだ未接続（W3 以降）
+```
+
+- Actuation Pulse は発話ではない
+- 意思表示でもない
+- 世界へ漏れる最小の身体的作用である
+- W2 では World Medium / Sensory Return / Reafference Comparison をまだ本実装しない
+- 出力しないことも自然な反応として扱う
+
 ### W1 の実装内容
 
 - `src/types/bodySurfaceState.ts`: BodySurfaceState 型定義

@@ -270,6 +270,16 @@ Compare behavioral outcomes against this baseline order.
 - After replay, only tiny slow-state deltas remain (weak consolidation): slightly easier recurrence, slight restoration/stabilization bias, slight settling residue.
 - Semantic interpretation is outside this loop's responsibility.
 
+### W2 Actuation Pulse Placement (observer-side, read-only)
+
+- After recovery / trace / body surface related observer derivations, `deriveActuationPulse` may run.
+- It reads `BodySurfaceState`, `PressureCompetitionState`, `RecoveryState`, `TraceState`, and mismatch proxies.
+- It returns either a weak `visual` / `simulatedForce` pulse candidate or `null`.
+- The result is currently used only for observer / debug / scenario recording.
+- It does **not** take over the main loop.
+- It does **not** perform semantic interpretation.
+- World Medium reflection is deferred to W3+.
+
 ### Phase 5 Observation Layer (observer-side pattern candidates, read-only)
 
 - After trace / replay, the observer layer may detect structural candidates in the life-field.

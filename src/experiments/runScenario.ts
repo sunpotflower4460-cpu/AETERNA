@@ -37,6 +37,8 @@ import { deriveProtoPointCandidates } from '../observer/deriveProtoPointCandidat
 import type { ProtoPointObservationState } from '../types/protoPointObservationState.ts';
 import { deriveBodySurfaceState } from '../body/deriveBodySurfaceState.ts';
 import type { BodySurfaceState } from '../types/bodySurfaceState.ts';
+import { deriveActuationPulse } from '../actuation/deriveActuationPulse.ts';
+import type { ActuationPulse, ActuationPulseChannel } from '../types/actuationPulse.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -244,6 +246,18 @@ export interface MetricsSnapshot {
     bs_surfaceFatigue?: number;
     bs_protectiveClosure?: number;
     bs_externalContactLoad?: number;
+    // W2: Actuation Pulse (derived / proxy, read-only)
+    ap_channel?: ActuationPulseChannel | null;
+    ap_intensity?: number;
+    ap_coherence?: number;
+    ap_rhythm?: number;
+    ap_locality?: number;
+    ap_recoveryLinked?: number;
+    ap_boundaryLinked?: number;
+    ap_traceLinked?: number;
+    ap_outputReadiness?: number;
+    ap_generatedCount?: number;
+    ap_nullCount?: number;
 }
 
 export interface ScenarioResult {
@@ -392,6 +406,18 @@ export interface ScenarioResult {
         avgBsRecoveryShielding?: number;
         maxBsLocalIrritability?: number;
         minBsPermeability?: number;
+        // W2: Actuation Pulse summaries — derived / proxy, read-only
+        actuationPulseGeneratedCount?: number;
+        actuationPulseNullCount?: number;
+        actuationPulseChannelCount?: Record<ActuationPulseChannel, number>;
+        avgActuationIntensity?: number;
+        avgActuationCoherence?: number;
+        avgActuationRhythm?: number;
+        avgActuationLocality?: number;
+        avgActuationRecoveryLinked?: number;
+        avgActuationBoundaryLinked?: number;
+        avgActuationTraceLinked?: number;
+        avgActuationOutputReadiness?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -407,6 +433,10 @@ export interface ScenarioResult {
 function clampFinite(value: number, min: number, max: number): number {
     if (!Number.isFinite(value)) return min;
     return Math.max(min, Math.min(max, value));
+}
+
+function clamp01(value: number): number {
+    return clampFinite(value, 0, 1);
 }
 
 /**
@@ -672,6 +702,9 @@ function buildMetricsSnapshot(
     observationPatternState?: ObservationPatternState | null,
     protoPointObservationState?: ProtoPointObservationState | null,
     bodySurfaceState?: BodySurfaceState | null,
+    actuationPulse?: ActuationPulse | null,
+    actuationPulseGeneratedCount = 0,
+    actuationPulseNullCount = 0,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -969,6 +1002,20 @@ function buildMetricsSnapshot(
         snapshot.bs_externalContactLoad = bodySurfaceState.externalContactLoad;
     }
 
+    snapshot.ap_generatedCount = actuationPulseGeneratedCount;
+    snapshot.ap_nullCount = actuationPulseNullCount;
+    snapshot.ap_outputReadiness = bodySurfaceState?.outputReadiness ?? actuationPulse?.outputReadiness ?? 0;
+    if (actuationPulse) {
+        snapshot.ap_channel = actuationPulse.channel;
+        snapshot.ap_intensity = actuationPulse.intensity;
+        snapshot.ap_coherence = actuationPulse.coherence;
+        snapshot.ap_rhythm = actuationPulse.rhythm;
+        snapshot.ap_locality = actuationPulse.locality;
+        snapshot.ap_recoveryLinked = actuationPulse.recoveryLinked;
+        snapshot.ap_boundaryLinked = actuationPulse.boundaryLinked;
+        snapshot.ap_traceLinked = actuationPulse.traceLinked;
+    }
+
     return snapshot;
 }
 
@@ -1046,6 +1093,13 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // W1: Body Surface state (Boundary Layer — derived / proxy, read-only)
     let lastBodySurfaceState: BodySurfaceState | null = null;
+    let lastActuationPulse: ActuationPulse | null = null;
+    let actuationPulseGeneratedCount = 0;
+    let actuationPulseNullCount = 0;
+    const actuationPulseChannelCount: Record<ActuationPulseChannel, number> = {
+        visual: 0,
+        simulatedForce: 0,
+    };
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -1431,8 +1485,45 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 overload: dyn.overload ?? network.homeostaticState?.overloadLevel,
                 recentPerturbationHistory,
             });
+
+            const quietness = clamp01(
+                (1 - clampFinite((dyn.meanRawTouch ?? 0) / 1.2, 0, 1)) * 0.5 +
+                clampFinite((dyn.bl_restDepth ?? 0), 0, 1) * 0.25 +
+                clampFinite((dyn.bl_settlingWindow ?? 0), 0, 1) * 0.25,
+            );
+
+            const frameOngoingness = clamp01(
+                (1 - clampFinite(collapseFrames / Math.max(frame + 1, 1) * 5, 0, 1)) * 0.45 +
+                (1 - clampFinite(saturationFrames / Math.max(frame + 1, 1) * 12, 0, 1)) * 0.25 +
+                clampFinite((quietBaselineCount > 0 ? quietBaselineSum / quietBaselineCount : meanAct) / 0.2, 0, 1) * 0.3,
+            );
+
+            lastActuationPulse = deriveActuationPulse({
+                timestamp: frame,
+                bodySurfaceState: lastBodySurfaceState,
+                pressureState: bsPressureState,
+                recoveryState,
+                traceState,
+                mismatchState: bsMismatchState,
+                ongoingness: frameOngoingness,
+                stability: dyn.stability ?? 0.5,
+                boundaryIntegrity: network.homeostaticState?.boundaryIntegrity ?? 1,
+                collapseRisk: recoveryState?.collapseRisk ?? network.homeostaticState?.collapseRisk,
+                overload: dyn.overload ?? network.homeostaticState?.overloadLevel,
+                quietness,
+                meanActivity: meanAct,
+            });
+
+            if (lastActuationPulse) {
+                actuationPulseGeneratedCount++;
+                actuationPulseChannelCount[lastActuationPulse.channel]++;
+            } else {
+                actuationPulseNullCount++;
+            }
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
+            lastActuationPulse = null;
+            actuationPulseNullCount++;
         }
 
         if (collectMetrics && frame % metricsInterval === 0) {
@@ -1452,6 +1543,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 lastObservationPatternState,
                 lastProtoPointObservationState,
                 lastBodySurfaceState,
+                lastActuationPulse,
+                actuationPulseGeneratedCount,
+                actuationPulseNullCount,
             ));
         }
     }
@@ -1663,6 +1757,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxBsLocalIrritability = 0;
     let minBsPermeability = Infinity;
     let bsCount = 0;
+    let avgActuationIntensity = 0;
+    let avgActuationCoherence = 0;
+    let avgActuationRhythm = 0;
+    let avgActuationLocality = 0;
+    let avgActuationRecoveryLinked = 0;
+    let avgActuationBoundaryLinked = 0;
+    let avgActuationTraceLinked = 0;
+    let avgActuationOutputReadiness = 0;
+    let actuationSnapshotCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -1885,6 +1988,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             bsCount++;
         }
+
+        if (m.ap_outputReadiness !== undefined) {
+            avgActuationOutputReadiness += m.ap_outputReadiness;
+            if (m.ap_channel) {
+                avgActuationIntensity += m.ap_intensity ?? 0;
+                avgActuationCoherence += m.ap_coherence ?? 0;
+                avgActuationRhythm += m.ap_rhythm ?? 0;
+                avgActuationLocality += m.ap_locality ?? 0;
+                avgActuationRecoveryLinked += m.ap_recoveryLinked ?? 0;
+                avgActuationBoundaryLinked += m.ap_boundaryLinked ?? 0;
+                avgActuationTraceLinked += m.ap_traceLinked ?? 0;
+                actuationSnapshotCount++;
+            }
+        }
     }
 
     if (packetCount > 0) {
@@ -2046,6 +2163,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgBsRecoveryShielding /= bsCount;
     }
 
+    const actuationOutputSnapshotCount = metrics.filter(m => m.ap_outputReadiness !== undefined).length;
+    if (actuationOutputSnapshotCount > 0) {
+        avgActuationOutputReadiness /= actuationOutputSnapshotCount;
+    }
+    if (actuationSnapshotCount > 0) {
+        avgActuationIntensity /= actuationSnapshotCount;
+        avgActuationCoherence /= actuationSnapshotCount;
+        avgActuationRhythm /= actuationSnapshotCount;
+        avgActuationLocality /= actuationSnapshotCount;
+        avgActuationRecoveryLinked /= actuationSnapshotCount;
+        avgActuationBoundaryLinked /= actuationSnapshotCount;
+        avgActuationTraceLinked /= actuationSnapshotCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -2198,6 +2329,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgBsRecoveryShielding: bsCount > 0 ? avgBsRecoveryShielding : undefined,
             maxBsLocalIrritability: bsCount > 0 ? maxBsLocalIrritability : undefined,
             minBsPermeability: bsCount > 0 && minBsPermeability !== Infinity ? minBsPermeability : undefined,
+            actuationPulseGeneratedCount,
+            actuationPulseNullCount,
+            actuationPulseChannelCount,
+            avgActuationIntensity: actuationSnapshotCount > 0 ? avgActuationIntensity : undefined,
+            avgActuationCoherence: actuationSnapshotCount > 0 ? avgActuationCoherence : undefined,
+            avgActuationRhythm: actuationSnapshotCount > 0 ? avgActuationRhythm : undefined,
+            avgActuationLocality: actuationSnapshotCount > 0 ? avgActuationLocality : undefined,
+            avgActuationRecoveryLinked: actuationSnapshotCount > 0 ? avgActuationRecoveryLinked : undefined,
+            avgActuationBoundaryLinked: actuationSnapshotCount > 0 ? avgActuationBoundaryLinked : undefined,
+            avgActuationTraceLinked: actuationSnapshotCount > 0 ? avgActuationTraceLinked : undefined,
+            avgActuationOutputReadiness: actuationOutputSnapshotCount > 0 ? avgActuationOutputReadiness : undefined,
         },
         succeeded,
         failureReason,

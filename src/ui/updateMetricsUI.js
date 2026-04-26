@@ -238,6 +238,17 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-overload-drain'])         UI['val-overload-drain'].innerText         = (dyn.overloadDrain           || 0).toFixed(3);
     if (UI['val-recovery-trajectory'])    UI['val-recovery-trajectory'].innerText    = dyn.recoveryTrajectory || 'shift';
     if (UI['val-collapse-mode'])          UI['val-collapse-mode'].innerText          = dyn.collapseMode || 'stable';
+    if (UI['val-actuation-channel'])      UI['val-actuation-channel'].innerText      = dyn.actuationPulseChannel || 'none';
+    if (UI['val-actuation-intensity'])    UI['val-actuation-intensity'].innerText    = (dyn.actuationPulseIntensity || 0).toFixed(3);
+    if (UI['val-actuation-coherence'])    UI['val-actuation-coherence'].innerText    = (dyn.actuationPulseCoherence || 0).toFixed(3);
+    if (UI['val-actuation-rhythm'])       UI['val-actuation-rhythm'].innerText       = (dyn.actuationPulseRhythm || 0).toFixed(3);
+    if (UI['val-actuation-locality'])     UI['val-actuation-locality'].innerText     = (dyn.actuationPulseLocality || 0).toFixed(3);
+    if (UI['val-actuation-recovery-linked']) UI['val-actuation-recovery-linked'].innerText = (dyn.actuationPulseRecoveryLinked || 0).toFixed(3);
+    if (UI['val-actuation-boundary-linked']) UI['val-actuation-boundary-linked'].innerText = (dyn.actuationPulseBoundaryLinked || 0).toFixed(3);
+    if (UI['val-actuation-trace-linked']) UI['val-actuation-trace-linked'].innerText = (dyn.actuationPulseTraceLinked || 0).toFixed(3);
+    if (UI['val-actuation-output-readiness']) UI['val-actuation-output-readiness'].innerText = (dyn.actuationPulseOutputReadiness || 0).toFixed(3);
+    if (UI['val-actuation-generated-count']) UI['val-actuation-generated-count'].innerText = `${dyn.actuationPulseGeneratedCount || 0}`;
+    if (UI['val-actuation-null-count'])   UI['val-actuation-null-count'].innerText   = `${dyn.actuationPulseNullCount || 0}`;
 
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];

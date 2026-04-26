@@ -258,6 +258,40 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Measurement**: `derivePerturbationEvent` output `novelty`
 - **Classification**: Derived
 
+### G. Actuation Pulse (W2)
+
+**Definition**: 世界へ漏れる最小の pre-semantic body output candidate。発話ではない。
+
+#### G.1 Pulse Generated Count
+- **Meaning**: 非 null の Actuation Pulse が導出された回数
+- **Measurement**: `deriveActuationPulse(...) !== null` の累積
+- **Classification**: Measured
+
+#### G.2 Channel Count
+- **Meaning**: `visual` / `simulatedForce` ごとの導出回数
+- **Measurement**: channel 別カウント
+- **Classification**: Measured
+
+#### G.3 Null Pulse Count
+- **Meaning**: 抑制条件により pulse を返さなかった回数
+- **Measurement**: `deriveActuationPulse(...) === null` の累積
+- **Classification**: Measured
+
+#### G.4 Intensity / Coherence / Rhythm / Locality
+- **Meaning**: pulse の強さ / まとまり / 周期性 / 場の局所性
+- **Measurement**: `ActuationPulse.intensity`, `coherence`, `rhythm`, `locality`
+- **Classification**: Derived
+
+#### G.5 Recovery-Linked / Boundary-Linked / Trace-Linked / Output Readiness
+- **Meaning**: 回復 / 境界 / trace / Body Surface 出力準備との結びつき
+- **Measurement**: `recoveryLinked`, `boundaryLinked`, `traceLinked`, `outputReadiness`
+- **Classification**: Proxy
+
+**Important**:
+- Actuation Pulse は semantic output ではない
+- channel は world-medium-ready な interface であり、W2 では observer / scenario 記録に留める
+- output しないことも自然な観測結果として扱う
+
 #### F.6 Perturbation Expectedness
 - **Meaning**: How expected the perturbation is (inverse of surprise)
 - **Measurement**: `derivePerturbationEvent` output `expectedness`
