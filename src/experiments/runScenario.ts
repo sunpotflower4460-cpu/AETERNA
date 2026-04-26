@@ -795,9 +795,9 @@ function buildMetricsSnapshot(
                     needMotivation
                 );
 
-        snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
-        snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
-        snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
+                snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
+                snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
+                snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
 
                 // Phase 6 / Q2-1: Derive and collect pressure competition state
                 const pressureCompetition = derivePressureCompetition(needMotivation);
