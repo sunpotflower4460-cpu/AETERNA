@@ -278,7 +278,36 @@ Compare behavioral outcomes against this baseline order.
 - The result is currently used only for observer / debug / scenario recording.
 - It does **not** take over the main loop.
 - It does **not** perform semantic interpretation.
-- World Medium reflection is deferred to W3+.
+
+### W3 World Medium Update (external simulation, read-only in this phase)
+
+- After deriving Actuation Pulse, the external World Medium may be updated.
+- `updateWorldMedium(worldState, actuationPulse, dt)` is a **pure function** that:
+  - Takes current `WorldMediumState` and optional `ActuationPulse`
+  - Returns next `WorldMediumState`
+  - Applies pulse effects (visual / simulatedForce) to world parameters
+  - Applies natural decay and drift even without pulses
+- World Medium is **external to AETERNA** — not part of organism core state.
+- World Medium update is **read-only from AETERNA's perspective** in W3.
+- No Sensory Return feedback to AETERNA yet (W4+).
+- No Reafference Comparison yet (W5+).
+
+Recommended position in update cycle:
+
+```
+derive actuation pulse
+↓
+update simulated world medium (external)
+↓
+observer / future sensory return (W4+)
+```
+
+**Important constraints**:
+- World Medium state is managed separately from organism state
+- AETERNA does not directly read World Medium state in W3
+- Actuation Pulse is the only channel from AETERNA to World Medium
+- Sensory Return (World Medium → AETERNA) is deferred to W4
+- No semantic interpretation occurs in World Medium
 
 ### Phase 5 Observation Layer (observer-side pattern candidates, read-only)
 

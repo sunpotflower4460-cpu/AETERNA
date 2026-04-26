@@ -1,6 +1,6 @@
-# World Medium Spec（雛形）
+# World Medium Spec
 
-> **Status**: W0 — 設計境界の固定のみ。W3（Simulated World Medium 導入）まで実装しない。
+> **Status**: W3 — Simulated World Medium 導入完了。Sensory Return (W4) / Reafference Comparison (W5) はまだ未実装。
 
 ## World Medium とは
 
@@ -56,10 +56,90 @@ Sensory Return は Reafference Comparison によって処理される。
 
 ## 実装ロードマップ
 
-- W3: Simulated World Medium 導入（最小インターフェース）
-- W4: Sensory Return 導入
-- W5: Reafference Comparison 導入
+- ✅ W3: Simulated World Medium 導入（完了）
+  - `WorldMediumState` 型定義
+  - `initializeWorldMediumState()` 初期化関数
+  - `updateWorldMedium()` 更新関数
+  - Actuation Pulse による影響（visual / simulatedForce）
+  - 自然減衰・ドリフト
+  - scenario / behavioral tests
+- W4: Sensory Return 導入（未実装）
+- W5: Reafference Comparison 導入（未実装）
 - （後段）: real sensor との接続
+
+## W3 実装内容
+
+### ファイル構成
+
+- `src/types/worldMediumState.ts` — WorldMediumState 型定義
+- `src/world/initializeWorldMediumState.ts` — 初期化関数
+- `src/world/updateWorldMedium.ts` — 更新関数（pulse 受け取り + 自然変化）
+- `src/tests/scenario/worldMediumScenario.ts` — W3-A〜E シナリオテスト
+- `src/tests/behavioral/worldMedium.test.ts` — ユニットテスト
+
+### WorldMediumState 項目
+
+| フィールド名 | 意味 | 範囲 |
+|---|---|---|
+| `timestamp` | フレームタイムスタンプ | number |
+| `ambientLight` | 環境光レベル | 0–1 |
+| `ambientNoise` | 環境ノイズレベル | 0–1 |
+| `surfaceResistance` | 表面抵抗（作用への応答性） | 0–1 |
+| `echoLevel` | 作用のエコー・反射強度 | 0–1 |
+| `motionDrift` | 外界のドリフト / 揺らぎ | 0–1 |
+| `fieldTemperature` | 場の温度（活性度・変化しやすさ） | 0–1 |
+| `feedbackDelay` | Sensory Return が戻るまでの遅延（W4 用） | 0–1 |
+| `lastPulseImpact` | 直近の Actuation Pulse 影響度 | 0–1 |
+| `mediumStability` | World Medium の安定度 | 0–1 |
+| `visualResidue` | visual pulse の残留 | 0–1 |
+| `forceResidue` | simulatedForce pulse の残留 | 0–1 |
+| `worldTurbulence` | 世界の乱流度 | 0–1 |
+| `returnReadiness` | Sensory Return 準備度（W4 用） | 0–1 |
+
+### Actuation Pulse による影響
+
+#### Visual Pulse 影響
+
+- `ambientLight` 増加（微弱）
+- `visualResidue` 増加
+- `echoLevel` 増加
+- `ambientNoise` 微増
+- `worldTurbulence` 微増
+
+#### Simulated Force Pulse 影響
+
+- `surfaceResistance` 増加
+- `motionDrift` 増加
+- `fieldTemperature` 増加
+- `forceResidue` 増加
+- `worldTurbulence` 増加
+- `echoLevel` 微増
+
+### 自然減衰
+
+pulse がない時も、World Medium は以下の自然変化を持つ：
+
+- `echoLevel` → 0 へ減衰（速い）
+- `lastPulseImpact` → 0 へ減衰（速い）
+- `visualResidue` / `forceResidue` → 0 へ減衰（速い）
+- `ambientLight` → baseline (0.5) へ戻る
+- `ambientNoise` → baseline (0.2) へ戻る
+- `surfaceResistance` → baseline (0.4) へ戻る
+- `fieldTemperature` → baseline (0.35) へ戻る
+- `mediumStability` → baseline (0.7) へ戻る
+- `motionDrift` 小さく揺れる（sin 波ベース）
+- `worldTurbulence` → baseline (0.15) へ戻る
+- `returnReadiness` → baseline (0.3) へ戻る
+
+### W3 重要原則
+
+- World Medium は AETERNA の外部である
+- pulse 影響は微弱（単一 pulse で大きく変えない）
+- NaN / Infinity を出さない
+- すべての値を [0, 1] 範囲に維持
+- まだ Sensory Return を AETERNA に返さない
+- まだ Reafference Comparison を実装しない
+- semantic interpretation を行わない
 
 ## 禁止事項
 
