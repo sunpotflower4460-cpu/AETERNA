@@ -36,6 +36,19 @@ State is now clearly separated into three layers:
 - **coreConstants.ts** (`src/core/coreConstants.ts`) - Centralized IDs, enums, and helper functions
 
 
+## W-Series: Body-World Closure（設計境界のみ固定、W0 完了）
+
+AETERNA は内側だけでなく世界と閉じる方向へ進む。ただし意味形成はしない。
+
+- **Body Surface** (`docs/body-world-closure-principles.md`) — W1 で導入
+- **Actuation Pulse** (`docs/actuation-pulse-spec.md`) — W2 で導入。言語出力ではなく身体的作用。
+- **World Medium** (`docs/world-medium-spec.md`) — W3 で導入。まず simulated world から始める。real sensor は後段。
+- **Sensory Return** — W4 で導入
+- **Reafference Comparison** (`docs/reafference-comparison-spec.md`) — W5 で導入
+- **Body-World Closure Metrics** (`docs/body-world-closure-metrics.md`) — W6 で導入
+- **Emergent Proto-Neuron Observation** (`docs/emergent-proto-neuron-principles.md`) — W7 で観測開始。proto-neuron は最初から置かず、トーラス生命場の流れから自然に観測される節候補として扱う。
+- **Node-AI-Z / Node Mother**: 意味・構造化の後段として扱う。AETERNA 側に先取りしない。
+
 ## Phase 2: Perturbation Types (外乱受容)
 
 - **`src/types/perturbationEvent.ts`** — PerturbationEvent: structured perturbation descriptor (magnitude, novelty, expectedness, locality)

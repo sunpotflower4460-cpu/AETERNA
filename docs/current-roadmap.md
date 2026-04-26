@@ -36,6 +36,35 @@
 - quiet 時の消失と long-run の暴走を避ける
 - observer は研究用であり、本体因果を壊さない
 
+## W-Series: Body-World Closure Phases
+
+AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼吸するトーラス生命場」へ進めるための段階。
+意味形成は行わない。proto-neuron は自然発生する観測候補として扱う。
+
+| Phase | 内容 | 状態 |
+|---|---|---|
+| **W0** | Body-World Closure 原則固定 | ✅ 完了（docs のみ） |
+| **W1** | Body Surface 導入 | 未着手 |
+| **W2** | Actuation Pulse 導入 | 未着手 |
+| **W3** | Simulated World Medium 導入 | 未着手 |
+| **W4** | Sensory Return 導入 | 未着手 |
+| **W5** | Reafference Comparison 導入 | 未着手 |
+| **W6** | Body-World Closure Metrics | 未着手 |
+| **W7** | Emergent Proto-Neuron Observation | 未着手 |
+| **W8** | Closed-Loop Scenario Tests | 未着手 |
+
+### W0 完了条件
+
+- body-world-closure-principles.md がある ✅
+- emergent-proto-neuron-principles.md がある ✅
+- world-medium-spec.md / actuation-pulse-spec.md / reafference-comparison-spec.md / body-world-closure-metrics.md がある ✅
+- roadmap に W0〜W8 が追記されている ✅
+- AETERNA は意味ノードを先に持たないことが明記されている ✅
+- proto-neuron は自然発生する観測候補であると明記されている ✅
+- runtime 挙動を変えていない ✅
+
+---
+
 ## Phase 2: 外乱受容と prediction mismatch の純化
 
 **目的**: 入力を生命場を開始するトリガーではなく、すでに流れている場を乱す perturbation として整理し、prediction mismatch を state-dependent に立てられるようにする。
