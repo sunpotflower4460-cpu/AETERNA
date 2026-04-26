@@ -139,8 +139,8 @@ export function deriveObservationPatterns(
     replayReadiness * 0.25 +
     recentPatternWeight * 0.20 +
     (1 - replaySuppression) * 0.10;
-  const knotCount = knotSignal > 0.35 ? 1
-    : knotSignal > 0.55 ? 2
+  const knotCount = knotSignal > 0.55 ? 2
+    : knotSignal > 0.35 ? 1
     : 0;
 
   // --- Path candidate count ---
@@ -153,8 +153,8 @@ export function deriveObservationPatterns(
     clamp01(recentPerturbationHistory.length > 0
       ? recentPerturbationHistory.slice(-10).reduce((a, b) => a + b, 0) / 10
       : 0) * 0.15;
-  const pathCount = pathSignal > 0.30 ? 1
-    : pathSignal > 0.50 ? 2
+  const pathCount = pathSignal > 0.50 ? 2
+    : pathSignal > 0.30 ? 1
     : 0;
 
   // --- Recurrence locus count ---
@@ -165,8 +165,8 @@ export function deriveObservationPatterns(
     recentPatternWeight * 0.30 +
     (perturbSlope > 0.01 ? 0.10 : 0) +
     traceStrength * 0.10;
-  const recurrenceLocusCount = recurrenceSignal > 0.30 ? 1
-    : recurrenceSignal > 0.50 ? 2
+  const recurrenceLocusCount = recurrenceSignal > 0.50 ? 2
+    : recurrenceSignal > 0.30 ? 1
     : 0;
 
   // --- Basin candidate count ---
@@ -177,8 +177,8 @@ export function deriveObservationPatterns(
     restorationBias * 0.30 +
     relaxationLevel * 0.25 +
     (1 - clamp01(collapseRisk)) * 0.10;
-  const basinCount = basinSignal > 0.45 ? 1
-    : basinSignal > 0.65 ? 2
+  const basinCount = basinSignal > 0.65 ? 2
+    : basinSignal > 0.45 ? 1
     : 0;
 
   // --- Long-lived anomaly count ---
