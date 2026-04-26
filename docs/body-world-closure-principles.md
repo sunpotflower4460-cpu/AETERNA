@@ -121,7 +121,7 @@ Body Surface
 ↓
 Actuation Pulse  ← W2 で導出
 ↓
-World Medium     ← まだ未接続（W3 以降）
+World Medium     ← W3 で接続
 ```
 
 - Actuation Pulse は発話ではない
@@ -129,6 +129,58 @@ World Medium     ← まだ未接続（W3 以降）
 - 世界へ漏れる最小の身体的作用である
 - W2 では World Medium / Sensory Return / Reafference Comparison をまだ本実装しない
 - 出力しないことも自然な反応として扱う
+
+## W3: Simulated World Medium 導入（完了）
+
+W3 では、AETERNA の Actuation Pulse を受け取る小さな外界「Simulated World Medium」を導入した。
+
+### World Medium の位置づけ
+
+```
+Torus Life Field
+↓
+Body Surface (W1)
+↓
+Actuation Pulse (W2)
+↓
+[World Medium]  ← W3 で導入
+↓
+Sensory Return  ← W4（未実装）
+↓
+Reafference Comparison  ← W5（未実装）
+↓
+Perturbation + Mismatch
+↓
+Torus Life Field
+```
+
+### W3 で実装したこと
+
+- `WorldMediumState` 型定義（14 項目）
+- `initializeWorldMediumState()` 初期化関数
+- `updateWorldMedium()` 更新関数
+  - Actuation Pulse による微弱な影響
+  - pulse がない時も自然減衰・ドリフト
+- scenario / behavioral tests (W3-A〜E)
+
+### W3 で実装していないこと
+
+まだ以下は実装していない：
+
+- Sensory Return（W4）
+- Reafference Comparison（W5）
+- World Medium から AETERNA への feedback
+- real sensor 接続
+- semantic interpretation
+
+### World Medium は AETERNA の外部
+
+World Medium は AETERNA の一部ではなく、AETERNA の作用を受ける外界である。
+
+- World Medium の状態を AETERNA が直接読み書きしない
+- Actuation Pulse のみが World Medium に影響する
+- World Medium 自体も時間で自然に変化する
+- W4 で Sensory Return として初めて AETERNA に戻る
 
 ### W1 の実装内容
 

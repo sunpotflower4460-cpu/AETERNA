@@ -302,6 +302,79 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Derived**: `mismatchLevel`, `boundaryStress`, `perturbationNovelty`, `perturbationExpectedness`
 - **Proxy**: `surprisePressure`, `recoveryPull`
 
+### H. World Medium (W3)
+
+**Definition**: 外界シミュレーションの状態。AETERNA の Actuation Pulse を受け取り変化する。
+
+#### H.1 World Medium Raw Values
+
+- **Meaning**: World Medium の現在の生の値
+- **Measurement**: `WorldMediumState` の各フィールド
+- **Classification**: Measured
+- **Values**:
+  - `ambientLight` (0–1): 環境光レベル
+  - `ambientNoise` (0–1): 環境ノイズレベル
+  - `surfaceResistance` (0–1): 表面抵抗
+  - `echoLevel` (0–1): エコーレベル
+  - `motionDrift` (0–1): ドリフト
+  - `fieldTemperature` (0–1): 場の温度
+  - `feedbackDelay` (0–1): feedback 遅延
+  - `lastPulseImpact` (0–1): 直近 pulse 影響
+  - `mediumStability` (0–1): 安定度
+
+#### H.2 Pulse Count
+
+- **Meaning**: World Medium に送られた Actuation Pulse の総数
+- **Measurement**: updateWorldMedium に pulse が渡された回数
+- **Classification**: Measured
+
+#### H.3 Pulse Impact Change
+
+- **Meaning**: pulse 前後の lastPulseImpact の変化量
+- **Measurement**: `lastPulseImpact[t+1] - lastPulseImpact[t]` when pulse applied
+- **Classification**: Measured
+
+#### H.4 Visual Residue Decay Rate
+
+- **Meaning**: visualResidue の減衰速度
+- **Measurement**: `visualResidue` の時間変化率（pulse なし時）
+- **Classification**: Derived
+
+#### H.5 Force Residue Decay Rate
+
+- **Meaning**: forceResidue の減衰速度
+- **Measurement**: `forceResidue` の時間変化率（pulse なし時）
+- **Classification**: Derived
+
+#### H.6 Medium Stability
+
+- **Meaning**: World Medium がどれくらい安定しているか
+- **Measurement**: `mediumStability` 値
+- **Classification**: Derived
+
+#### H.7 World Turbulence
+
+- **Meaning**: World Medium の乱流度・変動性
+- **Measurement**: `worldTurbulence` 値
+- **Classification**: Proxy
+
+#### H.8 Return Readiness (W4 準備用)
+
+- **Meaning**: Sensory Return を生成する準備度（W4 以降で使用予定）
+- **Measurement**: `returnReadiness` 値
+- **Classification**: Proxy
+
+**Important**:
+- World Medium metrics は AETERNA 外部の状態
+- W3 では Sensory Return / Reafference Comparison は未実装
+- これらは外界シミュレーションの観測値であり、AETERNA の内部状態ではない
+- semantic interpretation は行わない
+
+**Metric Categories**:
+- **Measured**: `ambientLight`, `ambientNoise`, `surfaceResistance`, `echoLevel`, `motionDrift`, `fieldTemperature`, `feedbackDelay`, `lastPulseImpact`, pulse count, pulse impact change
+- **Derived**: `mediumStability`, visual/force residue decay rates
+- **Proxy**: `worldTurbulence`, `returnReadiness`
+
 ## Measurement Implementation
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).
