@@ -32,6 +32,7 @@ import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.t
 import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
 import { deriveObservationPatterns } from '../observer/deriveObservationPatterns.ts';
 import type { ObservationPatternState } from '../types/observationPatternState.ts';
+import { derivePressureCompetition } from '../organism/derivePressureCompetition.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -208,6 +209,18 @@ export interface MetricsSnapshot {
     obs_recoveryProfileCount?: number;
     obs_stableAttractorCandidateCount?: number;
     obs_observationConfidence?: number;
+    // Phase 6 / Q2-1: Pressure competition state
+    pc_safetyPressure?: number;
+    pc_restorationPressure?: number;
+    pc_noveltyPressure?: number;
+    pc_repetitionPressure?: number;
+    pc_explorationPressure?: number;
+    pc_withdrawalPressure?: number;
+    pc_dominantPressure?: string | null;
+    pc_competitionEntropy?: number;
+    pc_competitionStability?: number;
+    pc_annealingTemperature?: number;
+    pc_pressureEnergy?: number;
 }
 
 export interface ScenarioResult {
@@ -324,6 +337,18 @@ export interface ScenarioResult {
         avgObservationConfidence?: number;
         protoPointEmergenceFrames?: number;
         repeatedEmergenceCount?: number;
+        // Phase 6 / Q2-1: Pressure competition summaries
+        avgSafetyPressure?: number;
+        avgRestorationPressure?: number;
+        avgNoveltyPressure?: number;
+        avgRepetitionPressure?: number;
+        avgExplorationPressure?: number;
+        avgWithdrawalPressure?: number;
+        avgCompetitionEntropy?: number;
+        avgCompetitionStability?: number;
+        avgAnnealingTemperature?: number;
+        avgPressureEnergy?: number;
+        dominantPressureDistribution?: Record<string, number>;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -770,9 +795,24 @@ function buildMetricsSnapshot(
                     needMotivation
                 );
 
-        snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
-        snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
-        snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
+                snapshot.openState_stabilityIndex = openStateSnapshot.stabilityIndex;
+                snapshot.openState_mixtureEntropy = openStateSnapshot.mixtureEntropy;
+                snapshot.openState_dominantPole = openStateSnapshot.dominantPole;
+
+                // Phase 6 / Q2-1: Derive and collect pressure competition state
+                const pressureCompetition = derivePressureCompetition(needMotivation);
+
+                snapshot.pc_safetyPressure = pressureCompetition.safetyPressure;
+                snapshot.pc_restorationPressure = pressureCompetition.restorationPressure;
+                snapshot.pc_noveltyPressure = pressureCompetition.noveltyPressure;
+                snapshot.pc_repetitionPressure = pressureCompetition.repetitionPressure;
+                snapshot.pc_explorationPressure = pressureCompetition.explorationPressure;
+                snapshot.pc_withdrawalPressure = pressureCompetition.withdrawalPressure;
+                snapshot.pc_dominantPressure = pressureCompetition.dominantPressure;
+                snapshot.pc_competitionEntropy = pressureCompetition.competitionEntropy;
+                snapshot.pc_competitionStability = pressureCompetition.competitionStability;
+                snapshot.pc_annealingTemperature = pressureCompetition.annealingTemperature;
+                snapshot.pc_pressureEnergy = pressureCompetition.pressureEnergy;
             }
         }
 
@@ -1424,6 +1464,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let protoPointEmergenceFrames = 0;
     let obsCount = 0;
 
+    // Phase 6 / Q2-1: Pressure competition summary accumulators
+    let avgSafetyPressure = 0;
+    let avgRestorationPressure = 0;
+    let avgNoveltyPressure = 0;
+    let avgRepetitionPressure = 0;
+    let avgExplorationPressure = 0;
+    let avgWithdrawalPressure = 0;
+    let avgCompetitionEntropy = 0;
+    let avgCompetitionStability = 0;
+    let avgAnnealingTemperature = 0;
+    let avgPressureEnergy = 0;
+    const dominantPressureCount: Record<string, number> = {};
+    let pressureCompetitionCount = 0;
+
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
             avgEnergySense += m.bl_energySense;
@@ -1582,6 +1636,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             obsCount++;
         }
+
+        // Phase 6 / Q2-1: Accumulate pressure competition metrics
+        if (m.pc_competitionEntropy !== undefined) {
+            avgSafetyPressure += m.pc_safetyPressure ?? 0;
+            avgRestorationPressure += m.pc_restorationPressure ?? 0;
+            avgNoveltyPressure += m.pc_noveltyPressure ?? 0;
+            avgRepetitionPressure += m.pc_repetitionPressure ?? 0;
+            avgExplorationPressure += m.pc_explorationPressure ?? 0;
+            avgWithdrawalPressure += m.pc_withdrawalPressure ?? 0;
+            avgCompetitionEntropy += m.pc_competitionEntropy;
+            avgCompetitionStability += m.pc_competitionStability ?? 0;
+            avgAnnealingTemperature += m.pc_annealingTemperature ?? 0;
+            avgPressureEnergy += m.pc_pressureEnergy ?? 0;
+            const dp = m.pc_dominantPressure ?? 'null';
+            dominantPressureCount[dp] = (dominantPressureCount[dp] ?? 0) + 1;
+            pressureCompetitionCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1711,6 +1782,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     // repeatedEmergenceCount: how many distinct frames had proto-point emergence (already tracked above)
     const repeatedEmergenceCount = protoPointEmergenceFrames;
 
+    // Phase 6 / Q2-1: Compute pressure competition averages
+    if (pressureCompetitionCount > 0) {
+        avgSafetyPressure /= pressureCompetitionCount;
+        avgRestorationPressure /= pressureCompetitionCount;
+        avgNoveltyPressure /= pressureCompetitionCount;
+        avgRepetitionPressure /= pressureCompetitionCount;
+        avgExplorationPressure /= pressureCompetitionCount;
+        avgWithdrawalPressure /= pressureCompetitionCount;
+        avgCompetitionEntropy /= pressureCompetitionCount;
+        avgCompetitionStability /= pressureCompetitionCount;
+        avgAnnealingTemperature /= pressureCompetitionCount;
+        avgPressureEnergy /= pressureCompetitionCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -1831,6 +1916,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgObservationConfidence: obsCount > 0 ? avgObservationConfidence : undefined,
             protoPointEmergenceFrames: obsCount > 0 ? protoPointEmergenceFrames : undefined,
             repeatedEmergenceCount: obsCount > 0 ? repeatedEmergenceCount : undefined,
+            // Phase 6 / Q2-1: Pressure competition summaries
+            avgSafetyPressure: pressureCompetitionCount > 0 ? avgSafetyPressure : undefined,
+            avgRestorationPressure: pressureCompetitionCount > 0 ? avgRestorationPressure : undefined,
+            avgNoveltyPressure: pressureCompetitionCount > 0 ? avgNoveltyPressure : undefined,
+            avgRepetitionPressure: pressureCompetitionCount > 0 ? avgRepetitionPressure : undefined,
+            avgExplorationPressure: pressureCompetitionCount > 0 ? avgExplorationPressure : undefined,
+            avgWithdrawalPressure: pressureCompetitionCount > 0 ? avgWithdrawalPressure : undefined,
+            avgCompetitionEntropy: pressureCompetitionCount > 0 ? avgCompetitionEntropy : undefined,
+            avgCompetitionStability: pressureCompetitionCount > 0 ? avgCompetitionStability : undefined,
+            avgAnnealingTemperature: pressureCompetitionCount > 0 ? avgAnnealingTemperature : undefined,
+            avgPressureEnergy: pressureCompetitionCount > 0 ? avgPressureEnergy : undefined,
+            dominantPressureDistribution: pressureCompetitionCount > 0 ? dominantPressureCount : undefined,
         },
         succeeded,
         failureReason,
