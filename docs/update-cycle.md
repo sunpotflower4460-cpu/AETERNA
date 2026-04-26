@@ -291,6 +291,18 @@ Compare behavioral outcomes against this baseline order.
 - Candidates are NOT semantic nodes, labels, concepts, or object identifiers.
 - See `docs/proto-point-observation-principles.md` for full principles.
 
+### Phase 8 Observation Export (pre-semantic packet, read-only, AETERNA → Node direction only)
+
+- After the main organism update cycle completes (including Phase 5 and Phase 7 observers), an optional **observation export step** may run.
+- `exportAeternaObservationPacket` reads current state (fieldState, traceState, recoveryState, observationPatternState, pressureCompetitionState) and assembles a compressed `AeternaObservationPacket`.
+- The packet contains only pre-semantic proxy observations: field state metrics, structural candidate counts, pressure tendencies, and trace/replay indicators.
+- The packet is then passed through `sanitizeAeternaObservationPacket` which strips any forbidden semantic fields and validates all numeric values.
+- **Strictly read-only and one-way**: export runs AFTER all core updates; the packet does NOT feed back into organism core dynamics.
+- **No Node → AETERNA feedback in this phase**: the bridge is observation-upload only.
+- **No semantic content**: label, meaning, concept, same-object, teacherVerdict, language, utterance are forbidden in the packet.
+- Semantic interpretation of the packet is the responsibility of the Node side (future phase).
+- See `docs/aeterna-to-node-bridge-spec.md` for full boundary specification.
+
 
 ## Implementation Notes
 

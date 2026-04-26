@@ -502,3 +502,72 @@ Each candidate carries individual sub-scores:
 - **knotOverlap** [PROXY]: Overlap with Phase 5 knot candidates
 - **basinOverlap** [PROXY]: Overlap with Phase 5 basin candidates
 - **anomalyOverlap** [PROXY]: Overlap with long-lived anomaly candidates
+
+---
+
+## Phase 8: AETERNA → Node Bridge Packet Metrics (Observer-Side, Read-Only Export)
+
+**Phase 8: AETERNA → Node bridge 最小版** adds metrics for the observation packet export pipeline.
+These metrics describe how well the export and sanitization pipeline is operating.
+They are NOT behavior drivers. They are read-only pipeline health indicators.
+
+### Important Constraints
+
+- All Phase 8 metrics are **export pipeline metrics**, not organism behavior metrics.
+- The packet is **pre-semantic**: it carries observation data, not meaning or labels.
+- The exporter is **read-only**: it does NOT modify organism dynamics.
+- The bridge is **AETERNA → Node only** in this phase (no reverse feedback).
+- See `docs/aeterna-to-node-bridge-spec.md` for full bridge specification.
+
+### P8.1 Packet Generated Count
+- **Meaning**: Number of `AeternaObservationPacket` instances exported in a scenario run
+- **Derived from**: Number of metrics snapshots multiplied by export rate
+- **Classification**: Measured count
+
+### P8.2 Semantic Leak Count (target: 0)
+- **Meaning**: Number of forbidden semantic fields found and stripped per packet
+- **Target**: Always 0 in normal operation
+- **Forbidden fields**: label, meaning, concept, category, sameObject, objectId, teacherVerdict, language, utterance, semanticNode, objectLabel, teacherBinding, nodeBridge, naturalLanguage, interpretation
+- **Classification**: Measured integrity check
+
+### P8.3 Packet Confidence (proxy)
+- **Meaning**: Observation stability proxy — how stable the current observation window is
+- **This is NOT**: semantic confidence, concept confidence, or a probability estimate
+- **Derived from**: ongoingness level, boundaryIntegrity, collapseRisk, trace availability
+- **Range**: 0–1; not a probability
+- **Classification**: Observer-side derived proxy
+
+### P8.4 Non-Finite Fields Fixed Count (target: 0)
+- **Meaning**: Number of NaN / Infinity values replaced in a packet during sanitization
+- **Target**: 0 in normal operation (all values should be finite before sanitization)
+- **Classification**: Measured data quality check
+
+### P8.5 FieldState Values Finite Fraction
+- **Meaning**: Fraction of packets where all fieldState values are finite
+- **Target**: 1.0 (all packets should have finite fieldState)
+- **Classification**: Derived data quality metric
+
+### P8.6 Long-Cycle Coherence Shift (proxy)
+- **Meaning**: Slow drift in phase coherence between consecutive observation windows
+- **Derived from**: `phaseCoherence[t] - phaseCoherence[t-1]`
+- **Range**: -1 to +1; positive = coherence rising, negative = falling
+- **Note**: Only present when consecutive coherence readings are available
+- **Classification**: Observer-side proxy
+
+### Scenario Summary Additions (Phase 8)
+
+Scenario packet summaries include:
+- `packetGeneratedCount`: Total packets exported
+- `semanticLeakTotal`: Total forbidden-field incidents (target: 0)
+- `nonFiniteFieldsTotal`: Total NaN/Infinity fixes (target: 0)
+- `allPacketsClean`: Boolean — true if no semantic leaks and no non-finite fixes
+- `avgConfidence`: Mean packet confidence over the run
+- `protoPointPresentFraction`: Fraction of frames with proto-point candidates in packet
+- `fieldStateFiniteFraction`: Fraction of packets with all-finite fieldState (target: 1.0)
+- `lastFieldState`: Final frame's fieldState values
+- `lastPatternCandidates`: Final frame's patternCandidates counts
+
+**Classification**:
+- **Measured**: `packetGeneratedCount`, `semanticLeakTotal`, `nonFiniteFieldsTotal`
+- **Derived**: `allPacketsClean`, `fieldStateFiniteFraction`
+- **Proxy**: `avgConfidence`, `protoPointPresentFraction`, `lastFieldState`, `lastPatternCandidates`
