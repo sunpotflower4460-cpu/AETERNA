@@ -375,6 +375,86 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Derived**: `mediumStability`, visual/force residue decay rates
 - **Proxy**: `worldTurbulence`, `returnReadiness`
 
+### I. Sensory Return (W4)
+
+**Definition**: pre-semantic signal が World Medium から AETERNA に戻る入力。意味入力ではない。
+
+#### I.1 Sensory Return Packet Count
+
+- **Meaning**: 生成された SensoryReturnPacket の総数
+- **Measurement**: `deriveSensoryReturn` が返した packet 配列の累積長
+- **Classification**: Measured
+
+#### I.2 Channel Count
+
+- **Meaning**: channel 別の packet 数
+- **Measurement**: channel ごとの packet 数
+  - `simulatedLight`
+  - `simulatedNoise`
+  - `simulatedPressure`
+  - `simulatedMotion`
+  - `simulatedEcho`
+- **Classification**: Measured
+
+#### I.3 Raw World Value Delta
+
+- **Meaning**: World Medium の生の値の変化量
+- **Measurement**: `currentWorld[field] - previousWorld[field]` の絶対値
+- **Classification**: Measured
+
+#### I.4 Intensity
+
+- **Meaning**: 戻り信号の強さ
+- **Measurement**: `SensoryReturnPacket.intensity`
+- **Classification**: Derived
+
+#### I.5 Novelty
+
+- **Meaning**: 前回までの world state と比べた新規性
+- **Measurement**: `SensoryReturnPacket.novelty`
+- **Classification**: Derived
+
+#### I.6 Locality
+
+- **Meaning**: 局所的な戻りか、全体的な戻りか
+- **Measurement**: `SensoryReturnPacket.locality`
+- **Classification**: Derived
+
+#### I.7 Rhythm
+
+- **Meaning**: 戻りの周期性
+- **Measurement**: `SensoryReturnPacket.rhythm`
+- **Classification**: Derived
+
+#### I.8 World Origin Strength
+
+- **Meaning**: この信号が World Medium 由来である強度（W4 では self/world 判定なし）
+- **Measurement**: `SensoryReturnPacket.worldOriginStrength`
+- **Classification**: Proxy
+
+#### I.9 Return Delay Hint
+
+- **Meaning**: どれくらい遅れて戻った可能性があるかの hint
+- **Measurement**: `SensoryReturnPacket.returnDelayHint`
+- **Classification**: Proxy
+
+#### I.10 Medium Stability Hint
+
+- **Meaning**: World Medium が安定している状態から戻ったのか、揺れている状態から戻ったのかの hint
+- **Measurement**: `SensoryReturnPacket.mediumStabilityHint`
+- **Classification**: Proxy
+
+**Important**:
+- Sensory Return は semantic input ではない
+- W4 では simulated return のみ（real sensor はまだ使わない）
+- Reafference Comparison（self-caused / world-caused 判定）は W5
+- PerturbationEvent への変換は weak（overwhelming しない）
+
+**Metric Categories**:
+- **Measured**: sensory return packet count, raw world value delta, channel count
+- **Derived**: intensity, novelty, locality, rhythm
+- **Proxy**: worldOriginStrength, returnDelayHint, mediumStabilityHint
+
 ## Measurement Implementation
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).
