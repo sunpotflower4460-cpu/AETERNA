@@ -35,6 +35,8 @@ import type { ObservationPatternState } from '../types/observationPatternState.t
 import { derivePressureCompetition } from '../organism/derivePressureCompetition.ts';
 import { deriveProtoPointCandidates } from '../observer/deriveProtoPointCandidates.ts';
 import type { ProtoPointObservationState } from '../types/protoPointObservationState.ts';
+import { deriveBodySurfaceState } from '../body/deriveBodySurfaceState.ts';
+import type { BodySurfaceState } from '../types/bodySurfaceState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -230,6 +232,18 @@ export interface MetricsSnapshot {
     pp_maxConfidence?: number;
     pp_newCandidateCount?: number;
     pp_decayedCandidateCount?: number;
+    // W1: Body Surface (Boundary Layer) — derived / proxy, read-only
+    bs_boundaryIntegrity?: number;
+    bs_surfaceSensitivity?: number;
+    bs_permeability?: number;
+    bs_contactReadiness?: number;
+    bs_outputReadiness?: number;
+    bs_localIrritability?: number;
+    bs_recoveryShielding?: number;
+    bs_surfaceTension?: number;
+    bs_surfaceFatigue?: number;
+    bs_protectiveClosure?: number;
+    bs_externalContactLoad?: number;
 }
 
 export interface ScenarioResult {
@@ -368,6 +382,16 @@ export interface ScenarioResult {
         replaySupportedCandidateFrames?: number;
         basinOverlapCandidateFrames?: number;
         protoPointPersistentFrames?: number;
+        // W1: Body Surface (Boundary Layer) summaries — derived / proxy, read-only
+        avgBsBoundaryIntegrity?: number;
+        avgBsSurfaceSensitivity?: number;
+        avgBsPermeability?: number;
+        avgBsContactReadiness?: number;
+        avgBsOutputReadiness?: number;
+        avgBsLocalIrritability?: number;
+        avgBsRecoveryShielding?: number;
+        maxBsLocalIrritability?: number;
+        minBsPermeability?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -647,6 +671,7 @@ function buildMetricsSnapshot(
     collapseMode?: CollapseModeLabel,
     observationPatternState?: ObservationPatternState | null,
     protoPointObservationState?: ProtoPointObservationState | null,
+    bodySurfaceState?: BodySurfaceState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -929,6 +954,21 @@ function buildMetricsSnapshot(
         snapshot.pp_decayedCandidateCount = protoPointObservationState.decayedCandidateCount;
     }
 
+    // W1: Add Body Surface state (Boundary Layer — derived / proxy, read-only)
+    if (bodySurfaceState) {
+        snapshot.bs_boundaryIntegrity = bodySurfaceState.boundaryIntegrity;
+        snapshot.bs_surfaceSensitivity = bodySurfaceState.surfaceSensitivity;
+        snapshot.bs_permeability = bodySurfaceState.permeability;
+        snapshot.bs_contactReadiness = bodySurfaceState.contactReadiness;
+        snapshot.bs_outputReadiness = bodySurfaceState.outputReadiness;
+        snapshot.bs_localIrritability = bodySurfaceState.localIrritability;
+        snapshot.bs_recoveryShielding = bodySurfaceState.recoveryShielding;
+        snapshot.bs_surfaceTension = bodySurfaceState.surfaceTension;
+        snapshot.bs_surfaceFatigue = bodySurfaceState.surfaceFatigue;
+        snapshot.bs_protectiveClosure = bodySurfaceState.protectiveClosure;
+        snapshot.bs_externalContactLoad = bodySurfaceState.externalContactLoad;
+    }
+
     return snapshot;
 }
 
@@ -1003,6 +1043,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // Phase 7: Proto-point observation state (observer-side proxy, read-only)
     let lastProtoPointObservationState: ProtoPointObservationState | null = null;
+
+    // W1: Body Surface state (Boundary Layer — derived / proxy, read-only)
+    let lastBodySurfaceState: BodySurfaceState | null = null;
 
     // Run simulation
     for (let frame = 0; frame < config.totalFrames; frame++) {
@@ -1327,6 +1370,71 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             // Observer derivation failed — skip silently, no core impact
         }
 
+        // W1: Derive Body Surface state (Boundary Layer — derived / proxy, read-only, no core impact)
+        try {
+            // Derive mismatch for Body Surface (if touch is active)
+            let bsMismatchState = null;
+            if ((dyn.activeTouchCount ?? 0) > 0 || (dyn.meanTouchNovelty ?? 0) > 0.01) {
+                try {
+                    const familiarity = network.touchExpectation
+                        ? network.touchExpectation.touchHabituationField.reduce((a: number, b: number) => a + b, 0) /
+                          network.touchExpectation.touchHabituationField.length
+                        : 0;
+                    const perturbEvent = derivePerturbationEvent('touch', dyn.meanRawTouch ?? 0, {
+                        overload: dyn.overload ?? 0,
+                        boundaryIntegrity: network.homeostaticState?.boundaryIntegrity ?? 0.8,
+                        openness: 0.5,
+                        familiarity,
+                        repetitionCount: familiarity * 10,
+                        baselineLevel: dyn.baselineLevel ?? 0,
+                    });
+                    bsMismatchState = derivePredictionMismatch(perturbEvent, {
+                        overload: dyn.overload ?? 0,
+                        boundaryIntegrity: network.homeostaticState?.boundaryIntegrity ?? 0.8,
+                        restorationBias: network.homeostaticState?.restorationBias ?? 0.5,
+                        coherenceMemory: network.livingState?.coherenceMemory ?? 0.5,
+                        stability: dyn.stability ?? 0.5,
+                    }, dyn.meanPredictionError ?? 0);
+                } catch (_e) {
+                    // skip mismatch derivation silently
+                }
+            }
+
+            // Derive pressure competition for Body Surface
+            let bsPressureState = null;
+            if (network.livingState && network.homeostaticState && network.energyFlowState) {
+                try {
+                    const bsOrganismSnapshot = buildOrganismSnapshot(frame, network, dyn);
+                    const bsIntero = runInteroceptionStage(bsOrganismSnapshot);
+                    const bsSelfWorld = runSelfWorldModelStage(bsIntero, bsOrganismSnapshot, network.lastSelfWorldModelPacket ?? null);
+                    const bsFelt = deriveFeltState(bsOrganismSnapshot, network.livingState, network.homeostaticState, network.energyFlowState, bsSelfWorld);
+                    const bsArousal = deriveArousalAwareness(bsOrganismSnapshot, bsFelt, network.livingState, bsSelfWorld);
+                    const bsReplay = deriveReplayState(bsOrganismSnapshot, bsFelt, bsArousal, traceState ?? {
+                        timestamp: frame, traceStrength: 0, recurrenceWeight: 0, salienceResidue: 0, replayReadiness: 0, replaySuppression: 0,
+                    }, replayQueue, 0, 0, null, recoveryState);
+                    const bsNeed = deriveNeedMotivation(bsOrganismSnapshot, bsFelt, bsArousal, bsReplay, network.livingState, network.energyFlowState, network.homeostaticState, bsSelfWorld);
+                    bsPressureState = derivePressureCompetition(bsNeed);
+                } catch (_e) {
+                    // skip pressure derivation silently
+                }
+            }
+
+            lastBodySurfaceState = deriveBodySurfaceState({
+                timestamp: frame,
+                recoveryState,
+                mismatchState: bsMismatchState,
+                pressureState: bsPressureState,
+                traceState,
+                meanActivity: meanAct,
+                homeostaticBoundaryIntegrity: network.homeostaticState?.boundaryIntegrity,
+                collapseRisk: network.homeostaticState?.collapseRisk,
+                overload: dyn.overload ?? network.homeostaticState?.overloadLevel,
+                recentPerturbationHistory,
+            });
+        } catch (_e) {
+            // Body Surface derivation failed — skip silently, no core impact
+        }
+
         if (collectMetrics && frame % metricsInterval === 0) {
             metrics.push(buildMetricsSnapshot(
                 frame,
@@ -1343,6 +1451,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 collapseMode,
                 lastObservationPatternState,
                 lastProtoPointObservationState,
+                lastBodySurfaceState,
             ));
         }
     }
@@ -1542,6 +1651,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let ppBasinOverlapFrames = 0;
     let ppPersistentFrames = 0;
     let ppCount = 0;
+
+    // W1: Body Surface summary accumulators
+    let avgBsBoundaryIntegrity = 0;
+    let avgBsSurfaceSensitivity = 0;
+    let avgBsPermeability = 0;
+    let avgBsContactReadiness = 0;
+    let avgBsOutputReadiness = 0;
+    let avgBsLocalIrritability = 0;
+    let avgBsRecoveryShielding = 0;
+    let maxBsLocalIrritability = 0;
+    let minBsPermeability = Infinity;
+    let bsCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -1746,6 +1867,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             }
             ppCount++;
         }
+
+        // W1: Accumulate Body Surface metrics
+        if (m.bs_boundaryIntegrity !== undefined) {
+            avgBsBoundaryIntegrity += m.bs_boundaryIntegrity;
+            avgBsSurfaceSensitivity += m.bs_surfaceSensitivity ?? 0;
+            avgBsPermeability += m.bs_permeability ?? 0;
+            avgBsContactReadiness += m.bs_contactReadiness ?? 0;
+            avgBsOutputReadiness += m.bs_outputReadiness ?? 0;
+            avgBsLocalIrritability += m.bs_localIrritability ?? 0;
+            avgBsRecoveryShielding += m.bs_recoveryShielding ?? 0;
+            if ((m.bs_localIrritability ?? 0) > maxBsLocalIrritability) {
+                maxBsLocalIrritability = m.bs_localIrritability ?? 0;
+            }
+            if (m.bs_permeability !== undefined) {
+                minBsPermeability = Math.min(minBsPermeability, m.bs_permeability);
+            }
+            bsCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -1896,6 +2035,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         ppAvgAverageConfidence /= ppCount;
     }
 
+    // W1: Compute Body Surface averages
+    if (bsCount > 0) {
+        avgBsBoundaryIntegrity /= bsCount;
+        avgBsSurfaceSensitivity /= bsCount;
+        avgBsPermeability /= bsCount;
+        avgBsContactReadiness /= bsCount;
+        avgBsOutputReadiness /= bsCount;
+        avgBsLocalIrritability /= bsCount;
+        avgBsRecoveryShielding /= bsCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -2038,6 +2188,16 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             replaySupportedCandidateFrames: ppCount > 0 ? ppReplaySupportedFrames : undefined,
             basinOverlapCandidateFrames: ppCount > 0 ? ppBasinOverlapFrames : undefined,
             protoPointPersistentFrames: ppCount > 0 ? ppPersistentFrames : undefined,
+            // W1: Body Surface (Boundary Layer) summaries — derived / proxy, read-only
+            avgBsBoundaryIntegrity: bsCount > 0 ? avgBsBoundaryIntegrity : undefined,
+            avgBsSurfaceSensitivity: bsCount > 0 ? avgBsSurfaceSensitivity : undefined,
+            avgBsPermeability: bsCount > 0 ? avgBsPermeability : undefined,
+            avgBsContactReadiness: bsCount > 0 ? avgBsContactReadiness : undefined,
+            avgBsOutputReadiness: bsCount > 0 ? avgBsOutputReadiness : undefined,
+            avgBsLocalIrritability: bsCount > 0 ? avgBsLocalIrritability : undefined,
+            avgBsRecoveryShielding: bsCount > 0 ? avgBsRecoveryShielding : undefined,
+            maxBsLocalIrritability: bsCount > 0 ? maxBsLocalIrritability : undefined,
+            minBsPermeability: bsCount > 0 && minBsPermeability !== Infinity ? minBsPermeability : undefined,
         },
         succeeded,
         failureReason,

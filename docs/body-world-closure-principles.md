@@ -85,3 +85,42 @@ W0 では runtime 実装は行わない。
 - reafferenceComparison: W5 で導入
 - closureMetrics: W6 で導入
 - proto-neuron 観測: W7 で観測開始
+
+## W1: Body Surface 導入
+
+W1 では、AETERNA が世界と接するための Body Surface を導入した。
+
+### Body Surface の位置づけ
+
+Body Surface は、Body-World Closure ループの入口に位置する。
+
+```
+Torus Life Field
+↓
+[Body Surface]  ← W1 で導入
+↓
+Actuation Pulse  ← W2 で導入
+↓
+World Medium  ← W3 で導入
+↓
+...
+```
+
+Body Surface は、外界からの perturbation を受け取り、
+将来的に外界へ Actuation Pulse を返すための身体境界である。
+
+### W1 の実装内容
+
+- `src/types/bodySurfaceState.ts`: BodySurfaceState 型定義
+- `src/body/deriveBodySurfaceState.ts`: 既存 state からの純粋導出関数
+
+### W1 の設計原則
+
+- Body Surface は UI ではない
+- Body Surface は身体境界・膜・皮膚のような pre-semantic layer である
+- 入力（外乱の受け取り）と出力準備（outputReadiness）の両方に関係する
+- W1 では出力本体（Actuation Pulse）は実装しない
+- outputReadiness は W2 Actuation Pulse の準備値として計算のみ行う
+- semantic node / object label / language meaning は含まない
+- 既存の boundary / recovery / pressure / perturbation と自然につながる
+- 既存の touch pipeline を全面置換しない
