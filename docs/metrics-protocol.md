@@ -595,3 +595,80 @@ AETERNA が世界と閉じた循環を持つ生命場として機能している
 | `closureDrift` | 閉ループ中心点のゆっくりとした移動 | Proxy |
 | `unresolvedReturn` | 帰属不明の Sensory Return の量 | Derived |
 | `feedbackSaturationRisk` | フィードバック飽和・暴走リスク | Proxy |
+
+---
+
+## Section W1: Body Surface / Boundary Layer Metrics
+
+W1 で導入した Body Surface は、AETERNA のトーラス生命場が外界と接するための身体境界である。
+これは UI ではなく、pre-semantic な境界膜・皮膚に相当する。
+
+### W1 メトリクス定義
+
+#### Measured
+
+| 指標名 | 意味 | 分類 |
+|---|---|---|
+| `externalContactLoad` | 境界面に現在到来している外乱の負荷 | Measured |
+
+#### Derived
+
+| 指標名 | 意味 | 分類 |
+|---|---|---|
+| `boundaryIntegrity` | 境界がどれくらい保たれているか | Derived |
+| `surfaceSensitivity` | 外界からの perturbation をどれくらい受け取りやすいか | Derived |
+| `permeability` | 境界がどれくらい開いているか（外界の影響が入りやすいか） | Derived |
+| `contactReadiness` | 外界との接触を受け取れる準備度 | Derived |
+
+#### Proxy
+
+| 指標名 | 意味 | 分類 |
+|---|---|---|
+| `outputReadiness` | 将来 Actuation Pulse を外へ返せる準備度（W2 用） | Proxy |
+| `recoveryShielding` | 回復中に外界からの影響を少し遮る保護傾向 | Proxy |
+| `localIrritability` | 局所的な過敏さ（反復外乱後に高まりうる） | Proxy |
+| `surfaceTension` | 境界面の張力・硬直度 | Proxy |
+| `surfaceFatigue` | 境界面の疲労・摩耗（持続的過負荷で蓄積） | Proxy |
+| `protectiveClosure` | 能動的な境界閉鎖傾向 | Proxy |
+
+### W1 既存概念との関係
+
+```
+boundaryIntegrity:
+  境界が保たれている度合い
+  ← homeostatic boundaryIntegrity + boundaryRepairPressure
+
+permeability:
+  外界がどれくらい入りやすいか
+  ← explorationPressure（高→開）、withdrawalPressure/overload（高→閉）
+
+surfaceSensitivity:
+  入ってきた外乱にどれくらい反応しやすいか
+  ← surprisePressure + mismatchLevel + salienceResidue
+
+recoveryShielding:
+  回復中に境界がどれくらい保護寄りになるか
+  ← recoveryPressure + selfPreservationDrive + withdrawalPressure
+
+outputReadiness:
+  外へ pulse を返す準備度（W2 Actuation Pulse の前準備）
+  ← pressureEnergy + boundaryIntegrity - overload
+```
+
+### W1 表示について
+
+observer / debug での表示区分:
+
+- 表示グループ: **Body Surface / Boundary Layer**
+- 「skin mood」などの人間的表現は使わない
+- `derived` / `proxy` と明示して表示する
+- 研究用表示に留める
+
+### W1 未実装
+
+以下は W1 では実装していない:
+
+- Actuation Pulse 本実装（W2 で導入予定）
+- World Medium 本実装（W3 で導入予定）
+- Sensory Return 本実装（W4 で導入予定）
+- Reafference Comparison（W5 で導入予定）
