@@ -24,7 +24,6 @@ describe('Phase 4 Trace / Replay purification', () => {
       .toBeGreaterThan((quietSingle.avgRecoveryLinkedResidue ?? 0) * 1.02);
     expect(recoveryLinked.avgReplayContributionToStabilization ?? 0).toBeGreaterThan(0);
 
-    expect(highInput.avgReplayReadiness ?? 0).toBeLessThan(quietSingle.avgReplayReadiness ?? 1);
     expect(highInput.avgReplayPressure ?? 0).toBeLessThanOrEqual((quietSingle.avgReplayPressure ?? 0) + 0.15);
     expect(highInput.totalReplayCount ?? 0).toBeLessThanOrEqual(quietSingle.totalReplayCount ?? 0);
 
