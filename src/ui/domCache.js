@@ -113,6 +113,18 @@ export function initDOMCache() {
         'val-overload-drain',         'row-overload-drain',
         'val-recovery-trajectory',    'row-recovery-trajectory',
         'val-collapse-mode',          'row-collapse-mode',
+        // W2: Actuation Pulse observer
+        'val-actuation-channel', 'row-actuation-channel',
+        'val-actuation-intensity', 'row-actuation-intensity',
+        'val-actuation-coherence', 'row-actuation-coherence',
+        'val-actuation-rhythm', 'row-actuation-rhythm',
+        'val-actuation-locality', 'row-actuation-locality',
+        'val-actuation-recovery-linked', 'row-actuation-recovery-linked',
+        'val-actuation-boundary-linked', 'row-actuation-boundary-linked',
+        'val-actuation-trace-linked', 'row-actuation-trace-linked',
+        'val-actuation-output-readiness', 'row-actuation-output-readiness',
+        'val-actuation-generated-count', 'row-actuation-generated-count',
+        'val-actuation-null-count', 'row-actuation-null-count',
     ];
     ids.forEach(id => { UI[id] = document.getElementById(id); });
 }

@@ -40,7 +40,7 @@ window.toggleMobileHelp = () => {
 // ── DOM-ready setup ──
 document.addEventListener('DOMContentLoaded', () => {
     initDOMCache();
-    ['icon-network', 'icon-nature', 'icon-prereq', 'icon-organism-state'].forEach(id => {
+    ['icon-network', 'icon-nature', 'icon-prereq', 'icon-organism-state', 'icon-actuation-pulse'].forEach(id => {
         const icon = document.getElementById(id);
         if(icon) icon.style.transform = 'rotate(-180deg)';
     });

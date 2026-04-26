@@ -1,6 +1,6 @@
 # Actuation Pulse Spec（雛形）
 
-> **Status**: W0 — 設計境界の固定のみ。W2（Actuation Pulse 導入）まで実装しない。
+> **Status**: W2 — `visual` / `simulatedForce` の最小導出のみ実装。World Medium 本接続はまだ行わない。
 
 ## Actuation Pulse とは
 
@@ -17,9 +17,9 @@ AETERNA 内部状態（pressure / recovery / boundary / trace）
      ↓
 Actuation Pulse（身体的作用）
      ↓
-World Medium
+World Medium（W3）
      ↓
-Sensory Return
+Sensory Return（W4）
      ↓
 AETERNA
 ```
@@ -38,6 +38,15 @@ Actuation Pulse は以下の内部状態から導かれる。
 - `rewriteTendency`: 構造的変化傾向
 - `mismatchLevel`: 予測誤差レベル
 
+## W2 実装境界
+
+- W2 では `visualPulse` / `simulatedForcePulse` のみ扱う
+- `audioPulse` / `hapticPulse` / `fieldMotionPulse` は後段に残す
+- World Medium 本実装は W3
+- Sensory Return 本実装は W4
+- Reafference Comparison 本実装は W5
+- pulse を出さないことも自然な反応として扱う
+
 ## 候補パルス種別
 
 | パルス名 | 意味 | フェーズ |
@@ -54,14 +63,16 @@ Actuation Pulse は以下の内部状態から導かれる。
 
 - Actuation Pulse は AETERNA が「世界に何かを伝えようとする」ものではない
 - AETERNA の内圧が自然に外へ漏れる最小単位である
-- World Medium はこの作用を受けて変化し、Sensory Return として返ってくる
+- W2 では World Medium をまだ更新しない
+- World Medium は W3 でこの作用を受けて変化し、Sensory Return は W4 で返ってくる
 - 閉ループの成立には Actuation Pulse が不可欠
 
 ## 実装ロードマップ
 
-- W2: Actuation Pulse 導入（visualPulse / simulatedForcePulse の最小実装）
+- W2: Actuation Pulse 導入（`visualPulse` / `simulatedForcePulse` の最小導出）
 - W3: World Medium との接続
 - W4: Sensory Return との接続
+- W5: Reafference Comparison との接続
 - （後段）: audioPulse / hapticPulse
 
 ## 禁止事項

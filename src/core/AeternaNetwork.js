@@ -37,6 +37,11 @@ import { deriveTraceState } from '../organism/deriveTraceState.ts';
 import { deriveNeedMotivation } from '../organism/deriveNeedMotivation.ts';
 import { deriveOpenStateSnapshot } from '../organism/deriveOpenStateSnapshot.ts';
 import { classifyCollapseMode, classifyRecoveryTrajectory, deriveRecoveryState } from '../organism/deriveRecoveryState.ts';
+import { derivePressureCompetition } from '../organism/derivePressureCompetition.ts';
+import { deriveBodySurfaceState } from '../body/deriveBodySurfaceState.ts';
+import { deriveActuationPulse } from '../actuation/deriveActuationPulse.ts';
+import { derivePerturbationEvent } from '../perception/derivePerturbationEvent.ts';
+import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -276,6 +281,9 @@ export class AeternaNetwork {
         this.lastOpenStateSnapshot = null;
         this.lastFeltState = null;
         this.lastNeedMotivationState = null;
+        this.lastPressureCompetitionState = null;
+        this.lastBodySurfaceState = null;
+        this.lastActuationPulse = null;
     }
 
     initializeHomeostaticState() {
@@ -301,6 +309,12 @@ export class AeternaNetwork {
         this.recentPerturbationHistory = [];
         this.recentRecoveryHistory = [];
         this.recentPatternHistory = [];
+        this.actuationPulseGeneratedCount = 0;
+        this.actuationPulseNullCount = 0;
+        this.actuationPulseChannelCounts = {
+            visual: 0,
+            simulatedForce: 0,
+        };
     }
 
     initializeTemporaryWorkBuffers() {
@@ -571,6 +585,7 @@ export class AeternaNetwork {
                 selfWorldModelPacket
             );
             this.lastNeedMotivationState = needMotivation;
+            this.lastPressureCompetitionState = derivePressureCompetition(needMotivation);
             this.lastOpenStateSnapshot = deriveOpenStateSnapshot(
                 feltState,
                 arousalAwarenessState,
@@ -626,6 +641,78 @@ export class AeternaNetwork {
         if (this.recentRecoveryHistory.length > 180) this.recentRecoveryHistory.shift();
         this.recentPatternHistory.push(Math.min(1, (perceptionPacket.touchRepeatCount || 0) / 8));
         if (this.recentPatternHistory.length > 180) this.recentPatternHistory.shift();
+
+        let actuationMismatchState = null;
+        if ((perceptionPacket.activeTouchCount ?? 0) > 0 || (perceptionPacket.noveltyMean ?? 0) > 0.01) {
+            try {
+                const familiarity = this.touchExpectation
+                    ? this.touchExpectation.touchHabituationField.reduce((a, b) => a + b, 0) / this.touchExpectation.touchHabituationField.length
+                    : 0;
+                const perturbEvent = derivePerturbationEvent('touch', perceptionPacket.rawTouchMean ?? 0, {
+                    overload: organismPacket.overload ?? 0,
+                    boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 0.8,
+                    openness: feltState.openness ?? 0.5,
+                    familiarity,
+                    repetitionCount: familiarity * 10,
+                    baselineLevel: baselinePacket.baselineLevel ?? 0,
+                });
+                actuationMismatchState = derivePredictionMismatch(perturbEvent, {
+                    overload: organismPacket.overload ?? 0,
+                    boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 0.8,
+                    restorationBias: this.homeostaticState?.restorationBias ?? 0.5,
+                    coherenceMemory: this.livingState?.coherenceMemory ?? 0.5,
+                    stability: organismPacket.stability ?? 0.5,
+                }, predictionPacket.meanPredictionError ?? 0);
+            } catch (_e) {
+                actuationMismatchState = null;
+            }
+        }
+
+        this.lastBodySurfaceState = deriveBodySurfaceState({
+            timestamp: this.simTime,
+            recoveryState,
+            mismatchState: actuationMismatchState,
+            pressureState: this.lastPressureCompetitionState,
+            traceState,
+            meanActivity: metricsPacket.arousal,
+            homeostaticBoundaryIntegrity: this.homeostaticState?.boundaryIntegrity,
+            collapseRisk: this.homeostaticState?.collapseRisk,
+            overload: organismPacket.overload ?? this.homeostaticState?.overloadLevel,
+            recentPerturbationHistory: this.recentPerturbationHistory,
+        });
+
+        const quietness = clamp01(
+            (1 - clampFinite((perceptionPacket.rawTouchMean ?? 0) / 1.2, 0, 1)) * 0.5 +
+            arousalAwarenessState.restDepth * 0.25 +
+            arousalAwarenessState.settlingWindow * 0.25
+        );
+
+        this.lastActuationPulse = deriveActuationPulse({
+            timestamp: this.simTime,
+            bodySurfaceState: this.lastBodySurfaceState,
+            pressureState: this.lastPressureCompetitionState,
+            recoveryState,
+            traceState,
+            mismatchState: actuationMismatchState,
+            ongoingness: clamp01(
+                organismPacket.stability * 0.35 +
+                (1 - recoveryState.collapseRisk) * 0.45 +
+                clampFinite((baselinePacket.baselineLevel ?? 0) / 0.2, 0, 1) * 0.2
+            ),
+            stability: organismPacket.stability,
+            boundaryIntegrity: this.homeostaticState?.boundaryIntegrity ?? 1,
+            collapseRisk: recoveryState.collapseRisk,
+            overload: organismPacket.overload,
+            quietness,
+            meanActivity: metricsPacket.arousal,
+        });
+
+        if (this.lastActuationPulse) {
+            this.actuationPulseGeneratedCount++;
+            this.actuationPulseChannelCounts[this.lastActuationPulse.channel]++;
+        } else {
+            this.actuationPulseNullCount++;
+        }
 
         // Beautiful Loop L3: Compute thin modulation from packets
         // This returns weak bias deltas to organism core
@@ -799,6 +886,19 @@ export class AeternaNetwork {
             overloadDrain: recoveryState.overloadDrain ?? 0,
             recoveryTrajectory,
             collapseMode,
+            actuationPulseChannel: this.lastActuationPulse?.channel ?? null,
+            actuationPulseIntensity: this.lastActuationPulse?.intensity ?? 0,
+            actuationPulseCoherence: this.lastActuationPulse?.coherence ?? 0,
+            actuationPulseRhythm: this.lastActuationPulse?.rhythm ?? 0,
+            actuationPulseLocality: this.lastActuationPulse?.locality ?? 0,
+            actuationPulseRecoveryLinked: this.lastActuationPulse?.recoveryLinked ?? 0,
+            actuationPulseBoundaryLinked: this.lastActuationPulse?.boundaryLinked ?? 0,
+            actuationPulseTraceLinked: this.lastActuationPulse?.traceLinked ?? 0,
+            actuationPulseOutputReadiness: this.lastBodySurfaceState?.outputReadiness ?? 0,
+            actuationPulseGeneratedCount: this.actuationPulseGeneratedCount,
+            actuationPulseNullCount: this.actuationPulseNullCount,
+            actuationPulseVisualCount: this.actuationPulseChannelCounts.visual,
+            actuationPulseSimulatedForceCount: this.actuationPulseChannelCounts.simulatedForce,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,
