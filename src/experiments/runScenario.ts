@@ -1219,7 +1219,10 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const collectMetrics = config.collectMetrics ?? true;
     const metricsInterval = config.metricsInterval ?? 10;
     const touchScript = config.touchScript ?? [];
-    const naturalFeedbackFlags = normalizeNaturalFeedbackFlags(config.naturalFeedbackFlags);
+    const naturalFeedbackFlags = normalizeNaturalFeedbackFlags({
+        minimalNaturalFeedbackEnabled: false,
+        ...config.naturalFeedbackFlags,
+    });
 
     // Initialize network and disk
     const network = new AeternaNetwork(segments);
