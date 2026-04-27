@@ -56,6 +56,22 @@ Body-World Closure とは、
 - language meaning
 - LLM teacher
 
+## Natural Emergence Principles（S0 追記）
+
+Body-World Closure の実装において、**Natural Emergence Principles** を遵守する。
+
+- 揺らぎを直接足さない：flow / resistance / dissipation / delay / boundary exchange / local coupling / threshold / trace / re-entry の条件から揺らぎが自然に生じるかを見る
+- 安定化を命令として実装しない：崩壊せず流れ続ける条件を観測する
+- 生命っぽく見せる演出を入れない：生命的現象が生じうる媒質条件を作る
+- proto-neuron / proto-network は observer-side candidate として扱う
+
+詳細は以下を参照：
+
+- `docs/natural-emergence-principles.md` — 自然発生原則
+- `docs/world-loop-dynamic-viability.md` — Dynamic Viability の定義
+- `docs/proto-network-natural-observation.md` — Proto-Network Natural Observation
+- `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
+
 ## AETERNA は意味ノードを先に持たない
 
 AETERNA は最初から意味ノードを持たない。
