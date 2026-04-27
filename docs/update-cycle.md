@@ -479,3 +479,13 @@ Torus Life Field
 - **Call**: `deriveProtoNeuronCandidates(...)`
 - **Output**: `ProtoNeuronObservationState`
 - **Important**: Read-only. Does not feed back into organism dynamics, does not place runtime neurons, and does not add semantics.
+
+
+### W8 Closed-Loop Scenario Tests (Headless scenario path)
+- **Location**: `src/tests/scenario/closedLoopScenario.ts`
+- **Role**: Headless integration scenario runner that exercises W1–W7 together in a single closed loop
+- **Call**: `runClosedLoopScenario(config)` / `runClosedLoopScenarioSuite()`
+- **Output**: `ClosedLoopScenarioSummary`, `BodyWorldClosureState[]`, `ReafferenceComparisonState[]`
+- **Important**: Observer-only, read-only. Does not feed back into organism dynamics, does not place runtime neurons, does not add semantics.
+- **Scenarios**: W8-A no-return, W8-B delayed, W8-C amplified, W8-D weak, W8-E repeated-self-pulse, W8-F world-only, W8-G self-vs-world, W8-H closure-coupled proto-neuron, W8-I saturation guard, W8-J semantic leak check
+- **Prohibited outputs**: semantic node, runtime neuron node, Node bridge, consciousness claim, self-awareness claim

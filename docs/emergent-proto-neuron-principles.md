@@ -113,3 +113,31 @@ W7 では proto-neuron を **観測する**。
 W7 では proto-neuron を **配置しない**。  
 W7 では Node bridge しない。  
 W7 では meaning を与えない。
+
+## W8: Closed-Loop Scenario での proto-neuron candidate の扱い（追記）
+
+W8 では、Body-World Closure が安定している時に proto-neuron candidate の
+closureCoupling が上がるかを scenario W8-H で検証した。
+
+### W8 での原則
+
+- candidate は observer-side のまま
+- runtime neuron node は配置されない
+- semantic label は付かない
+- Node bridge 本格接続はしない
+- closureCoupling は proxy であり、因果の確信ではない
+
+### W8 での観察
+
+- stable loop の反復で closureCoupling proxy が少し上がる可能性がある
+- recurrence / trace / local propagation と重なった candidate が出る可能性がある
+- ただし semantic node は生成されない
+- 「proto-neuron が生まれた」という claim はしない
+
+### closureCoupling の再確認
+
+closureCoupling は：
+
+- loopGain / returnStrength / closureStability などから proxy として導出される
+- 意識の証明ではない
+- 閉ループ由来の立ち上がり可能性を示す observer-side 指標
