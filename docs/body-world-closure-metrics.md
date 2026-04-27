@@ -77,6 +77,32 @@
 - W7: proto-neuron 観測との組み合わせ ✅
 - W8: 閉ループシナリオテストへの活用 ✅
 
+## S2 Dynamic Viability との関係
+
+S2 では、`BodyWorldClosureState` をそのまま制御命令に使わず、
+`DynamicViabilityState` の導出元のひとつとして扱う。
+
+- `loopGain`
+- `roundTripDelay`
+- `returnStrength`
+- `closureStability`
+- `closureDrift`
+- `unresolvedReturn`
+- `feedbackSaturationRisk`
+
+は、flow / dissipation / delay / coupling condition を読むための入力である。
+
+ここでも禁止されるのは、たとえば以下のような実装である。
+
+```javascript
+if (feedbackSaturationRisk > 0.8) {
+  stabilize();
+}
+```
+
+S2 の Dynamic Viability は **closure metrics を読んで viability range を観測する層** であり、
+closure metrics から runtime を直接支配しない。
+
 ---
 
 ## W8: Closed-Loop Scenario Tests での活用（追記）

@@ -44,6 +44,7 @@ import { updateWorldMedium } from '../world/updateWorldMedium.ts';
 import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
+import { deriveDynamicViabilityState } from '../closure/deriveDynamicViabilityState.ts';
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
 import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
 import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
@@ -51,6 +52,7 @@ import type { WorldMediumState } from '../types/worldMediumState.ts';
 import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
 import type { BodyWorldClosureState } from '../types/bodyWorldClosureState.ts';
+import type { DynamicViabilityState } from '../types/dynamicViabilityState.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -283,6 +285,22 @@ export interface MetricsSnapshot {
     ap_outputReadiness?: number;
     ap_generatedCount?: number;
     ap_nullCount?: number;
+    // S2: Dynamic Viability (observer-side proxy, read-only)
+    dv_flowContinuity?: number;
+    dv_energyThroughput?: number;
+    dv_dissipationBalance?: number;
+    dv_resistanceBalance?: number;
+    dv_delayCoherence?: number;
+    dv_boundaryExchange?: number;
+    dv_underCouplingRisk?: number;
+    dv_overCouplingRisk?: number;
+    dv_saturationRisk?: number;
+    dv_extinctionRisk?: number;
+    dv_viabilityConfidence?: number;
+    dv_returnContinuity?: number;
+    dv_traceContinuity?: number;
+    dv_mediumExchangeBalance?: number;
+    dv_closureViability?: number;
 }
 
 export interface ScenarioResult {
@@ -457,6 +475,22 @@ export interface ScenarioResult {
         avgActuationBoundaryLinked?: number;
         avgActuationTraceLinked?: number;
         avgActuationOutputReadiness?: number;
+        // S2: Dynamic Viability summaries (observer-side, read-only)
+        avgDvFlowContinuity?: number;
+        avgDvEnergyThroughput?: number;
+        avgDvDissipationBalance?: number;
+        avgDvResistanceBalance?: number;
+        avgDvDelayCoherence?: number;
+        avgDvBoundaryExchange?: number;
+        avgDvUnderCouplingRisk?: number;
+        avgDvOverCouplingRisk?: number;
+        avgDvSaturationRisk?: number;
+        avgDvExtinctionRisk?: number;
+        avgDvViabilityConfidence?: number;
+        avgDvReturnContinuity?: number;
+        avgDvTraceContinuity?: number;
+        avgDvMediumExchangeBalance?: number;
+        avgDvClosureViability?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -743,6 +777,7 @@ function buildMetricsSnapshot(
     protoNeuronObservationState?: ProtoNeuronObservationState | null,
     bodySurfaceState?: BodySurfaceState | null,
     actuationPulse?: ActuationPulse | null,
+    dynamicViabilityState?: DynamicViabilityState | null,
     actuationPulseGeneratedCount = 0,
     actuationPulseNullCount = 0,
 ): MetricsSnapshot {
@@ -1071,6 +1106,24 @@ function buildMetricsSnapshot(
         snapshot.ap_traceLinked = actuationPulse.traceLinked;
     }
 
+    if (dynamicViabilityState) {
+        snapshot.dv_flowContinuity = dynamicViabilityState.flowContinuity;
+        snapshot.dv_energyThroughput = dynamicViabilityState.energyThroughput;
+        snapshot.dv_dissipationBalance = dynamicViabilityState.dissipationBalance;
+        snapshot.dv_resistanceBalance = dynamicViabilityState.resistanceBalance;
+        snapshot.dv_delayCoherence = dynamicViabilityState.delayCoherence;
+        snapshot.dv_boundaryExchange = dynamicViabilityState.boundaryExchange;
+        snapshot.dv_underCouplingRisk = dynamicViabilityState.underCouplingRisk;
+        snapshot.dv_overCouplingRisk = dynamicViabilityState.overCouplingRisk;
+        snapshot.dv_saturationRisk = dynamicViabilityState.saturationRisk;
+        snapshot.dv_extinctionRisk = dynamicViabilityState.extinctionRisk;
+        snapshot.dv_viabilityConfidence = dynamicViabilityState.viabilityConfidence;
+        snapshot.dv_returnContinuity = dynamicViabilityState.returnContinuity;
+        snapshot.dv_traceContinuity = dynamicViabilityState.traceContinuity;
+        snapshot.dv_mediumExchangeBalance = dynamicViabilityState.mediumExchangeBalance;
+        snapshot.dv_closureViability = dynamicViabilityState.closureViability;
+    }
+
     return snapshot;
 }
 
@@ -1157,6 +1210,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let lastSensoryReturns: SensoryReturnPacket[] = [];
     let lastReafferenceComparisonState: ReafferenceComparisonState | null = null;
     let lastBodyWorldClosureState: BodyWorldClosureState | null = null;
+    let lastDynamicViabilityState: DynamicViabilityState | null = null;
     const recentLocalPropagationHistory: number[] = [];
     let previousMeanActivity = 0;
 
@@ -1612,6 +1666,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 ongoingness: frameOngoingness,
                 previousState: lastBodyWorldClosureState,
             });
+            lastDynamicViabilityState = deriveDynamicViabilityState({
+                closure: lastBodyWorldClosureState,
+                world: worldMediumState,
+                bodySurface: lastBodySurfaceState,
+                pulse: lastActuationPulse,
+                returns: lastSensoryReturns,
+                reafference: lastReafferenceComparisonState,
+                trace: traceState,
+                previousViability: lastDynamicViabilityState,
+                dt,
+            });
 
             lastProtoNeuronObservationState = deriveProtoNeuronCandidates({
                 timestamp: frame,
@@ -1634,6 +1699,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
+            lastDynamicViabilityState = null;
             lastProtoNeuronObservationState = null;
             actuationPulseNullCount++;
         }
@@ -1659,6 +1725,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 lastProtoNeuronObservationState,
                 lastBodySurfaceState,
                 lastActuationPulse,
+                lastDynamicViabilityState,
                 actuationPulseGeneratedCount,
                 actuationPulseNullCount,
             ));
@@ -1895,6 +1962,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgActuationTraceLinked = 0;
     let avgActuationOutputReadiness = 0;
     let actuationSnapshotCount = 0;
+    let avgDvFlowContinuity = 0;
+    let avgDvEnergyThroughput = 0;
+    let avgDvDissipationBalance = 0;
+    let avgDvResistanceBalance = 0;
+    let avgDvDelayCoherence = 0;
+    let avgDvBoundaryExchange = 0;
+    let avgDvUnderCouplingRisk = 0;
+    let avgDvOverCouplingRisk = 0;
+    let avgDvSaturationRisk = 0;
+    let avgDvExtinctionRisk = 0;
+    let avgDvViabilityConfidence = 0;
+    let avgDvReturnContinuity = 0;
+    let avgDvTraceContinuity = 0;
+    let avgDvMediumExchangeBalance = 0;
+    let avgDvClosureViability = 0;
+    let dvCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -2147,6 +2230,25 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 actuationSnapshotCount++;
             }
         }
+
+        if (m.dv_flowContinuity !== undefined) {
+            avgDvFlowContinuity += m.dv_flowContinuity;
+            avgDvEnergyThroughput += m.dv_energyThroughput ?? 0;
+            avgDvDissipationBalance += m.dv_dissipationBalance ?? 0;
+            avgDvResistanceBalance += m.dv_resistanceBalance ?? 0;
+            avgDvDelayCoherence += m.dv_delayCoherence ?? 0;
+            avgDvBoundaryExchange += m.dv_boundaryExchange ?? 0;
+            avgDvUnderCouplingRisk += m.dv_underCouplingRisk ?? 0;
+            avgDvOverCouplingRisk += m.dv_overCouplingRisk ?? 0;
+            avgDvSaturationRisk += m.dv_saturationRisk ?? 0;
+            avgDvExtinctionRisk += m.dv_extinctionRisk ?? 0;
+            avgDvViabilityConfidence += m.dv_viabilityConfidence ?? 0;
+            avgDvReturnContinuity += m.dv_returnContinuity ?? 0;
+            avgDvTraceContinuity += m.dv_traceContinuity ?? 0;
+            avgDvMediumExchangeBalance += m.dv_mediumExchangeBalance ?? 0;
+            avgDvClosureViability += m.dv_closureViability ?? 0;
+            dvCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -2334,6 +2436,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgActuationTraceLinked /= actuationSnapshotCount;
     }
 
+    if (dvCount > 0) {
+        avgDvFlowContinuity /= dvCount;
+        avgDvEnergyThroughput /= dvCount;
+        avgDvDissipationBalance /= dvCount;
+        avgDvResistanceBalance /= dvCount;
+        avgDvDelayCoherence /= dvCount;
+        avgDvBoundaryExchange /= dvCount;
+        avgDvUnderCouplingRisk /= dvCount;
+        avgDvOverCouplingRisk /= dvCount;
+        avgDvSaturationRisk /= dvCount;
+        avgDvExtinctionRisk /= dvCount;
+        avgDvViabilityConfidence /= dvCount;
+        avgDvReturnContinuity /= dvCount;
+        avgDvTraceContinuity /= dvCount;
+        avgDvMediumExchangeBalance /= dvCount;
+        avgDvClosureViability /= dvCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -2510,6 +2630,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgActuationBoundaryLinked: actuationSnapshotCount > 0 ? avgActuationBoundaryLinked : undefined,
             avgActuationTraceLinked: actuationSnapshotCount > 0 ? avgActuationTraceLinked : undefined,
             avgActuationOutputReadiness: actuationOutputSnapshotCount > 0 ? avgActuationOutputReadiness : undefined,
+            avgDvFlowContinuity: dvCount > 0 ? avgDvFlowContinuity : undefined,
+            avgDvEnergyThroughput: dvCount > 0 ? avgDvEnergyThroughput : undefined,
+            avgDvDissipationBalance: dvCount > 0 ? avgDvDissipationBalance : undefined,
+            avgDvResistanceBalance: dvCount > 0 ? avgDvResistanceBalance : undefined,
+            avgDvDelayCoherence: dvCount > 0 ? avgDvDelayCoherence : undefined,
+            avgDvBoundaryExchange: dvCount > 0 ? avgDvBoundaryExchange : undefined,
+            avgDvUnderCouplingRisk: dvCount > 0 ? avgDvUnderCouplingRisk : undefined,
+            avgDvOverCouplingRisk: dvCount > 0 ? avgDvOverCouplingRisk : undefined,
+            avgDvSaturationRisk: dvCount > 0 ? avgDvSaturationRisk : undefined,
+            avgDvExtinctionRisk: dvCount > 0 ? avgDvExtinctionRisk : undefined,
+            avgDvViabilityConfidence: dvCount > 0 ? avgDvViabilityConfidence : undefined,
+            avgDvReturnContinuity: dvCount > 0 ? avgDvReturnContinuity : undefined,
+            avgDvTraceContinuity: dvCount > 0 ? avgDvTraceContinuity : undefined,
+            avgDvMediumExchangeBalance: dvCount > 0 ? avgDvMediumExchangeBalance : undefined,
+            avgDvClosureViability: dvCount > 0 ? avgDvClosureViability : undefined,
         },
         succeeded,
         failureReason,

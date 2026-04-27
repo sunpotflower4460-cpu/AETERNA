@@ -53,6 +53,7 @@ AETERNA でも同じ。
 
 - 揺らぎを演出として追加しない
 - 揺らぎが自然に起きうる条件を整える
+- viability を命令として作らず、flow / resistance / dissipation / delay / boundary exchange の結果として観測する
 
 火は「生き物っぽく見せる」ために揺らぐのではない。
 物理的条件の結果として揺らぐ。
@@ -161,6 +162,13 @@ proto-neuron candidate や proto-network candidate は、runtime に配置され
 - semantic meaning を持たない
 - 後から見て「このような構造が見える可能性がある」という研究観測
 - 確信ではなく proxy
+
+Dynamic Viability も同じ位置づけである。
+
+- observer-side の state
+- flow conditions を読むための proxy / derived metrics
+- risk が高くても、その場で stabilize command を入れない
+- S3 以降で feedback を使う場合も、媒質条件の微調整に留める
 
 ## S0 の位置づけ
 

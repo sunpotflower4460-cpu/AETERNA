@@ -462,6 +462,12 @@ Sensory Return (W4)
 ↓
 Reafference Comparison (W5)
 ↓
+Body-World Closure Metrics (W6)
+↓
+Dynamic Viability State (S2)
+↓
+Observer / future minimal natural feedback (S3+)
+↓
 Perturbation + Mismatch (既存)
 ↓
 Torus Life Field
@@ -469,6 +475,7 @@ Torus Life Field
 
 - W0: docs のみ固定。runtime 変更なし。
 - W1〜W8: 段階的に実装。
+- S2 Dynamic Viability は observer / metrics 追加であり、S2 では feedback しない。
 - proto-neuron は W7 で観測開始。最初から置かない。
 - real sensor は後段（W3 は simulated world のみ）。
 
