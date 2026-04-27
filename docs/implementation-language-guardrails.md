@@ -97,6 +97,41 @@
 | 教師から学ぶ | 反復・痕跡・弱い可塑性により流路が少し変化するかを見る |
 | LLM で意味を与える | pre-semantic な観測候補として扱う（意味は与えない） |
 
+## S1 Audit 追記（2026-04-27）
+
+S1 Flow/Resistance/Dissipation Audit により、以下の実装パターンが確認され、Natural Emergence Principles に沿っていることが検証されました。
+
+### 避けるべき実装名（S1 確認済み）
+
+以下の関数名・変数名は AETERNA に存在してはならない：
+
+- `addFlicker` / `addFluctuation` — 揺らぎの直接追加
+- `makeAlive` / `makeLookAlive` — 生命演出
+- `addOrganicMotion` / `organicMotion` — 有機的動き追加
+- `forceStabilize` / `stabilize` — 命令型安定化
+- `spawnNeuron` / `createNeuron` — ニューロン配置
+- `createProtoNetwork` / `buildNetwork` — ネットワーク構築
+- `semanticize` / `assignMeaning` — 意味付与
+- `addRandomness` / `injectNoise` — ランダムノイズ注入
+- `boostActivity` / `suppressAll` — 活動の強制調整
+
+### 推奨する実装名（S1 確認済み）
+
+以下の関数名・変数名が推奨され、実装で使用されている：
+
+- `deriveFlowContinuity` — 流れの連続性導出
+- `deriveDissipationBalance` — 散逸バランス導出
+- `deriveResistanceProfile` — 抵抗プロファイル導出
+- `deriveDelayProfile` — 遅延プロファイル導出
+- `deriveBoundaryExchange` — 境界交換導出
+- `deriveLocalExcitability` — 局所発火性導出
+- `observeCandidate` — 候補観測
+- `deriveProtoNeuronCandidates` — proto-neuron 候補導出（observer-side）
+- `deriveBodySurfaceState` — body surface 状態導出
+- `updateWorldMedium` — world medium 更新（自然減衰含む）
+- `deriveSensoryReturn` — sensory return 導出（変化駆動）
+- `deriveReafferenceComparison` — reafference 比較導出
+
 ## コード例
 
 ### ❌ 避けるべきコード
@@ -132,6 +167,19 @@ if (protoNeuronExists) {
 if (needsInterpretation) {
   const meaning = await llm.interpret(observation);
 }
+
+// 強制候補生成（S1 追記）
+if (noCandidates) {
+  createCandidate();
+}
+
+// 強制パルス生成（S1 追記）
+if (quiet) {
+  forcePulse();
+}
+
+// 揺らぎ注入（S1 追記）
+const drift = Math.random() * amplitude;  // 演出的ランダム
 ```
 
 ### ✅ 推奨されるコード
