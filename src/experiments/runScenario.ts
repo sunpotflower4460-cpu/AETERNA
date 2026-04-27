@@ -1220,6 +1220,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const metricsInterval = config.metricsInterval ?? 10;
     const touchScript = config.touchScript ?? [];
     const naturalFeedbackFlags = normalizeNaturalFeedbackFlags({
+        // Keep S3 disabled by default here to avoid behavior breaks in the
+        // large pre-existing scenario suite; targeted S3 runs enable it explicitly.
         minimalNaturalFeedbackEnabled: false,
         ...config.naturalFeedbackFlags,
     });

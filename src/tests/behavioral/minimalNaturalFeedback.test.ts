@@ -141,6 +141,8 @@ describe('S3: Minimal Natural Feedback', () => {
     expect(enabled.summary.naturalFeedbackFlags?.minimalNaturalFeedbackEnabled).toBe(true);
     expect(disabled.summary.naturalFeedbackFlags?.minimalNaturalFeedbackEnabled).toBe(false);
     expect(enabled.summary.avgNfFeedbackDominanceRisk ?? 0).toBeLessThan(0.6);
+    // This loose band just checks that feedback stays weak enough not to take over
+    // the scenario while still allowing measurable S3 condition shifts.
     expect(Math.abs(enabled.summary.finalMeanActivity - disabled.summary.finalMeanActivity)).toBeLessThan(3.5);
     expect(Math.abs((enabled.summary.avgDvFlowContinuity ?? 0) - (disabled.summary.avgDvFlowContinuity ?? 0))).toBeLessThan(0.25);
   });

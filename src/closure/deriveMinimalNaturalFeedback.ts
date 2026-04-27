@@ -18,6 +18,8 @@ export interface DeriveMinimalNaturalFeedbackParams {
   dt: number;
 }
 
+// S3 keeps raw condition adjustments in a very small ±0.05 band so feedback
+// remains a thin medium-condition bias rather than a stabilization command.
 const RAW_ADJUSTMENT_LIMIT = 0.05;
 
 function clamp01(value: number): number {
