@@ -218,6 +218,7 @@ export function deriveDynamicViabilityState(
     balanceScore(returnAttenuation, 0.35, 0.35),
     balanceScore(loopGainNormalized, 0.65, 0.45),
     balanceScore(boundaryIntegrity, 0.72, 0.42),
+    balanceScore(1 - worldMismatch, 0.7, 0.5),
   ]);
 
   const delayCoherence = average([
@@ -318,6 +319,7 @@ export function deriveDynamicViabilityState(
       mediumStability * 0.1 +
       (1 - average([saturationRisk, extinctionRisk])) * 0.15 +
       (1 - unresolvedReturn) * 0.08 +
+      (1 - returnMismatch) * 0.05 +
       (1 - previousDelta) * 0.05 +
       dtQuality * 0.02,
   );
