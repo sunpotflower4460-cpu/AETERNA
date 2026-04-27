@@ -121,6 +121,47 @@ Dynamic Viability の定義を docs に固定することである。
 
 S2 以降で、これらの条件を段階的に実装する。
 
+## S2 実装位置づけ
+
+S2 では `DynamicViabilityState` と `deriveDynamicViabilityState(...)` を追加し、
+
+- `BodyWorldClosureState`
+- `WorldMediumState`
+- `BodySurfaceState`
+- `ActuationPulse`
+- `SensoryReturnPacket[]`
+- `ReafferenceComparisonState`
+- `TraceState`
+
+から **read-mostly / observer-side** に導出する。
+
+重要なのは、ここで行うのが **stabilization command ではなく flow conditions の観測** だという点である。
+
+- `if (unstable) stabilize()` を入れない
+- `if (tooQuiet) randomize()` を入れない
+- `if (notAliveLooking) addMotion()` を入れない
+
+S2 の risk metrics は warning / proxy であり、runtime loop を直接変更しない。
+
+## S2 で観測する Flow Conditions
+
+S2 の Dynamic Viability は、以下を observer / metrics に表示する。
+
+- `flowContinuity`
+- `energyThroughput`
+- `dissipationBalance`
+- `resistanceBalance`
+- `delayCoherence`
+- `boundaryExchange`
+- `underCouplingRisk`
+- `overCouplingRisk`
+- `saturationRisk`
+- `extinctionRisk`
+- `viabilityConfidence`
+
+表示名は **Dynamic Viability / Flow Conditions** とし、
+「生命力」「生存本能」「意識」とは表示しない。
+
 ## 禁止事項
 
 Dynamic Viability の実装・観測において、以下を追加してはならない。

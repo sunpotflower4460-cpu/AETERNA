@@ -818,6 +818,50 @@ W1 で導入した Body Surface は、AETERNA のトーラス生命場が外界�
 | `surfaceFatigue` | 境界面の疲労・摩耗（持続的過負荷で蓄積） | Proxy |
 | `protectiveClosure` | 能動的な境界閉鎖傾向 | Proxy |
 
+---
+
+## S2: Dynamic Viability / Flow Conditions
+
+Dynamic Viability は「安定化命令」ではない。
+flow / resistance / dissipation / delay / boundary exchange を observer-side で観測し、
+AETERNA が世界との閉ループを保ったまま流れ続けられる範囲にあるかを読むための state である。
+
+### Measured
+
+- `pulse intensity`
+- `return intensity`
+- `echoLevel`
+- `feedbackDelay`
+- `surfaceResistance`
+
+### Derived
+
+| 指標名 | 意味 | 入力例 |
+|---|---|---|
+| `flowContinuity` | pulse / return / trace / closure が完全に途切れていないか | `ActuationPulse`, `SensoryReturnPacket[]`, `TraceState`, `BodyWorldClosureState` |
+| `energyThroughput` | pulse → world → sensory return に信号が通っている度合い | `pulse.intensity`, `returnStrength`, `lastPulseImpact`, `returnReadiness` |
+| `dissipationBalance` | 残響や痕跡が即消えも固定化もしない中庸にあるか | `echoLevel`, `lastPulseImpact`, `traceStrength`, `salienceResidue`, `replayReadiness` |
+| `resistanceBalance` | world / boundary が素通しでも完全遮断でもないか | `surfaceResistance`, `permeability`, `boundaryIntegrity`, `returnAttenuation`, `loopGain` |
+| `delayCoherence` | return delay が閉ループの観測可能範囲にあるか | `feedbackDelay`, `returnDelay`, `roundTripDelay`, `unresolvedReturn`, `closureDrift` |
+| `boundaryExchange` | Body Surface が完全開放でも完全閉鎖でもない交換状態を保てているか | `boundaryIntegrity`, `permeability`, `contactReadiness`, `outputReadiness`, `recoveryShielding` |
+
+### Proxy
+
+| 指標名 | 意味 | 入力例 |
+|---|---|---|
+| `underCouplingRisk` | 世界との結合が弱すぎる危険 | `loopGain`, `returnStrength`, `lastPulseImpact`, `outputReadiness` |
+| `overCouplingRisk` | pulse-return が増幅しすぎる危険 | `loopGain`, `echoLevel`, `returnStrength`, `returnAmplification`, `feedbackSaturationRisk` |
+| `saturationRisk` | activity / return / echo / trace が上限に張り付く危険 | `pulse intensity`, `returnStrength`, `echoLevel`, `traceStrength`, `feedbackSaturationRisk` |
+| `extinctionRisk` | flow / return / trace が弱まりすぎる危険 | `flowContinuity`, `energyThroughput`, `returnStrength`, `traceContinuity`, `returnReadiness` |
+| `viabilityConfidence` | Dynamic Viability metrics 自体の観測信頼度 | state coverage, `comparisonConfidence`, `closureStability`, extreme risk, previous-frame delta |
+
+### Important
+
+- risk metrics は command ではない
+- `if unstable then stabilize()` を入れない
+- `if too quiet then randomize()` を入れない
+- semantic meaning / label / same-object / teacher binding を追加しない
+
 ### W1 既存概念との関係
 
 ```
