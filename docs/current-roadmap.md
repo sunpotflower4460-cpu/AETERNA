@@ -44,7 +44,7 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 | Phase | 内容 | 状態 |
 |---|---|---|
 | **S0** | Natural Emergence Principles 固定 | ✅ 完了（docs のみ） |
-| **S1** | Flow / Resistance / Dissipation Audit | 未着手 |
+| **S1** | Flow / Resistance / Dissipation Audit | ✅ 完了（2026-04-27） |
 | **S2** | Dynamic Viability State | 未着手 |
 | **S3** | Minimal Natural Feedback | 未着手 |
 | **S4** | Delay / Echo / Resistance Profile | 未着手 |
@@ -65,6 +65,19 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 - proto-neuron / proto-network は observer-side candidate と明記されている ✅
 - semantic leak 禁止が維持されている ✅
 - runtime 挙動を変更していない ✅
+
+### S1 完了条件
+
+- flow-resistance-dissipation-audit.md がある ✅
+- W0〜W8 の各層について flow/resistance/dissipation/delay/boundary/local coupling/threshold/trace の監査がある ✅
+- artificial fluctuation risk が確認されている ✅
+- command-style stabilization risk が確認されている ✅
+- semantic leak risk が確認されている ✅
+- naturalEmergenceAudit.test.ts がある ✅
+- language guardrails が更新されている（S1 追記） ✅
+- immediate minimal fixes / next-phase candidates が整理されている ✅
+- runtime 挙動を大きく変えていない ✅
+- build が通る ✅（予定）
 
 ## W-Series: Body-World Closure Phases
 
