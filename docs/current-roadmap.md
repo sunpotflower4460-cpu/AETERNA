@@ -36,6 +36,36 @@
 - quiet 時の消失と long-run の暴走を避ける
 - observer は研究用であり、本体因果を壊さない
 
+## S-Series: Natural Emergence Phases
+
+AETERNA の次段階（W-Series の後）では、自然発生原則に基づく条件実装を進める。
+揺らぎ・安定・proto-neuron / proto-network は、条件から自然に観測される結果として扱う。
+
+| Phase | 内容 | 状態 |
+|---|---|---|
+| **S0** | Natural Emergence Principles 固定 | ✅ 完了（docs のみ） |
+| **S1** | Flow / Resistance / Dissipation Audit | 未着手 |
+| **S2** | Dynamic Viability State | 未着手 |
+| **S3** | Minimal Natural Feedback | 未着手 |
+| **S4** | Delay / Echo / Resistance Profile | 未着手 |
+| **S5** | Local Excitability Field | 未着手 |
+| **S6** | Path Formation by Repeated Flow | 未着手 |
+| **S7** | Proto-Network Candidate Observation | 未着手 |
+| **S8** | Long-Run Natural Emergence Scenarios | 未着手 |
+
+### S0 完了条件
+
+- natural-emergence-principles.md がある ✅
+- world-loop-dynamic-viability.md がある ✅
+- proto-network-natural-observation.md がある ✅
+- implementation-language-guardrails.md がある ✅
+- roadmap に S0〜S8 が追加されている ✅
+- 「揺らぎを直接足さない」原則が明記されている ✅
+- 「安定化を命令として実装しない」原則が明記されている ✅
+- proto-neuron / proto-network は observer-side candidate と明記されている ✅
+- semantic leak 禁止が維持されている ✅
+- runtime 挙動を変更していない ✅
+
 ## W-Series: Body-World Closure Phases
 
 AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼吸するトーラス生命場」へ進めるための段階。

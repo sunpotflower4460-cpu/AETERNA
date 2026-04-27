@@ -109,10 +109,25 @@ relation / concept link にはしない。
 
 ## このフェーズ（W7）での位置づけ
 
-W7 では proto-neuron を **観測する**。  
-W7 では proto-neuron を **配置しない**。  
-W7 では Node bridge しない。  
+W7 では proto-neuron を **観測する**。
+W7 では proto-neuron を **配置しない**。
+W7 では Node bridge しない。
 W7 では meaning を与えない。
+
+## Natural Emergence との関係（S0 追記）
+
+proto-neuron は、**Natural Emergence Principles** に基づく観測候補である。
+
+- proto-neuron は「ニューロンを作る」のではなく、局所発火性のある節候補を観測する
+- 発火性・不応期・伝播・痕跡・再発・共発火・弱い可塑性・closure coupling は、条件から自然に生じる可能性のある現象
+- proto-neuron candidate は observer-side であり、runtime dynamics を変更しない
+
+詳細は以下を参照：
+
+- `docs/natural-emergence-principles.md` — 自然発生原則
+- `docs/proto-network-natural-observation.md` — Proto-Network Natural Observation（S7 次段階）
+- `docs/world-loop-dynamic-viability.md` — Dynamic Viability の定義
+- `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
 
 ## W8: Closed-Loop Scenario での proto-neuron candidate の扱い（追記）
 
