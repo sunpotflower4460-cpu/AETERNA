@@ -270,3 +270,27 @@ Ongoingness は Dynamic Viability の前提条件である。
 - `docs/body-world-closure-principles.md` — Body-World Closure の基本方針
 - `docs/ongoingness-metrics.md` — Ongoingness 指標
 - `docs/metrics-protocol.md` — Metrics Protocol
+
+## S3: Minimal Natural Feedback との関係
+
+S3 では、`DynamicViabilityState` をそのまま command に変換しない。
+
+- `deriveMinimalNaturalFeedback(...)` は `DynamicViabilityState` / `BodyWorldClosureState` / `WorldMediumState` / `BodySurfaceState` / `TraceState` から **微弱 adjustment** を導出する
+- adjustment 対象は `echo decay` / `return gain` / `pulse leakage` / `boundary permeability` / `sensory attenuation` / `trace decay` のような **媒質条件・境界条件・伝達条件** に限る
+- adjustment は 0 中心の小さい範囲に clamp される
+- `adjustmentStrength` / `adjustmentConfidence` / `feedbackDominanceRisk` を observer 側で監視する
+- viability が中庸なときは adjustment をほぼ 0 に近づける
+
+ここでも禁止されるのは以下のような実装である。
+
+```javascript
+if (dynamicViability.overCouplingRisk > 0.8) {
+  stabilize();
+}
+
+if (dynamicViability.extinctionRisk > 0.8) {
+  addRandomPulse();
+}
+```
+
+正しい方向は、`deriveMinimalNaturalFeedback(...)` と `applyWeakConditionAdjustment(...)` により、**次 tick 以降の媒質条件に薄く効く** 形である。

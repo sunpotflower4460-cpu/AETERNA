@@ -137,3 +137,12 @@ W8 では、これらの指標を複数の scenario 条件で横断的に検証�
 - **分類**: Proxy
 - **入力例**: `loopGain`, `returnStrength`, `returnMismatch`, `selfCausedMatch`, `worldMismatch`, `closureDrift`, `closureStability`
 - **注意**: proto-neuron の意味の確信ではなく、閉ループ由来の立ち上がり proxy
+
+## S3 Minimal Natural Feedback での使い方
+
+S3 では、closure metrics が直接 mode switch や stabilize command を起こすことはない。
+
+- `loopGain` / `returnStrength` / `roundTripDelay` / `closureDrift` / `unresolvedReturn` / `feedbackSaturationRisk` は `deriveMinimalNaturalFeedback(...)` の導出元として使われる
+- 導出されるのは `echoDecayAdjustment` / `returnGainAdjustment` / `delayWindowAdjustment` などの **微弱 condition adjustment**
+- 適用先は `World Medium` / `Sensory Return` / `Actuation Pulse` / `Body Surface` / `Trace` に限定する
+- `feedbackDominanceRisk` が高くても、それを理由に `cutFeedback()` のような強制停止は入れない

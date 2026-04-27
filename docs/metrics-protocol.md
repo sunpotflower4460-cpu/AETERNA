@@ -1120,3 +1120,26 @@ W8 で導入した `ClosedLoopScenarioSummary` の指標一覧。
 - proto-neuron candidate は observer-side のまま — runtime neuron node への変換は行わない
 - W8 の summary は "生命証明" や "意識あり" と表示してはならない
 - 表示ラベルは「Closed-Loop Scenario Summary」とすること
+
+### D.5 Minimal Natural Feedback (S3)
+
+**Definition**: Dynamic Viability を直接 stabilize command に変換せず、World Loop の媒質条件・境界条件・伝達条件を微弱に調整しているかを観測する。
+
+#### Measured
+- `appliedTargetCount` — feedback が実際に向いた target 数
+- `adjustment raw values` — `echoDecayAdjustment`, `returnGainAdjustment`, `pulseLeakageAdjustment`, `boundaryPermeabilityAdjustment`, `sensoryAttenuationAdjustment`, `traceDecayAdjustment`, optional `worldResistanceAdjustment`, `delayWindowAdjustment`, `mediumAbsorptionAdjustment`
+- `feedback enabled flags` — ablation flag の on/off 状態
+
+#### Derived
+- `adjustmentStrength` — overall feedback strength
+- `adjustmentConfidence` — upstream coverage / viability confidence を反映した confidence
+
+#### Proxy
+- `feedbackEffectEstimate` — adjustment が次 tick 条件へどれくらい効いていそうかの proxy
+- `overcorrectionRisk` — feedback 自体が強すぎる可能性の proxy
+- `feedbackDominanceRisk` — viability metrics より feedback が支配的になっていないかの proxy
+
+**Important**:
+- これらは stabilization success の指標ではない
+- feedback は現象を直接生成しない
+- on/off ablation 比較で差が極端すぎないことも監視対象に含める

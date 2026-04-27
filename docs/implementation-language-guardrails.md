@@ -319,3 +319,30 @@ const observedFluctuation = measureFluctuation(state);
 - `docs/proto-network-natural-observation.md` — Proto-Network Natural Observation
 - `docs/emergent-proto-neuron-principles.md` — Proto-Neuron の観測原則
 - `docs/agent-guardrails.md` — Agent の実装ガイドライン
+
+## S3 Minimal Natural Feedback 追記（2026-04-27）
+
+S3 では feedback を導入しても、語彙は依然として命令型に寄せない。
+
+### 避けるべき実装名（S3 追加）
+
+- `forceImmediateReturn` — 遅延を命令で潰す
+- `reopenLoop` — loop を命令的に再開する
+- `forceBoundaryOpen` / `forceBoundaryClose` — 境界を command で開閉する
+- `resetWorld` — world の強制リセット
+- `cutFeedback` / `suppressFeedback` — feedback の強制遮断
+- `boostProtoNeuron` — proto-neuron 候補への直接 boost
+
+### 推奨する実装名（S3 追加）
+
+- `deriveMinimalNaturalFeedback` — minimal natural feedback 導出
+- `applyMinimalNaturalFeedback` — weak condition adjustment 適用
+- `feedbackDominanceRisk` — feedback 支配リスクの observer proxy
+
+### 避ける説明
+
+- `stabilization command`
+- `will`
+- `desire`
+- `intentional reopening`
+- `self-protection decision`

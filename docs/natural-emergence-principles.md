@@ -191,3 +191,14 @@ S1 以降で、この原則に沿った条件実装を段階的に進める。
 - `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
 - `docs/body-world-closure-principles.md` — Body-World Closure の基本方針
 - `docs/emergent-proto-neuron-principles.md` — Proto-Neuron の観測原則
+
+## S3: Minimal Natural Feedback の位置づけ
+
+S3 では、初めて weak feedback を導入するが、これは **command-style stabilization ではない**。
+
+- feedback は `echo decay` / `return attenuation` / `boundary permeability` / `pulse leakage` / `trace decay` のような条件だけを少し動かす
+- feedback は現象を直接作らない
+- under-coupling に対しても `random pulse` を追加しない
+- over-coupling に対しても `suppress all` / `reset world` をしない
+- feedback は ablation でき、on/off 比較で本体を乗っ取っていないか確認する
+- `feedbackDominanceRisk` は observer warning であり、強制停止には使わない

@@ -45,6 +45,8 @@ import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
 import { deriveDynamicViabilityState } from '../closure/deriveDynamicViabilityState.ts';
+import { deriveMinimalNaturalFeedback } from '../closure/deriveMinimalNaturalFeedback.ts';
+import { applyMinimalNaturalFeedback } from '../closure/applyMinimalNaturalFeedback.ts';
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
 import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
 import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
@@ -53,6 +55,14 @@ import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
 import type { BodyWorldClosureState } from '../types/bodyWorldClosureState.ts';
 import type { DynamicViabilityState } from '../types/dynamicViabilityState.ts';
+import {
+    createNeutralNaturalFeedbackAdjustment,
+    normalizeNaturalFeedbackFlags,
+    type NaturalFeedbackAblationFlags,
+    type NaturalFeedbackAdjustment,
+    type NaturalFeedbackApplicationReport,
+    type NaturalFeedbackTarget,
+} from '../types/naturalFeedbackAdjustment.ts';
 
 export interface TouchEvent {
     frame: number;
@@ -75,6 +85,7 @@ export interface ScenarioConfig {
     initialLivingState?: Partial<OrganismLivingState>;
     initialEnergyState?: Partial<OrganismEnergyState>;
     initialWorldMediumState?: Partial<WorldMediumState>;
+    naturalFeedbackFlags?: Partial<NaturalFeedbackAblationFlags>;
 }
 
 export interface MetricsSnapshot {
@@ -301,6 +312,29 @@ export interface MetricsSnapshot {
     dv_traceContinuity?: number;
     dv_mediumExchangeBalance?: number;
     dv_closureViability?: number;
+    // S3: Minimal Natural Feedback (weak medium-condition adjustment)
+    nf_echoDecayAdjustment?: number;
+    nf_returnGainAdjustment?: number;
+    nf_pulseLeakageAdjustment?: number;
+    nf_boundaryPermeabilityAdjustment?: number;
+    nf_sensoryAttenuationAdjustment?: number;
+    nf_traceDecayAdjustment?: number;
+    nf_worldResistanceAdjustment?: number;
+    nf_delayWindowAdjustment?: number;
+    nf_mediumAbsorptionAdjustment?: number;
+    nf_adjustmentStrength?: number;
+    nf_adjustmentConfidence?: number;
+    nf_feedbackEffectEstimate?: number;
+    nf_overcorrectionRisk?: number;
+    nf_feedbackDominanceRisk?: number;
+    nf_appliedTargetCount?: number;
+    nf_appliedTargets?: NaturalFeedbackTarget[];
+    nf_minimalNaturalFeedbackEnabled?: boolean;
+    nf_worldMediumEnabled?: boolean;
+    nf_sensoryReturnEnabled?: boolean;
+    nf_actuationEnabled?: boolean;
+    nf_bodySurfaceEnabled?: boolean;
+    nf_traceEnabled?: boolean;
 }
 
 export interface ScenarioResult {
@@ -491,6 +525,23 @@ export interface ScenarioResult {
         avgDvTraceContinuity?: number;
         avgDvMediumExchangeBalance?: number;
         avgDvClosureViability?: number;
+        avgNfEchoDecayAdjustment?: number;
+        avgNfReturnGainAdjustment?: number;
+        avgNfPulseLeakageAdjustment?: number;
+        avgNfBoundaryPermeabilityAdjustment?: number;
+        avgNfSensoryAttenuationAdjustment?: number;
+        avgNfTraceDecayAdjustment?: number;
+        avgNfWorldResistanceAdjustment?: number;
+        avgNfDelayWindowAdjustment?: number;
+        avgNfMediumAbsorptionAdjustment?: number;
+        avgNfAdjustmentStrength?: number;
+        avgNfAdjustmentConfidence?: number;
+        avgNfFeedbackEffectEstimate?: number;
+        avgNfOvercorrectionRisk?: number;
+        avgNfFeedbackDominanceRisk?: number;
+        naturalFeedbackAppliedTargetCount?: number;
+        naturalFeedbackLastAppliedTargets?: NaturalFeedbackTarget[];
+        naturalFeedbackFlags?: NaturalFeedbackAblationFlags;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -778,6 +829,8 @@ function buildMetricsSnapshot(
     bodySurfaceState?: BodySurfaceState | null,
     actuationPulse?: ActuationPulse | null,
     dynamicViabilityState?: DynamicViabilityState | null,
+    naturalFeedbackAdjustment?: NaturalFeedbackAdjustment | null,
+    naturalFeedbackReport?: NaturalFeedbackApplicationReport | null,
     actuationPulseGeneratedCount = 0,
     actuationPulseNullCount = 0,
 ): MetricsSnapshot {
@@ -1124,6 +1177,34 @@ function buildMetricsSnapshot(
         snapshot.dv_closureViability = dynamicViabilityState.closureViability;
     }
 
+    if (naturalFeedbackAdjustment) {
+        snapshot.nf_echoDecayAdjustment = naturalFeedbackAdjustment.echoDecayAdjustment;
+        snapshot.nf_returnGainAdjustment = naturalFeedbackAdjustment.returnGainAdjustment;
+        snapshot.nf_pulseLeakageAdjustment = naturalFeedbackAdjustment.pulseLeakageAdjustment;
+        snapshot.nf_boundaryPermeabilityAdjustment = naturalFeedbackAdjustment.boundaryPermeabilityAdjustment;
+        snapshot.nf_sensoryAttenuationAdjustment = naturalFeedbackAdjustment.sensoryAttenuationAdjustment;
+        snapshot.nf_traceDecayAdjustment = naturalFeedbackAdjustment.traceDecayAdjustment;
+        snapshot.nf_worldResistanceAdjustment = naturalFeedbackAdjustment.worldResistanceAdjustment;
+        snapshot.nf_delayWindowAdjustment = naturalFeedbackAdjustment.delayWindowAdjustment;
+        snapshot.nf_mediumAbsorptionAdjustment = naturalFeedbackAdjustment.mediumAbsorptionAdjustment;
+        snapshot.nf_adjustmentStrength = naturalFeedbackAdjustment.adjustmentStrength;
+        snapshot.nf_adjustmentConfidence = naturalFeedbackAdjustment.adjustmentConfidence;
+        snapshot.nf_feedbackEffectEstimate = naturalFeedbackAdjustment.feedbackEffectEstimate;
+        snapshot.nf_overcorrectionRisk = naturalFeedbackAdjustment.overcorrectionRisk;
+        snapshot.nf_feedbackDominanceRisk = naturalFeedbackAdjustment.feedbackDominanceRisk;
+    }
+
+    if (naturalFeedbackReport) {
+        snapshot.nf_appliedTargetCount = naturalFeedbackReport.appliedTargetCount;
+        snapshot.nf_appliedTargets = naturalFeedbackReport.appliedTargets;
+        snapshot.nf_minimalNaturalFeedbackEnabled = naturalFeedbackReport.enabledFlags.minimalNaturalFeedbackEnabled;
+        snapshot.nf_worldMediumEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackWorldMediumEnabled;
+        snapshot.nf_sensoryReturnEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackSensoryReturnEnabled;
+        snapshot.nf_actuationEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackActuationEnabled;
+        snapshot.nf_bodySurfaceEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackBodySurfaceEnabled;
+        snapshot.nf_traceEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackTraceEnabled;
+    }
+
     return snapshot;
 }
 
@@ -1138,6 +1219,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     const collectMetrics = config.collectMetrics ?? true;
     const metricsInterval = config.metricsInterval ?? 10;
     const touchScript = config.touchScript ?? [];
+    const naturalFeedbackFlags = normalizeNaturalFeedbackFlags(config.naturalFeedbackFlags);
 
     // Initialize network and disk
     const network = new AeternaNetwork(segments);
@@ -1211,6 +1293,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let lastReafferenceComparisonState: ReafferenceComparisonState | null = null;
     let lastBodyWorldClosureState: BodyWorldClosureState | null = null;
     let lastDynamicViabilityState: DynamicViabilityState | null = null;
+    let lastNaturalFeedbackAdjustment: NaturalFeedbackAdjustment = createNeutralNaturalFeedbackAdjustment(worldMediumState.timestamp);
+    let lastNaturalFeedbackReport: NaturalFeedbackApplicationReport = {
+        appliedTargets: [],
+        appliedTargetCount: 0,
+        enabledFlags: naturalFeedbackFlags,
+    };
     const recentLocalPropagationHistory: number[] = [];
     let previousMeanActivity = 0;
 
@@ -1323,6 +1411,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                     boundaryIntegrity: feltState.boundaryIntegrity,
                     collapseRisk: network.homeostaticState.collapseRisk ?? 0,
                 });
+
+                if (traceState && naturalFeedbackFlags.minimalNaturalFeedbackEnabled && naturalFeedbackFlags.naturalFeedbackTraceEnabled) {
+                    traceState = applyMinimalNaturalFeedback({
+                        world: worldMediumState,
+                        returns: lastSensoryReturns,
+                        pulse: lastActuationPulse,
+                        bodySurface: lastBodySurfaceState,
+                        trace: traceState,
+                        adjustment: lastNaturalFeedbackAdjustment,
+                        flags: naturalFeedbackFlags,
+                    }).trace;
+                }
 
                 recoveryState = deriveRecoveryState({
                     timestamp: frame,
@@ -1608,6 +1708,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 overload: dyn.overload ?? network.homeostaticState?.overloadLevel,
                 recentPerturbationHistory,
             });
+            lastBodySurfaceState = applyMinimalNaturalFeedback({
+                world: worldMediumState,
+                returns: lastSensoryReturns,
+                pulse: lastActuationPulse,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                adjustment: lastNaturalFeedbackAdjustment,
+                flags: naturalFeedbackFlags,
+            }).bodySurface;
 
             const quietness = clamp01(
                 (1 - clampFinite((dyn.meanRawTouch ?? 0) / 1.2, 0, 1)) * 0.5 +
@@ -1645,6 +1754,15 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 quietness,
                 meanActivity: meanAct,
             });
+            lastActuationPulse = applyMinimalNaturalFeedback({
+                world: worldMediumState,
+                returns: lastSensoryReturns,
+                pulse: lastActuationPulse,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                adjustment: lastNaturalFeedbackAdjustment,
+                flags: naturalFeedbackFlags,
+            }).pulse;
 
             if (lastActuationPulse) {
                 actuationPulseGeneratedCount++;
@@ -1653,9 +1771,26 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 actuationPulseNullCount++;
             }
 
-            const previousWorldMediumState = worldMediumState;
-            worldMediumState = updateWorldMedium(worldMediumState, lastActuationPulse, dt);
-            lastSensoryReturns = deriveSensoryReturn(worldMediumState, previousWorldMediumState, dt);
+            const worldMediumInput = applyMinimalNaturalFeedback({
+                world: worldMediumState,
+                returns: lastSensoryReturns,
+                pulse: lastActuationPulse,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                adjustment: lastNaturalFeedbackAdjustment,
+                flags: naturalFeedbackFlags,
+            }).world;
+            const previousWorldMediumState = worldMediumInput;
+            worldMediumState = updateWorldMedium(worldMediumInput, lastActuationPulse, dt);
+            lastSensoryReturns = applyMinimalNaturalFeedback({
+                world: worldMediumState,
+                returns: deriveSensoryReturn(worldMediumState, previousWorldMediumState, dt),
+                pulse: lastActuationPulse,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                adjustment: lastNaturalFeedbackAdjustment,
+                flags: naturalFeedbackFlags,
+            }).returns;
             lastReafferenceComparisonState = deriveReafferenceComparison(lastActuationPulse, lastSensoryReturns, worldMediumState, dt);
             lastBodyWorldClosureState = deriveBodyWorldClosureState({
                 timestamp: frame,
@@ -1677,6 +1812,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 previousViability: lastDynamicViabilityState,
                 dt,
             });
+            lastNaturalFeedbackAdjustment = deriveMinimalNaturalFeedback({
+                viability: lastDynamicViabilityState,
+                closure: lastBodyWorldClosureState,
+                world: worldMediumState,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                previousAdjustment: lastNaturalFeedbackAdjustment,
+                dt,
+            });
+            lastNaturalFeedbackReport = applyMinimalNaturalFeedback({
+                world: worldMediumState,
+                returns: lastSensoryReturns,
+                pulse: lastActuationPulse,
+                bodySurface: lastBodySurfaceState,
+                trace: traceState,
+                adjustment: lastNaturalFeedbackAdjustment,
+                flags: naturalFeedbackFlags,
+            }).report;
 
             lastProtoNeuronObservationState = deriveProtoNeuronCandidates({
                 timestamp: frame,
@@ -1700,6 +1853,12 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
             lastDynamicViabilityState = null;
+            lastNaturalFeedbackAdjustment = createNeutralNaturalFeedbackAdjustment(frame);
+            lastNaturalFeedbackReport = {
+                appliedTargets: [],
+                appliedTargetCount: 0,
+                enabledFlags: naturalFeedbackFlags,
+            };
             lastProtoNeuronObservationState = null;
             actuationPulseNullCount++;
         }
@@ -1726,6 +1885,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 lastBodySurfaceState,
                 lastActuationPulse,
                 lastDynamicViabilityState,
+                lastNaturalFeedbackAdjustment,
+                lastNaturalFeedbackReport,
                 actuationPulseGeneratedCount,
                 actuationPulseNullCount,
             ));
@@ -1978,6 +2139,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgDvMediumExchangeBalance = 0;
     let avgDvClosureViability = 0;
     let dvCount = 0;
+    let avgNfEchoDecayAdjustment = 0;
+    let avgNfReturnGainAdjustment = 0;
+    let avgNfPulseLeakageAdjustment = 0;
+    let avgNfBoundaryPermeabilityAdjustment = 0;
+    let avgNfSensoryAttenuationAdjustment = 0;
+    let avgNfTraceDecayAdjustment = 0;
+    let avgNfWorldResistanceAdjustment = 0;
+    let avgNfDelayWindowAdjustment = 0;
+    let avgNfMediumAbsorptionAdjustment = 0;
+    let avgNfAdjustmentStrength = 0;
+    let avgNfAdjustmentConfidence = 0;
+    let avgNfFeedbackEffectEstimate = 0;
+    let avgNfOvercorrectionRisk = 0;
+    let avgNfFeedbackDominanceRisk = 0;
+    let naturalFeedbackAppliedTargetCount = 0;
+    let naturalFeedbackCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -2249,6 +2426,25 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgDvClosureViability += m.dv_closureViability ?? 0;
             dvCount++;
         }
+
+        if (m.nf_adjustmentStrength !== undefined) {
+            avgNfEchoDecayAdjustment += m.nf_echoDecayAdjustment ?? 0;
+            avgNfReturnGainAdjustment += m.nf_returnGainAdjustment ?? 0;
+            avgNfPulseLeakageAdjustment += m.nf_pulseLeakageAdjustment ?? 0;
+            avgNfBoundaryPermeabilityAdjustment += m.nf_boundaryPermeabilityAdjustment ?? 0;
+            avgNfSensoryAttenuationAdjustment += m.nf_sensoryAttenuationAdjustment ?? 0;
+            avgNfTraceDecayAdjustment += m.nf_traceDecayAdjustment ?? 0;
+            avgNfWorldResistanceAdjustment += m.nf_worldResistanceAdjustment ?? 0;
+            avgNfDelayWindowAdjustment += m.nf_delayWindowAdjustment ?? 0;
+            avgNfMediumAbsorptionAdjustment += m.nf_mediumAbsorptionAdjustment ?? 0;
+            avgNfAdjustmentStrength += m.nf_adjustmentStrength ?? 0;
+            avgNfAdjustmentConfidence += m.nf_adjustmentConfidence ?? 0;
+            avgNfFeedbackEffectEstimate += m.nf_feedbackEffectEstimate ?? 0;
+            avgNfOvercorrectionRisk += m.nf_overcorrectionRisk ?? 0;
+            avgNfFeedbackDominanceRisk += m.nf_feedbackDominanceRisk ?? 0;
+            naturalFeedbackAppliedTargetCount += m.nf_appliedTargetCount ?? 0;
+            naturalFeedbackCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -2454,6 +2650,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgDvClosureViability /= dvCount;
     }
 
+    if (naturalFeedbackCount > 0) {
+        avgNfEchoDecayAdjustment /= naturalFeedbackCount;
+        avgNfReturnGainAdjustment /= naturalFeedbackCount;
+        avgNfPulseLeakageAdjustment /= naturalFeedbackCount;
+        avgNfBoundaryPermeabilityAdjustment /= naturalFeedbackCount;
+        avgNfSensoryAttenuationAdjustment /= naturalFeedbackCount;
+        avgNfTraceDecayAdjustment /= naturalFeedbackCount;
+        avgNfWorldResistanceAdjustment /= naturalFeedbackCount;
+        avgNfDelayWindowAdjustment /= naturalFeedbackCount;
+        avgNfMediumAbsorptionAdjustment /= naturalFeedbackCount;
+        avgNfAdjustmentStrength /= naturalFeedbackCount;
+        avgNfAdjustmentConfidence /= naturalFeedbackCount;
+        avgNfFeedbackEffectEstimate /= naturalFeedbackCount;
+        avgNfOvercorrectionRisk /= naturalFeedbackCount;
+        avgNfFeedbackDominanceRisk /= naturalFeedbackCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -2645,6 +2858,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgDvTraceContinuity: dvCount > 0 ? avgDvTraceContinuity : undefined,
             avgDvMediumExchangeBalance: dvCount > 0 ? avgDvMediumExchangeBalance : undefined,
             avgDvClosureViability: dvCount > 0 ? avgDvClosureViability : undefined,
+            avgNfEchoDecayAdjustment: naturalFeedbackCount > 0 ? avgNfEchoDecayAdjustment : undefined,
+            avgNfReturnGainAdjustment: naturalFeedbackCount > 0 ? avgNfReturnGainAdjustment : undefined,
+            avgNfPulseLeakageAdjustment: naturalFeedbackCount > 0 ? avgNfPulseLeakageAdjustment : undefined,
+            avgNfBoundaryPermeabilityAdjustment: naturalFeedbackCount > 0 ? avgNfBoundaryPermeabilityAdjustment : undefined,
+            avgNfSensoryAttenuationAdjustment: naturalFeedbackCount > 0 ? avgNfSensoryAttenuationAdjustment : undefined,
+            avgNfTraceDecayAdjustment: naturalFeedbackCount > 0 ? avgNfTraceDecayAdjustment : undefined,
+            avgNfWorldResistanceAdjustment: naturalFeedbackCount > 0 ? avgNfWorldResistanceAdjustment : undefined,
+            avgNfDelayWindowAdjustment: naturalFeedbackCount > 0 ? avgNfDelayWindowAdjustment : undefined,
+            avgNfMediumAbsorptionAdjustment: naturalFeedbackCount > 0 ? avgNfMediumAbsorptionAdjustment : undefined,
+            avgNfAdjustmentStrength: naturalFeedbackCount > 0 ? avgNfAdjustmentStrength : undefined,
+            avgNfAdjustmentConfidence: naturalFeedbackCount > 0 ? avgNfAdjustmentConfidence : undefined,
+            avgNfFeedbackEffectEstimate: naturalFeedbackCount > 0 ? avgNfFeedbackEffectEstimate : undefined,
+            avgNfOvercorrectionRisk: naturalFeedbackCount > 0 ? avgNfOvercorrectionRisk : undefined,
+            avgNfFeedbackDominanceRisk: naturalFeedbackCount > 0 ? avgNfFeedbackDominanceRisk : undefined,
+            naturalFeedbackAppliedTargetCount: naturalFeedbackCount > 0 ? naturalFeedbackAppliedTargetCount : undefined,
+            naturalFeedbackLastAppliedTargets: lastNaturalFeedbackReport.appliedTargets,
+            naturalFeedbackFlags,
         },
         succeeded,
         failureReason,
