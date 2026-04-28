@@ -11,6 +11,25 @@ AETERNA is a repo for growing a primitive-organism-like brain with ongoing basel
 - Agent rules for small safe changes: `docs/agent-guardrails.md`
 - Current structure map: `docs/system-map.md`
 
+## UI / UX
+
+AETERNA's visualization is not decorative.  
+It must translate actual field activity, trace, return, closure, local excitability, and observed candidates into human-readable visual form.  
+Fake energy, fake fluctuation, and fake life-like motion are prohibited.  
+Raw, derived, proxy, and presentation-smoothed values should remain distinguishable.
+
+AETERNA の可視化は装飾ではありません。  
+実際の場の活動、痕跡、戻り、閉ループ、局所励起、観測候補を、人間が理解できる形へ翻訳するものです。  
+存在しないエネルギー、嘘の揺らぎ、生命っぽく見せるだけの動きは禁止します。  
+Raw / Derived / Proxy / Presentation-smoothed は区別します。
+
+- `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則（U0）
+- `docs/visualization-integrity-principles.md` — 可視化の整合性原則
+- `docs/ui-information-architecture.md` — UI 3層アーキテクチャ
+- `docs/torus-visualization-requirements.md` — トーラス表示要件
+- `docs/default-guide-principles.md` — Default Guide 方針（API なしでも動く）
+- `docs/ui-ux-roadmap.md` — U0〜U8 ロードマップ
+
 ## Body-World Closure（W-Series）
 
 AETERNA は内側だけで完結する生命場ではなく、世界と閉じた循環を持つ生命場を目指す。

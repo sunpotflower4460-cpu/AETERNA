@@ -184,6 +184,17 @@ S0 の目的は、今後の実装が以下の方向に進まないよう、原�
 
 S1 以降で、この原則に沿った条件実装を段階的に進める。
 
+## UI への適用
+
+Natural Emergence 原則は、UI / Visualization にも適用される。
+
+- UI は「観測窓」であり、演出装置ではない
+- fake energy / fake fluctuation / fake flow を可視化に追加しない
+- 美しさは実際の観測値（flow / trace / return / closure / excitability）の翻訳として作る
+- raw / derived / proxy / presentation-smoothed を区別して表示する
+
+詳細は `docs/scientific-ui-ux-principles.md` および `docs/visualization-integrity-principles.md` を参照。
+
 ## 関連文書
 
 - `docs/world-loop-dynamic-viability.md` — Dynamic Viability の定義
@@ -191,6 +202,9 @@ S1 以降で、この原則に沿った条件実装を段階的に進める。
 - `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
 - `docs/body-world-closure-principles.md` — Body-World Closure の基本方針
 - `docs/emergent-proto-neuron-principles.md` — Proto-Neuron の観測原則
+- `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則（U0）
+- `docs/visualization-integrity-principles.md` — 可視化の整合性原則（U0）
+- `docs/ui-ux-roadmap.md` — U0〜U8 UI/UX ロードマップ
 
 ## S3: Minimal Natural Feedback の位置づけ
 

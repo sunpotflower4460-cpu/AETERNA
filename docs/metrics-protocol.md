@@ -1358,3 +1358,17 @@ Pre-semantic, observer-side observation of network-like patterns emerging from r
 | `nanOrInfinityCount` | Measured | Must be 0 in all valid runs |
 
 All values are pre-semantic observer-side measurements. No semantic interpretation is made.
+
+## UI への原則適用
+
+Metrics Protocol で定義する全指標は、UI に表示する際に以下の区分を守る：
+
+| 区分 | 定義 |
+|---|---|
+| Measured | 実際に直接測っている値 |
+| Derived | Measured や state から計算された値 |
+| Proxy | 直接測れない概念の代理指標 |
+| Presentation-smoothed | 人間が見やすいように補間・平滑化した表示値 |
+
+UI は観測窓であり、fake energy / fake fluctuation を追加しない。  
+詳細は `docs/scientific-ui-ux-principles.md` および `docs/visualization-integrity-principles.md` を参照。
