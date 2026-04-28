@@ -96,6 +96,47 @@ Layer C: Research Panels  ← ユーザー操作で開閉
 
 ---
 
+## 3.5 U1 実装方針（Layout 再設計）
+
+### PC レイアウト
+
+- 画面中央: Main Field View（トーラス全画面）
+- 左上: Observation HUD（compact status chips + title）
+- 右側: Research Panel（collapsible sidebar, ~380px, 初期は折りたたみ）
+- 右下: `Explain current state` ボタン（固定）
+- 画面下: Event Strip（薄く）
+
+### モバイルレイアウト
+
+- 画面全面: Main Field View
+- 上部: Observation HUD（compact chips）
+- 下部: Bottom Nav（5ボタン: View / Touch / Explain / Scenario / Data）
+- Research Panel が下から出るシート形式（responsive CSS）
+
+### Research Panel タブ構成
+
+| タブ | 内容 |
+|---|---|
+| **Overview** | 全体サマリーカード（Flow / Return / Energy / Echo / Risk）+ Guide / Sparklines |
+| **Field** | Physical Disk / Torus Geometry / Network State / Prerequisites / Ongoingness |
+| **World** | Recovery Field / Actuation Pulse |
+| **Medium** | Medium Profile（Delay / Echo / Resistance） |
+| **Paths** | Touch Pattern / Trace & Replay |
+| **Network** | Natural Mechanisms / A2 Arousal / Prior Rewrite / Organism & Action |
+| **Scenarios** | Presets / Sliders / Actions / Camera / Experience Mode |
+| **Raw** | API Config / Signal Observe Panel / Visual & Debug Toggles |
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `index.html` | 3層レイアウト HTML/CSS（Tailwind + inline CSS） |
+| `src/ui/layout/layoutControls.js` | タブ切替 / パネル開閉 / モバイルシート / Explain / Event Strip |
+| `src/ui/updateMetricsUI.js` | HUD chips + Overview cards 更新（各フレーム） |
+| `src/tests/ui/layoutStructure.test.ts` | レイアウト構造スモークテスト（38件） |
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

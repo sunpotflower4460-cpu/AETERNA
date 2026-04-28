@@ -44,7 +44,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進める。
 | Phase | 内容 | 状態 |
 |---|---|---|
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
-| **U1** | Layout 再設計 | 未着手 |
+| **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | 未着手 |
 | **U3** | Scientific Torus Renderer | 未着手 |
 | **U4** | Field Layer Visualization | 未着手 |

@@ -13,7 +13,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | Phase | 内容 | 状態 |
 |---|---|---|
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
-| **U1** | Layout 再設計 | 未着手 |
+| **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | 未着手 |
 | **U3** | Scientific Torus Renderer | 未着手 |
 | **U4** | Field Layer Visualization | 未着手 |
@@ -50,6 +50,33 @@ runtime 挙動は変更しない。fake visual を追加しない。
 
 **目的**: Main Field View（Layer A）が中央に大きく表示され、Observation HUD（Layer B）と Research Panels（Layer C）が主役を遮らないレイアウトを実現する。  
 現状の「UI パネルが重なってトーラスが見えづらい」問題を改善する。
+
+**実装内容**:
+- トーラス全画面表示（Layer A）
+- 上部 compact HUD chips（Flow / Return / Echo / Risk）
+- 右側 collapsible Research Panel（PC）+ モバイル bottom sheet（responsive）
+- Research Panel タブ: Overview / Field / World / Medium / Paths / Network / Scenarios / Raw
+- Overview タブを最初の情報入口に（サマリーカード）
+- `Explain current state` ボタンを右下に固定
+- Event Strip を下部に薄く配置
+- モバイル Bottom Nav（5ボタン）
+- API key / debug 設定を Raw タブに移動
+
+**完了条件**:
+- Main Field View が中央主役 ✅
+- Observation HUD がある ✅
+- Research Panel が開閉式で整理されている ✅
+- Overview が最初の tab ✅
+- Explain button が見つけやすい位置にある ✅
+- PC side panel 方針 ✅
+- mobile bottom sheet 方針 ✅
+- パネルがトーラスを過度に隠さない ✅
+- Raw / Advanced が初期画面で前面に出すぎない ✅
+- runtime dynamics を変更していない ✅
+- fake visual を追加していない ✅
+- semantic / consciousness / emotion claim なし ✅
+- build が通る ✅
+- 38件のレイアウト構造テスト通過 ✅
 
 ---
 
