@@ -313,3 +313,13 @@ S6 は proto-network の前段として、繰り返し流れた結果として�
 - resistance / dissipation shift は観測に留める (媒質条件を変えるのは後段)
 - S6 は S7 Proto-Network Candidate Observation の前段である
 - proto-network はまだ S6 では本実装しない
+
+## S8: Long-Run Observation Phase
+
+S8 is the long-run observation phase for proto-network candidate emergence. Over 200+ ticks per scenario, it accumulates:
+
+- `protoNetworkCandidateCount`: ticks where stablePathCandidateCount ≥ 2, averageClosureCoupling ≥ 0.35, and flowContinuity ≥ 0.40
+- `stableProtoNetworkCandidateCount`: ticks where proxy confidence ≥ 0.40 and stablePathCandidateCount ≥ 3
+- `averageProtoNetworkConfidence` / `maxProtoNetworkConfidence`: derived from flowPathObs.averageConfidence, viability.flowContinuity, closure.closureStability
+
+These are observer-side measurements only. No runtime edges are created. No semantic meaning is assigned.

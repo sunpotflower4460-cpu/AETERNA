@@ -611,3 +611,26 @@ observer / future proto-network candidate observation (S7+)
 - **Input sources**: localField (current), previousLocalField (previous frame), trace, mediumProfile, closure, reafference, viability, previousObservation
 - **Important**: Read-only. Does not create runtime edges, modify medium conditions, or perform semantic interpretation.
 - **Derived fields per candidate**: flowCount, recurrenceStrength, propagationConsistency, delayConsistency, traceSupport, resistanceShift, dissipationShift, replayAffinity, closureCoupling, confidence
+
+## S8 Long-Run Natural Emergence Scenarios ordering
+
+S8 adds a long-run headless scenario runner that exercises S0–S7 components together over extended tick counts to observe whether pre-semantic structures arise naturally under various world-medium conditions.
+
+```
+single tick closure pipeline
+↓
+long-run scenario summary
+```
+
+- S8 は observer-side のみ; organism core dynamics を変更しない
+- semantic nodes / runtime edges / Node bridge を作成しない
+- 生命・意識・知性の証明をしない
+- `semanticLeakCount = 0` / `nanOrInfinityCount = 0` を全 scenario で検証する
+
+### S8 Long-Run Natural Emergence Stage (scenario-debug path)
+- **Location**: `src/tests/scenario/runLongRunEmergenceScenario.ts`
+- **Role**: Run S0–S7 components over 200+ ticks and aggregate emergence-related metrics
+- **Call**: `runLongRunEmergenceScenario(params)` / `runLongRunEmergenceScenarioSuite()`
+- **Output**: `LongRunEmergenceScenarioSummary`
+- **Input sources**: worldMode config, feedbackEnabled flag, perturbationLevel, durationScale
+- **Important**: Observer-side only. No runtime edges, no semantic fields.

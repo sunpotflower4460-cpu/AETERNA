@@ -320,3 +320,7 @@ S5 は `DynamicViabilityState` を observer material として使い、局所 ex
 
 S5 は Dynamic Viability を直接変更しない。
 S5 は局所 excitability 条件を観測するだけである。
+
+## S8: Long-Run Integration
+
+S8 integrates DynamicViabilityState into long-run scenario runs (200+ ticks). Across all 12 S8 scenarios, `averageFlowContinuity`, `averageEnergyThroughput`, `maxSaturationRisk`, and `maxExtinctionRisk` are aggregated from per-tick DynamicViabilityState outputs. `nanOrInfinityCount = 0` is enforced across all scenarios.
