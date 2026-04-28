@@ -17,6 +17,7 @@ import { actionLoop } from './organism/actionLoop.js';
 import { CameraControls } from './utils/cameraControls.js';
 import { MajorStateObserver } from './ui/MajorStateObserver.js';
 import { ObservationDisplay } from './ui/ObservationDisplay.js';
+import { registerCameraKeyboardShortcuts } from './ui/camera/createTorusCameraControls.js';
 
 // ── Assign globals required by HTML onclick attributes ──
 window.toggleAccordion  = toggleAccordion;
@@ -30,6 +31,16 @@ window.cameraResetView = () => state.cameraControls?.resetView();
 window.cameraTopView = () => state.cameraControls?.topView();
 window.cameraSideView = () => state.cameraControls?.sideView();
 window.cameraFocusTorus = () => state.cameraControls?.focusTorus();
+window.cameraViewPreset = (name: string) => state.cameraControls?.applyViewPreset(name);
+window.toggleAutoRotate = () => {
+    const active = state.cameraControls?.toggleAutoRotate();
+    const btn = document.getElementById('btn-auto-rotate');
+    if (btn) {
+        btn.textContent = active ? 'Auto: On' : 'Auto: Off';
+        btn.classList.toggle('active', !!active);
+    }
+};
+window.setCameraViewMode = (mode: string) => state.cameraControls?.setViewMode(mode);
 window.toggleMobileHelp = () => {
     const overlay = document.getElementById('mobile-help-overlay');
     if (overlay) {
@@ -74,6 +85,7 @@ function init() {
         state.network.currentBuffer[0] = +8.0; state.network.currentBuffer[Math.floor(state.network.numNodes/2)] = -8.0;
         state.realityVisualLayer = new RealityVisualLayer(state.scene, state.network, state.particleSystem); state.guidePanel = new GuidePanel(state.network);
         state.cameraControls = new CameraControls(state.camera, state.renderer.domElement);
+        registerCameraKeyboardShortcuts(state.cameraControls);
         state.majorStateObserver = new MajorStateObserver();
         state.observationDisplay = new ObservationDisplay();
 

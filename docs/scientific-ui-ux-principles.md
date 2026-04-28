@@ -99,6 +99,32 @@ API key がなくても、以下を最低限理解できる default guide を用
 
 ---
 
+## 1.6 Camera Controls の原則（U2）
+
+Camera Controls は観測窓の一部であり、field dynamics とは無関係である。
+
+### 許可
+
+- camera orbit / zoom / pan / reset（観察角度の変更）
+- view presets（観察しやすい角度への移動）
+- auto rotate（observation aid — camera motion のみ）
+- damping / lerp（カメラ動作を滑らかにする presentation control）
+
+### 禁止
+
+- auto rotate を「field が流れている」ように見せるための演出として使う
+- cinematic motion を「生命らしさの演出」として追加する
+- camera controls から runtime dynamics / field calculation を変更する
+
+### 明記事項
+
+- `enableDamping` はカメラ操作の見やすさのための presentation control であり、AETERNA の field dynamics とは無関係である
+- auto rotate は camera motion の observation aid であり、field の動きではない
+- view presets はカメラ位置のみを変更し、field 値・energy・trace・return は変更しない
+- View mode = camera orbit on drag、Touch mode = camera orbit 無効で torus input 優先
+
+---
+
 ## 関連文書
 
 - `docs/visualization-integrity-principles.md` — 可視化の整合性原則
