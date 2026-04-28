@@ -191,3 +191,38 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 - Node bridge 未実装 ✅
 - semantic / consciousness claim なし ✅
 - build が通る ✅
+
+---
+
+## S5: Local Excitability Field
+
+**目的**: AETERNA のトーラス生命場の局所領域ごとの「発火しやすさの条件」を Local Excitability Field として観測する。
+
+これは neuron node の配置ではなく、pre-neural / pre-semantic な field profile です。
+
+**実装済み**:
+- `src/types/localExcitabilityField.ts` — LocalExcitabilityCell + LocalExcitabilityFieldState 型
+- `src/observer/deriveLocalExcitabilityField.ts` — observer-side pure function
+- `src/tests/behavioral/localExcitabilityField.test.ts` — 13 behavioral tests
+- `src/tests/scenario/localExcitabilityScenario.ts` — S5-A〜S5-H シナリオ
+- `src/experiments/runScenario.ts` — MetricsSnapshot / ScenarioResult / ループ / サマリーへの統合
+- docs 更新: update-cycle / metrics-protocol / natural-emergence-principles / implementation-language-guardrails / current-roadmap
+
+### S5 完了条件
+
+- `LocalExcitabilityCell` 型がある ✅
+- `LocalExcitabilityFieldState` 型がある ✅
+- `deriveLocalExcitabilityField` がある ✅
+- excitability / thresholdProximity / refractoryDepth / recoveryProgress / traceResidue / returnInfluence / propagationTendency / localResistance / localDissipation が導出される ✅
+- observer / metrics に Local Excitability Field が表示される ✅
+- scenario / behavioral test (S5-A〜S5-H) がある ✅
+- docs に Local Excitability Field の位置づけが追記されている ✅
+- neuron node を配置していない ✅
+- path formation はまだ実装していない ✅
+- semantic leak がない ✅
+- build が通る ✅
+
+### 次のステップ
+
+- S6: Path Formation by Repeated Flow — Local Excitability Field を前提条件として使用
+- S7: Proto-Network

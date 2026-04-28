@@ -1204,3 +1204,53 @@ W8 で導入した `ClosedLoopScenarioSummary` の指標一覧。
 - これらは stabilization success の指標ではない
 - feedback は現象を直接生成しない
 - on/off ablation 比較で差が極端すぎないことも監視対象に含める
+
+---
+
+## S5 Local Excitability Field
+
+### Overview
+
+Local Excitability Field は、AETERNA トーラス生命場の局所領域ごとの「発火しやすさの条件」を観測するための pre-neural / pre-semantic field profile です。
+
+これは neuron node の配置でも、発火を命令するものでもありません。
+観測するだけです。
+
+### Metric Categories
+
+#### D.6.1 Measured
+
+- **local activation level** (`activationLevel`) — その局所領域の現在の活動量
+- **raw return influence** (`returnInfluence`) — World Medium からの Sensory Return が局所 excitability にどれだけ影響しているか
+- **raw trace residue** (`traceResidue`) — 過去の流れ・戻り・発火の痕跡がどれくらい残っているか
+
+#### D.6.2 Derived
+
+- **excitability** — activationLevel, thresholdProximity, traceResidue, returnInfluence, propagationTendency, recoveryProgress, (1-localResistance) の合成
+- **thresholdProximity** — その領域が少しの perturbation で立ち上がりやすい条件に近いか
+- **recoveryProgress** — refractory / overload / local depletion からどれくらい戻っているか
+- **propagationTendency** — 近傍へ活動が伝わりやすい条件にあるか
+- **localResistance** — その領域が流れをどれくらい通しにくいか
+- **localDissipation** — その領域で活動や痕跡がどれくらい散逸しやすいか
+- **refractoryDepth** — 直前の発火や負荷による、一時的な発火しにくさ
+
+#### D.6.3 Proxy
+
+- **highExcitabilityRegionCount** — excitability >= 0.6 の領域数
+- **nearThresholdRegionCount** — thresholdProximity >= 0.6 の領域数
+- **recoveringRegionCount** — recovery 中の領域数
+- **regionalGradientStrength** — 隣接領域間の excitability 勾配の強さ
+- **fieldConfidence** — 観測全体の信頼度 (data availability proxy)
+- **localHotspotCount** — excitability > 0.7 の領域数
+
+### Important Notes
+
+- Local Excitability Field は **neuron node ではない**
+- region は **意味ラベルではない** (u0-v0 形式の座標識別子)
+- **thresholdProximity が高い = 発火命令ではない** — 観測のみ
+- S5 では発火させない、path を作らない
+- 表示ラベルは "Local Excitability Field / pre-neural field profile" とすること
+- "neuron" "brain node" "meaning" と表示しない
+- Implemented in `src/observer/deriveLocalExcitabilityField.ts`
+- Types in `src/types/localExcitabilityField.ts`
+- Tests in `src/tests/behavioral/localExcitabilityField.test.ts` and `src/tests/scenario/localExcitabilityScenario.ts`

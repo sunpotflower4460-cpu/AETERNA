@@ -156,3 +156,14 @@ closureCoupling は：
 - loopGain / returnStrength / closureStability などから proxy として導出される
 - 意識の証明ではない
 - 閉ループ由来の立ち上がり可能性を示す observer-side 指標
+
+## S5: Local Excitability Field の位置づけ
+
+S5 では proto-neuron の前段として局所 excitability 条件を観測する。
+
+- `excitability` は発火命令ではない — 発火しやすさの条件が重なった結果として観測されるもの
+- Local Excitability Field は neuron node ではない
+- `thresholdProximity` は「threshold を超えたから発火する」信号ではない
+- S5 は純粋な pre-neural / pre-semantic な field profile である
+- S5 の段階では proto-neuron 本実装には進まない
+- proto-neuron / proto-network はまだ observer candidate のまま

@@ -49,8 +49,10 @@ import { deriveMediumProfileState } from '../closure/deriveMediumProfileState.ts
 import { deriveMinimalNaturalFeedback } from '../closure/deriveMinimalNaturalFeedback.ts';
 import { applyMinimalNaturalFeedback } from '../closure/applyMinimalNaturalFeedback.ts';
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
+import { deriveLocalExcitabilityField } from '../observer/deriveLocalExcitabilityField.ts';
 import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
 import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
+import type { LocalExcitabilityFieldState } from '../types/localExcitabilityField.ts';
 import type { WorldMediumState } from '../types/worldMediumState.ts';
 import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
@@ -360,6 +362,21 @@ export interface MetricsSnapshot {
     nf_actuationEnabled?: boolean;
     nf_bodySurfaceEnabled?: boolean;
     nf_traceEnabled?: boolean;
+    // S5: Local Excitability Field (observer-side, read-only pre-neural field profile)
+    lef_regionCount?: number;
+    lef_averageExcitability?: number;
+    lef_maxExcitability?: number;
+    lef_averageThresholdProximity?: number;
+    lef_averageTraceResidue?: number;
+    lef_averageReturnInfluence?: number;
+    lef_averagePropagationTendency?: number;
+    lef_highExcitabilityRegionCount?: number;
+    lef_nearThresholdRegionCount?: number;
+    lef_recoveringRegionCount?: number;
+    lef_fieldConfidence?: number;
+    lef_excitabilityVariance?: number;
+    lef_regionalGradientStrength?: number;
+    lef_localHotspotCount?: number;
 }
 
 export interface ScenarioResult {
@@ -578,6 +595,21 @@ export interface ScenarioResult {
         naturalFeedbackAppliedTargetCount?: number;
         naturalFeedbackLastAppliedTargets?: NaturalFeedbackTarget[];
         naturalFeedbackFlags?: NaturalFeedbackAblationFlags;
+        // S5: Local Excitability Field summaries (observer-side, read-only)
+        avgLefAverageExcitability?: number;
+        avgLefMaxExcitability?: number;
+        avgLefAverageThresholdProximity?: number;
+        avgLefAverageTraceResidue?: number;
+        avgLefAverageReturnInfluence?: number;
+        avgLefAveragePropagationTendency?: number;
+        avgLefHighExcitabilityRegionCount?: number;
+        avgLefNearThresholdRegionCount?: number;
+        avgLefRecoveringRegionCount?: number;
+        avgLefFieldConfidence?: number;
+        avgLefExcitabilityVariance?: number;
+        avgLefRegionalGradientStrength?: number;
+        maxLefHighExcitabilityRegionCount?: number;
+        maxLefNearThresholdRegionCount?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -870,6 +902,7 @@ function buildMetricsSnapshot(
     naturalFeedbackReport?: NaturalFeedbackApplicationReport | null,
     actuationPulseGeneratedCount = 0,
     actuationPulseNullCount = 0,
+    localExcitabilityFieldState?: LocalExcitabilityFieldState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -1267,6 +1300,24 @@ function buildMetricsSnapshot(
         snapshot.nf_traceEnabled = naturalFeedbackReport.enabledFlags.naturalFeedbackTraceEnabled;
     }
 
+    // S5: Add Local Excitability Field (observer-side, pre-neural field profile, read-only)
+    if (localExcitabilityFieldState) {
+        snapshot.lef_regionCount = localExcitabilityFieldState.regionCount;
+        snapshot.lef_averageExcitability = localExcitabilityFieldState.averageExcitability;
+        snapshot.lef_maxExcitability = localExcitabilityFieldState.maxExcitability;
+        snapshot.lef_averageThresholdProximity = localExcitabilityFieldState.averageThresholdProximity;
+        snapshot.lef_averageTraceResidue = localExcitabilityFieldState.averageTraceResidue;
+        snapshot.lef_averageReturnInfluence = localExcitabilityFieldState.averageReturnInfluence;
+        snapshot.lef_averagePropagationTendency = localExcitabilityFieldState.averagePropagationTendency;
+        snapshot.lef_highExcitabilityRegionCount = localExcitabilityFieldState.highExcitabilityRegionCount;
+        snapshot.lef_nearThresholdRegionCount = localExcitabilityFieldState.nearThresholdRegionCount;
+        snapshot.lef_recoveringRegionCount = localExcitabilityFieldState.recoveringRegionCount;
+        snapshot.lef_fieldConfidence = localExcitabilityFieldState.fieldConfidence;
+        snapshot.lef_excitabilityVariance = localExcitabilityFieldState.excitabilityVariance;
+        snapshot.lef_regionalGradientStrength = localExcitabilityFieldState.regionalGradientStrength;
+        snapshot.lef_localHotspotCount = localExcitabilityFieldState.localHotspotCount;
+    }
+
     return snapshot;
 }
 
@@ -1350,6 +1401,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // W7: Proto-neuron observation state (observer-side proxy, read-only)
     let lastProtoNeuronObservationState: ProtoNeuronObservationState | null = null;
+
+    // S5: Local Excitability Field (observer-side, pre-neural field profile, read-only)
+    let lastLocalExcitabilityFieldState: LocalExcitabilityFieldState | null = null;
 
     // W3–W6: world-loop observer state (read-only)
     let worldMediumState: WorldMediumState = {
@@ -1928,6 +1982,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 ongoingness: frameOngoingness,
                 previousState: lastProtoNeuronObservationState,
             });
+
+            // S5: Derive Local Excitability Field (observer-side, read-only, no core impact)
+            try {
+                lastLocalExcitabilityFieldState = deriveLocalExcitabilityField({
+                    trace: traceState,
+                    returns: lastSensoryReturns,
+                    closure: lastBodyWorldClosureState,
+                    mediumProfile: lastMediumProfileState,
+                    viability: lastDynamicViabilityState,
+                    previousField: lastLocalExcitabilityFieldState,
+                    dt,
+                });
+            } catch (_e) {
+                // Observer derivation failed — skip silently, no core impact
+            }
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
@@ -1970,6 +2039,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 lastNaturalFeedbackReport,
                 actuationPulseGeneratedCount,
                 actuationPulseNullCount,
+                lastLocalExcitabilityFieldState,
             ));
         }
     }
@@ -2248,6 +2318,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgNfFeedbackDominanceRisk = 0;
     let naturalFeedbackAppliedTargetCount = 0;
     let naturalFeedbackCount = 0;
+
+    // S5: Local Excitability Field summary accumulators
+    let avgLefAverageExcitability = 0;
+    let avgLefMaxExcitability = 0;
+    let avgLefAverageThresholdProximity = 0;
+    let avgLefAverageTraceResidue = 0;
+    let avgLefAverageReturnInfluence = 0;
+    let avgLefAveragePropagationTendency = 0;
+    let avgLefHighExcitabilityRegionCount = 0;
+    let avgLefNearThresholdRegionCount = 0;
+    let avgLefRecoveringRegionCount = 0;
+    let avgLefFieldConfidence = 0;
+    let avgLefExcitabilityVariance = 0;
+    let avgLefRegionalGradientStrength = 0;
+    let maxLefHighExcitabilityRegionCount = 0;
+    let maxLefNearThresholdRegionCount = 0;
+    let lefCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -2553,6 +2640,25 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             naturalFeedbackAppliedTargetCount += m.nf_appliedTargetCount ?? 0;
             naturalFeedbackCount++;
         }
+
+        // S5: Accumulate Local Excitability Field metrics
+        if (m.lef_averageExcitability !== undefined) {
+            avgLefAverageExcitability += m.lef_averageExcitability;
+            avgLefMaxExcitability += m.lef_maxExcitability ?? 0;
+            avgLefAverageThresholdProximity += m.lef_averageThresholdProximity ?? 0;
+            avgLefAverageTraceResidue += m.lef_averageTraceResidue ?? 0;
+            avgLefAverageReturnInfluence += m.lef_averageReturnInfluence ?? 0;
+            avgLefAveragePropagationTendency += m.lef_averagePropagationTendency ?? 0;
+            avgLefHighExcitabilityRegionCount += m.lef_highExcitabilityRegionCount ?? 0;
+            avgLefNearThresholdRegionCount += m.lef_nearThresholdRegionCount ?? 0;
+            avgLefRecoveringRegionCount += m.lef_recoveringRegionCount ?? 0;
+            avgLefFieldConfidence += m.lef_fieldConfidence ?? 0;
+            avgLefExcitabilityVariance += m.lef_excitabilityVariance ?? 0;
+            avgLefRegionalGradientStrength += m.lef_regionalGradientStrength ?? 0;
+            maxLefHighExcitabilityRegionCount = Math.max(maxLefHighExcitabilityRegionCount, m.lef_highExcitabilityRegionCount ?? 0);
+            maxLefNearThresholdRegionCount = Math.max(maxLefNearThresholdRegionCount, m.lef_nearThresholdRegionCount ?? 0);
+            lefCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -2789,6 +2895,22 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgNfFeedbackDominanceRisk /= naturalFeedbackCount;
     }
 
+    // S5: Compute Local Excitability Field averages
+    if (lefCount > 0) {
+        avgLefAverageExcitability /= lefCount;
+        avgLefMaxExcitability /= lefCount;
+        avgLefAverageThresholdProximity /= lefCount;
+        avgLefAverageTraceResidue /= lefCount;
+        avgLefAverageReturnInfluence /= lefCount;
+        avgLefAveragePropagationTendency /= lefCount;
+        avgLefHighExcitabilityRegionCount /= lefCount;
+        avgLefNearThresholdRegionCount /= lefCount;
+        avgLefRecoveringRegionCount /= lefCount;
+        avgLefFieldConfidence /= lefCount;
+        avgLefExcitabilityVariance /= lefCount;
+        avgLefRegionalGradientStrength /= lefCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -3008,6 +3130,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             naturalFeedbackAppliedTargetCount: naturalFeedbackCount > 0 ? naturalFeedbackAppliedTargetCount : undefined,
             naturalFeedbackLastAppliedTargets: lastNaturalFeedbackReport.appliedTargets,
             naturalFeedbackFlags,
+            // S5: Local Excitability Field summaries (observer-side, read-only)
+            avgLefAverageExcitability: lefCount > 0 ? avgLefAverageExcitability : undefined,
+            avgLefMaxExcitability: lefCount > 0 ? avgLefMaxExcitability : undefined,
+            avgLefAverageThresholdProximity: lefCount > 0 ? avgLefAverageThresholdProximity : undefined,
+            avgLefAverageTraceResidue: lefCount > 0 ? avgLefAverageTraceResidue : undefined,
+            avgLefAverageReturnInfluence: lefCount > 0 ? avgLefAverageReturnInfluence : undefined,
+            avgLefAveragePropagationTendency: lefCount > 0 ? avgLefAveragePropagationTendency : undefined,
+            avgLefHighExcitabilityRegionCount: lefCount > 0 ? avgLefHighExcitabilityRegionCount : undefined,
+            avgLefNearThresholdRegionCount: lefCount > 0 ? avgLefNearThresholdRegionCount : undefined,
+            avgLefRecoveringRegionCount: lefCount > 0 ? avgLefRecoveringRegionCount : undefined,
+            avgLefFieldConfidence: lefCount > 0 ? avgLefFieldConfidence : undefined,
+            avgLefExcitabilityVariance: lefCount > 0 ? avgLefExcitabilityVariance : undefined,
+            avgLefRegionalGradientStrength: lefCount > 0 ? avgLefRegionalGradientStrength : undefined,
+            maxLefHighExcitabilityRegionCount: lefCount > 0 ? maxLefHighExcitabilityRegionCount : undefined,
+            maxLefNearThresholdRegionCount: lefCount > 0 ? maxLefNearThresholdRegionCount : undefined,
         },
         succeeded,
         failureReason,
