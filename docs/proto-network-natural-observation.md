@@ -314,6 +314,19 @@ S6 は proto-network の前段として、繰り返し流れた結果として�
 - S6 は S7 Proto-Network Candidate Observation の前段である
 - proto-network はまだ S6 では本実装しない
 
+## S7 Implementation Notes
+
+S7 Proto-Network Candidate Observation の実装において：
+
+- `ProtoNetworkCandidate` は observer-side の観測候補である
+- runtime graph / semantic edge / concept relation を作らない
+- `regionIds` / `pathCandidateIds` は観測 ID であり、意味ラベルではない
+- `weakPlasticity` は観測値であり、runtime weight 強化ではない
+- `closureCoupling` は "世界を理解した" を意味しない
+- confidence が高い = 意味がある、ではない
+
+S7 は S8 Long-Run Natural Emergence Scenarios の前段である。
+
 ## S8: Long-Run Observation Phase
 
 S8 is the long-run observation phase for proto-network candidate emergence. Over 200+ ticks per scenario, it accumulates:

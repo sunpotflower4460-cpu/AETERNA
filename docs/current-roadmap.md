@@ -251,9 +251,38 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 
 - S6: Path Formation by Repeated Flow — Local Excitability Field を前提条件として使用
 - S7: Proto-Network
-- S8: Long-Run Natural Emergence Scenarios — S0–S7 全要素の長時間統合検証
 
----
+## S7: Proto-Network Candidate Observation
+
+**目的**: S6 Repeated Flow Path Candidate のグループを観察し、network-like な統計パターンが見られるかを observer-side に記録する。
+
+これは semantic network / concept graph / knowledge graph ではなく、pre-semantic な network-like observation candidate です。
+
+**実装済み**:
+- `src/types/protoNetworkCandidate.ts` — ProtoNetworkCandidate + ProtoNetworkObservationState 型
+- `src/observer/deriveProtoNetworkCandidates.ts` — observer-side pure function
+- `src/tests/behavioral/protoNetworkCandidate.test.ts` — 13 behavioral tests
+- `src/tests/scenario/protoNetworkCandidateScenario.ts` — S7-A〜S7-I シナリオ
+- `src/experiments/runScenario.ts` — MetricsSnapshot / ScenarioResult / ループ / サマリーへの統合
+- docs 更新: update-cycle / metrics-protocol / natural-emergence-principles / implementation-language-guardrails / current-roadmap
+
+### S7 完了条件
+
+- `ProtoNetworkCandidate` 型がある ✅
+- `ProtoNetworkObservationState` 型がある ✅
+- `deriveProtoNetworkCandidates` がある ✅
+- coActivationStrength / propagationStrength / recurrenceStrength / traceCorrelation / replayCoReturn / closureCoupling / weakPlasticity / confidence が導出される ✅
+- observer / metrics に Proto-Network Candidate が表示される ✅
+- scenario / behavioral test (S7-A〜S7-I) がある ✅
+- docs に Proto-Network Candidate の位置づけが追記されている ✅
+- runtime edge / graph を作っていない ✅
+- semantic leak がない ✅
+- Node bridge はしない ✅
+- build が通る ✅
+
+### 次のステップ
+
+- S8: Long-Run Natural Emergence Scenarios — Proto-Network Candidate を前提条件として使用
 
 ## S8: Long-Run Natural Emergence Scenarios
 

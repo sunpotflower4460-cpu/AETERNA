@@ -612,6 +612,35 @@ observer / future proto-network candidate observation (S7+)
 - **Important**: Read-only. Does not create runtime edges, modify medium conditions, or perform semantic interpretation.
 - **Derived fields per candidate**: flowCount, recurrenceStrength, propagationConsistency, delayConsistency, traceSupport, resistanceShift, dissipationShift, replayAffinity, closureCoupling, confidence
 
+## S7: Proto-Network Candidate Observation
+
+S7 adds a pre-semantic proto-network candidate observation stage, built on top of the S6 Repeated Flow Paths.
+
+```text
+derive local excitability field
+↓
+observe repeated flow paths
+↓
+observe proto-network candidates  ← NEW (S7)
+↓
+observer / future long-run emergence scenarios
+```
+
+Note:
+- Proto-Network Candidate は observer-side
+- runtime graph ではない
+- semantic interpretation はしない
+- Node bridge はしない
+
+### S7 Proto-Network Candidate Stage (Observer / scenario-debug path)
+- **Location**: `src/observer/deriveProtoNetworkCandidates.ts`
+- **Role**: Derive pre-semantic proto-network candidates from observed co-activation, propagation, recurrence, trace correlation, replay co-return, and closure coupling across S6 path groups
+- **Call**: `deriveProtoNetworkCandidates(params)`
+- **Output**: `ProtoNetworkObservationState` with `ProtoNetworkCandidate[]`
+- **Input sources**: localField, repeatedFlowPaths, protoNeuronObservation, trace, mediumProfile, closure, reafference, viability, previousObservation
+- **Important**: Read-only. Does not create runtime edges, graphs, or semantic interpretations.
+- **Derived fields per candidate**: coActivationStrength, propagationStrength, recurrenceStrength, traceCorrelation, replayCoReturn, closureCoupling, weakPlasticity, confidence
+
 ## S8 Long-Run Natural Emergence Scenarios ordering
 
 S8 adds a long-run headless scenario runner that exercises S0–S7 components together over extended tick counts to observe whether pre-semantic structures arise naturally under various world-medium conditions.

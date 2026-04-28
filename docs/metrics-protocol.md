@@ -1302,6 +1302,33 @@ These are NOT semantic relations, memory routes, meaning links, or runtime graph
 - Types in `src/types/repeatedFlowPath.ts`
 - Tests in `src/tests/behavioral/repeatedFlowPath.test.ts` and `src/tests/scenario/repeatedFlowPathScenario.ts`
 
+## S7: Proto-Network Candidate Observation
+
+Pre-semantic, observer-side observation of network-like patterns emerging from repeated flow, co-activation, trace correlation, replay co-return, and closure coupling.
+
+**This is NOT a semantic network, concept graph, knowledge graph, or memory graph.**
+
+### Measured
+
+- co-activation event count (pairs of regions/paths activating in same time window)
+- repeated path group count (groups of paths observed recurrently)
+- observed path overlap count (paths appearing together across multiple frames)
+
+### Derived
+
+- `coActivationStrength`: strength of co-activation across region/path groups
+- `propagationStrength`: consistency of directional flow across path groups
+- `recurrenceStrength`: repeated appearance of the same region/path groups
+- `traceCorrelation`: trace/residue correlations across multiple paths/regions
+- `replayCoReturn`: multiple paths weakly returning together in quiet/replay state
+
+### Proxy
+
+- `closureCoupling`: correlation with Body-World Closure events (return, mismatch, drift)
+- `weakPlasticity`: observation of thresholdProximity/resistance/dissipation shift after repetition (NOT runtime weight change)
+- `confidence`: composite observation confidence (NOT semantic certainty)
+- `networkStability`: how consistently candidate persists across frames
+
 ## LongRunEmergenceScenarioSummary Metrics (S8)
 
 `LongRunEmergenceScenarioSummary` aggregates per-tick metrics across a full long-run scenario run:

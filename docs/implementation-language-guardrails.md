@@ -462,6 +462,33 @@ S4 では delay / echo / resistance を observer-side profile として記録す
 - fromRegionId / toRegionId は座標識別子 (`u\d+-v\d+` 形式)
 - `relation` `meaning link` `memory path` と表示しない
 
+## S7: Proto-Network Candidate Language Guardrails
+
+### 避ける名前 (Avoid)
+
+- `createNetwork`
+- `buildNetwork`
+- `createGraph`
+- `buildGraph`
+- `createRelationGraph`
+- `semanticNetwork`
+- `knowledgeGraph`
+- `memoryGraph`
+- `strengthenNetworkEdge`
+- `promoteToNode`
+- `addEdge`
+- `networkEdge`
+- `relationEdge`
+
+### 推奨名 (Recommended)
+
+- `observeProtoNetworkCandidates`
+- `deriveProtoNetworkCandidates`
+- `observeNetworkLikePattern`
+- `deriveCoActivationGroup`
+- `deriveRepeatedPathGroup`
+- `observeReplayCoReturn`
+
 ## S8 Scenario Name Guardrail
 
 S8 scenario names (e.g., `S8-A-quiet-world`, `S8-B-weak-repeated-return`) are **research labels only**. They describe the simulated world-medium condition, not a semantic state, cognitive state, or life state of AETERNA.
