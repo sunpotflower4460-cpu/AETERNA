@@ -8,12 +8,18 @@
     "skipLibCheck": true,
     "noEmit": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "jsx": "react-jsx"
   },
   "include": [
     "src/bridge/**/*.ts",
     "src/signal/**/*.ts",
-    "src/types/**/*.ts"
+    "src/types/**/*.ts",
+    "src/domain/**/*.ts",
+    "src/pages/**/*.tsx",
+    "src/components/**/*.tsx",
+    "src/motherNew/**/*.tsx",
+    "src/motherNew/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"]
 }

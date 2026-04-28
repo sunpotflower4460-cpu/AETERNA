@@ -349,3 +349,13 @@ S8 verifies long-run natural emergence behavior across quiet, repeated return, d
 - Node bridge 未実装 ✅
 - semantic / consciousness claim なし ✅
 - build が通る ✅
+
+## Phase 24 — App Download Packet / Working Set Builder ✅
+
+- **New React SPA**: `mother-new.html` entry point with sidebar navigation shell
+- **Domain**: `src/domain/motherNew/` — types, repository, index search, safety checks, working set builder, packet builder, history
+- **UI**: `src/components/motherNew/` (7 components) + `src/pages/MotherNewDownloadPage.tsx`
+- **Features**: App context form, query-driven working set build, safety-filtered download packet, copy-to-clipboard JSON, packet history (localStorage, last 50)
+- **Safety**: quarantined / rejected / low-trust records excluded by default; cautions embedded in every packet
+- **No Crystal writes**: packet history uses `node-mother:mother-new:packet-history` key only
+- External app connections: not yet implemented (MVP)
