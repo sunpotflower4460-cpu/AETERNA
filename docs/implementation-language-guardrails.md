@@ -339,6 +339,39 @@ S3 では feedback を導入しても、語彙は依然として命令型に寄�
 - `applyMinimalNaturalFeedback` — weak condition adjustment 適用
 - `feedbackDominanceRisk` — feedback 支配リスクの observer proxy
 
+## S4 Medium Profile 追記（2026-04-28）
+
+S4 では delay / echo / resistance を observer-side profile として記録する。
+
+### 避けるべき実装名（S4 追加）
+
+- `fixDelayNow` / `shortenDelay` — delay を command で改善する示唆
+- `boostEcho` / `preserveEcho` — echo を演出的に増やす示唆
+- `reduceResistanceNow` / `openBoundaryNow` — resistance を命令で下げる示唆
+- `forceMediumBalance` — balance を命令値にする示唆
+- `stabilizeMedium` — command-style stabilization
+
+### 推奨する実装名（S4 追加）
+
+- `deriveDelayProfile` — delay profile 導出
+- `deriveEchoProfile` — echo profile 導出
+- `deriveResistanceProfile` — resistance profile 導出
+- `deriveMediumProfileState` — combined medium profile 導出
+- `unstableDelayScore` / `echoSaturationRisk` / `mediumAbsorption` — observer proxy
+
+### 表示ガイド
+
+- `Medium Profile / Delay-Echo-Resistance`
+- `Measured / Derived / Proxy`
+- `research / diagnostic`
+
+以下の表示は避ける:
+
+- `natural fluctuation`
+- `life feeling`
+- `the system wants to stabilize`
+- `self-adjusting consciousness`
+
 ### 避ける説明
 
 - `stabilization command`

@@ -47,7 +47,7 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 | **S1** | Flow / Resistance / Dissipation Audit | ✅ 完了（2026-04-27） |
 | **S2** | Dynamic Viability State | ✅ 完了（2026-04-27） |
 | **S3** | Minimal Natural Feedback | ✅ 完了（2026-04-27） |
-| **S4** | Delay / Echo / Resistance Profile | 未着手 |
+| **S4** | Delay / Echo / Resistance Profile | ✅ 完了（2026-04-28） |
 | **S5** | Local Excitability Field | 未着手 |
 | **S6** | Path Formation by Repeated Flow | 未着手 |
 | **S7** | Proto-Network Candidate Observation | 未着手 |
@@ -100,6 +100,18 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 - 適用先が `World Medium` / `Sensory Return` / `Actuation Pulse` / `Body Surface` / `Trace` に限定されている ✅
 - ablation flag がある ✅
 - observer / metrics / scenario / docs に反映されている ✅
+- command-style stabilization を追加していない ✅
+- artificial fluctuation を追加していない ✅
+- semantic leak がない ✅
+- build が通る ✅
+
+### S4 完了条件
+
+- `DelayProfileState` / `EchoProfileState` / `ResistanceProfileState` がある ✅
+- `MediumProfileState` と `deriveMediumProfileState(...)` がある ✅
+- `deriveDelayProfile(...)` / `deriveEchoProfile(...)` / `deriveResistanceProfile(...)` がある ✅
+- observer / metrics / scenario / docs に反映されている ✅
+- S3 feedback へ直接強く接続していない ✅
 - command-style stabilization を追加していない ✅
 - artificial fluctuation を追加していない ✅
 - semantic leak がない ✅

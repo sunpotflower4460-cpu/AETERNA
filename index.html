@@ -815,6 +815,41 @@
                           </div>
                       </div>
                   </div>
+                  <div>
+                      <div class="flex justify-between items-center cursor-pointer text-cyan-400 font-bold mb-1 border-b border-white/10 pb-0.5 hover:text-cyan-300" onclick="toggleAccordion('sec-medium-profile', 'icon-medium-profile')">
+                          <span class="tracking-wider">MEDIUM PROFILE / DELAY-ECHO-RESISTANCE</span>
+                          <svg id="icon-medium-profile" class="w-3 h-3 transform transition-transform collapsed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div id="sec-medium-profile" class="accordion-grid collapsed">
+                          <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+                              <div class="text-[9px] uppercase tracking-[0.2em] text-white/40 pt-1">Delay (derived / proxy)</div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Average proxy of round-trip return delay across recent samples." id="row-medium-delay-average"><span>Average return delay</span><span id="val-medium-delay-average" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Minimum recent return-delay proxy." id="row-medium-delay-min"><span>Min return delay</span><span id="val-medium-delay-min" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Maximum recent return-delay proxy." id="row-medium-delay-max"><span>Max return delay</span><span id="val-medium-delay-max" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Variance of recent return-delay proxies." id="row-medium-delay-variance"><span>Delay variance</span><span id="val-medium-delay-variance" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Stability window of recent delay samples. Higher means delay stayed in a narrower band." id="row-medium-delay-stable-window"><span>Stable delay window</span><span id="val-medium-delay-stable-window" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Delay irregularity warning only. It does not command stabilization." id="row-medium-delay-unstable-score"><span>Unstable delay score</span><span id="val-medium-delay-unstable-score" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Coupling between delayed return and echo residue." id="row-medium-delay-delayed-echo"><span>Delayed echo score</span><span id="val-medium-delay-delayed-echo" class="text-white">0.000</span></div>
+                              <div class="text-[9px] uppercase tracking-[0.2em] text-white/40 pt-2">Echo (derived / proxy)</div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Aggregate echo residue strength across world echo and return-linked residue." id="row-medium-echo-strength"><span>Echo strength</span><span id="val-medium-echo-strength" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Observed echo decay rate. Higher means residue is dissipating faster." id="row-medium-echo-decay"><span>Echo decay rate</span><span id="val-medium-echo-decay" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Persistence of echo-related residue in the loop medium." id="row-medium-echo-persistence"><span>Echo persistence</span><span id="val-medium-echo-persistence" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] High echo without enough decay is recorded here as saturation risk only." id="row-medium-echo-saturation"><span>Echo saturation risk</span><span id="val-medium-echo-saturation" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED/DERIVED] Current visual-side echo residue proxy from World Medium." id="row-medium-visual-residue"><span>Visual echo residue</span><span id="val-medium-visual-residue" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[MEASURED/DERIVED] Current force-side echo residue proxy from World Medium." id="row-medium-force-residue"><span>Force echo residue</span><span id="val-medium-force-residue" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Coupling between echo return packets, world impact, and closure return strength." id="row-medium-return-coupling"><span>Return-echo coupling</span><span id="val-medium-return-coupling" class="text-white">0.000</span></div>
+                              <div class="text-[9px] uppercase tracking-[0.2em] text-white/40 pt-2">Resistance (derived / proxy)</div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Aggregate world-side resistance / damping proxy." id="row-medium-world-resistance"><span>World resistance</span><span id="val-medium-world-resistance" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Boundary-layer resistance proxy from integrity / permeability / shielding." id="row-medium-boundary-resistance"><span>Boundary resistance</span><span id="val-medium-boundary-resistance" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] How much return is reduced relative to pulse strength." id="row-medium-return-attenuation"><span>Return attenuation</span><span id="val-medium-return-attenuation" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Composite absorption / damping proxy across world, boundary, and return reduction." id="row-medium-medium-absorption"><span>Medium absorption</span><span id="val-medium-medium-absorption" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[DERIVED] Pulse-to-return transmission ratio. High means closer to pass-through." id="row-medium-transmission-ratio"><span>Transmission ratio</span><span id="val-medium-transmission-ratio" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Balance readout only; it does not command a middle state." id="row-medium-resistance-balance"><span>Resistance balance</span><span id="val-medium-resistance-balance" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Spread between world / boundary / return resistance conditions." id="row-medium-resistance-variance"><span>Resistance variance</span><span id="val-medium-resistance-variance" class="text-white">0.000</span></div>
+                              <div class="flex justify-between has-tooltip" data-tooltip="[PROXY] Composite confidence for this observer-side medium profile." id="row-medium-profile-confidence"><span>Profile confidence</span><span id="val-medium-profile-confidence" class="text-white">0.000</span></div>
+                          </div>
+                      </div>
+                  </div>
               </div>
             </div>
         </div>

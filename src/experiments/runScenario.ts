@@ -45,6 +45,7 @@ import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
 import { deriveDynamicViabilityState } from '../closure/deriveDynamicViabilityState.ts';
+import { deriveMediumProfileState } from '../closure/deriveMediumProfileState.ts';
 import { deriveMinimalNaturalFeedback } from '../closure/deriveMinimalNaturalFeedback.ts';
 import { applyMinimalNaturalFeedback } from '../closure/applyMinimalNaturalFeedback.ts';
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
@@ -55,6 +56,7 @@ import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
 import type { BodyWorldClosureState } from '../types/bodyWorldClosureState.ts';
 import type { DynamicViabilityState } from '../types/dynamicViabilityState.ts';
+import type { MediumProfileState } from '../types/mediumProfileState.ts';
 import {
     createNeutralNaturalFeedbackAdjustment,
     normalizeNaturalFeedbackFlags,
@@ -312,6 +314,29 @@ export interface MetricsSnapshot {
     dv_traceContinuity?: number;
     dv_mediumExchangeBalance?: number;
     dv_closureViability?: number;
+    // S4: Medium Profile / Delay-Echo-Resistance (observer-side, read-only)
+    mp_delayAverageReturnDelay?: number;
+    mp_delayMinReturnDelay?: number;
+    mp_delayMaxReturnDelay?: number;
+    mp_delayVariance?: number;
+    mp_delayStableDelayWindow?: number;
+    mp_delayUnstableDelayScore?: number;
+    mp_delayDelayedEchoScore?: number;
+    mp_echoStrength?: number;
+    mp_echoDecayRate?: number;
+    mp_echoPersistence?: number;
+    mp_echoSaturationRisk?: number;
+    mp_echoVisualResidue?: number;
+    mp_echoForceResidue?: number;
+    mp_echoReturnCoupling?: number;
+    mp_resistanceWorldResistance?: number;
+    mp_resistanceBoundaryResistance?: number;
+    mp_resistanceReturnAttenuation?: number;
+    mp_resistanceMediumAbsorption?: number;
+    mp_resistanceTransmissionRatio?: number;
+    mp_resistanceBalance?: number;
+    mp_resistanceVariance?: number;
+    mp_profileConfidence?: number;
     // S3: Minimal Natural Feedback (weak medium-condition adjustment)
     nf_echoDecayAdjustment?: number;
     nf_returnGainAdjustment?: number;
@@ -525,6 +550,17 @@ export interface ScenarioResult {
         avgDvTraceContinuity?: number;
         avgDvMediumExchangeBalance?: number;
         avgDvClosureViability?: number;
+        avgMpDelayAverageReturnDelay?: number;
+        avgMpDelayVariance?: number;
+        avgMpDelayStableDelayWindow?: number;
+        avgMpDelayUnstableDelayScore?: number;
+        avgMpEchoStrength?: number;
+        avgMpEchoDecayRate?: number;
+        avgMpEchoSaturationRisk?: number;
+        avgMpResistanceWorldResistance?: number;
+        avgMpResistanceReturnAttenuation?: number;
+        avgMpResistanceTransmissionRatio?: number;
+        avgMpProfileConfidence?: number;
         avgNfEchoDecayAdjustment?: number;
         avgNfReturnGainAdjustment?: number;
         avgNfPulseLeakageAdjustment?: number;
@@ -829,6 +865,7 @@ function buildMetricsSnapshot(
     bodySurfaceState?: BodySurfaceState | null,
     actuationPulse?: ActuationPulse | null,
     dynamicViabilityState?: DynamicViabilityState | null,
+    mediumProfileState?: MediumProfileState | null,
     naturalFeedbackAdjustment?: NaturalFeedbackAdjustment | null,
     naturalFeedbackReport?: NaturalFeedbackApplicationReport | null,
     actuationPulseGeneratedCount = 0,
@@ -1177,6 +1214,31 @@ function buildMetricsSnapshot(
         snapshot.dv_closureViability = dynamicViabilityState.closureViability;
     }
 
+    if (mediumProfileState) {
+        snapshot.mp_delayAverageReturnDelay = mediumProfileState.delay.averageReturnDelay;
+        snapshot.mp_delayMinReturnDelay = mediumProfileState.delay.minReturnDelay;
+        snapshot.mp_delayMaxReturnDelay = mediumProfileState.delay.maxReturnDelay;
+        snapshot.mp_delayVariance = mediumProfileState.delay.delayVariance;
+        snapshot.mp_delayStableDelayWindow = mediumProfileState.delay.stableDelayWindow;
+        snapshot.mp_delayUnstableDelayScore = mediumProfileState.delay.unstableDelayScore;
+        snapshot.mp_delayDelayedEchoScore = mediumProfileState.delay.delayedEchoScore;
+        snapshot.mp_echoStrength = mediumProfileState.echo.echoStrength;
+        snapshot.mp_echoDecayRate = mediumProfileState.echo.echoDecayRate;
+        snapshot.mp_echoPersistence = mediumProfileState.echo.echoPersistence;
+        snapshot.mp_echoSaturationRisk = mediumProfileState.echo.echoSaturationRisk;
+        snapshot.mp_echoVisualResidue = mediumProfileState.echo.visualEchoResidue;
+        snapshot.mp_echoForceResidue = mediumProfileState.echo.forceEchoResidue;
+        snapshot.mp_echoReturnCoupling = mediumProfileState.echo.returnEchoCoupling;
+        snapshot.mp_resistanceWorldResistance = mediumProfileState.resistance.worldResistance;
+        snapshot.mp_resistanceBoundaryResistance = mediumProfileState.resistance.boundaryResistance;
+        snapshot.mp_resistanceReturnAttenuation = mediumProfileState.resistance.returnAttenuation;
+        snapshot.mp_resistanceMediumAbsorption = mediumProfileState.resistance.mediumAbsorption;
+        snapshot.mp_resistanceTransmissionRatio = mediumProfileState.resistance.transmissionRatio;
+        snapshot.mp_resistanceBalance = mediumProfileState.resistance.resistanceBalance;
+        snapshot.mp_resistanceVariance = mediumProfileState.resistance.resistanceVariance;
+        snapshot.mp_profileConfidence = mediumProfileState.profileConfidence;
+    }
+
     if (naturalFeedbackAdjustment) {
         snapshot.nf_echoDecayAdjustment = naturalFeedbackAdjustment.echoDecayAdjustment;
         snapshot.nf_returnGainAdjustment = naturalFeedbackAdjustment.returnGainAdjustment;
@@ -1298,6 +1360,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let lastReafferenceComparisonState: ReafferenceComparisonState | null = null;
     let lastBodyWorldClosureState: BodyWorldClosureState | null = null;
     let lastDynamicViabilityState: DynamicViabilityState | null = null;
+    let lastMediumProfileState: MediumProfileState | null = null;
     let lastNaturalFeedbackAdjustment: NaturalFeedbackAdjustment = createNeutralNaturalFeedbackAdjustment(worldMediumState.timestamp);
     let lastNaturalFeedbackReport: NaturalFeedbackApplicationReport = {
         appliedTargets: [],
@@ -1817,6 +1880,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 previousViability: lastDynamicViabilityState,
                 dt,
             });
+            lastMediumProfileState = deriveMediumProfileState({
+                closure: lastBodyWorldClosureState,
+                reafference: lastReafferenceComparisonState,
+                world: worldMediumState,
+                bodySurface: lastBodySurfaceState,
+                pulse: lastActuationPulse,
+                returns: lastSensoryReturns,
+                viability: lastDynamicViabilityState,
+                previousProfile: lastMediumProfileState,
+                dt,
+            });
             lastNaturalFeedbackAdjustment = deriveMinimalNaturalFeedback({
                 viability: lastDynamicViabilityState,
                 closure: lastBodyWorldClosureState,
@@ -1858,6 +1932,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
             lastDynamicViabilityState = null;
+            lastMediumProfileState = null;
             lastNaturalFeedbackAdjustment = createNeutralNaturalFeedbackAdjustment(frame);
             lastNaturalFeedbackReport = {
                 appliedTargets: [],
@@ -1890,6 +1965,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 lastBodySurfaceState,
                 lastActuationPulse,
                 lastDynamicViabilityState,
+                lastMediumProfileState,
                 lastNaturalFeedbackAdjustment,
                 lastNaturalFeedbackReport,
                 actuationPulseGeneratedCount,
@@ -2144,6 +2220,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgDvMediumExchangeBalance = 0;
     let avgDvClosureViability = 0;
     let dvCount = 0;
+    let avgMpDelayAverageReturnDelay = 0;
+    let avgMpDelayVariance = 0;
+    let avgMpDelayStableDelayWindow = 0;
+    let avgMpDelayUnstableDelayScore = 0;
+    let avgMpEchoStrength = 0;
+    let avgMpEchoDecayRate = 0;
+    let avgMpEchoSaturationRisk = 0;
+    let avgMpResistanceWorldResistance = 0;
+    let avgMpResistanceReturnAttenuation = 0;
+    let avgMpResistanceTransmissionRatio = 0;
+    let avgMpProfileConfidence = 0;
+    let mediumProfileCount = 0;
     let avgNfEchoDecayAdjustment = 0;
     let avgNfReturnGainAdjustment = 0;
     let avgNfPulseLeakageAdjustment = 0;
@@ -2432,6 +2520,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             dvCount++;
         }
 
+        if (m.mp_delayAverageReturnDelay !== undefined) {
+            avgMpDelayAverageReturnDelay += m.mp_delayAverageReturnDelay;
+            avgMpDelayVariance += m.mp_delayVariance ?? 0;
+            avgMpDelayStableDelayWindow += m.mp_delayStableDelayWindow ?? 0;
+            avgMpDelayUnstableDelayScore += m.mp_delayUnstableDelayScore ?? 0;
+            avgMpEchoStrength += m.mp_echoStrength ?? 0;
+            avgMpEchoDecayRate += m.mp_echoDecayRate ?? 0;
+            avgMpEchoSaturationRisk += m.mp_echoSaturationRisk ?? 0;
+            avgMpResistanceWorldResistance += m.mp_resistanceWorldResistance ?? 0;
+            avgMpResistanceReturnAttenuation += m.mp_resistanceReturnAttenuation ?? 0;
+            avgMpResistanceTransmissionRatio += m.mp_resistanceTransmissionRatio ?? 0;
+            avgMpProfileConfidence += m.mp_profileConfidence ?? 0;
+            mediumProfileCount++;
+        }
+
         if (m.nf_adjustmentStrength !== undefined) {
             avgNfEchoDecayAdjustment += m.nf_echoDecayAdjustment ?? 0;
             avgNfReturnGainAdjustment += m.nf_returnGainAdjustment ?? 0;
@@ -2655,6 +2758,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgDvClosureViability /= dvCount;
     }
 
+    if (mediumProfileCount > 0) {
+        avgMpDelayAverageReturnDelay /= mediumProfileCount;
+        avgMpDelayVariance /= mediumProfileCount;
+        avgMpDelayStableDelayWindow /= mediumProfileCount;
+        avgMpDelayUnstableDelayScore /= mediumProfileCount;
+        avgMpEchoStrength /= mediumProfileCount;
+        avgMpEchoDecayRate /= mediumProfileCount;
+        avgMpEchoSaturationRisk /= mediumProfileCount;
+        avgMpResistanceWorldResistance /= mediumProfileCount;
+        avgMpResistanceReturnAttenuation /= mediumProfileCount;
+        avgMpResistanceTransmissionRatio /= mediumProfileCount;
+        avgMpProfileConfidence /= mediumProfileCount;
+    }
+
     if (naturalFeedbackCount > 0) {
         avgNfEchoDecayAdjustment /= naturalFeedbackCount;
         avgNfReturnGainAdjustment /= naturalFeedbackCount;
@@ -2863,6 +2980,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgDvTraceContinuity: dvCount > 0 ? avgDvTraceContinuity : undefined,
             avgDvMediumExchangeBalance: dvCount > 0 ? avgDvMediumExchangeBalance : undefined,
             avgDvClosureViability: dvCount > 0 ? avgDvClosureViability : undefined,
+            avgMpDelayAverageReturnDelay: mediumProfileCount > 0 ? avgMpDelayAverageReturnDelay : undefined,
+            avgMpDelayVariance: mediumProfileCount > 0 ? avgMpDelayVariance : undefined,
+            avgMpDelayStableDelayWindow: mediumProfileCount > 0 ? avgMpDelayStableDelayWindow : undefined,
+            avgMpDelayUnstableDelayScore: mediumProfileCount > 0 ? avgMpDelayUnstableDelayScore : undefined,
+            avgMpEchoStrength: mediumProfileCount > 0 ? avgMpEchoStrength : undefined,
+            avgMpEchoDecayRate: mediumProfileCount > 0 ? avgMpEchoDecayRate : undefined,
+            avgMpEchoSaturationRisk: mediumProfileCount > 0 ? avgMpEchoSaturationRisk : undefined,
+            avgMpResistanceWorldResistance: mediumProfileCount > 0 ? avgMpResistanceWorldResistance : undefined,
+            avgMpResistanceReturnAttenuation: mediumProfileCount > 0 ? avgMpResistanceReturnAttenuation : undefined,
+            avgMpResistanceTransmissionRatio: mediumProfileCount > 0 ? avgMpResistanceTransmissionRatio : undefined,
+            avgMpProfileConfidence: mediumProfileCount > 0 ? avgMpProfileConfidence : undefined,
             avgNfEchoDecayAdjustment: naturalFeedbackCount > 0 ? avgNfEchoDecayAdjustment : undefined,
             avgNfReturnGainAdjustment: naturalFeedbackCount > 0 ? avgNfReturnGainAdjustment : undefined,
             avgNfPulseLeakageAdjustment: naturalFeedbackCount > 0 ? avgNfPulseLeakageAdjustment : undefined,

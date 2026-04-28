@@ -466,6 +466,8 @@ Body-World Closure Metrics (W6)
 ↓
 Dynamic Viability State (S2)
 ↓
+Medium Profile / Delay-Echo-Resistance (S4)
+↓
 Observer / future minimal natural feedback (S3+)
 ↓
 Perturbation + Mismatch (既存)
@@ -476,6 +478,7 @@ Torus Life Field
 - W0: docs のみ固定。runtime 変更なし。
 - W1〜W8: 段階的に実装。
 - S2 Dynamic Viability は observer / metrics 追加であり、S2 では feedback しない。
+- S4 Medium Profile は observer / metrics 追加であり、delay / echo / resistance を直接良くする command ではない。
 - proto-neuron は W7 で観測開始。最初から置かない。
 - real sensor は後段（W3 は simulated world のみ）。
 
@@ -504,6 +507,8 @@ World-loop observer/scenario runs now treat minimal natural feedback in the foll
 ```text
 derive dynamic viability state
 ↓
+derive medium profiles (S4 observer material)
+↓
 derive minimal natural feedback
 ↓
 apply weak condition adjustment to allowed media / boundary / transfer parameters
@@ -517,3 +522,28 @@ next tick world / body / return update
 - next tick 以降の条件に薄く効く形に留める
 - semantic interpretation はしない
 - mode direct switch / random pulse / suppress all / reset world は行わない
+
+## S4 Medium Profile ordering
+
+S4 adds an observer-side profile stage to the world loop:
+
+```text
+derive sensory return
+↓
+derive reafference comparison
+↓
+derive body-world closure metrics
+↓
+derive dynamic viability state
+↓
+derive delay / echo / resistance profiles
+↓
+observer / future minimal natural feedback material
+```
+
+重要な制約:
+
+- Medium Profile は command ではなく観測素材
+- S4 自体は pulse / world / return を直接変更しない
+- same tick で強い stabilization を掛けない
+- semantic interpretation はしない

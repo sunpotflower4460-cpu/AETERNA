@@ -294,3 +294,15 @@ if (dynamicViability.extinctionRisk > 0.8) {
 ```
 
 正しい方向は、`deriveMinimalNaturalFeedback(...)` と `applyWeakConditionAdjustment(...)` により、**次 tick 以降の媒質条件に薄く効く** 形である。
+
+## S4: Medium Profile / Delay-Echo-Resistance との関係
+
+S4 では、`DynamicViabilityState` を直接変更せず、閉ループ媒質の delay / echo / resistance condition を別 profile として観測する。
+
+- `deriveMediumProfileState(...)` は `BodyWorldClosureState` / `ReafferenceComparisonState` / `WorldMediumState` / `BodySurfaceState` / `ActuationPulse` / `SensoryReturnPacket[]` を読み、`MediumProfileState` を返す
+- profile は `DelayProfileState` / `EchoProfileState` / `ResistanceProfileState` に分かれる
+- これは viability を命令する層ではなく、observer / metrics / scenario comparison 用の素材である
+- delay / echo / resistance があること自体を善悪で判定しない
+- semantic interpretation はしない
+
+将来的には Dynamic Viability や Minimal Natural Feedback の input material になりうるが、S4 自体では pulse / world / return を直接変更しない。
