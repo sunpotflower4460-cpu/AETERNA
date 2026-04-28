@@ -50,9 +50,11 @@ import { deriveMinimalNaturalFeedback } from '../closure/deriveMinimalNaturalFee
 import { applyMinimalNaturalFeedback } from '../closure/applyMinimalNaturalFeedback.ts';
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
 import { deriveLocalExcitabilityField } from '../observer/deriveLocalExcitabilityField.ts';
+import { deriveRepeatedFlowPaths } from '../observer/deriveRepeatedFlowPaths.ts';
 import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
 import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
 import type { LocalExcitabilityFieldState } from '../types/localExcitabilityField.ts';
+import type { RepeatedFlowPathObservationState } from '../types/repeatedFlowPath.ts';
 import type { WorldMediumState } from '../types/worldMediumState.ts';
 import type { SensoryReturnPacket } from '../types/sensoryReturnPacket.ts';
 import type { ReafferenceComparisonState } from '../types/reafferenceComparisonState.ts';
@@ -377,6 +379,16 @@ export interface MetricsSnapshot {
     lef_excitabilityVariance?: number;
     lef_regionalGradientStrength?: number;
     lef_localHotspotCount?: number;
+    // S6: Repeated Flow Path Candidates (observer-side, read-only pre-semantic path observation)
+    rfp_pathCandidateCount?: number;
+    rfp_stablePathCandidateCount?: number;
+    rfp_averageConfidence?: number;
+    rfp_maxConfidence?: number;
+    rfp_averageRecurrenceStrength?: number;
+    rfp_averagePropagationConsistency?: number;
+    rfp_averageTraceSupport?: number;
+    rfp_averageClosureCoupling?: number;
+    rfp_observationConfidence?: number;
 }
 
 export interface ScenarioResult {
@@ -610,6 +622,17 @@ export interface ScenarioResult {
         avgLefRegionalGradientStrength?: number;
         maxLefHighExcitabilityRegionCount?: number;
         maxLefNearThresholdRegionCount?: number;
+        // S6: Repeated Flow Path summaries (observer-side, read-only pre-semantic path observation)
+        avgRfpPathCandidateCount?: number;
+        avgRfpStablePathCandidateCount?: number;
+        avgRfpAverageConfidence?: number;
+        maxRfpMaxConfidence?: number;
+        avgRfpAverageRecurrenceStrength?: number;
+        avgRfpAveragePropagationConsistency?: number;
+        avgRfpAverageTraceSupport?: number;
+        avgRfpAverageClosureCoupling?: number;
+        avgRfpObservationConfidence?: number;
+        rfpStablePathFrames?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -903,6 +926,7 @@ function buildMetricsSnapshot(
     actuationPulseGeneratedCount = 0,
     actuationPulseNullCount = 0,
     localExcitabilityFieldState?: LocalExcitabilityFieldState | null,
+    repeatedFlowPathObservationState?: RepeatedFlowPathObservationState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -1318,6 +1342,19 @@ function buildMetricsSnapshot(
         snapshot.lef_localHotspotCount = localExcitabilityFieldState.localHotspotCount;
     }
 
+    // S6: Add Repeated Flow Path observation state (observer-side, pre-semantic path observation, read-only)
+    if (repeatedFlowPathObservationState) {
+        snapshot.rfp_pathCandidateCount = repeatedFlowPathObservationState.pathCandidateCount;
+        snapshot.rfp_stablePathCandidateCount = repeatedFlowPathObservationState.stablePathCandidateCount;
+        snapshot.rfp_averageConfidence = repeatedFlowPathObservationState.averageConfidence;
+        snapshot.rfp_maxConfidence = repeatedFlowPathObservationState.maxConfidence;
+        snapshot.rfp_averageRecurrenceStrength = repeatedFlowPathObservationState.averageRecurrenceStrength;
+        snapshot.rfp_averagePropagationConsistency = repeatedFlowPathObservationState.averagePropagationConsistency;
+        snapshot.rfp_averageTraceSupport = repeatedFlowPathObservationState.averageTraceSupport;
+        snapshot.rfp_averageClosureCoupling = repeatedFlowPathObservationState.averageClosureCoupling;
+        snapshot.rfp_observationConfidence = repeatedFlowPathObservationState.observationConfidence;
+    }
+
     return snapshot;
 }
 
@@ -1404,6 +1441,10 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     // S5: Local Excitability Field (observer-side, pre-neural field profile, read-only)
     let lastLocalExcitabilityFieldState: LocalExcitabilityFieldState | null = null;
+
+    // S6: Repeated Flow Path (observer-side, pre-semantic path observation, read-only)
+    let lastRepeatedFlowPathObservationState: RepeatedFlowPathObservationState | null = null;
+    let previousLocalExcitabilityFieldState: LocalExcitabilityFieldState | null = null;
 
     // W3–W6: world-loop observer state (read-only)
     let worldMediumState: WorldMediumState = {
@@ -1997,6 +2038,26 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             } catch (_e) {
                 // Observer derivation failed — skip silently, no core impact
             }
+
+            // S6: Derive Repeated Flow Path Observation (observer-side, read-only, no core impact)
+            try {
+                const prevLef = previousLocalExcitabilityFieldState;
+                lastRepeatedFlowPathObservationState = deriveRepeatedFlowPaths({
+                    localField: lastLocalExcitabilityFieldState,
+                    previousLocalField: prevLef,
+                    trace: traceState,
+                    mediumProfile: lastMediumProfileState,
+                    closure: lastBodyWorldClosureState,
+                    reafference: lastReafferenceComparisonState,
+                    viability: lastDynamicViabilityState,
+                    previousObservation: lastRepeatedFlowPathObservationState,
+                    dt,
+                });
+                previousLocalExcitabilityFieldState = lastLocalExcitabilityFieldState;
+            } catch (_e) {
+                // Observer derivation failed — skip silently, no core impact
+                previousLocalExcitabilityFieldState = lastLocalExcitabilityFieldState;
+            }
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
@@ -2040,6 +2101,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 actuationPulseGeneratedCount,
                 actuationPulseNullCount,
                 lastLocalExcitabilityFieldState,
+                lastRepeatedFlowPathObservationState,
             ));
         }
     }
@@ -2335,6 +2397,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let maxLefHighExcitabilityRegionCount = 0;
     let maxLefNearThresholdRegionCount = 0;
     let lefCount = 0;
+
+    // S6: Repeated Flow Path summary accumulators
+    let avgRfpPathCandidateCount = 0;
+    let avgRfpStablePathCandidateCount = 0;
+    let avgRfpAverageConfidence = 0;
+    let maxRfpMaxConfidence = 0;
+    let avgRfpAverageRecurrenceStrength = 0;
+    let avgRfpAveragePropagationConsistency = 0;
+    let avgRfpAverageTraceSupport = 0;
+    let avgRfpAverageClosureCoupling = 0;
+    let avgRfpObservationConfidence = 0;
+    let rfpStablePathFrames = 0;
+    let rfpCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -2659,6 +2734,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             maxLefNearThresholdRegionCount = Math.max(maxLefNearThresholdRegionCount, m.lef_nearThresholdRegionCount ?? 0);
             lefCount++;
         }
+
+        // S6: Accumulate Repeated Flow Path metrics
+        if (m.rfp_observationConfidence !== undefined) {
+            avgRfpPathCandidateCount += m.rfp_pathCandidateCount ?? 0;
+            avgRfpStablePathCandidateCount += m.rfp_stablePathCandidateCount ?? 0;
+            avgRfpAverageConfidence += m.rfp_averageConfidence ?? 0;
+            maxRfpMaxConfidence = Math.max(maxRfpMaxConfidence, m.rfp_maxConfidence ?? 0);
+            avgRfpAverageRecurrenceStrength += m.rfp_averageRecurrenceStrength ?? 0;
+            avgRfpAveragePropagationConsistency += m.rfp_averagePropagationConsistency ?? 0;
+            avgRfpAverageTraceSupport += m.rfp_averageTraceSupport ?? 0;
+            avgRfpAverageClosureCoupling += m.rfp_averageClosureCoupling ?? 0;
+            avgRfpObservationConfidence += m.rfp_observationConfidence;
+            if ((m.rfp_stablePathCandidateCount ?? 0) > 0) rfpStablePathFrames++;
+            rfpCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -2911,6 +3001,18 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgLefRegionalGradientStrength /= lefCount;
     }
 
+    // S6: Compute Repeated Flow Path averages
+    if (rfpCount > 0) {
+        avgRfpPathCandidateCount /= rfpCount;
+        avgRfpStablePathCandidateCount /= rfpCount;
+        avgRfpAverageConfidence /= rfpCount;
+        avgRfpAverageRecurrenceStrength /= rfpCount;
+        avgRfpAveragePropagationConsistency /= rfpCount;
+        avgRfpAverageTraceSupport /= rfpCount;
+        avgRfpAverageClosureCoupling /= rfpCount;
+        avgRfpObservationConfidence /= rfpCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -3145,6 +3247,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgLefRegionalGradientStrength: lefCount > 0 ? avgLefRegionalGradientStrength : undefined,
             maxLefHighExcitabilityRegionCount: lefCount > 0 ? maxLefHighExcitabilityRegionCount : undefined,
             maxLefNearThresholdRegionCount: lefCount > 0 ? maxLefNearThresholdRegionCount : undefined,
+            // S6: Repeated Flow Path summaries (observer-side, read-only pre-semantic path observation)
+            avgRfpPathCandidateCount: rfpCount > 0 ? avgRfpPathCandidateCount : undefined,
+            avgRfpStablePathCandidateCount: rfpCount > 0 ? avgRfpStablePathCandidateCount : undefined,
+            avgRfpAverageConfidence: rfpCount > 0 ? avgRfpAverageConfidence : undefined,
+            maxRfpMaxConfidence: rfpCount > 0 ? maxRfpMaxConfidence : undefined,
+            avgRfpAverageRecurrenceStrength: rfpCount > 0 ? avgRfpAverageRecurrenceStrength : undefined,
+            avgRfpAveragePropagationConsistency: rfpCount > 0 ? avgRfpAveragePropagationConsistency : undefined,
+            avgRfpAverageTraceSupport: rfpCount > 0 ? avgRfpAverageTraceSupport : undefined,
+            avgRfpAverageClosureCoupling: rfpCount > 0 ? avgRfpAverageClosureCoupling : undefined,
+            avgRfpObservationConfidence: rfpCount > 0 ? avgRfpObservationConfidence : undefined,
+            rfpStablePathFrames: rfpCount > 0 ? rfpStablePathFrames : undefined,
         },
         succeeded,
         failureReason,

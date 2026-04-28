@@ -238,3 +238,26 @@ S5 では、AETERNA のトーラス生命場の局所領域ごとの励起条件
 - semantic interpretation はしない
 - S6 Path Formation by Repeated Flow の前段として位置づけられる
 - proto-neuron / proto-network はまだ S5 では observer candidate のまま
+
+## S6: Path Formation by Repeated Flow の位置づけ
+
+S6 では、S5 で導入した Local Excitability Field を土台にして、繰り返し流れた結果として観測される流路候補 (Repeated Flow Path Candidate) を observer-side に記録する。
+
+**S6 は path / edge / relation を作る実装ではない。**
+繰り返し流れた結果として通りやすく見える流路のような構造が観測されるかを見るものである。
+
+- `RepeatedFlowPathCandidate`: fromRegionId → toRegionId の観測上の流れ記録 (semantic relation ではない)
+- `RepeatedFlowPathObservationState`: 観測された流路候補の統計的要約
+
+### S6 の原則
+
+- **runtime edge を作らない** — path candidate は runtime グラフ要素ではない
+- **path weight を強化しない** — 「何度も通ったから通りやすくする」という直接命令はしない
+- **semantic relation を追加しない** — fromRegionId / toRegionId は座標識別子 (意味ラベルではない)
+- **A → B は「A が B を意味する」ではない** — A 付近の励起の後に B 付近の励起が繰り返し観測された、というだけ
+- **resistance / dissipation shift は観測に留める** — 通った場の媒質条件が変化したかの観測; 媒質条件を本当に変えるのは必要なら後段
+- **replayAffinity は記憶再生ではない** — quiet / low perturbation 時に過去と似た流れが弱く再出現するかの proxy
+- **closureCoupling は意味解釈ではない** — 世界との戻りが局所流れに影響した可能性の観測
+- **observer-side のみ** — organism core dynamics を変更しない
+- **semantic interpretation はしない**
+- **S7 Proto-Network Candidate Observation の前段として位置づけられる**

@@ -167,3 +167,13 @@ S5 では proto-neuron の前段として局所 excitability 条件を観測す�
 - S5 は純粋な pre-neural / pre-semantic な field profile である
 - S5 の段階では proto-neuron 本実装には進まない
 - proto-neuron / proto-network はまだ observer candidate のまま
+
+## S6: Path Formation by Repeated Flow の位置づけ
+
+S6 では、繰り返し流れた結果として観測される流路候補を observer-side に記録する。
+
+- path candidate は意味・記憶・概念の確信ではない — 流れの履歴候補である
+- `RepeatedFlowPathCandidate` は runtime edge / neuron node ではない
+- S6 は path を作る実装ではない — 繰り返し流れの観測である
+- path candidate は semantic link / proto-network edge ではない
+- S6 は S7 Proto-Network Candidate Observation の前段である

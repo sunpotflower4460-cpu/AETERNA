@@ -419,3 +419,45 @@ S4 では delay / echo / resistance を observer-side profile として記録す
 - `neuron`, `brain node`, `meaning`, `memory region`
 - `firing`, `activated neuron`, `neural candidate`
 - `consciousness`, `self-awareness`, `life feeling`
+
+---
+
+## S6 Repeated Flow Path 言語ガイドライン (Path Formation by Repeated Flow)
+
+### 避ける名前
+
+| 禁止名 | 理由 |
+|--------|------|
+| `createPath` | path を先に作らない |
+| `buildPath` | path を先に作らない |
+| `createRelation` | semantic relation ではない |
+| `learnRoute` | 学習させない |
+| `memoryPath` | 記憶経路ではない |
+| `semanticPath` | 意味経路ではない |
+| `strengthenEdge` | edge weight 強化は行わない |
+| `relation`, `edge`, `link` | runtime グラフ要素ではない |
+| `memory`, `learned`, `known route` | 意味的記憶ではない |
+
+### 推奨される表現
+
+| 推奨 | 説明 |
+|------|------|
+| `observeRepeatedFlow` | 繰り返し流れを観測する |
+| `deriveRepeatedFlowPaths` | 繰り返し流路候補を導出する |
+| `derivePathCandidate` | 流路候補を導出する |
+| `observePathResidue` | 流路の痕跡を観測する |
+| `deriveFlowRecurrence` | 流れの再発を導出する |
+| `repeated flow residue` | 繰り返しの流れの痕跡 |
+| `replay co-return` | replay 的な共返り |
+| `weak path reactivation` | 弱い経路再活性 |
+| `observed path affinity` | 観測された経路親和性 |
+| `pre-semantic path observation` | 意味以前の経路観測 |
+| `Repeated Flow Path Candidate` | 正式名称 |
+
+### 表示ガイド
+
+- `Repeated Flow Path Candidate / pre-semantic path observation`
+- `Measured / Derived / Proxy`
+- `research / diagnostic`
+- fromRegionId / toRegionId は座標識別子 (`u\d+-v\d+` 形式)
+- `relation` `meaning link` `memory path` と表示しない
