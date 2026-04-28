@@ -219,3 +219,22 @@ S4 では、World Loop の媒質条件そのものを observer-side に観測す
 - resistance があること自体は悪ではない
 - profile は research / diagnostic 表示に留める
 - semantic interpretation はしない
+
+## S5: Local Excitability Field の位置づけ
+
+S5 では、AETERNA のトーラス生命場の局所領域ごとの励起条件を observer-side に観測する。
+
+- `LocalExcitabilityCell`: 局所領域の excitability / threshold / refractory / recovery / trace / return / propagation / resistance / dissipation
+- `LocalExcitabilityFieldState`: 全領域の統計的要約
+
+ここで重要なのは、発火させることではない。
+重要なのは、**どの局所領域がどんな条件で発火しやすくなっているかを観測すること** である。
+
+- excitability が高い = 発火命令ではない
+- thresholdProximity が高い = 発火させる signal ではない
+- region は意味ラベルではない (u0-v0 形式の座標識別子)
+- Local Excitability Field は neuron node ではない
+- S5 では発火させない、path を作らない
+- semantic interpretation はしない
+- S6 Path Formation by Repeated Flow の前段として位置づけられる
+- proto-neuron / proto-network はまだ S5 では observer candidate のまま

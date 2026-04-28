@@ -547,3 +547,36 @@ observer / future minimal natural feedback material
 - S4 自体は pulse / world / return を直接変更しない
 - same tick で強い stabilization を掛けない
 - semantic interpretation はしない
+
+## S5 Local Excitability Field ordering
+
+S5 adds a pre-neural / pre-semantic excitability field observation stage to the world-loop observer chain.
+
+```text
+derive medium profiles (S4 observer material)
+↓
+derive dynamic viability state
+↓
+derive local excitability field   ← S5 (observer-side, read-only)
+↓
+observer / future path formation observation (S6+)
+```
+
+重要な制約:
+
+- Local Excitability Field は neuron node ではない
+- region は意味ラベルではない (u0-v0 形式の座標識別子)
+- S5 では発火させない、path は作らない
+- observer-side のみ; organism core dynamics を変更しない
+- semantic interpretation はしない
+- S6 Path Formation by Repeated Flow の前段として位置づけられる
+- proto-neuron / proto-network はまだ S5 では実装しない
+
+### S5 Local Excitability Field Stage (Observer / scenario-debug path)
+- **Location**: `src/observer/deriveLocalExcitabilityField.ts`
+- **Role**: Derive pre-neural / pre-semantic local excitability conditions across coarse torus regions
+- **Call**: `deriveLocalExcitabilityField(params)`
+- **Output**: `LocalExcitabilityFieldState` with per-region `LocalExcitabilityCell[]`
+- **Input sources**: trace, sensory returns, body-world closure, medium profile, dynamic viability, previous field
+- **Important**: Read-only. Does not feed back into organism dynamics, does not place neuron nodes, no semantic labels.
+- **Derived fields per cell**: excitability, thresholdProximity, refractoryDepth, recoveryProgress, traceResidue, returnInfluence, propagationTendency, localResistance, localDissipation, confidence

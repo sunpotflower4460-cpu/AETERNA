@@ -306,3 +306,17 @@ S4 では、`DynamicViabilityState` を直接変更せず、閉ループ媒質�
 - semantic interpretation はしない
 
 将来的には Dynamic Viability や Minimal Natural Feedback の input material になりうるが、S4 自体では pulse / world / return を直接変更しない。
+
+## S5: Local Excitability Field との関係
+
+S5 は `DynamicViabilityState` を observer material として使い、局所 excitability を導出する。
+
+- `flowContinuity` / `energyThroughput` → `activationLevel` の構成素材
+- `overCouplingRisk` / `saturationRisk` → `refractoryDepth` の構成素材
+- `dissipationBalance` → `localDissipation` の構成素材
+- `resistanceBalance` → `localResistance` の構成素材
+- `traceContinuity` / `returnContinuity` / `delayCoherence` → `recoveryProgress` の構成素材
+- `closureViability` / `mediumExchangeBalance` → `propagationTendency` の構成素材
+
+S5 は Dynamic Viability を直接変更しない。
+S5 は局所 excitability 条件を観測するだけである。

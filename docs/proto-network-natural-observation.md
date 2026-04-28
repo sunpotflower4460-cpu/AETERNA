@@ -290,3 +290,14 @@ S7 では meaning を与えない。
 - `docs/emergent-proto-neuron-principles.md` — Proto-Neuron の観測原則
 - `docs/body-world-closure-principles.md` — Body-World Closure の基本方針
 - `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
+
+## S5: Local Excitability Field の位置づけ
+
+S5 は proto-network の前段として局所 excitability 条件を観測する。
+
+- Local Excitability Field は neuron node の配置ではない
+- region は意味ラベルではない (u0-v0 形式の座標識別子)
+- S5 では発火させない、path を作らない
+- S5 は S6 Path Formation by Repeated Flow の前段である
+- S7 Proto-Network の前段として位置づけられる
+- proto-neuron / proto-network はまだ S5 では observer candidate のまま

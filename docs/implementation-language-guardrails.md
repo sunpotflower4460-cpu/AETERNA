@@ -379,3 +379,43 @@ S4 では delay / echo / resistance を observer-side profile として記録す
 - `desire`
 - `intentional reopening`
 - `self-protection decision`
+
+## S5: Local Excitability Field の言語ガードレール
+
+### 禁止される表現
+
+| 禁止 | 理由 |
+|------|------|
+| `neuronNode` | S5 は neuron 配置ではない |
+| `fireNeuron()` | S5 は発火させない |
+| `cat-region`, `memory-region`, `sadness-region` | regionId は意味ラベルではない |
+| `semantic excitability` | 意味は持たない |
+| `consciousness field` | 意識主張は禁止 |
+| `if (thresholdProximity > 0.8) fireNeuron()` | S5 では発火させない |
+| `path.formation` | S6 以降のみ |
+| `proto-network` | S7 以降のみ |
+
+### 推奨される表現
+
+| 推奨 | 説明 |
+|------|------|
+| `Local Excitability Field` | field profile の正式名称 |
+| `pre-neural field profile` | semantics 未形成の旨を明示 |
+| `region u0-v0` | 座標識別子を使う |
+| `excitability condition` | 条件を観測する表現 |
+| `threshold proximity` | 閾値近接度 (命令ではない) |
+| `recovery progress` | 回復の進行度 |
+| `refractory depth` | 不応期の深さ |
+
+### 表示ガイド
+
+- `Local Excitability Field / pre-neural field profile`
+- `Measured / Derived / Proxy`
+- `research / diagnostic`
+- `regionId` は `u\d+-v\d+` 形式
+
+以下の表示は避ける:
+
+- `neuron`, `brain node`, `meaning`, `memory region`
+- `firing`, `activated neuron`, `neural candidate`
+- `consciousness`, `self-awareness`, `life feeling`
