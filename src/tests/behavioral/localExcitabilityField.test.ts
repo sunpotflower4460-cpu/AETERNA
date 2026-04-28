@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveLocalExcitabilityField } from '../../observer/deriveLocalExcitabilityField.ts';
 import { runScenario } from '../../experiments/runScenario.ts';
 import { runLocalExcitabilityScenarioSuite } from '../scenario/localExcitabilityScenario.ts';
+import type { SensoryReturnPacket } from '../../types/sensoryReturnPacket.ts';
 
 function deepFreeze<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
@@ -180,7 +181,7 @@ describe('S5: Local Excitability Field', () => {
     // Should not throw even with frozen inputs
     const field = deriveLocalExcitabilityField({
       trace,
-      returns: returns as any,
+      returns: returns as SensoryReturnPacket[],
       closure,
       mediumProfile: null,
       viability: null,
