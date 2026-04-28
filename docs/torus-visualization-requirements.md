@@ -20,29 +20,49 @@ U1 では以下のレイアウト要件を実装した：
 
 ---
 
-## 4.1 必須操作
+## 4.1 必須操作（U2 実装済み）
 
-| 操作 | 要件 |
-|---|---|
-| **drag rotate** | マウスドラッグ / タッチドラッグでトーラスを任意の角度に回転できる |
-| **pinch / wheel zoom** | ピンチ操作またはホイールスクロールでズームできる |
-| **double tap reset view** | ダブルタップ / ダブルクリックでデフォルトビューに戻せる |
-| **mobile gesture support** | タッチデバイスでも回転・ズームが操作できる |
-| **auto rotate** | オプションで自動回転を有効にできる（デフォルトは off） |
-| **view presets** | 以下のプリセットビューを切り替えられる |
+| 操作 | 要件 | 状態 |
+|---|---|---|
+| **drag rotate** | マウスドラッグ / タッチドラッグでトーラスを任意の角度に回転できる | ✅ U2 |
+| **pinch / wheel zoom** | ピンチ操作またはホイールスクロールでズームできる | ✅ U2 |
+| **pan** | 右クリックドラッグ / 中クリックドラッグでパンできる | ✅ U2 |
+| **double tap reset view** | ダブルタップ / ダブルクリックでデフォルトビューに戻せる | ✅ U2 |
+| **R key reset** | R キーでデフォルトビューに戻せる | ✅ U2 |
+| **keyboard presets** | 1–7 キーで view preset に切り替えられる | ✅ U2 |
+| **Space auto rotate** | Space キーで auto rotate を toggle できる | ✅ U2 |
+| **mobile gesture support** | タッチデバイスでも回転・ズームが操作できる | ✅ U2 |
+| **auto rotate** | オプションで自動回転を有効にできる（デフォルトは off） | ✅ U2 |
+| **view presets** | 以下のプリセットビューを切り替えられる | ✅ U2 |
+| **View / Touch mode** | View モードと Touch モードを切り替えられる | ✅ U2 |
+| **Camera HUD** | 現在の view preset / zoom / auto rotate を HUD に表示 | ✅ U2 |
 
 **view presets：**
 
-| プリセット名 | 説明 |
+| プリセット名 | キー | 説明 |
+|---|---|---|
+| Front | 1 | 正面から見たデフォルトビュー |
+| Top | 2 | 上から見た俯瞰ビュー |
+| Side | 3 | 横から見たビュー |
+| Inside Rim | 4 | トーラスの内側リムから見たビュー |
+| Energy Flow View | 5 | Energy Flow が見やすい角度 |
+| Trace View | 6 | Trace / Residue が見やすい角度 |
+| Closure View | 7 | Closure Match が見やすい角度 |
+| Diagnostic View | — | 全体形状・coverage を確認しやすい遠景視点 |
+
+**View / Touch Mode：**
+
+| モード | 動作 |
 |---|---|
-| Front | 正面から見たデフォルトビュー |
-| Top | 上から見た俯瞰ビュー |
-| Side | 横から見たビュー |
-| Inside Rim | トーラスの内側リムから見たビュー |
-| Energy Flow View | Energy Flow が見やすい角度・色設定 |
-| Trace View | Trace / Residue が見やすい角度・色設定 |
-| Closure View | Closure Match が見やすい角度・色設定 |
-| Diagnostic View | region id, coverage, raw intensity を確認するビュー |
+| **View** | ドラッグ → camera orbit（デフォルト）|
+| **Touch** | ドラッグ → camera orbit 無効（将来の torus perturbation input 用）|
+
+どちらのモードでも、タップベースの torus perturbation 入力（既存挙動）は維持される。
+
+**注記：**
+- camera motion は observation aid であり、field dynamics ではない
+- auto rotate は presentation control のみ（field が揺れているように見せるものではない）
+- view presets は値を変更しない
 
 ---
 

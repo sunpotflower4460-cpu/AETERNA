@@ -14,7 +14,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 |---|---|---|
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
 | **U1** | Layout 再設計 | ✅ 完了 |
-| **U2** | Torus Camera / Controls | 未着手 |
+| **U2** | Torus Camera / Controls | ✅ 完了 |
 | **U3** | Scientific Torus Renderer | 未着手 |
 | **U4** | Field Layer Visualization | 未着手 |
 | **U5** | Overview / Now Summary / Event Timeline | 未着手 |
@@ -82,8 +82,64 @@ runtime 挙動は変更しない。fake visual を追加しない。
 
 ## U2: Torus Camera / Controls
 
-**目的**: drag rotate / pinch-zoom / double-tap reset / view presets / auto rotate / mobile gesture を実装し、トーラスを任意の角度から観察できるようにする。  
+**目的**: drag rotate / pinch-zoom / pan / double-tap reset / view presets / auto rotate / keyboard shortcuts / mobile gesture / View-Touch mode を実装し、トーラスを任意の角度から観察できるようにする。  
 `docs/torus-visualization-requirements.md` §4.1 の要件を実装する。
+
+**実装内容**:
+
+- drag rotate（1本指 / 左クリックドラッグ → orbit）
+- pinch zoom（2本指ピンチ）/ wheel zoom
+- pan（右クリック / 中クリックドラッグ、2本指）
+- double-tap / double-click → reset view
+- R キー → reset view
+- 1–7 キー → view preset
+- Space キー → auto rotate toggle
+- 8 view presets: Front / Top / Side / Inside Rim / Energy Flow / Trace / Closure / Diagnostic
+- damping（gentle lerp、観察補助）
+- auto rotate（off by default、observation aid のみ、field dynamics ではない）
+- View / Touch mode toggle（View=orbit on drag、Touch=orbit 無効で torus input 優先）
+- Camera HUD（現在の view preset / zoom / auto rotate 状態を表示）
+- 初期視点 Front（distance=15）でトーラス全体が収まる
+- near=0.1、far=100、fov=50
+
+**新規ファイル**:
+
+- `src/ui/camera/torusViewPresets.ts` — view preset 定義
+- `src/ui/camera/createTorusCameraControls.ts` — keyboard shortcut 登録
+- `src/ui/camera/useTorusCameraControls.ts` — Camera UI state management
+- `src/tests/ui/torusCameraControls.test.ts` — smoke tests（65件）
+
+**更新ファイル**:
+
+- `src/utils/cameraControls.js` — 全面強化（damping, pan, pinch zoom, all 8 presets, auto-rotate, View/Touch mode, Camera HUD）
+- `src/main.ts` — 新 window globals + keyboard shortcut 登録
+- `index.html` — Camera HUD 追加、Camera Viewpoints 拡張（8 presets）、View/Touch toggle 追加、CSS 追加
+
+**重要方針**:
+
+- camera motion は observation aid であり field dynamics ではない（docs / source に明記）
+- auto rotate は presentation control（field が揺れているように見せるものではない）
+- view presets は値を変更しない（カメラ位置のみ変更）
+- View / Touch mode は既存の tap ベース torus perturbation 入力を壊さない
+- runtime dynamics / field calculation / energy / trace / return は変更しない
+- fake visual を追加していない
+
+**完了条件**:
+
+- rotate / zoom / pan / reset ができる ✅
+- view presets がある（8種類）✅
+- auto rotate toggle がある ✅
+- keyboard shortcuts がある（R, 1-7, Space）✅
+- View / Touch mode 切り替えがある ✅
+- Camera HUD がある ✅
+- PC / mobile の操作導線がある ✅
+- 初期視点でトーラス全体が見える ✅
+- runtime 未変更 ✅
+- fake visual なし ✅
+- semantic/consciousness/emotion claim なし ✅
+- build が通る ✅
+- 65件の camera controls テスト通過 ✅
+- 38件の layout structure テスト通過 ✅
 
 ---
 

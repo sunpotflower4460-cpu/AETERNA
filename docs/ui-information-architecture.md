@@ -137,6 +137,56 @@ Layer C: Research Panels  ← ユーザー操作で開閉
 
 ---
 
+## 3.6 U2 Camera / Controls 実装（Camera Layer）
+
+Camera Controls は Layer A（Main Field View）内に統合される観察補助層。
+
+### PC 操作
+
+| 操作 | 動作 |
+|---|---|
+| 左クリックドラッグ | Orbit（torus 回転） |
+| ホイール | Zoom |
+| 右クリック / 中クリックドラッグ | Pan |
+| ダブルクリック | Reset view |
+| R キー | Reset view |
+| 1–7 キー | View preset |
+| Space キー | Auto rotate toggle |
+
+### モバイル操作
+
+| 操作 | 動作 |
+|---|---|
+| 1本指ドラッグ | Orbit（View mode 時）|
+| 2本指ピンチ | Zoom |
+| ダブルタップ | Reset view |
+
+### View / Touch Mode
+
+| モード | Drag の挙動 |
+|---|---|
+| View（デフォルト）| Camera orbit |
+| Touch | Camera orbit 無効（tap ベース torus 入力は両モードで有効）|
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/utils/cameraControls.js` | Camera controls 本体（orbit, zoom, pan, presets, auto-rotate, damping）|
+| `src/ui/camera/torusViewPresets.ts` | 8 view preset 定義（field 値は変更しない）|
+| `src/ui/camera/createTorusCameraControls.ts` | Keyboard shortcut 登録 |
+| `src/ui/camera/useTorusCameraControls.ts` | Camera UI state management |
+| `src/main.ts` | window globals + keyboard shortcut 登録 |
+| `src/tests/ui/torusCameraControls.test.ts` | Camera controls smoke tests（65件）|
+
+### 注記
+
+- camera motion は observation aid であり field dynamics ではない
+- auto rotate は presentation control（field の動きではない）
+- view presets はカメラ位置のみ変更（field 値・energy・trace・return は変更しない）
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則
