@@ -461,3 +461,30 @@ S4 では delay / echo / resistance を observer-side profile として記録す
 - `research / diagnostic`
 - fromRegionId / toRegionId は座標識別子 (`u\d+-v\d+` 形式)
 - `relation` `meaning link` `memory path` と表示しない
+
+## S7: Proto-Network Candidate Language Guardrails
+
+### 避ける名前 (Avoid)
+
+- `createNetwork`
+- `buildNetwork`
+- `createGraph`
+- `buildGraph`
+- `createRelationGraph`
+- `semanticNetwork`
+- `knowledgeGraph`
+- `memoryGraph`
+- `strengthenNetworkEdge`
+- `promoteToNode`
+- `addEdge`
+- `networkEdge`
+- `relationEdge`
+
+### 推奨名 (Recommended)
+
+- `observeProtoNetworkCandidates`
+- `deriveProtoNetworkCandidates`
+- `observeNetworkLikePattern`
+- `deriveCoActivationGroup`
+- `deriveRepeatedPathGroup`
+- `observeReplayCoReturn`

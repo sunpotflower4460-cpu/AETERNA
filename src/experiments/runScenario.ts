@@ -51,6 +51,8 @@ import { applyMinimalNaturalFeedback } from '../closure/applyMinimalNaturalFeedb
 import { deriveProtoNeuronCandidates } from '../observer/deriveProtoNeuronCandidates.ts';
 import { deriveLocalExcitabilityField } from '../observer/deriveLocalExcitabilityField.ts';
 import { deriveRepeatedFlowPaths } from '../observer/deriveRepeatedFlowPaths.ts';
+import { deriveProtoNetworkCandidates } from '../observer/deriveProtoNetworkCandidates.ts';
+import type { ProtoNetworkObservationState } from '../types/protoNetworkCandidate.ts';
 import type { ProtoNeuronCandidate } from '../types/protoNeuronCandidate.ts';
 import type { ProtoNeuronObservationState, ProtoNeuronCoActivationPairSummary } from '../types/protoNeuronObservationState.ts';
 import type { LocalExcitabilityFieldState } from '../types/localExcitabilityField.ts';
@@ -389,6 +391,18 @@ export interface MetricsSnapshot {
     rfp_averageTraceSupport?: number;
     rfp_averageClosureCoupling?: number;
     rfp_observationConfidence?: number;
+    // S7: Proto-Network Candidate Observation (observer-side, read-only pre-semantic network-like observation)
+    pnc_networkCandidateCount?: number;
+    pnc_stableNetworkCandidateCount?: number;
+    pnc_averageConfidence?: number;
+    pnc_maxConfidence?: number;
+    pnc_averageCoActivation?: number;
+    pnc_averagePropagation?: number;
+    pnc_averageRecurrence?: number;
+    pnc_averageTraceCorrelation?: number;
+    pnc_averageReplayCoReturn?: number;
+    pnc_averageClosureCoupling?: number;
+    pnc_observationConfidence?: number;
 }
 
 export interface ScenarioResult {
@@ -633,6 +647,19 @@ export interface ScenarioResult {
         avgRfpAverageClosureCoupling?: number;
         avgRfpObservationConfidence?: number;
         rfpStablePathFrames?: number;
+        // S7: Proto-Network Candidate Observation summaries
+        avgPncNetworkCandidateCount?: number;
+        avgPncStableNetworkCandidateCount?: number;
+        avgPncAverageConfidence?: number;
+        maxPncMaxConfidence?: number;
+        avgPncAverageCoActivation?: number;
+        avgPncAveragePropagation?: number;
+        avgPncAverageRecurrence?: number;
+        avgPncAverageTraceCorrelation?: number;
+        avgPncAverageReplayCoReturn?: number;
+        avgPncAverageClosureCoupling?: number;
+        avgPncObservationConfidence?: number;
+        pncStableNetworkFrames?: number;
         // Phase 1: Ongoingness metrics
         saturationFrames: number;    // frames where maxActivity > 8.0 (soft-clamp onset threshold; values above are suppressed but not clamped)
         saturationRate: number;      // saturationFrames / totalFrames
@@ -927,6 +954,7 @@ function buildMetricsSnapshot(
     actuationPulseNullCount = 0,
     localExcitabilityFieldState?: LocalExcitabilityFieldState | null,
     repeatedFlowPathObservationState?: RepeatedFlowPathObservationState | null,
+    protoNetworkObservationState?: ProtoNetworkObservationState | null,
 ): MetricsSnapshot {
     const snapshot: MetricsSnapshot = {
         frame,
@@ -1355,6 +1383,21 @@ function buildMetricsSnapshot(
         snapshot.rfp_observationConfidence = repeatedFlowPathObservationState.observationConfidence;
     }
 
+    // S7: Add Proto-Network Candidate observation state (observer-side, pre-semantic network-like observation, read-only)
+    if (protoNetworkObservationState) {
+        snapshot.pnc_networkCandidateCount = protoNetworkObservationState.networkCandidateCount;
+        snapshot.pnc_stableNetworkCandidateCount = protoNetworkObservationState.stableNetworkCandidateCount;
+        snapshot.pnc_averageConfidence = protoNetworkObservationState.averageConfidence;
+        snapshot.pnc_maxConfidence = protoNetworkObservationState.maxConfidence;
+        snapshot.pnc_averageCoActivation = protoNetworkObservationState.averageCoActivation;
+        snapshot.pnc_averagePropagation = protoNetworkObservationState.averagePropagation;
+        snapshot.pnc_averageRecurrence = protoNetworkObservationState.averageRecurrence;
+        snapshot.pnc_averageTraceCorrelation = protoNetworkObservationState.averageTraceCorrelation;
+        snapshot.pnc_averageReplayCoReturn = protoNetworkObservationState.averageReplayCoReturn;
+        snapshot.pnc_averageClosureCoupling = protoNetworkObservationState.averageClosureCoupling;
+        snapshot.pnc_observationConfidence = protoNetworkObservationState.observationConfidence;
+    }
+
     return snapshot;
 }
 
@@ -1445,6 +1488,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     // S6: Repeated Flow Path (observer-side, pre-semantic path observation, read-only)
     let lastRepeatedFlowPathObservationState: RepeatedFlowPathObservationState | null = null;
     let previousLocalExcitabilityFieldState: LocalExcitabilityFieldState | null = null;
+
+    // S7: Proto-Network Candidate Observation (observer-side, read-only)
+    let lastProtoNetworkObservationState: ProtoNetworkObservationState | null = null;
 
     // W3–W6: world-loop observer state (read-only)
     let worldMediumState: WorldMediumState = {
@@ -2058,6 +2104,24 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 // Observer derivation failed — skip silently, no core impact
                 previousLocalExcitabilityFieldState = lastLocalExcitabilityFieldState;
             }
+
+            // S7: Derive Proto-Network Candidate Observation (observer-side, read-only, no core impact)
+            try {
+                lastProtoNetworkObservationState = deriveProtoNetworkCandidates({
+                    localField: lastLocalExcitabilityFieldState,
+                    repeatedFlowPaths: lastRepeatedFlowPathObservationState,
+                    protoNeuronObservation: lastProtoNeuronObservationState,
+                    trace: traceState,
+                    mediumProfile: lastMediumProfileState,
+                    closure: lastBodyWorldClosureState,
+                    reafference: lastReafferenceComparisonState,
+                    viability: lastDynamicViabilityState,
+                    previousObservation: lastProtoNetworkObservationState,
+                    dt,
+                });
+            } catch (_e) {
+                // Observer derivation failed — skip silently, no core impact
+            }
         } catch (_e) {
             // Body Surface derivation failed — skip silently, no core impact
             lastActuationPulse = null;
@@ -2102,6 +2166,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
                 actuationPulseNullCount,
                 lastLocalExcitabilityFieldState,
                 lastRepeatedFlowPathObservationState,
+                lastProtoNetworkObservationState,
             ));
         }
     }
@@ -2410,6 +2475,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     let avgRfpObservationConfidence = 0;
     let rfpStablePathFrames = 0;
     let rfpCount = 0;
+
+    // S7: Proto-Network Candidate Observation summary accumulators
+    let avgPncNetworkCandidateCount = 0;
+    let avgPncStableNetworkCandidateCount = 0;
+    let avgPncAverageConfidence = 0;
+    let maxPncMaxConfidence = 0;
+    let avgPncAverageCoActivation = 0;
+    let avgPncAveragePropagation = 0;
+    let avgPncAverageRecurrence = 0;
+    let avgPncAverageTraceCorrelation = 0;
+    let avgPncAverageReplayCoReturn = 0;
+    let avgPncAverageClosureCoupling = 0;
+    let avgPncObservationConfidence = 0;
+    let pncStableNetworkFrames = 0;
+    let pncCount = 0;
 
     for (const m of metrics) {
         if (m.bl_energySense !== undefined) {
@@ -2749,6 +2829,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             if ((m.rfp_stablePathCandidateCount ?? 0) > 0) rfpStablePathFrames++;
             rfpCount++;
         }
+
+        // S7: Accumulate Proto-Network Candidate metrics
+        if (m.pnc_networkCandidateCount !== undefined) {
+            avgPncNetworkCandidateCount += m.pnc_networkCandidateCount;
+            avgPncStableNetworkCandidateCount += m.pnc_stableNetworkCandidateCount ?? 0;
+            avgPncAverageConfidence += m.pnc_averageConfidence ?? 0;
+            maxPncMaxConfidence = Math.max(maxPncMaxConfidence, m.pnc_maxConfidence ?? 0);
+            avgPncAverageCoActivation += m.pnc_averageCoActivation ?? 0;
+            avgPncAveragePropagation += m.pnc_averagePropagation ?? 0;
+            avgPncAverageRecurrence += m.pnc_averageRecurrence ?? 0;
+            avgPncAverageTraceCorrelation += m.pnc_averageTraceCorrelation ?? 0;
+            avgPncAverageReplayCoReturn += m.pnc_averageReplayCoReturn ?? 0;
+            avgPncAverageClosureCoupling += m.pnc_averageClosureCoupling ?? 0;
+            avgPncObservationConfidence += m.pnc_observationConfidence ?? 0;
+            if ((m.pnc_stableNetworkCandidateCount ?? 0) > 0) pncStableNetworkFrames++;
+            pncCount++;
+        }
     }
 
     if (packetCount > 0) {
@@ -3013,6 +3110,20 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
         avgRfpObservationConfidence /= rfpCount;
     }
 
+    // S7: Compute Proto-Network Candidate averages
+    if (pncCount > 0) {
+        avgPncNetworkCandidateCount /= pncCount;
+        avgPncStableNetworkCandidateCount /= pncCount;
+        avgPncAverageConfidence /= pncCount;
+        avgPncAverageCoActivation /= pncCount;
+        avgPncAveragePropagation /= pncCount;
+        avgPncAverageRecurrence /= pncCount;
+        avgPncAverageTraceCorrelation /= pncCount;
+        avgPncAverageReplayCoReturn /= pncCount;
+        avgPncAverageClosureCoupling /= pncCount;
+        avgPncObservationConfidence /= pncCount;
+    }
+
     const avgQueueFillRatio = avgQueueSize / 50.0; // maxCandidates = 50
 
     return {
@@ -3258,6 +3369,19 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
             avgRfpAverageClosureCoupling: rfpCount > 0 ? avgRfpAverageClosureCoupling : undefined,
             avgRfpObservationConfidence: rfpCount > 0 ? avgRfpObservationConfidence : undefined,
             rfpStablePathFrames: rfpCount > 0 ? rfpStablePathFrames : undefined,
+            // S7: Proto-Network Candidate Observation summaries
+            avgPncNetworkCandidateCount: pncCount > 0 ? avgPncNetworkCandidateCount : undefined,
+            avgPncStableNetworkCandidateCount: pncCount > 0 ? avgPncStableNetworkCandidateCount : undefined,
+            avgPncAverageConfidence: pncCount > 0 ? avgPncAverageConfidence : undefined,
+            maxPncMaxConfidence: pncCount > 0 ? maxPncMaxConfidence : undefined,
+            avgPncAverageCoActivation: pncCount > 0 ? avgPncAverageCoActivation : undefined,
+            avgPncAveragePropagation: pncCount > 0 ? avgPncAveragePropagation : undefined,
+            avgPncAverageRecurrence: pncCount > 0 ? avgPncAverageRecurrence : undefined,
+            avgPncAverageTraceCorrelation: pncCount > 0 ? avgPncAverageTraceCorrelation : undefined,
+            avgPncAverageReplayCoReturn: pncCount > 0 ? avgPncAverageReplayCoReturn : undefined,
+            avgPncAverageClosureCoupling: pncCount > 0 ? avgPncAverageClosureCoupling : undefined,
+            avgPncObservationConfidence: pncCount > 0 ? avgPncObservationConfidence : undefined,
+            pncStableNetworkFrames: pncCount > 0 ? pncStableNetworkFrames : undefined,
         },
         succeeded,
         failureReason,

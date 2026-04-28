@@ -177,3 +177,14 @@ S6 では、繰り返し流れた結果として観測される流路候補を o
 - S6 は path を作る実装ではない — 繰り返し流れの観測である
 - path candidate は semantic link / proto-network edge ではない
 - S6 は S7 Proto-Network Candidate Observation の前段である
+
+## S7: Proto-Network Candidate との関係
+
+S7 Proto-Network Candidate Observation は S5/S6 の上に乗る観測層である。
+
+proto-neuron (W7) が局所的な節候補であるのに対して、
+proto-network (S7) は複数の節・流路候補の関係網のように見える構造を観測する。
+
+- proto-neuron から proto-network を作らない
+- proto-network から proto-neuron を増やさない
+- どちらも observer-side candidate である

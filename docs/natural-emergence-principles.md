@@ -261,3 +261,12 @@ S6 では、S5 で導入した Local Excitability Field を土台にして、繰
 - **observer-side のみ** — organism core dynamics を変更しない
 - **semantic interpretation はしない**
 - **S7 Proto-Network Candidate Observation の前段として位置づけられる**
+
+## S7: Proto-Network Candidate Observation の位置づけ
+
+S7 では、S6 で観測した Repeated Flow Path Candidate のグループを観察し、network-like な統計パターンが見られるかを observer-side に記録する。
+
+- proto-network candidate は semantic network / concept graph / knowledge graph ではない
+- `regionIds` / `pathCandidateIds` は観測 ID であり、意味ラベルではない
+- `coActivationStrength` / `propagationStrength` は統計的観測値であり、意味的強度ではない
+- S7 は S8 Long-Run Natural Emergence Scenarios の前段である
