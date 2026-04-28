@@ -394,6 +394,21 @@ function _hudLevel(value, lowThresh, highThresh) {
     return 'normal';
 }
 
+// ── U1 helpers: shared risk computation ──────────────────────────────────────
+
+/**
+ * Compute risk label and CSS level from collapse risk and saturation fraction.
+ * @returns {{ label: string, level: string }}
+ */
+function _computeRisk(collapseRisk, satFrac) {
+    const isHigh = collapseRisk > 0.6 || satFrac > 0.1;
+    const isMod  = collapseRisk > 0.3;
+    return {
+        label: isHigh ? 'high' : isMod ? 'moderate' : 'low',
+        level: isHigh ? 'critical' : isMod ? 'high' : 'low',
+    };
+}
+
 function _setHudChip(id, text, level) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -420,11 +435,9 @@ function _updateHudChips(dyn) {
     _setHudChip('hud-chip-echo', `Echo ${echoLabel}`, 'normal');
 
     // Risk: combined collapse + saturation
-    const cr = dyn.collapseRisk || 0;
     const satFrac = _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0;
-    const riskLabel = cr > 0.6 || satFrac > 0.1 ? 'high' : cr > 0.3 ? 'moderate' : 'low';
-    const riskLevel = cr > 0.6 || satFrac > 0.1 ? 'critical' : cr > 0.3 ? 'high' : 'low';
-    _setHudChip('hud-chip-risk', `Risk ${riskLabel}`, riskLevel);
+    const risk = _computeRisk(dyn.collapseRisk || 0, satFrac);
+    _setHudChip('hud-chip-risk', `Risk ${risk.label}`, risk.level);
 }
 
 // ── U1 helpers: Overview cards ────────────────────────────────────────────────
@@ -458,13 +471,12 @@ function _updateOverviewCards(dyn) {
 
     const satFrac = _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0;
     const satLabel = satFrac > 0.1 ? 'High' : satFrac > 0.03 ? 'Moderate' : 'Low';
-    _setCard('ov-card-saturation', satLabel,
-        satFrac > 0.1 ? 'critical' : satFrac > 0.03 ? 'high' : 'low');
+    const satRisk = _computeRisk(0, satFrac); // saturation-only risk for card level
+    _setCard('ov-card-saturation', satLabel, satRisk.level);
 
     const cr = dyn.collapseRisk || 0;
-    _setCard('ov-card-collapse',
-        cr.toFixed(3),
-        cr > 0.6 ? 'critical' : cr > 0.3 ? 'high' : 'low');
+    const collapseRisk = _computeRisk(cr, 0);
+    _setCard('ov-card-collapse', cr.toFixed(3), collapseRisk.level);
 
     const mode = dyn.modeState || 'wake';
     const action = dyn.actionState || 'idle';

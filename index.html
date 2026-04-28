@@ -288,6 +288,8 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:18px; width:18px; border-radius:50%; background:#fff; cursor:pointer; box-shadow:0 0 8px rgba(255,255,255,0.7); transition:transform 0.1s; margin-top:-7px; }
         input[type=range]::-webkit-slider-thumb:active { transform:scale(1.2); }
         input[type=range]::-webkit-slider-runnable-track { width:100%; height:3px; background:linear-gradient(to right, rgba(34,211,238,0.8) var(--pct,0%), rgba(255,255,255,0.1) var(--pct,0%)); border-radius:2px; }
+        input[type=range]::-moz-range-thumb { height:18px; width:18px; border-radius:50%; background:#fff; cursor:pointer; box-shadow:0 0 8px rgba(255,255,255,0.7); border:none; }
+        input[type=range]::-moz-range-track { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
 
         /* ── Preset buttons ── */
         .preset-btn {
@@ -498,7 +500,10 @@
                 <span id="major-process-label">—</span>
             </div>
         </div>
-        <div id="hud-chips" onclick="selectResearchTab('overview');toggleResearchPanel()">
+        <div id="hud-chips" role="button" tabindex="0"
+             onclick="selectResearchTab('overview');toggleResearchPanel()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){selectResearchTab('overview');toggleResearchPanel();}"
+             aria-label="Open Overview panel">
             <span class="hud-chip" id="hud-chip-flow" title="Flow Continuity (σ cascade proxy)">Flow —</span>
             <span class="hud-chip" id="hud-chip-return" title="Return Strength (recovery pressure)">Return —</span>
             <span class="hud-chip" id="hud-chip-echo" title="Echo Persistence">Echo —</span>

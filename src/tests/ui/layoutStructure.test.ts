@@ -176,12 +176,11 @@ describe('U1: Layout Structure', () => {
             expect(html).not.toContain('artificialFluctuation');
         });
         it('does not contain consciousness / emotion claims in UI text', () => {
-            // emotionalCharge is an existing signal runtime field name (not a claim) - exclude it
-            // Check for actual UI claims using more specific patterns
+            // emotionalCharge is an existing signal runtime field name (not a claim) — excluded by word boundary
             expect(html).not.toContain('consciousness');
             expect(html).not.toContain('self-awareness');
-            // "emotion" as a standalone claim (not "emotionalCharge" signal field or "emotions" in docs)
-            const emotionClaims = html.match(/[^a-zA-Z]emotion[^a-zA-Z]/g) ?? [];
+            // Check "emotion" as a standalone word (not "emotionalCharge")
+            const emotionClaims = html.match(/\bemotion\b/g) ?? [];
             expect(emotionClaims.length).toBe(0);
         });
         it('semantic layer note correctly indicates inactive status', () => {

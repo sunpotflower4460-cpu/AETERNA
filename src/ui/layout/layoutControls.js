@@ -15,6 +15,7 @@ let _explainOpen = false;
 let _eventStripOpen = false;
 let _eventEntries = [];
 const EVENT_STRIP_MAX = 7;
+const EVENT_STRIP_FADE_DURATION = 30000; // ms — time over which entries fade
 
 // ── Research Panel (PC sidebar) ─────────────────────────────────────────────
 
@@ -80,15 +81,21 @@ export function setMobileSheetFull() {
 let _sheetDragStartY = 0;
 let _sheetDragStartState = 'collapsed';
 
+function _getClientY(e) {
+    if (typeof e.clientY === 'number') return e.clientY;
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
+    return 0;
+}
+
 export function onSheetDragStart(e) {
-    _sheetDragStartY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+    _sheetDragStartY = _getClientY(e);
     _sheetDragStartState = _mobileSheetState;
     document.addEventListener('pointermove', _onSheetDragMove, { passive: true });
     document.addEventListener('pointerup', _onSheetDragEnd, { once: true });
 }
 
 function _onSheetDragMove(e) {
-    const dy = _sheetDragStartY - (e.clientY ?? 0);
+    const dy = _sheetDragStartY - _getClientY(e);
     const sheet = document.getElementById('mobile-bottom-sheet');
     if (!sheet) return;
     if (dy > 60 && _sheetDragStartState === 'collapsed') {
@@ -124,7 +131,7 @@ export function addEventStripEntry(text) {
     const now = Date.now();
     _eventEntries.unshift({ text, time: now });
     if (_eventEntries.length > EVENT_STRIP_MAX) {
-        _eventEntries = _eventEntries.slice(0, EVENT_STRIP_MAX);
+        _eventEntries.splice(EVENT_STRIP_MAX);
     }
     _renderEventStrip();
 }
@@ -133,9 +140,9 @@ function _renderEventStrip() {
     const inner = document.getElementById('event-strip-list');
     if (!inner) return;
     const now = Date.now();
-    inner.innerHTML = _eventEntries.map((e, i) => {
+    inner.innerHTML = _eventEntries.map((e) => {
         const age = now - e.time;
-        const opacity = Math.max(0.3, 1 - (age / 30000)); // fade over 30s
+        const opacity = Math.max(0.3, 1 - (age / EVENT_STRIP_FADE_DURATION));
         return `<span class="event-strip-item" style="opacity:${opacity.toFixed(2)}">${e.text}</span>`;
     }).join('');
 }
