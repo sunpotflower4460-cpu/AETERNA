@@ -57,6 +57,8 @@ import type { LongRunEmergenceScenarioConfig, LongRunWorldMode } from './longRun
 
 // ─── Simple seeded PRNG ───────────────────────────────────────────────────────
 
+// xorshift32 — a fast, deterministic PRNG suitable for reproducible headless
+// scenario testing. Not cryptographically secure; used only for test seeding.
 function makeSeededRng(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
@@ -80,6 +82,14 @@ const SEMANTIC_FORBIDDEN_KEYS = [
   'naturalLanguage', 'objectIdentity', 'selfAwareness',
   'iDidThis', 'agentLabel', 'meaningNode',
 ];
+
+// Proto-network proxy thresholds (observer-side only; not semantic criteria)
+const PROTO_NETWORK_MIN_STABLE_PATHS = 2;
+const PROTO_NETWORK_MIN_CLOSURE_COUPLING = 0.35;
+const PROTO_NETWORK_MIN_FLOW_CONTINUITY = 0.40;
+const PROTO_NETWORK_STABLE_MIN_CONFIDENCE = 0.40;
+const PROTO_NETWORK_STABLE_MIN_PATHS = 3;
+const PROTO_NETWORK_EMERGENCE_MIN_CONFIDENCE = 0.50;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -142,7 +152,7 @@ function makeTraceState(timestamp: number, overrides: Partial<TraceState> = {}):
 
 // ─── World mode helpers ───────────────────────────────────────────────────────
 
-function getWorldModeInitialState(mode: LongRunWorldMode, _rng: () => number): Partial<WorldMediumState> {
+function getWorldModeInitialState(mode: LongRunWorldMode): Partial<WorldMediumState> {
   switch (mode) {
     case 'quiet':
       return { mediumStability: 0.72, worldTurbulence: 0.05, motionDrift: 0.08, echoLevel: 0.12, fieldTemperature: 0.40 };
@@ -236,7 +246,7 @@ export function runLongRunEmergenceScenario(params: {
   const startMs = Date.now();
 
   // Initialize world state
-  const modeInitial = getWorldModeInitialState(worldMode, rng);
+  const modeInitial = getWorldModeInitialState(worldMode);
   let worldState: WorldMediumState = { ...initializeWorldMediumState(), ...modeInitial };
   let previousWorldState: WorldMediumState | null = null;
   let previousClosureState: BodyWorldClosureState | null = null;
@@ -245,7 +255,6 @@ export function runLongRunEmergenceScenario(params: {
   let previousViability: DynamicViabilityState | null = null;
   let previousMediumProfile: MediumProfileState | null = null;
   let previousFeedbackAdjustment: NaturalFeedbackAdjustment | null = null;
-  let lastFlowPathObs: RepeatedFlowPathObservationState | null = null;
 
   // Accumulators
   const flowContinuities: number[] = [];
@@ -261,6 +270,7 @@ export function runLongRunEmergenceScenario(params: {
   const returnDelays: number[] = [];
   const transmissionRatios: number[] = [];
   const protoNetworkConfidences: number[] = [];
+  const closureCouplings: number[] = [];
 
   let highExcitabilityRegionCount = 0;
   let repeatedFlowPathCandidateCount = 0;
@@ -411,7 +421,6 @@ export function runLongRunEmergenceScenario(params: {
       dt: DT,
     });
     previousFlowPathObs = flowPathObs;
-    lastFlowPathObs = flowPathObs;
 
     // --- Accumulate metrics ---
     flowContinuities.push(viability.flowContinuity);
@@ -440,21 +449,22 @@ export function runLongRunEmergenceScenario(params: {
 
     // Proto-network candidate proxy: observe if multiple stable paths cluster
     const hasProtoNetworkSignal =
-      flowPathObs.stablePathCandidateCount >= 2 &&
-      flowPathObs.averageClosureCoupling >= 0.35 &&
-      viability.flowContinuity >= 0.40;
+      flowPathObs.stablePathCandidateCount >= PROTO_NETWORK_MIN_STABLE_PATHS &&
+      flowPathObs.averageClosureCoupling >= PROTO_NETWORK_MIN_CLOSURE_COUPLING &&
+      viability.flowContinuity >= PROTO_NETWORK_MIN_FLOW_CONTINUITY;
     if (hasProtoNetworkSignal) {
       protoNetworkCandidateCount++;
+      closureCouplings.push(flowPathObs.averageClosureCoupling);
       const proxyConf = clamp01(
         flowPathObs.averageConfidence * 0.5 +
         viability.flowContinuity * 0.3 +
         closureState.closureStability * 0.2,
       );
       protoNetworkConfidences.push(proxyConf);
-      if (proxyConf >= 0.40 && flowPathObs.stablePathCandidateCount >= 3) {
+      if (proxyConf >= PROTO_NETWORK_STABLE_MIN_CONFIDENCE && flowPathObs.stablePathCandidateCount >= PROTO_NETWORK_STABLE_MIN_PATHS) {
         stableProtoNetworkCandidateCount++;
       }
-      if (proxyConf >= 0.50) {
+      if (proxyConf >= PROTO_NETWORK_EMERGENCE_MIN_CONFIDENCE) {
         emergenceEventCount++;
       }
     }
@@ -526,7 +536,7 @@ export function runLongRunEmergenceScenario(params: {
     nanOrInfinityCount,
     averageProtoNetworkConfidence: protoNetworkConfidences.length > 0 ? average(protoNetworkConfidences) : 0,
     maxProtoNetworkConfidence: protoNetworkConfidences.length > 0 ? Math.max(...protoNetworkConfidences) : 0,
-    averageClosureCoupling: lastFlowPathObs != null ? lastFlowPathObs.averageClosureCoupling : 0,
+    averageClosureCoupling: average(closureCouplings),
     emergenceEventCount,
     collapseEventCount,
     recoveryEventCount,
