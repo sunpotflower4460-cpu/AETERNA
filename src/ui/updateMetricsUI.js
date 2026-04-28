@@ -282,7 +282,7 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-medium-world-resistance'])     UI['val-medium-world-resistance'].innerText     = (dyn.mediumWorldResistance || 0).toFixed(3);
     if (UI['val-medium-boundary-resistance'])  UI['val-medium-boundary-resistance'].innerText  = (dyn.mediumBoundaryResistance || 0).toFixed(3);
     if (UI['val-medium-return-attenuation'])   UI['val-medium-return-attenuation'].innerText   = (dyn.mediumReturnAttenuation || 0).toFixed(3);
-    if (UI['val-medium-medium-absorption'])    UI['val-medium-medium-absorption'].innerText    = (dyn.mediumAbsorption || 0).toFixed(3);
+    if (UI['val-medium-absorption'])           UI['val-medium-absorption'].innerText           = (dyn.mediumAbsorption || 0).toFixed(3);
     if (UI['val-medium-transmission-ratio'])   UI['val-medium-transmission-ratio'].innerText   = (dyn.mediumTransmissionRatio || 0).toFixed(3);
     if (UI['val-medium-resistance-balance'])   UI['val-medium-resistance-balance'].innerText   = (dyn.mediumResistanceBalance || 0).toFixed(3);
     if (UI['val-medium-resistance-variance'])  UI['val-medium-resistance-variance'].innerText  = (dyn.mediumResistanceVariance || 0).toFixed(3);

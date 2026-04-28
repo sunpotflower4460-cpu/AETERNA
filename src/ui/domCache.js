@@ -143,7 +143,7 @@ export function initDOMCache() {
         'val-medium-world-resistance', 'row-medium-world-resistance',
         'val-medium-boundary-resistance', 'row-medium-boundary-resistance',
         'val-medium-return-attenuation', 'row-medium-return-attenuation',
-        'val-medium-medium-absorption', 'row-medium-medium-absorption',
+        'val-medium-absorption', 'row-medium-absorption',
         'val-medium-transmission-ratio', 'row-medium-transmission-ratio',
         'val-medium-resistance-balance', 'row-medium-resistance-balance',
         'val-medium-resistance-variance', 'row-medium-resistance-variance',
