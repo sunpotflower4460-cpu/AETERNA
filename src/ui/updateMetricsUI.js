@@ -376,4 +376,109 @@ export function updateMetricsUI(dyn, engineState) {
         if (UI['val-quiet-floor'])      UI['val-quiet-floor'].innerText      = quietFloor.toFixed(4);
         if (UI['val-ignition-count'])   UI['val-ignition-count'].innerText   = String(_ong_ignitionCount);
     }
+
+    // U1: Update Observation HUD chips (every frame – cheap string ops)
+    _updateHudChips(dyn);
+
+    // U1: Update Overview summary cards (every 10 frames)
+    if (_ong_totalFrames % 10 === 0) {
+        _updateOverviewCards(dyn);
+    }
+}
+
+// ── U1 helpers: HUD chips ─────────────────────────────────────────────────────
+
+function _hudLevel(value, lowThresh, highThresh) {
+    if (value >= highThresh) return 'critical';
+    if (value >= lowThresh)  return 'high';
+    return 'normal';
+}
+
+// ── U1 helpers: shared risk computation ──────────────────────────────────────
+
+/**
+ * Compute risk label and CSS level from collapse risk and saturation fraction.
+ * @returns {{ label: string, level: string }}
+ */
+function _computeRisk(collapseRisk, satFrac) {
+    const isHigh = collapseRisk > 0.6 || satFrac > 0.1;
+    const isMod  = collapseRisk > 0.3;
+    return {
+        label: isHigh ? 'high' : isMod ? 'moderate' : 'low',
+        level: isHigh ? 'critical' : isMod ? 'high' : 'low',
+    };
+}
+
+function _setHudChip(id, text, level) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.level = level;
+}
+
+function _updateHudChips(dyn) {
+    const sig = dyn.sigmaDisplay || 0;
+    // Flow: label based on σ cascade
+    const flowLabel = sig > 1.15 ? 'high' : sig > 0.9 ? 'moderate' : 'low';
+    const flowLevel = sig > 1.15 ? 'high' : sig < 0.5 ? 'critical' : 'normal';
+    _setHudChip('hud-chip-flow', `Flow ${flowLabel}`, flowLevel);
+
+    // Return: recovery pressure
+    const rp = dyn.recoveryPressure || 0;
+    const returnLabel = rp > 0.6 ? 'strong' : rp > 0.25 ? 'delayed' : 'weak';
+    const returnLevel = rp > 0.6 ? 'high' : 'normal';
+    _setHudChip('hud-chip-return', `Return ${returnLabel}`, returnLevel);
+
+    // Echo: medium echo persistence
+    const ep = dyn.mediumEchoPersistence || 0;
+    const echoLabel = ep > 0.5 ? 'strong' : ep > 0.2 ? 'medium' : 'faint';
+    _setHudChip('hud-chip-echo', `Echo ${echoLabel}`, 'normal');
+
+    // Risk: combined collapse + saturation
+    const satFrac = _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0;
+    const risk = _computeRisk(dyn.collapseRisk || 0, satFrac);
+    _setHudChip('hud-chip-risk', `Risk ${risk.label}`, risk.level);
+}
+
+// ── U1 helpers: Overview cards ────────────────────────────────────────────────
+
+function _setCard(id, value, level) {
+    const card = document.getElementById(id);
+    if (!card) return;
+    const valEl = card.querySelector('.ov-card-value');
+    if (valEl) valEl.textContent = value;
+    card.dataset.level = level || 'normal';
+}
+
+function _updateOverviewCards(dyn) {
+    const sig = dyn.sigmaDisplay || 0;
+    _setCard('ov-card-flow',
+        sig.toFixed(3),
+        sig > 1.15 ? 'high' : sig < 0.5 ? 'critical' : 'normal');
+
+    const rp = dyn.recoveryPressure || 0;
+    _setCard('ov-card-return',
+        rp.toFixed(3),
+        rp > 0.6 ? 'high' : 'normal');
+
+    const energy = dyn.energy || 0;
+    _setCard('ov-card-energy',
+        energy.toFixed(3),
+        energy < 0.2 ? 'critical' : energy < 0.4 ? 'high' : 'normal');
+
+    const ep = dyn.mediumEchoPersistence || 0;
+    _setCard('ov-card-echo', ep.toFixed(3), 'normal');
+
+    const satFrac = _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0;
+    const satLabel = satFrac > 0.1 ? 'High' : satFrac > 0.03 ? 'Moderate' : 'Low';
+    const satRisk = _computeRisk(0, satFrac); // saturation-only risk for card level
+    _setCard('ov-card-saturation', satLabel, satRisk.level);
+
+    const cr = dyn.collapseRisk || 0;
+    const collapseRisk = _computeRisk(cr, 0);
+    _setCard('ov-card-collapse', cr.toFixed(3), collapseRisk.level);
+
+    const mode = dyn.modeState || 'wake';
+    const action = dyn.actionState || 'idle';
+    _setCard('ov-card-mode', `${mode} / ${action}`, 'normal');
 }
