@@ -455,6 +455,67 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - **Derived**: intensity, novelty, locality, rhythm
 - **Proxy**: worldOriginStrength, returnDelayHint, mediumStabilityHint
 
+### J. Medium Profile / Delay-Echo-Resistance (S4)
+
+**Definition**: 閉ループ媒質における戻りの遅れ、反響、抵抗、吸収、減衰を observer-side にまとめた profile。安定化命令ではない。
+
+#### J.1 Delay Profile
+
+- **Meaning**: 戻りの delay band / variance / stability window を観測する
+- **Measurement**: `deriveDelayProfile(...)`
+- **Important**:
+  - delay が短いこと自体を「良い」と断定しない
+  - delay が長いこと自体を「悪い」と断定しない
+  - exact delay claim ではなく closed-loop proxy を扱う
+
+#### J.2 Echo Profile
+
+- **Meaning**: echo residue がどの程度残り、どの程度減衰しているかを観測する
+- **Measurement**: `deriveEchoProfile(...)`
+- **Important**:
+  - echo を増やすための実装ではない
+  - echo saturation risk は warning / proxy であり command ではない
+  - visual / force residue は medium-side residue proxy
+
+#### J.3 Resistance Profile
+
+- **Meaning**: world / boundary / return path のどこで抵抗・吸収・減衰が起きているかを観測する
+- **Measurement**: `deriveResistanceProfile(...)`
+- **Important**:
+  - pass-through / blocked の両極端を観測する
+  - resistanceBalance は中庸を命令する値ではなく観測値
+  - transmissionRatio は pulse copy の疑いを見る proxy
+
+#### J.4 Combined Medium Profile
+
+- **Meaning**: Delay / Echo / Resistance の observer-side bundle
+- **Measurement**: `deriveMediumProfileState(...)`
+- **Important**:
+  - S4 自体は viability や feedback を直接変更しない
+  - later phases では Minimal Natural Feedback の input material になりうる
+  - semantic interpretation はしない
+
+**Measured**:
+- raw `feedbackDelay`
+- raw `echoLevel`
+- raw `surfaceResistance`
+- raw pulse intensity
+- raw return intensity
+
+**Derived**:
+- `averageReturnDelay`
+- `echoDecayRate`
+- `transmissionRatio`
+- `returnAttenuation`
+- `resistanceBalance`
+
+**Proxy**:
+- `unstableDelayScore`
+- `delayedEchoScore`
+- `echoSaturationRisk`
+- `mediumAbsorption`
+- `profileConfidence`
+
 ## Measurement Implementation
 
 All metrics should be computed from scenario runs (see `src/experiments/runScenario.ts`).

@@ -146,3 +146,14 @@ S3 では、closure metrics が直接 mode switch や stabilize command を起�
 - 導出されるのは `echoDecayAdjustment` / `returnGainAdjustment` / `delayWindowAdjustment` などの **微弱 condition adjustment**
 - 適用先は `World Medium` / `Sensory Return` / `Actuation Pulse` / `Body Surface` / `Trace` に限定する
 - `feedbackDominanceRisk` が高くても、それを理由に `cutFeedback()` のような強制停止は入れない
+
+## S4 Medium Profile での使い方
+
+S4 では、closure metrics をさらに Delay / Echo / Resistance の profile に分解して observer-side に記録する。
+
+- `roundTripDelay` / `returnDelay` / `feedbackDelay` → `DelayProfileState`
+- `feedbackSaturationRisk` / `returnStrength` / `echoLevel` / residue → `EchoProfileState`
+- `loopGain` / `returnAttenuation` / `surfaceResistance` / boundary permeability → `ResistanceProfileState`
+
+この段階でも closure metrics は command に変換しない。
+S4 は **閉ループ媒質の自然条件を観測する profile 層** であり、pulse / world / return を直接変更しない。

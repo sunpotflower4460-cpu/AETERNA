@@ -265,6 +265,28 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-reafference-world-caused'])    UI['val-reafference-world-caused'].innerText    = (dyn.reafferenceWorldCausedDifference || 0).toFixed(3);
     if (UI['val-reafference-unresolved'])      UI['val-reafference-unresolved'].innerText      = (dyn.reafferenceUnresolvedReturn || 0).toFixed(3);
     if (UI['val-reafference-confidence'])      UI['val-reafference-confidence'].innerText      = (dyn.reafferenceComparisonConfidence || 0).toFixed(3);
+    if (UI['val-medium-delay-average'])        UI['val-medium-delay-average'].innerText        = (dyn.mediumDelayAverageReturnDelay || 0).toFixed(3);
+    if (UI['val-medium-delay-min'])            UI['val-medium-delay-min'].innerText            = (dyn.mediumDelayMinReturnDelay || 0).toFixed(3);
+    if (UI['val-medium-delay-max'])            UI['val-medium-delay-max'].innerText            = (dyn.mediumDelayMaxReturnDelay || 0).toFixed(3);
+    if (UI['val-medium-delay-variance'])       UI['val-medium-delay-variance'].innerText       = (dyn.mediumDelayVariance || 0).toFixed(3);
+    if (UI['val-medium-delay-stable-window'])  UI['val-medium-delay-stable-window'].innerText  = (dyn.mediumDelayStableWindow || 0).toFixed(3);
+    if (UI['val-medium-delay-unstable-score']) UI['val-medium-delay-unstable-score'].innerText = (dyn.mediumDelayUnstableScore || 0).toFixed(3);
+    if (UI['val-medium-delay-delayed-echo'])   UI['val-medium-delay-delayed-echo'].innerText   = (dyn.mediumDelayDelayedEchoScore || 0).toFixed(3);
+    if (UI['val-medium-echo-strength'])        UI['val-medium-echo-strength'].innerText        = (dyn.mediumEchoStrength || 0).toFixed(3);
+    if (UI['val-medium-echo-decay'])           UI['val-medium-echo-decay'].innerText           = (dyn.mediumEchoDecayRate || 0).toFixed(3);
+    if (UI['val-medium-echo-persistence'])     UI['val-medium-echo-persistence'].innerText     = (dyn.mediumEchoPersistence || 0).toFixed(3);
+    if (UI['val-medium-echo-saturation'])      UI['val-medium-echo-saturation'].innerText      = (dyn.mediumEchoSaturationRisk || 0).toFixed(3);
+    if (UI['val-medium-visual-residue'])       UI['val-medium-visual-residue'].innerText       = (dyn.mediumVisualEchoResidue || 0).toFixed(3);
+    if (UI['val-medium-force-residue'])        UI['val-medium-force-residue'].innerText        = (dyn.mediumForceEchoResidue || 0).toFixed(3);
+    if (UI['val-medium-return-coupling'])      UI['val-medium-return-coupling'].innerText      = (dyn.mediumReturnEchoCoupling || 0).toFixed(3);
+    if (UI['val-medium-world-resistance'])     UI['val-medium-world-resistance'].innerText     = (dyn.mediumWorldResistance || 0).toFixed(3);
+    if (UI['val-medium-boundary-resistance'])  UI['val-medium-boundary-resistance'].innerText  = (dyn.mediumBoundaryResistance || 0).toFixed(3);
+    if (UI['val-medium-return-attenuation'])   UI['val-medium-return-attenuation'].innerText   = (dyn.mediumReturnAttenuation || 0).toFixed(3);
+    if (UI['val-medium-absorption'])           UI['val-medium-absorption'].innerText           = (dyn.mediumAbsorption || 0).toFixed(3);
+    if (UI['val-medium-transmission-ratio'])   UI['val-medium-transmission-ratio'].innerText   = (dyn.mediumTransmissionRatio || 0).toFixed(3);
+    if (UI['val-medium-resistance-balance'])   UI['val-medium-resistance-balance'].innerText   = (dyn.mediumResistanceBalance || 0).toFixed(3);
+    if (UI['val-medium-resistance-variance'])  UI['val-medium-resistance-variance'].innerText  = (dyn.mediumResistanceVariance || 0).toFixed(3);
+    if (UI['val-medium-profile-confidence'])   UI['val-medium-profile-confidence'].innerText   = (dyn.mediumProfileConfidence || 0).toFixed(3);
 
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];

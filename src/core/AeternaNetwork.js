@@ -45,6 +45,8 @@ import { derivePredictionMismatch } from '../prediction/derivePredictionMismatch
 import { updateWorldMedium } from '../world/updateWorldMedium.ts';
 import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
+import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
+import { deriveMediumProfileState } from '../closure/deriveMediumProfileState.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -340,6 +342,8 @@ export class AeternaNetwork {
         this.previousWorldMediumState = null;
         this.lastSensoryReturnPackets = [];
         this.lastReafferenceComparisonState = null;
+        this.lastBodyWorldClosureState = null;
+        this.lastMediumProfileState = null;
     }
 
     initializeTemporaryWorkBuffers() {
@@ -767,6 +771,26 @@ export class AeternaNetwork {
             dt
         );
 
+        this.lastBodyWorldClosureState = deriveBodyWorldClosureState({
+            timestamp: this.simTime,
+            actuationPulse: this.lastActuationPulse,
+            sensoryReturns: this.lastSensoryReturnPackets,
+            worldMediumState: this.worldMediumState,
+            reafferenceComparisonState: this.lastReafferenceComparisonState,
+            previousState: this.lastBodyWorldClosureState,
+        });
+
+        this.lastMediumProfileState = deriveMediumProfileState({
+            closure: this.lastBodyWorldClosureState,
+            reafference: this.lastReafferenceComparisonState,
+            world: this.worldMediumState,
+            bodySurface: this.lastBodySurfaceState ?? null,
+            pulse: this.lastActuationPulse,
+            returns: this.lastSensoryReturnPackets,
+            previousProfile: this.lastMediumProfileState,
+            dt,
+        });
+
         // W5: Optional weak feedback from reafference comparison
         // Currently observation-only; feedback intentionally minimal to avoid
         // overwhelming organism dynamics. Future phases may add subtle bias.
@@ -990,6 +1014,28 @@ export class AeternaNetwork {
             reafferenceReturnAttenuation: this.lastReafferenceComparisonState?.returnAttenuation ?? 0,
             reafferenceReturnAmplification: this.lastReafferenceComparisonState?.returnAmplification ?? 0,
             reafferenceDelayedEchoScore: this.lastReafferenceComparisonState?.delayedEchoScore ?? 0,
+            mediumDelayAverageReturnDelay: this.lastMediumProfileState?.delay.averageReturnDelay ?? 0,
+            mediumDelayMinReturnDelay: this.lastMediumProfileState?.delay.minReturnDelay ?? 0,
+            mediumDelayMaxReturnDelay: this.lastMediumProfileState?.delay.maxReturnDelay ?? 0,
+            mediumDelayVariance: this.lastMediumProfileState?.delay.delayVariance ?? 0,
+            mediumDelayStableWindow: this.lastMediumProfileState?.delay.stableDelayWindow ?? 0,
+            mediumDelayUnstableScore: this.lastMediumProfileState?.delay.unstableDelayScore ?? 0,
+            mediumDelayDelayedEchoScore: this.lastMediumProfileState?.delay.delayedEchoScore ?? 0,
+            mediumEchoStrength: this.lastMediumProfileState?.echo.echoStrength ?? 0,
+            mediumEchoDecayRate: this.lastMediumProfileState?.echo.echoDecayRate ?? 0,
+            mediumEchoPersistence: this.lastMediumProfileState?.echo.echoPersistence ?? 0,
+            mediumEchoSaturationRisk: this.lastMediumProfileState?.echo.echoSaturationRisk ?? 0,
+            mediumVisualEchoResidue: this.lastMediumProfileState?.echo.visualEchoResidue ?? 0,
+            mediumForceEchoResidue: this.lastMediumProfileState?.echo.forceEchoResidue ?? 0,
+            mediumReturnEchoCoupling: this.lastMediumProfileState?.echo.returnEchoCoupling ?? 0,
+            mediumWorldResistance: this.lastMediumProfileState?.resistance.worldResistance ?? 0,
+            mediumBoundaryResistance: this.lastMediumProfileState?.resistance.boundaryResistance ?? 0,
+            mediumReturnAttenuation: this.lastMediumProfileState?.resistance.returnAttenuation ?? 0,
+            mediumAbsorption: this.lastMediumProfileState?.resistance.mediumAbsorption ?? 0,
+            mediumTransmissionRatio: this.lastMediumProfileState?.resistance.transmissionRatio ?? 0,
+            mediumResistanceBalance: this.lastMediumProfileState?.resistance.resistanceBalance ?? 0,
+            mediumResistanceVariance: this.lastMediumProfileState?.resistance.resistanceVariance ?? 0,
+            mediumProfileConfidence: this.lastMediumProfileState?.profileConfidence ?? 0,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,

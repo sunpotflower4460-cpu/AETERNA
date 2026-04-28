@@ -202,3 +202,20 @@ S3 では、初めて weak feedback を導入するが、これは **command-sty
 - over-coupling に対しても `suppress all` / `reset world` をしない
 - feedback は ablation でき、on/off 比較で本体を乗っ取っていないか確認する
 - `feedbackDominanceRisk` は observer warning であり、強制停止には使わない
+
+## S4: Delay / Echo / Resistance Profile の位置づけ
+
+S4 では、World Loop の媒質条件そのものを observer-side に観測する。
+
+- `DelayProfileState`: 戻りの遅れの分布と安定 window
+- `EchoProfileState`: 残響の強さ・減衰・飽和リスク
+- `ResistanceProfileState`: world / boundary / return path の抵抗・吸収・減衰
+
+ここで重要なのは、delay / echo / resistance を直接良くすることではない。
+重要なのは、**流れがどう変形されて戻るかを観測すること** である。
+
+- delay があること自体は悪ではない
+- echo があること自体は悪ではない
+- resistance があること自体は悪ではない
+- profile は research / diagnostic 表示に留める
+- semantic interpretation はしない
