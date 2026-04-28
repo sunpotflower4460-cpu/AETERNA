@@ -59,8 +59,10 @@ import type { LongRunEmergenceScenarioConfig, LongRunWorldMode } from './longRun
 
 // xorshift32 — a fast, deterministic PRNG suitable for reproducible headless
 // scenario testing. Not cryptographically secure; used only for test seeding.
+// Period: 2^32 - 1 (cannot generate 0 in its sequence since state 0 is a fixed
+// point). A seed of 0 is coerced to 1 to avoid the degenerate zero state.
 function makeSeededRng(seed: number): () => number {
-  let s = seed >>> 0;
+  let s = (seed >>> 0) || 1;
   return () => {
     s ^= s << 13;
     s ^= s >> 17;
@@ -90,6 +92,9 @@ const PROTO_NETWORK_MIN_FLOW_CONTINUITY = 0.40;
 const PROTO_NETWORK_STABLE_MIN_CONFIDENCE = 0.40;
 const PROTO_NETWORK_STABLE_MIN_PATHS = 3;
 const PROTO_NETWORK_EMERGENCE_MIN_CONFIDENCE = 0.50;
+// Default prior values used when no previous viability/closure state is available
+const DEFAULT_PRIOR_FLOW = 0.5;
+const DEFAULT_PRIOR_STABILITY = 0.5;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -106,7 +111,9 @@ function average(values: number[]): number {
 function hasNanOrInfinity(obj: object): boolean {
   for (const value of Object.values(obj)) {
     if (typeof value === 'number' && !Number.isFinite(value)) return true;
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      if (value.some((item) => typeof item === 'number' && !Number.isFinite(item))) return true;
+    } else if (typeof value === 'object' && value !== null) {
       if (hasNanOrInfinity(value as object)) return true;
     }
   }
@@ -114,8 +121,11 @@ function hasNanOrInfinity(obj: object): boolean {
 }
 
 function hasSemanticLeak(obj: object): boolean {
-  for (const key of Object.keys(obj)) {
+  for (const [key, value] of Object.entries(obj)) {
     if (SEMANTIC_FORBIDDEN_KEYS.includes(key)) return true;
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (hasSemanticLeak(value as object)) return true;
+    }
   }
   return false;
 }
@@ -334,8 +344,8 @@ export function runLongRunEmergenceScenario(params: {
     previousClosureState = closureState;
 
     // --- Trace (minimal) ---
-    const priorViabilityFlow = previousViability?.flowContinuity ?? 0.5;
-    const priorClosureStability = previousClosureState?.closureStability ?? 0.5;
+    const priorViabilityFlow = previousViability?.flowContinuity ?? DEFAULT_PRIOR_FLOW;
+    const priorClosureStability = previousClosureState?.closureStability ?? DEFAULT_PRIOR_STABILITY;
     const trace = makeTraceState(timestamp, {
       traceStrength: clamp01(closureState.returnStrength * 0.6 + priorViabilityFlow * 0.3),
       recurrenceWeight: clamp01(priorViabilityFlow * 0.5),
