@@ -48,8 +48,8 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 | **S2** | Dynamic Viability State | ✅ 完了（2026-04-27） |
 | **S3** | Minimal Natural Feedback | ✅ 完了（2026-04-27） |
 | **S4** | Delay / Echo / Resistance Profile | ✅ 完了（2026-04-28） |
-| **S5** | Local Excitability Field | 未着手 |
-| **S6** | Path Formation by Repeated Flow | 未着手 |
+| **S5** | Local Excitability Field | ✅ 完了（2026-04-28） |
+| **S6** | Path Formation by Repeated Flow | ✅ 完了（2026-04-28） |
 | **S7** | Proto-Network Candidate Observation | 未着手 |
 | **S8** | Long-Run Natural Emergence Scenarios | 未着手 |
 
@@ -114,6 +114,31 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 - S3 feedback へ直接強く接続していない ✅
 - command-style stabilization を追加していない ✅
 - artificial fluctuation を追加していない ✅
+- semantic leak がない ✅
+- build が通る ✅
+
+### S5 完了条件
+
+- `LocalExcitabilityCell` / `LocalExcitabilityFieldState` 型がある ✅
+- `deriveLocalExcitabilityField(...)` がある ✅
+- excitability / thresholdProximity / refractoryDepth / recoveryProgress / traceResidue / returnInfluence / propagationTendency / localResistance / localDissipation が導出される ✅
+- observer / metrics / scenario / docs に反映されている ✅
+- S6 Path Formation の前段として位置づけられている ✅
+- runtime neuron node を配置していない ✅
+- semantic leak がない ✅
+- build が通る ✅
+
+### S6 完了条件
+
+- `RepeatedFlowPathCandidate` 型がある ✅
+- `RepeatedFlowPathObservationState` 型がある ✅
+- `deriveRepeatedFlowPaths(...)` がある ✅
+- sequential activation / repeated occurrence / delay consistency / trace support / replay affinity / closure coupling が導出される ✅
+- observer / metrics に Repeated Flow Path が表示される ✅
+- scenario / behavioral test がある ✅
+- docs に S6 の位置づけが追記されている ✅
+- runtime edge を作っていない ✅
+- path weight 強化を実装していない ✅
 - semantic leak がない ✅
 - build が通る ✅
 

@@ -301,3 +301,15 @@ S5 は proto-network の前段として局所 excitability 条件を観測する
 - S5 は S6 Path Formation by Repeated Flow の前段である
 - S7 Proto-Network の前段として位置づけられる
 - proto-neuron / proto-network はまだ S5 では observer candidate のまま
+
+## S6: Path Formation by Repeated Flow の位置づけ
+
+S6 は proto-network の前段として、繰り返し流れた結果として観測される流路候補を記録する。
+
+- Repeated Flow Path Candidate は runtime edge / proto-network edge ではない
+- fromRegionId / toRegionId は座標識別子 (semantic relation ではない)
+- S6 は path / edge / relation を作る実装ではない
+- path candidate は relation ではない; semantic link ではない
+- resistance / dissipation shift は観測に留める (媒質条件を変えるのは後段)
+- S6 は S7 Proto-Network Candidate Observation の前段である
+- proto-network はまだ S6 では本実装しない

@@ -1254,3 +1254,50 @@ Local Excitability Field は、AETERNA トーラス生命場の局所領域ご�
 - Implemented in `src/observer/deriveLocalExcitabilityField.ts`
 - Types in `src/types/localExcitabilityField.ts`
 - Tests in `src/tests/behavioral/localExcitabilityField.test.ts` and `src/tests/scenario/localExcitabilityScenario.ts`
+
+---
+
+## D.7 Repeated Flow Path — S6
+
+**Purpose**: Observer-side, read-only observation of pre-semantic repeated-flow path candidates.
+Repeated flow path candidates emerge when the same region-pair activation sequence is observed multiple times.
+These are NOT semantic relations, memory routes, meaning links, or runtime graph edges.
+
+### D.7.1 Measured
+
+- **sequential activation count** — number of times region A was active before region B became active in the same frame pair
+- **repeated pair count** — number of region pairs observed more than once across frames
+- **observed delay samples** — indirect estimate via medium profile delay window and viability delayCoherence
+
+### D.7.2 Derived
+
+- **recurrenceStrength** — how strongly the same (fromRegion → toRegion) flow pattern has recurred; saturates toward 1.0 as flowCount grows
+- **propagationConsistency** — how consistently activation propagates from fromRegion to toRegion (from source cell's propagationTendency and traceContinuity)
+- **delayConsistency** — how stable the activation delay window is between regions (from medium delay profile and viability delayCoherence)
+- **traceSupport** — how much trace/residue is observed in the target region after this flow (from cell traceResidue and global recurrenceWeight)
+- **replayAffinity** — proxy for how often this pair reactivates during quiet / low-perturbation conditions with elevated replay readiness (NOT memory replay)
+
+### D.7.3 Proxy
+
+- **resistanceShift** — observed change in localResistance on the region pair vs baseline; observer-only, does NOT modify the medium
+- **dissipationShift** — observed change in localDissipation on the region pair vs baseline; observer-only, does NOT modify the medium
+- **closureCoupling** — how much this path candidate co-occurs with Body-World Closure events (returnMismatch, selfCausedMatch, closureDrift, worldMismatch)
+- **confidence** — composite observation confidence (weighted combination of all above); high confidence = robustly observed flow pattern, NOT semantic meaning
+- **pathStability** — how consistently this candidate appears across frames; decays if not observed
+- **pathCandidateCount** — total number of path candidates currently observed
+- **stablePathCandidateCount** — candidates with confidence >= STABLE_CONFIDENCE and flowCount >= STABLE_FLOW_COUNT
+
+### Important Notes
+
+- Repeated Flow Path candidates are **NOT runtime edges or graph nodes**
+- fromRegionId / toRegionId are **coarse torus region coordinates, not semantic labels**
+- **high confidence does NOT mean semantic meaning** — it means the flow pattern is robustly observed
+- **resistanceShift / dissipationShift are observations only** — S6 does NOT modify medium conditions
+- **replayAffinity is NOT memory replay** — it is a flow-residue re-occurrence proxy
+- **closureCoupling is NOT causal interpretation** — it is co-occurrence with world-loop events
+- S6 is the pre-condition for S7 Proto-Network Candidate Observation
+- Display label should be "Repeated Flow Path Candidate / pre-semantic path observation"
+- Do NOT display "relation" "meaning link" "memory path"
+- Implemented in `src/observer/deriveRepeatedFlowPaths.ts`
+- Types in `src/types/repeatedFlowPath.ts`
+- Tests in `src/tests/behavioral/repeatedFlowPath.test.ts` and `src/tests/scenario/repeatedFlowPathScenario.ts`

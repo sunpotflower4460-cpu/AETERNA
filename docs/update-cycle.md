@@ -580,3 +580,34 @@ observer / future path formation observation (S6+)
 - **Input sources**: trace, sensory returns, body-world closure, medium profile, dynamic viability, previous field
 - **Important**: Read-only. Does not feed back into organism dynamics, does not place neuron nodes, no semantic labels.
 - **Derived fields per cell**: excitability, thresholdProximity, refractoryDepth, recoveryProgress, traceResidue, returnInfluence, propagationTendency, localResistance, localDissipation, confidence
+
+## S6 Repeated Flow Path ordering
+
+S6 adds a pre-semantic repeated-flow path candidate observation stage, built on top of the S5 Local Excitability Field.
+
+```text
+derive local excitability field   ← S5 (observer-side, read-only)
+↓
+observe repeated flow paths       ← S6 (observer-side, read-only)
+↓
+observer / future proto-network candidate observation (S7+)
+```
+
+重要な制約:
+
+- Repeated Flow Path は runtime edge ではない
+- path candidate は semantic relation / meaning link / memory path ではない
+- observer-side のみ; organism core dynamics を変更しない
+- path weight 強化は行わない
+- semantic interpretation はしない
+- S7 Proto-Network Candidate Observation の前段として位置づけられる
+- proto-network はまだ S6 では実装しない
+
+### S6 Repeated Flow Path Stage (Observer / scenario-debug path)
+- **Location**: `src/observer/deriveRepeatedFlowPaths.ts`
+- **Role**: Derive pre-semantic repeated-flow path candidates from observed regional activation history
+- **Call**: `deriveRepeatedFlowPaths(params)`
+- **Output**: `RepeatedFlowPathObservationState` with `RepeatedFlowPathCandidate[]`
+- **Input sources**: localField (current), previousLocalField (previous frame), trace, mediumProfile, closure, reafference, viability, previousObservation
+- **Important**: Read-only. Does not create runtime edges, modify medium conditions, or perform semantic interpretation.
+- **Derived fields per candidate**: flowCount, recurrenceStrength, propagationConsistency, delayConsistency, traceSupport, resistanceShift, dissipationShift, replayAffinity, closureCoupling, confidence
