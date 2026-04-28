@@ -326,3 +326,13 @@ S7 Proto-Network Candidate Observation の実装において：
 - confidence が高い = 意味がある、ではない
 
 S7 は S8 Long-Run Natural Emergence Scenarios の前段である。
+
+## S8: Long-Run Observation Phase
+
+S8 is the long-run observation phase for proto-network candidate emergence. Over 200+ ticks per scenario, it accumulates:
+
+- `protoNetworkCandidateCount`: ticks where stablePathCandidateCount ≥ 2, averageClosureCoupling ≥ 0.35, and flowContinuity ≥ 0.40
+- `stableProtoNetworkCandidateCount`: ticks where proxy confidence ≥ 0.40 and stablePathCandidateCount ≥ 3
+- `averageProtoNetworkConfidence` / `maxProtoNetworkConfidence`: derived from flowPathObs.averageConfidence, viability.flowContinuity, closure.closureStability
+
+These are observer-side measurements only. No runtime edges are created. No semantic meaning is assigned.

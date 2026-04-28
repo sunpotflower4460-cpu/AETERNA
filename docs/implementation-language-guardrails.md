@@ -488,3 +488,14 @@ S4 では delay / echo / resistance を observer-side profile として記録す
 - `deriveCoActivationGroup`
 - `deriveRepeatedPathGroup`
 - `observeReplayCoReturn`
+
+## S8 Scenario Name Guardrail
+
+S8 scenario names (e.g., `S8-A-quiet-world`, `S8-B-weak-repeated-return`) are **research labels only**. They describe the simulated world-medium condition, not a semantic state, cognitive state, or life state of AETERNA.
+
+Prohibited interpretations:
+- Do NOT interpret scenario names as semantic descriptions of AETERNA's "experience"
+- Do NOT use scenario names as object identifiers or meaning labels
+- Do NOT associate scenario outcomes with consciousness, self-awareness, or intelligence claims
+
+`formatLongRunEmergenceScenarioSummary` displays output as "Long-Run Natural Emergence Summary" — research/diagnostic output only.

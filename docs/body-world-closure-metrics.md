@@ -157,3 +157,7 @@ S4 では、closure metrics をさらに Delay / Echo / Resistance の profile �
 
 この段階でも closure metrics は command に変換しない。
 S4 は **閉ループ媒質の自然条件を観測する profile 層** であり、pulse / world / return を直接変更しない。
+
+## S8: Long-Run Integration
+
+S8 uses BodyWorldClosureState metrics (`returnStrength`, `closureStability`, `feedbackSaturationRisk`, `loopGain`) as inputs to DynamicViabilityState and MediumProfileState over 200+ tick long-run scenarios. `maxFeedbackDominanceRisk < 1.0` is verified across all feedback-enabled scenarios.

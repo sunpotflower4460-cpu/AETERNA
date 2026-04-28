@@ -1328,3 +1328,33 @@ Pre-semantic, observer-side observation of network-like patterns emerging from r
 - `weakPlasticity`: observation of thresholdProximity/resistance/dissipation shift after repetition (NOT runtime weight change)
 - `confidence`: composite observation confidence (NOT semantic certainty)
 - `networkStability`: how consistently candidate persists across frames
+
+## LongRunEmergenceScenarioSummary Metrics (S8)
+
+`LongRunEmergenceScenarioSummary` aggregates per-tick metrics across a full long-run scenario run:
+
+| Field | Classification | Description |
+|---|---|---|
+| `ticks` | Measured | Total ticks executed |
+| `durationMs` | Measured | Wall-clock duration |
+| `averageFlowContinuity` | Derived | Mean flowContinuity across ticks |
+| `averageEnergyThroughput` | Derived | Mean energyThroughput |
+| `averageDissipationBalance` | Derived | Mean dissipationBalance |
+| `averageResistanceBalance` | Derived | Mean resistanceBalance |
+| `averageDelayCoherence` | Derived | Mean delayCoherence |
+| `averageBoundaryExchange` | Derived | Mean boundaryExchange |
+| `maxSaturationRisk` | Proxy | Max saturationRisk observed |
+| `maxExtinctionRisk` | Proxy | Max extinctionRisk observed |
+| `maxFeedbackDominanceRisk` | Proxy | Max feedbackDominanceRisk observed |
+| `averageEchoStrength` | Derived | Mean echo.echoStrength |
+| `averageReturnDelay` | Derived | Mean reafference.returnDelay |
+| `averageTransmissionRatio` | Derived | Mean resistance.transmissionRatio |
+| `highExcitabilityRegionCount` | Measured | Ticks where highExcitabilityRegionCount > 0 |
+| `repeatedFlowPathCandidateCount` | Measured | Sum of pathCandidateCount across ticks |
+| `protoNetworkCandidateCount` | Measured | Ticks meeting proto-network proxy criteria |
+| `stablePathCandidateCount` | Measured | Sum of stablePathCandidateCount across ticks |
+| `stableProtoNetworkCandidateCount` | Measured | Ticks meeting stable proto-network proxy |
+| `semanticLeakCount` | Measured | Must be 0 in all valid runs |
+| `nanOrInfinityCount` | Measured | Must be 0 in all valid runs |
+
+All values are pre-semantic observer-side measurements. No semantic interpretation is made.

@@ -270,3 +270,16 @@ S7 では、S6 で観測した Repeated Flow Path Candidate のグループを�
 - `regionIds` / `pathCandidateIds` は観測 ID であり、意味ラベルではない
 - `coActivationStrength` / `propagationStrength` は統計的観測値であり、意味的強度ではない
 - S7 は S8 Long-Run Natural Emergence Scenarios の前段である
+
+## S8: Long-Run Natural Emergence Scenarios
+
+S8 is the long-run observation phase. It runs all S0–S7 components headlessly over extended tick counts (200+ ticks per scenario) and records aggregate metrics:
+
+- `averageFlowContinuity`, `averageEnergyThroughput`, `averageDissipationBalance`
+- `averageResistanceBalance`, `averageDelayCoherence`, `averageBoundaryExchange`
+- `highExcitabilityRegionCount`, `repeatedFlowPathCandidateCount`, `protoNetworkCandidateCount`
+- `semanticLeakCount` (must be 0), `nanOrInfinityCount` (must be 0)
+
+S8 runs 12 scenarios (S8-A through S8-L) across quiet, repeated return, delayed return, alternating perturbation, stable/unstable medium, high/low resistance, slow/fast echo, semantic leak guard, and feedback ablation conditions.
+
+This is NOT a proof of life, consciousness, meaning, or intelligence. It observes whether pre-semantic structures arise from natural conditions over time.

@@ -50,8 +50,8 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 | **S4** | Delay / Echo / Resistance Profile | ✅ 完了（2026-04-28） |
 | **S5** | Local Excitability Field | ✅ 完了（2026-04-28） |
 | **S6** | Path Formation by Repeated Flow | ✅ 完了（2026-04-28） |
-| **S7** | Proto-Network Candidate Observation | 未着手 |
-| **S8** | Long-Run Natural Emergence Scenarios | 未着手 |
+| **S7** | Proto-Network Candidate Observation | ✅ 完了 |
+| **S8** | Long-Run Natural Emergence Scenarios | ✅ 完了 |
 
 ### S0 完了条件
 
@@ -283,3 +283,32 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 ### 次のステップ
 
 - S8: Long-Run Natural Emergence Scenarios — Proto-Network Candidate を前提条件として使用
+
+## S8: Long-Run Natural Emergence Scenarios
+
+**目的**: S0–S7 の全コンポーネントを長時間ヘッドレス実行し、pre-semantic 構造（フロー継続性、局所励起性グラジエント、反復経路候補、プロトネットワーク候補）が自然条件下で生起するかを観測する。
+
+これは生命・意識・知性の証明ではない。純粋に研究・診断目的の長時間自然創発観測です。
+
+**実装済み**:
+- `src/types/longRunEmergenceScenarioSummary.ts` — LongRunEmergenceScenarioSummary 型
+- `src/tests/scenario/longRunEmergenceScenarioConfig.ts` — LongRunEmergenceScenarioConfig 型
+- `src/tests/scenario/runLongRunEmergenceScenario.ts` — ヘッドレスシナリオランナー + スイート + フォーマッター
+- `src/tests/behavioral/longRunEmergenceScenarios.test.ts` — S8-A〜S8-L の 27 behavioral tests
+
+S8 verifies long-run natural emergence behavior across quiet, repeated return, delayed return, alternating perturbation, stable/unstable medium, high/low resistance, slow/fast echo, semantic leak, and feedback ablation scenarios. It does not claim life, consciousness, meaning, or intelligence; it only observes whether pre-semantic structures arise from natural conditions over time.
+
+### S8 完了条件
+
+- `LongRunEmergenceScenarioSummary` 型がある ✅
+- `LongRunEmergenceScenarioConfig` 型がある ✅
+- `runLongRunEmergenceScenario` / `runLongRunEmergenceScenarioSuite` がある ✅
+- S8-A〜S8-L の 12 scenario がある ✅
+- `semanticLeakCount = 0` が全 scenario で検証される ✅
+- `nanOrInfinityCount = 0` が全 scenario で検証される ✅
+- behavioral tests (27 tests) がある ✅
+- docs に S8 の位置づけが追記されている ✅
+- runtime graph 未使用 ✅
+- Node bridge 未実装 ✅
+- semantic / consciousness claim なし ✅
+- build が通る ✅
