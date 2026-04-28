@@ -36,6 +36,43 @@
 - quiet 時の消失と long-run の暴走を避ける
 - observer は研究用であり、本体因果を壊さない
 
+## U-Series: UI / UX Phases
+
+AETERNA の UI / UX / Visualization 改善を段階的に進める。
+各 Phase は `docs/scientific-ui-ux-principles.md` の原則に従い、fake visual・演出的揺らぎを追加しない。
+
+| Phase | 内容 | 状態 |
+|---|---|---|
+| **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
+| **U1** | Layout 再設計 | 未着手 |
+| **U2** | Torus Camera / Controls | 未着手 |
+| **U3** | Scientific Torus Renderer | 未着手 |
+| **U4** | Field Layer Visualization | 未着手 |
+| **U5** | Overview / Now Summary / Event Timeline | 未着手 |
+| **U6** | Guide / Explanation System | 未着手 |
+| **U7** | Scenario UX | 未着手 |
+| **U8** | Visual QA / Scientific QA | 未着手 |
+
+詳細は `docs/ui-ux-roadmap.md` を参照。
+
+### U0 完了条件
+
+- `docs/scientific-ui-ux-principles.md` がある ✅
+- `docs/visualization-integrity-principles.md` がある ✅
+- `docs/ui-information-architecture.md` がある ✅
+- `docs/torus-visualization-requirements.md` がある ✅
+- `docs/default-guide-principles.md` がある ✅
+- `docs/ui-ux-roadmap.md` がある ✅
+- fake visual 禁止が明記されている ✅
+- raw / derived / proxy / presentation-smoothed 区分がある ✅
+- UI は観測窓と明記されている ✅
+- トーラス表示要件がある ✅
+- default guide 方針がある ✅
+- runtime 挙動を変更していない ✅
+- build が通る ✅
+
+---
+
 ## S-Series: Natural Emergence Phases
 
 AETERNA の次段階（W-Series の後）では、自然発生原則に基づく条件実装を進める。

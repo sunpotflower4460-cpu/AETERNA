@@ -4,6 +4,8 @@
 
 proto-network は、意味ネットワークではない。
 
+> **UI への適用**: Proto-Network Candidate は observer-side の proxy value である。UI に表示する際は `[Proxy]` として区別し、semantic network / concept graph のような見た目を避ける。consciousness / emotion claim を UI に出さない。
+
 AETERNA のトーラス生命場において、以下が重なった結果として、
 関係網のように見え始める観測候補である：
 

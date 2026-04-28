@@ -4,6 +4,8 @@
 
 Dynamic Viability とは、完全に静止・安定することではない。
 
+> **UI への適用**: Dynamic Viability 指標は observer-side の derived value である。UI に表示する際は `[Derived]` として区別し、fake fluctuation を加えずに実際の観測値を翻訳して表示する。
+
 AETERNA のトーラス生命場が、以下の状態を保つことを指す：
 
 - **流れ続ける**: 活性が完全に停止しない

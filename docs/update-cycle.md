@@ -663,3 +663,11 @@ long-run scenario summary
 - **Output**: `LongRunEmergenceScenarioSummary`
 - **Input sources**: worldMode config, feedbackEnabled flag, perturbationLevel, durationScale
 - **Important**: Observer-side only. No runtime edges, no semantic fields.
+
+## UI への原則適用
+
+update-cycle で導出される全 metrics は、UI に表示する際に以下の原則を守る：
+
+- Measured / Derived / Proxy / Presentation-smoothed を区別して表示する
+- UI は観測窓であり、fake visual を追加しない
+- 詳細は `docs/scientific-ui-ux-principles.md` を参照
