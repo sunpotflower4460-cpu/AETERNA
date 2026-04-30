@@ -33,7 +33,9 @@ export type AeternaEventKind =
     | 'protoNetworkCandidateObserved'   // Proto-network candidate observed
     | 'riskChange'                      // Saturation or extinction risk changed significantly
     | 'semanticLeakCheck'               // Semantic leak integrity check result
-    | 'diagnosticWarning';              // NaN / Infinity / coverage / other diagnostic
+    | 'diagnosticWarning'              // NaN / Infinity / coverage / other diagnostic
+    | 'scenarioControl'                // Scenario started / paused / stopped / reset
+    | 'scenarioSummary';               // Scenario result summary generated
 
 // ── AeternaEvent ──────────────────────────────────────────────────────────────
 

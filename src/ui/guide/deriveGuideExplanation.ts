@@ -130,7 +130,7 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
     const extRisk = asNum(metricValue(metrics, 'extinctionRisk'));
     const leakVal = metricValue(metrics, 'semanticLeak');
     const nanVal  = metricValue(metrics, 'nanOrInfinity');
-    const localExcStatus = metricStatus(metrics, 'localExcitability');
+    const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
 
     // Return delayed → suggest Medium panel
     if (retStatus === 'low' || retStatus === 'warning') {
@@ -177,7 +177,7 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
     }
 
     // Local excitability rising → turn on layer
-    if (localExcStatus === 'high' || localExcStatus === 'warning') {
+    if (localExcitabilityStatus === 'high' || localExcitabilityStatus === 'warning') {
         suggestions.push({
             id: 'look-local-excitability',
             label: 'Turn on Local Excitability layer',
@@ -249,6 +249,8 @@ function buildTryNext(
     const flow = asNum(metricValue(metrics, 'flowContinuity'));
     const extRisk = asNum(metricValue(metrics, 'extinctionRisk'));
     const satRisk = asNum(metricValue(metrics, 'saturationRisk'));
+    const echoStatus = metricStatus(metrics, 'echoPersistence');
+    const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
 
     // Rotate torus (always a useful suggestion)
     suggestions.push({
@@ -298,6 +300,39 @@ function buildTryNext(
             id: 'try-repeated-touch',
             label: 'Try Repeated Gentle Touch scenario',
             reason: 'Flow is at moderate level. Repeated Gentle Touch allows observing repeated flow path formation.',
+            targetPanel: 'scenarios',
+            action: 'openPanel',
+        });
+    }
+
+    // Slow Echo World if echo persistence is high
+    if (echoStatus === 'high' || echoStatus === 'warning') {
+        suggestions.push({
+            id: 'try-slow-echo-world',
+            label: 'Try Slow Echo World scenario',
+            reason: 'Echo persistence is elevated. Slow Echo World allows observing trace residue buildup under long echo delay.',
+            targetPanel: 'scenarios',
+            action: 'openPanel',
+        });
+    }
+
+    // Repeated Gentle Touch with Local Excitability layer if local excitability is high
+    if (localExcitabilityStatus === 'high' || localExcitabilityStatus === 'warning') {
+        suggestions.push({
+            id: 'try-repeated-touch-excitability',
+            label: 'Try Repeated Gentle Touch with Local Excitability layer',
+            reason: 'Local excitability is elevated. Repeated Gentle Touch with the Local Excitability layer visible allows observing regional excitability changes.',
+            targetPanel: 'scenarios',
+            action: 'openPanel',
+        });
+    }
+
+    // High Resistance World if extinction risk is high
+    if (extRisk !== null && extRisk > 0.5) {
+        suggestions.push({
+            id: 'try-high-resistance-world',
+            label: 'Try High Resistance World scenario',
+            reason: 'Extinction risk is elevated. High Resistance World allows observing return attenuation and under-coupling risk.',
             targetPanel: 'scenarios',
             action: 'openPanel',
         });

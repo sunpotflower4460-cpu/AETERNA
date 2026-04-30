@@ -324,3 +324,38 @@ export function resetEventHistory(): void {
     _prevSnapshot = null;
     _eventIndex = 0;
 }
+
+// ── Scenario control events ───────────────────────────────────────────────────
+
+/**
+ * Record a scenario control event (start / pause / resume / stop / reset / summary).
+ *
+ * Pushes a real AeternaEvent to the history.
+ * Does NOT create fake events — only called explicitly by scenario UI state handlers.
+ * Does NOT modify any runtime simulation state.
+ */
+export function recordScenarioControlEvent(
+    kind: 'start' | 'pause' | 'resume' | 'stop' | 'reset' | 'summary',
+    scenarioTitle: string,
+    tick: number
+): void {
+    const eventKind = kind === 'summary' ? 'scenarioSummary' as const : 'scenarioControl' as const;
+    const actionTextMap: Record<'start' | 'pause' | 'resume' | 'stop' | 'reset' | 'summary', string> = {
+        start:   'started',
+        pause:   'paused',
+        resume:  'resumed',
+        stop:    'stopped',
+        reset:   'reset',
+        summary: 'summary generated',
+    };
+    const actionText = actionTextMap[kind];
+
+    push(makeEvent(
+        eventKind,
+        'info',
+        `tick ${tick}: Scenario "${scenarioTitle}" ${actionText}`,
+        'scenarioControl',
+        tick,
+        'check'
+    ));
+}
