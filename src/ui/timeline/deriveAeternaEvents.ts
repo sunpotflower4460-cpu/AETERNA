@@ -300,7 +300,7 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         push(makeEvent(
             'semanticLeakCheck',
             'info',
-            `tick ${tick}: Semantic leak check — count: ${semanticLeakCount} — ${semanticLeakCount === 0 ? 'clear' : 'WARNING'}`,
+            `tick ${tick}: Semantic leak check — count: ${semanticLeakCount} — ${semanticLeakCount === 0 ? 'clear' : 'warning'}`,
             'integrity check',
             tick,
             'check'
