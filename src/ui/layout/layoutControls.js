@@ -119,10 +119,55 @@ function _onSheetDragEnd() {
 
 // ── Explain Panel ──────────────────────────────────────────────────────────
 
+/**
+ * Current ExplainableObservationSnapshot holder.
+ * Updated by setExplainSnapshot() — does NOT modify any runtime state.
+ */
+let _currentExplainSnapshot = null;
+let _currentRenderMode = null;
+let _currentViewMode = null;
+
+/**
+ * Set the latest ExplainableObservationSnapshot so the guide can use it.
+ * Called from the main frame loop — does NOT modify any runtime state.
+ *
+ * @param {object|null} snapshot  ExplainableObservationSnapshot or null
+ * @param {string} [renderMode]   Current render mode
+ * @param {string} [viewMode]     Current view mode
+ */
+export function setExplainSnapshot(snapshot, renderMode, viewMode) {
+    _currentExplainSnapshot = snapshot;
+    if (renderMode !== undefined) _currentRenderMode = renderMode;
+    if (viewMode !== undefined) _currentViewMode = viewMode;
+}
+
 export function toggleExplain() {
     _explainOpen = !_explainOpen;
     const panel = document.getElementById('explain-panel');
     if (panel) panel.classList.toggle('explain-visible', _explainOpen);
+
+    // When opening, generate and render the guide explanation
+    if (_explainOpen) {
+        _renderGuide();
+    }
+}
+
+/**
+ * Generate and render the current guide explanation into the panel DOM.
+ * Uses localGuideEngine — no LLM / API calls.
+ */
+function _renderGuide() {
+    import('../guide/localGuideEngine.ts').then(({ generateGuide, renderGuideToDOM }) => {
+        const guide = generateGuide(
+            _currentExplainSnapshot,
+            _currentRenderMode,
+            _currentViewMode
+        );
+        renderGuideToDOM(guide);
+    }).catch(() => {
+        const el = document.getElementById('guide-current-explanation');
+        if (el) el.textContent = 'Guide unavailable. Check the Overview panel.';
+    });
 }
 
 // ── Event Strip ────────────────────────────────────────────────────────────
@@ -292,3 +337,4 @@ window.toggleEventStrip     = toggleEventStrip;
 window.filterEventTimeline  = filterEventTimeline;
 window.updateNowSummary     = updateNowSummary;
 window.updateEventTimeline  = updateEventTimeline;
+window.setExplainSnapshot   = setExplainSnapshot;

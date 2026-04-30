@@ -87,8 +87,41 @@ Guide から参照できる用語説明の最小セットを用意する：
 
 ---
 
+## 5.5 U6 実装完了（Guide / Explanation System）
+
+U6 で Guide / Explanation System が実装された。
+
+### 新規ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/guideExplanation.ts` | GuideExplanation / GuideSuggestion / GuideGlossaryHint 型 |
+| `src/ui/guide/guideClaimGuard.ts` | 禁止 claim 検出・置換ガード |
+| `src/ui/guide/guideCopy.ts` | 静的テキスト・用語集（FULL_GLOSSARY / INTEGRITY_NOTES）|
+| `src/ui/guide/deriveGuideExplanation.ts` | rule-based guide derivation（LLM 不要）|
+| `src/ui/guide/localGuideEngine.ts` | guide lifecycle / DOM 更新 |
+| `src/tests/ui/guideExplanationSystem.test.ts` | U6 smoke tests |
+
+### 実装内容
+
+- Explain button から Guide Panel を開ける
+- `deriveGuideExplanation` が ExplainableObservationSnapshot から GuideExplanation を生成する
+- Current explanation / What to look at / Try next / Glossary / Integrity notes が表示される
+- guideClaimGuard が禁止 claim を検出・置換する
+- Guide action は UI 操作のみ（runtime dynamics は変更しない）
+- 外部 LLM / API 呼び出しなし
+
+### 将来方針
+
+External API guide may be added later behind a server-side proxy.
+It must not expose raw deep state unnecessarily.
+It must not make consciousness, emotion, or semantic claims.
+It must remain optional and never require a frontend API key.
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則
-- `docs/ui-information-architecture.md` — UI 情報アーキテクチャ（Guide ボタンの配置）
-- `docs/ui-ux-roadmap.md` — U6: Guide / Explanation System にて実装
+- `docs/ui-information-architecture.md` — UI 情報アーキテクチャ（Guide Panel 構成）
+- `docs/ui-ux-roadmap.md` — U6: Guide / Explanation System にて実装完了
