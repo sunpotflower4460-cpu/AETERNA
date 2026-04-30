@@ -52,14 +52,14 @@ export interface FieldLayerSummary {
     /** How the displayed value was derived */
     valueKind: FieldLayerValueKind;
 
-    /** Normalised magnitude 0–1 (best available proxy for the layer) */
+    /** Normalized magnitude 0–1 (best available proxy for the layer) */
     magnitude: number;
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
 /**
- * Map a normalised 0–1 magnitude to a FieldLayerStatus.
+ * Map a normalized 0–1 magnitude to a FieldLayerStatus.
  * Risk Overlay uses a separate threshold.
  */
 function magnitudeToStatus(
@@ -296,18 +296,25 @@ export function buildProtoNetworkCandidateSummary(
 /**
  * Build a Risk Overlay layer summary.
  *
- * @param visible          Whether the layer is currently toggled on
- * @param saturationRisk   DynamicViabilityState.saturationRisk  (0–1)
- * @param extinctionRisk   DynamicViabilityState.extinctionRisk  (0–1)
- * @param overCouplingRisk DynamicViabilityState.overCouplingRisk (0–1)
+ * @param visible              Whether the layer is currently toggled on
+ * @param saturationRisk       DynamicViabilityState.saturationRisk       (0–1)
+ * @param extinctionRisk       DynamicViabilityState.extinctionRisk       (0–1)
+ * @param overCouplingRisk     DynamicViabilityState.overCouplingRisk     (0–1)
+ * @param underCouplingRisk    DynamicViabilityState.underCouplingRisk    (0–1)
+ * @param feedbackSatRisk      BodyWorldClosureState.feedbackSaturationRisk (0–1)
  */
 export function buildRiskOverlaySummary(
     visible: boolean,
     saturationRisk: number,
     extinctionRisk: number,
-    overCouplingRisk: number
+    overCouplingRisk: number,
+    underCouplingRisk = 0,
+    feedbackSatRisk = 0
 ): FieldLayerSummary {
-    const magnitude = Math.min(1, Math.max(saturationRisk, extinctionRisk, overCouplingRisk));
+    const magnitude = Math.min(1, Math.max(
+        saturationRisk, extinctionRisk, overCouplingRisk,
+        underCouplingRisk, feedbackSatRisk
+    ));
     const status = magnitudeToStatus(magnitude, true);
     const shortText =
         status === 'inactive' ? 'Risk indicators within normal range' :

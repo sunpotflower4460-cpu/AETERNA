@@ -125,7 +125,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
         label: 'Energy / Activity',
         description:
             'Ongoing energy flow and activity level across the torus field. ' +
-            'Derived from activityField, flowContinuity, and energyThroughput.',
+            'Derived from currentBuffer mean activity, flowContinuity, and energyThroughput.',
         disclaimer:
             'This layer shows derived field activity values. ' +
             'It does not represent subjective experience, emotion, or intention.',
