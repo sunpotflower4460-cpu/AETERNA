@@ -279,6 +279,73 @@ U5 Now Summary との接続準備として提供されている。
 
 ---
 
+## 3.9 U5 Overview / Now Summary / Event Timeline 実装
+
+U5 で Overview / Now Summary / Event Timeline / ExplainableObservationSnapshot が整備された。
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/overviewState.ts` | OverviewState / OverviewMetric 型 |
+| `src/types/nowSummary.ts` | NowSummaryState / NowSummaryLine 型 |
+| `src/types/aeternaEvent.ts` | AeternaEvent / AeternaEventKind 型 |
+| `src/ui/overview/deriveOverviewState.ts` | rule-based Overview derivation |
+| `src/ui/summary/deriveNowSummary.ts` | 3〜5行 Now Summary derivation |
+| `src/ui/timeline/deriveAeternaEvents.ts` | delta-based Event derivation |
+| `src/ui/overview/MiniMetricSparkline.ts` | Canvas sparklines |
+| `src/ui/explain/explainableObservationSnapshot.ts` | U6 接続用 snapshot builder |
+| `src/tests/ui/overviewNowSummaryTimeline.test.ts` | U5 smoke tests（41件）|
+
+---
+
+## 3.10 U6 Guide / Explanation System 実装
+
+U6 で Guide / Explanation System が整備された。
+Explain button から開く Guide Panel がある。
+API/LLM なしで動く rule-based local guide が観測値を翻訳する。
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/guideExplanation.ts` | GuideExplanation / GuideSuggestion / GuideGlossaryHint 型 |
+| `src/ui/guide/guideClaimGuard.ts` | 禁止 claim 検出 / 置換ガード |
+| `src/ui/guide/guideCopy.ts` | 静的テキスト・用語集 |
+| `src/ui/guide/deriveGuideExplanation.ts` | rule-based guide derivation（LLM 不要）|
+| `src/ui/guide/localGuideEngine.ts` | guide lifecycle / DOM 更新 |
+| `src/tests/ui/guideExplanationSystem.test.ts` | U6 smoke tests |
+
+### Guide Panel 構成
+
+| セクション | ID | 内容 |
+|---|---|---|
+| Current state | `#guide-current-explanation` | Now Summary ベースの観測説明（2〜5行）|
+| What to look at | `#guide-what-to-look-at` | 今見るべきパネル / レイヤーの提案 |
+| Try next | `#guide-try-next` | 次に試せる操作の提案 |
+| Glossary | `#guide-glossary` | 現在関連する用語の短い説明 |
+| Integrity notes | `#guide-integrity-notes` | 科学的誠実さの注意書き |
+
+### Guide Action の種類
+
+| action | 効果 |
+|---|---|
+| `openPanel` | Research Panel を指定タブで開く（UI のみ）|
+| `toggleLayer` | Field Layer を on/off（UI のみ）|
+| `resetView` | カメラビューをリセット（UI のみ）|
+| `switchViewMode` | Render mode を切り替え（UI のみ）|
+| `runScenario` | U7 で本格実装（UI のみ）|
+
+### 重要方針
+
+- API/LLM なしで動く local guide を優先
+- guide は観測値の翻訳役（意味・感情・意識の説明ではない）
+- Guide action は UI 操作のみ（runtime dynamics を変更しない）
+- "AETERNA thinks / wants / feels" 系は禁止
+- guideClaimGuard が生成テキストを検査・置換する
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

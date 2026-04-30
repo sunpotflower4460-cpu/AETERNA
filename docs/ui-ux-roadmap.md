@@ -18,7 +18,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | ✅ 完了 |
 | **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
-| **U6** | Guide / Explanation System | 未着手 |
+| **U6** | Guide / Explanation System | ✅ 完了 |
 | **U7** | Scenario UX | 未着手 |
 | **U8** | Visual QA / Scientific QA | 未着手 |
 
@@ -317,8 +317,52 @@ backside faint display / inactive surface visibility / coverage map / raw-smooth
 
 ## U6: Guide / Explanation System
 
-**目的**: API key なしでも動く rule-based な Default Local Guide を実装し、右下の "Explain current state" ボタンから現在状態・次に見るべきパネル・次に試せる scenario を案内できるようにする。  
+**目的**: API key なしでも動く rule-based な Default Local Guide を実装し、右下の "Explain current state" ボタンから現在状態・次に見るべきパネル・次に試せる操作を案内できるようにする。  
 `docs/default-guide-principles.md` の方針を実装する。
+
+**実装内容**:
+
+- `GuideExplanation` / `GuideSuggestion` / `GuideGlossaryHint` 型（`src/types/guideExplanation.ts`）
+- `guideClaimGuard`（`src/ui/guide/guideClaimGuard.ts`）— 禁止 claim 検出・置換
+- `guideCopy`（`src/ui/guide/guideCopy.ts`）— 静的テキスト・用語集
+- `deriveGuideExplanation`（`src/ui/guide/deriveGuideExplanation.ts`）— rule-based / LLM 不要
+- `localGuideEngine`（`src/ui/guide/localGuideEngine.ts`）— guide lifecycle / DOM 更新
+- `setExplainSnapshot`（`src/ui/layout/layoutControls.js` 更新）— snapshot 受け渡し
+- Guide Panel HTML 更新（`index.html`）— 5セクション
+- U6 smoke tests（`src/tests/ui/guideExplanationSystem.test.ts`）
+
+**Guide Panel 構成**:
+
+| セクション | 内容 |
+|---|---|
+| Current state | Now Summary ベースの観測説明（2〜5行）|
+| What to look at | 今見るべきパネル / レイヤーの提案 |
+| Try next | 次に試せる操作の提案 |
+| Glossary | 現在関連する用語の短い説明 |
+| Integrity notes | 科学的誠実さの注意書き |
+
+**重要方針**:
+
+- API/LLM なしで動く local guide を優先
+- guide は観測値の翻訳役（意味・感情・意識の説明ではない）
+- Guide action は UI 操作のみ（runtime dynamics を変更しない）
+- "AETERNA thinks / wants / feels" 系は禁止
+- guideClaimGuard が生成テキストを検査・置換する
+- 外部 LLM / API guide は将来の optional 拡張として docs にのみ記載
+
+**完了条件**:
+
+- Guide Drawer / Panel がある ✅
+- GuideExplanation 型がある ✅
+- local guide engine がある ✅
+- deriveGuideExplanation がある ✅
+- Explain Button から Guide を開ける ✅
+- Current explanation / What to look at / Try next / Glossary / Integrity notes がある ✅
+- LLM/API を使っていない ✅
+- claim guard がある ✅
+- Guide action が runtime dynamics を直接変更しない ✅
+- semantic/consciousness/emotion claim なし ✅
+- build が通る ✅
 
 ---
 
