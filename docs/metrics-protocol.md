@@ -1372,3 +1372,42 @@ Metrics Protocol で定義する全指標は、UI に表示する際に以下の
 
 UI は観測窓であり、fake energy / fake fluctuation を追加しない。  
 詳細は `docs/scientific-ui-ux-principles.md` および `docs/visualization-integrity-principles.md` を参照。
+
+
+## U3 Renderer Coverage Metrics
+
+U3 で追加された coverage metrics は、field activity の実態と表示上の問題を切り分けるための presentation-side observer metrics である。
+
+これらは field 値そのものではなく、renderer が field をどの程度カバーして見せているかを示す。
+
+| Metric | 区分 | 説明 |
+|---|---|---|
+| `activeRegionCount` | Derived | activity が active threshold を超えている region の数 |
+| `inactiveRegionCount` | Derived | activity が active threshold 以下の region の数 |
+| `activeCoverageRatio` | Derived | active region の割合（0–1） |
+| `activeRegionConcentration` | Derived | activity の集中度（0=均一分布, 1=一点集中） |
+| `visibleCoverageRatio` | Presentation | カメラから見えている surface の推定割合（camera elevation から計算、presentation metric） |
+| `maxActivityRegionIndex` | Derived | 最も高い活動を持つ region の index |
+| `maxActivityRegionValue` | Derived | max region の平均活動値 |
+| `meanActiveRegionActivity` | Derived | active region の平均活動値 |
+
+`visibleCoverageRatio` は presentation metric（display-side 推定）であり、field 値ではない。
+
+実際に一部しか活動していない（field state）のか、表示上だけ一部に見える（presentation issue）のかを区別するために使う。
+
+---
+
+## U3 Diagnostic Warnings
+
+Diagnostic Mode で表示する renderer 信頼性指標。
+
+| Warning ID | severity | 説明 |
+|---|---|---|
+| `nan` | error | NaN 値が field buffer に存在する。field 計算エラーを示す。 |
+| `infinity` | error | Infinity 値が field buffer に存在する。非有界成長を示す。 |
+| `clipping` | warn | clipping threshold を超えた値。saturation / overload の可能性。 |
+| `overbright` | info | overbright threshold を超えた値。local norm では過大表示の可能性。 |
+| `backside_hidden` | info | backside 表示が無効。トーラス背面の activity が見えていない。 |
+| `coverage_low` | info | active coverage ratio が低い。field の activity 集中 or sampling/display 問題の可能性。 |
+
+これらは renderer の信頼性確認に使う。field 値そのものは変更しない。

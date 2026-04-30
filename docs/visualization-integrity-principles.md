@@ -98,6 +98,50 @@ presentation smoothing / interpolation を使用する場合は、以下のい�
 
 ---
 
+## 2.6 U3 Scientific Torus Renderer — 実装原則補足
+
+U3 で導入した renderer modules に適用される原則を補足する。
+
+### renderer module 一覧（U3 新規）
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/torusRenderState.ts` | レンダー状態型定義 |
+| `src/ui/render/torusColorMap.ts` | 色と観測値の対応（固定） |
+| `src/ui/render/torusLayerRegistry.ts` | 観測レイヤーレジストリ |
+| `src/ui/render/torusCoverageMetrics.ts` | coverage metrics 計算 |
+| `src/ui/render/torusDiagnosticWarnings.ts` | diagnostic warnings 計算 |
+| `src/ui/render/torusRenderModeManager.ts` | レンダーモード状態管理・DOM sync |
+
+### renderer modes
+
+| モード | 説明 |
+|---|---|
+| **raw** | 実値に最も近い表示。smoothing 最小。 |
+| **smooth** | presentation smoothing 適用（`[S]` と明記）。 |
+| **overlay** | 複数観測レイヤーを重ねる表示。値を混ぜない。 |
+| **diagnostic** | grid, coverage, NaN/Infinity/clipping 警告を表示。 |
+
+### normalization modes
+
+| モード | 説明 |
+|---|---|
+| **global** | 全体の最大値を基準にスケール。全体比較向き。 |
+| **local** | 表示中の最大値を基準にスケール。`[local norm]` と明記。presentation aid のみ。raw value を変えない。 |
+
+### performance modes
+
+| モード | 説明 |
+|---|---|
+| **high** | メッシュ・パーティクル・glow を高める。 |
+| **balanced** | 標準。 |
+| **battery** | particle / bloom / resolution を抑える。 |
+| **diagnostic** | 値の確認を優先。bloom = 0。 |
+
+performance mode は表示品質のみを制御する。field dynamics / simulation tick は変更しない。
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

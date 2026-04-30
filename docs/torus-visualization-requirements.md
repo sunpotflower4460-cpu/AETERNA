@@ -127,6 +127,60 @@ field 状態として、一部領域にしか activity がない場合。
 
 ---
 
+## U3 実装済み（Scientific Torus Renderer）
+
+U3 で以下の renderer 基盤が実装された。
+
+### 実装済みファイル
+
+| ファイル | 内容 |
+|---|---|
+| `src/types/torusRenderState.ts` | TorusRenderMode / TorusNormalizationMode / TorusPerformanceMode / TorusRenderState 型 |
+| `src/ui/render/torusColorMap.ts` | 固定カラーマップ（観測値 → 色対応） |
+| `src/ui/render/torusLayerRegistry.ts` | 観測レイヤー レジストリ（visible flag / color / valueType / label） |
+| `src/ui/render/torusCoverageMetrics.ts` | coverage metrics 計算（activeRegionCount, inactiveRegionCount, activeCoverageRatio, activeRegionConcentration, visibleCoverageRatio） |
+| `src/ui/render/torusDiagnosticWarnings.ts` | diagnostic warnings（NaN, Infinity, clipping, overbright, coverage_low, backside_hidden） |
+| `src/ui/render/torusRenderModeManager.ts` | レンダーモード状態管理・DOM sync |
+| `src/tests/ui/scientificTorusRenderer.test.ts` | U3 smoke tests（100件以上） |
+
+### 実装済みレイヤー（layer registry）
+
+| Layer ID | 説明 | valueType |
+|---|---|---|
+| energy | Energy / Activity | derived |
+| trace | Trace / Residue | derived |
+| actuationPulse | Actuation Pulse | raw |
+| sensoryReturn | Sensory Return | raw |
+| closureMatch | Closure Match | proxy |
+| localExcitability | Local Excitability | derived |
+| repeatedFlow | Repeated Flow Path | derived |
+| protoNetwork | Proto-Network Candidate | proxy |
+
+### Coverage Map metrics
+
+| metrics | 説明 |
+|---|---|
+| `activeRegionCount` | activity がある region の数 |
+| `inactiveRegionCount` | activity がない region の数 |
+| `activeCoverageRatio` | 活動している region の割合 |
+| `activeRegionConcentration` | 活動の集中度（0=均一、1=一点集中） |
+| `visibleCoverageRatio` | カメラから見えている surface の推定割合（presentation metric） |
+| `maxActivityRegionIndex` | 最も高い活動を持つ region の index |
+| `meanActiveRegionActivity` | active region の平均活動値 |
+
+### Diagnostic Warnings
+
+| warning id | severity | 説明 |
+|---|---|---|
+| `nan` | error | NaN 値が field buffer に存在する |
+| `infinity` | error | Infinity 値が field buffer に存在する |
+| `clipping` | warn | clipping threshold を超えた値が存在する |
+| `overbright` | info | overbright threshold を超えた値が存在する |
+| `backside_hidden` | info | backside 表示が無効になっている |
+| `coverage_low` | info | active coverage ratio が低い |
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

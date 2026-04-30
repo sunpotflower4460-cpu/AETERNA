@@ -125,6 +125,41 @@ Camera Controls は観測窓の一部であり、field dynamics とは無関係�
 
 ---
 
+## 1.7 Scientific Torus Renderer の原則（U3）
+
+U3 で導入した renderer 基盤に適用する原則を追記する。
+
+### Full Torus Visibility
+
+| 要件 | 方針 |
+|---|---|
+| inactive surface を完全透明にしない | faint で残し、トーラス全体形状を示す |
+| backside を表示する | showBackside フラグを true としデフォルト有効 |
+| 値なし領域を強く光らせない | inactiveSurface 色（Dark）で表示する |
+| subtle grid を表示できる | showGrid フラグで ON/OFF |
+
+### Coverage Map
+
+coverage metrics（activeRegionCount / inactiveRegionCount / activeCoverageRatio / activeRegionConcentration / visibleCoverageRatio）を提供し、「実際に一部しか活動していない」のか「表示上の問題」なのかを切り分けられるようにする。
+
+### Color Mapping 固定
+
+色と観測値の対応を `torusColorMap.ts` に固定した（`docs/visualization-integrity-principles.md` §2.3 の方針に従う）。
+
+### Raw / Smooth / Overlay / Diagnostic 切り替え
+
+`TorusRenderMode` 型（raw / smooth / overlay / diagnostic）と `torusRenderModeManager.ts` で切り替えを管理する。smooth mode 使用時は `[S]` を UI に明示する。
+
+### Global / Local Normalization
+
+`TorusNormalizationMode`（global / local）で切り替えられる。local normalization は presentation aid であり、raw value を変えない。local 使用時は `[local norm]` を UI に明示する。
+
+### Performance Mode
+
+`TorusPerformanceMode`（high / balanced / battery / diagnostic）で表示品質を選べる。field dynamics / simulation tick は変更しない。
+
+---
+
 ## 関連文書
 
 - `docs/visualization-integrity-principles.md` — 可視化の整合性原則
