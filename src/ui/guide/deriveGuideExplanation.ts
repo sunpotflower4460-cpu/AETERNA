@@ -130,7 +130,7 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
     const extRisk = asNum(metricValue(metrics, 'extinctionRisk'));
     const leakVal = metricValue(metrics, 'semanticLeak');
     const nanVal  = metricValue(metrics, 'nanOrInfinity');
-    const localExcStatus = metricStatus(metrics, 'localExcitability');
+    const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
 
     // Return delayed → suggest Medium panel
     if (retStatus === 'low' || retStatus === 'warning') {
@@ -177,7 +177,7 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
     }
 
     // Local excitability rising → turn on layer
-    if (localExcStatus === 'high' || localExcStatus === 'warning') {
+    if (localExcitabilityStatus === 'high' || localExcitabilityStatus === 'warning') {
         suggestions.push({
             id: 'look-local-excitability',
             label: 'Turn on Local Excitability layer',
@@ -250,7 +250,7 @@ function buildTryNext(
     const extRisk = asNum(metricValue(metrics, 'extinctionRisk'));
     const satRisk = asNum(metricValue(metrics, 'saturationRisk'));
     const echoStatus = metricStatus(metrics, 'echoPersistence');
-    const localExcStatus = metricStatus(metrics, 'localExcitability');
+    const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
 
     // Rotate torus (always a useful suggestion)
     suggestions.push({
@@ -317,7 +317,7 @@ function buildTryNext(
     }
 
     // Repeated Gentle Touch with Local Excitability layer if local excitability is high
-    if (localExcStatus === 'high' || localExcStatus === 'warning') {
+    if (localExcitabilityStatus === 'high' || localExcitabilityStatus === 'warning') {
         suggestions.push({
             id: 'try-repeated-touch-excitability',
             label: 'Try Repeated Gentle Touch with Local Excitability layer',

@@ -340,7 +340,7 @@ export function recordScenarioControlEvent(
     tick: number
 ): void {
     const eventKind = kind === 'summary' ? 'scenarioSummary' as const : 'scenarioControl' as const;
-    const actionTextMap: Record<typeof kind, string> = {
+    const actionTextMap: Record<'start' | 'pause' | 'resume' | 'stop' | 'reset' | 'summary', string> = {
         start:   'started',
         pause:   'paused',
         resume:  'resumed',
