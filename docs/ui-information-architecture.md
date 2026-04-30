@@ -187,6 +187,24 @@ Camera Controls は Layer A（Main Field View）内に統合される観察補�
 
 ---
 
+## 3.7 U3: Scientific Torus Renderer 実装済み
+
+U3 で追加した renderer 関連の実装ファイルとその役割：
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/torusRenderState.ts` | Renderer state 型群 |
+| `src/ui/render/torusColorMap.ts` | 色と観測値の固定マッピング |
+| `src/ui/render/torusLayerRegistry.ts` | 観測レイヤーレジストリ（8 layers） |
+| `src/ui/render/TorusRenderModeToggle.ts` | モード切り替え UI helper |
+| `src/ui/render/TorusLayerLegend.ts` | 色/レイヤー legend UI helper |
+| `src/ui/render/TorusCoveragePanel.ts` | Coverage metrics パネル |
+| `src/ui/render/TorusDiagnosticOverlay.ts` | Diagnostic warnings overlay |
+| `src/ui/render/TorusPerformanceSelector.ts` | Performance mode selector |
+| `src/tests/ui/scientificTorusRenderer.test.ts` | Smoke tests |
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

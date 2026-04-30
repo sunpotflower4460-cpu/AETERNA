@@ -1372,3 +1372,53 @@ Metrics Protocol で定義する全指標は、UI に表示する際に以下の
 
 UI は観測窓であり、fake energy / fake fluctuation を追加しない。  
 詳細は `docs/scientific-ui-ux-principles.md` および `docs/visualization-integrity-principles.md` を参照。
+
+---
+
+## U3: Coverage Metrics（Renderer 観測）
+
+U3 Scientific Torus Renderer で定義された coverage metrics。
+これらは renderer が正確に機能しているかを確認するための diagnostic metrics である。
+field 値ではなく、renderer の表示状態を表す。
+
+### R.1 Active Region Count
+- **Meaning**: activity threshold 以上の torus region の数
+- **Measurement**: normalised activity > ACTIVE_THRESHOLD (0.05) のリージョン数
+- **Classification**: Derived
+- **Purpose**: 実際に活動している領域の数を把握する
+
+### R.2 Inactive Region Count
+- **Meaning**: activity threshold 未満の torus region の数
+- **Classification**: Derived
+
+### R.3 Active Coverage Ratio
+- **Meaning**: 全リージョンに占める active リージョンの割合 (0–1)
+- **Formula**: `activeRegionCount / totalRegionCount`
+- **Classification**: Derived
+- **Purpose**: 「一部だけ流れて見える」が実際の field 状態かを判断する
+
+### R.4 Active Region Concentration
+- **Meaning**: activity の偏り度合い (1.0 = 均一, 0 = 一点集中)
+- **Formula**: coefficient of variation の逆数から導出
+- **Classification**: Derived
+- **Purpose**: activity が特定領域に集中しているかを診断する
+
+### R.5 Max Activity Region
+- **Meaning**: 最も activity が高いリージョンの index
+- **Classification**: Derived
+
+### R.6 Visible Coverage Ratio
+- **Meaning**: カメラから見えている torus surface の割合 (0–1)
+- **Classification**: Derived
+- **Purpose**: activeCoverageRatio と比較し「実際の偏り」と「カメラ遮蔽」を区別する
+
+### R.7 Diagnostic Warnings
+- **nanCount** — field 値中の NaN 数（field 計算の問題）
+- **infinityCount** — field 値中の Infinity 数（同上）
+- **clippedCount** — 表示範囲外でクランプされた値の数（display scale の問題）
+- **overbrightCount** — 過輝度リージョンの数（bloom / scale の問題）
+- **hiddenBacksideWarning** — backside faint pass が無効になっていないか
+- **coverageWarning** — activeCoverageRatio が threshold を下回っていないか
+
+これら R-series metrics は `src/ui/render/TorusCoveragePanel.ts` および
+`src/ui/render/TorusDiagnosticOverlay.ts` で実装されている。

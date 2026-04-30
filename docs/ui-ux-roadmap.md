@@ -15,7 +15,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
 | **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | ✅ 完了 |
-| **U3** | Scientific Torus Renderer | 未着手 |
+| **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | 未着手 |
 | **U5** | Overview / Now Summary / Event Timeline | 未着手 |
 | **U6** | Guide / Explanation System | 未着手 |
@@ -148,6 +148,48 @@ runtime 挙動は変更しない。fake visual を追加しない。
 **目的**: fake energy・fake flow を追加せず、実際の field 値を色・光・透明度に変換する Scientific Renderer を実装する。  
 backside faint display / inactive surface visibility / coverage map / raw-smoothed toggle を含む。  
 `docs/torus-visualization-requirements.md` §4.2〜4.4 の要件を実装する。
+
+**実装内容**:
+
+- Raw / Scientific Smooth[S] / Layer Overlay / Diagnostic の 4 render mode
+- TorusRenderState — mode / normalization / performance / showGrid / showBackside / showInactiveSurface / showCoverage / smoothingEnabled
+- Full Torus Visibility — inactive surface faint (showInactiveSurface), backside faint pass (showBackside), subtle grid (showGrid)
+- Coverage Map — activeRegionCount / inactiveRegionCount / activeCoverageRatio / activeRegionConcentration / maxActivityRegion / visibleCoverageRatio
+- Color Mapping 固定 — Blue/Cyan=flow, Green=recovery, White=coherent, Purple=trace, Orange=return, Red=saturation のみ
+- Value Legend — TORUS_COLOR_LEGEND + TORUS_COLOR_MEANINGS
+- Raw / Smooth[S] / Diagnostic toggle — RENDER_MODE_LABELS に明示
+- Global / Local[L] normalization toggle — NORMALIZATION_LABELS に明示
+- Performance Mode — High Quality / Balanced / Battery Saver / Diagnostic
+- Diagnostic Warnings — NaN / Infinity / clipping / overbright / backside hidden / coverage warning
+- Layer Registry — 8 observation layers, U3/U4 split, visibility flags, valueType labels
+
+**新規ファイル**:
+
+- `src/types/torusRenderState.ts`
+- `src/ui/render/torusColorMap.ts`
+- `src/ui/render/torusLayerRegistry.ts`
+- `src/ui/render/TorusRenderModeToggle.ts`
+- `src/ui/render/TorusLayerLegend.ts`
+- `src/ui/render/TorusCoveragePanel.ts`
+- `src/ui/render/TorusDiagnosticOverlay.ts`
+- `src/ui/render/TorusPerformanceSelector.ts`
+- `src/tests/ui/scientificTorusRenderer.test.ts`
+
+**完了条件**:
+
+- Raw / Smooth / Overlay / Diagnostic mode がある ✅
+- Full Torus Visibility 方針が反映されている ✅
+- coverage metrics がある ✅
+- color mapping が固定されている ✅
+- Value Legend がある ✅
+- Raw / Smoothed toggle がある（[S] ラベル） ✅
+- normalization toggle がある（[L] ラベル） ✅
+- Performance Mode がある ✅
+- Diagnostic warnings がある ✅
+- runtime 未変更 ✅
+- fake visual なし ✅
+- semantic/consciousness/emotion claim なし ✅
+- build が通る ✅
 
 ---
 

@@ -98,6 +98,40 @@ presentation smoothing / interpolation を使用する場合は、以下のい�
 
 ---
 
+---
+
+## 2.6 U3: Scientific Torus Renderer 実装方針（✅ 完了）
+
+U3 では以下の原則をコードとして実装した：
+
+### 実装済みファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/torusRenderState.ts` | Renderer state 型（TorusRenderMode / TorusNormalizationMode / TorusPerformanceMode / TorusRenderState / TorusCoverageMetrics / TorusDiagnosticWarnings） |
+| `src/ui/render/torusColorMap.ts` | 色と観測値の固定マッピング（Blue/Cyan=flow, Green=recovery, White=coherent, Purple=trace, Orange=return, Red=saturation のみ） |
+| `src/ui/render/torusLayerRegistry.ts` | 観測レイヤーレジストリ（8 layers, visibility flags, value type labels） |
+| `src/ui/render/TorusRenderModeToggle.ts` | Raw / Smooth[S] / Overlay / Diagnostic モード切り替え UI helper |
+| `src/ui/render/TorusLayerLegend.ts` | 色とレイヤーの対応を示す legend UI helper |
+| `src/ui/render/TorusCoveragePanel.ts` | Coverage metrics（activeRegionCount / activeCoverageRatio / concentration / visibleCoverageRatio）|
+| `src/ui/render/TorusDiagnosticOverlay.ts` | Diagnostic warnings（NaN / Infinity / clipping / overbright / backside / coverage）|
+| `src/ui/render/TorusPerformanceSelector.ts` | Performance mode（High / Balanced / Battery / Diagnostic）|
+| `src/tests/ui/scientificTorusRenderer.test.ts` | Smoke tests（fake visual なし / runtime 未変更 / semantic claim なし 確認含む）|
+
+### 主要方針
+
+- Raw / Smooth[S] / Overlay / Diagnostic の 4 mode が定義された
+- Smooth mode は `[S]` マーカーで presentation smoothing を明記
+- Local normalization は `[L]` マーカーで presentation aid であることを明記
+- inactive surface は faint に残す（COLOR_INACTIVE_DARK, inactiveSurfaceOpacity）
+- Coverage map で「実際の field 偏り」と「表示上の偏り」を区別できる
+- Diagnostic warnings で NaN / Infinity / clipping / overbright を検出する
+- Red は saturation / overload risk 専用（通常状態では使わない）
+- fake visual 関数（fakeEnergy / fakeFlow / fakeTrace / artificialFluctuation 等）は追加していない
+- runtime dynamics / field calculation / energy / trace / return は変更していない
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

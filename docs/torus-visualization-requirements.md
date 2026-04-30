@@ -127,6 +127,30 @@ field 状態として、一部領域にしか activity がない場合。
 
 ---
 
+---
+
+## 4.5 U3: Scientific Torus Renderer 実装済み項目
+
+U3 では §4.2〜4.4 の要件をコードとして実装した。
+
+| 要件 | 状態 | 実装 |
+|---|---|---|
+| Renderer Mode (Raw / Smooth / Overlay / Diagnostic) | ✅ | `src/types/torusRenderState.ts` + `src/ui/render/TorusRenderModeToggle.ts` |
+| Full Torus Visibility (faint inactive surface) | ✅ | `TorusRenderState.showInactiveSurface`, `COLOR_INACTIVE_DARK`, `inactiveSurfaceOpacity` |
+| Backside faint display | ✅ | `TorusRenderState.showBackside`, `RendererQualityConfig.renderBacksidePass` |
+| Subtle grid | ✅ | `TorusRenderState.showGrid`, `RendererQualityConfig.renderGridLines` |
+| Coverage Map / Metrics | ✅ | `src/ui/render/TorusCoveragePanel.ts` — 6 metrics |
+| Color Mapping (固定) | ✅ | `src/ui/render/torusColorMap.ts` — Blue/Cyan/Green/White/Purple/Orange/Red/Dark |
+| Value Legend | ✅ | `src/ui/render/TorusLayerLegend.ts` + `TORUS_COLOR_LEGEND` |
+| Raw / Smooth toggle | ✅ | `TorusRenderMode` + `[S]` label |
+| Global / Local normalization toggle | ✅ | `TorusNormalizationMode` + `[L]` label |
+| Performance Mode | ✅ | `src/ui/render/TorusPerformanceSelector.ts` — High / Balanced / Battery / Diagnostic |
+| Diagnostic warnings | ✅ | `src/ui/render/TorusDiagnosticOverlay.ts` — NaN / Infinity / clipping / overbright / backside / coverage |
+| Layer registry | ✅ | `src/ui/render/torusLayerRegistry.ts` — 8 layers, U3/U4 split |
+| Smoke tests | ✅ | `src/tests/ui/scientificTorusRenderer.test.ts` |
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

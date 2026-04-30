@@ -125,6 +125,52 @@ Camera Controls は観測窓の一部であり、field dynamics とは無関係�
 
 ---
 
+## 1.7 U3: Scientific Torus Renderer 原則（✅ 完了）
+
+U3 では以下の renderer 原則をコードとして実装した。
+
+### Renderer Mode
+
+| Mode | 説明 | 明示ラベル |
+|---|---|---|
+| **Raw** | 実値に最も近い表示。荒くてよい。 | なし |
+| **Smooth** | Presentation-smoothed。存在しない活動は作らない。 | `[S]` |
+| **Overlay** | 複数観測レイヤーを重ねる。値を混ぜない。 | layer 名 |
+| **Diagnostic** | Grid / coverage / NaN / clipping 表示。 | `Diagnostic` |
+
+### Normalization
+
+| Mode | 説明 | 明示ラベル |
+|---|---|---|
+| **Global** | 全データ min/max 基準。全体比較向き。 | なし |
+| **Local** | 表示中 min/max 基準。微細変化可視。Presentation aid。 | `[L]` |
+
+### Full Torus Visibility
+
+- `showInactiveSurface: true` — inactive surface は faint で残す（完全透明にしない）
+- `showBackside: true` — backside faint second pass を有効にする
+- `showGrid` — subtle grid で形状把握を補助
+- inactive surface は活動していない場所として表示する（fake energy を足さない）
+
+### Coverage Metrics
+
+- `activeRegionCount` / `inactiveRegionCount` / `activeCoverageRatio`
+- `activeRegionConcentration` / `maxActivityRegion` / `visibleCoverageRatio`
+- 「実際の field 偏り」と「カメラ/表示上の偏り」を区別するために使う
+
+### Performance Mode
+
+| Mode | 説明 |
+|---|---|
+| **High Quality** | Full mesh + particles + subtle bloom |
+| **Balanced** | Standard (default) |
+| **Battery Saver** | Low particle + no bloom + reduced resolution |
+| **Diagnostic** | Grid / backside pass あり。値の読み取りを優先 |
+
+Performance mode は表示品質のみを変更する。simulation tick / field dynamics は変更しない。
+
+---
+
 ## 関連文書
 
 - `docs/visualization-integrity-principles.md` — 可視化の整合性原則

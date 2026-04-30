@@ -46,7 +46,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進める。
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
 | **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | ✅ 完了 |
-| **U3** | Scientific Torus Renderer | 未着手 |
+| **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | 未着手 |
 | **U5** | Overview / Now Summary / Event Timeline | 未着手 |
 | **U6** | Guide / Explanation System | 未着手 |
@@ -69,6 +69,26 @@ AETERNA の UI / UX / Visualization 改善を段階的に進める。
 - トーラス表示要件がある ✅
 - default guide 方針がある ✅
 - runtime 挙動を変更していない ✅
+- build が通る ✅
+
+---
+
+### U3 完了条件
+
+- Raw / Smooth / Overlay / Diagnostic mode がある ✅ (`src/types/torusRenderState.ts`)
+- Full Torus Visibility 方針が反映されている ✅ (`showInactiveSurface`, `showBackside`, `showGrid`)
+- coverage metrics がある ✅ (`src/ui/render/TorusCoveragePanel.ts`)
+- color mapping が固定されている ✅ (`src/ui/render/torusColorMap.ts`)
+- Value Legend がある ✅ (`src/ui/render/TorusLayerLegend.ts`, `TORUS_COLOR_LEGEND`)
+- Raw / Smoothed toggle がある（[S] ラベル） ✅ (`src/ui/render/TorusRenderModeToggle.ts`)
+- normalization toggle がある（[L] ラベル） ✅ (`NORMALIZATION_LABELS`)
+- Performance Mode がある ✅ (`src/ui/render/TorusPerformanceSelector.ts`)
+- Diagnostic warnings がある ✅ (`src/ui/render/TorusDiagnosticOverlay.ts`)
+- Layer registry がある ✅ (`src/ui/render/torusLayerRegistry.ts`)
+- Smoke tests がある ✅ (`src/tests/ui/scientificTorusRenderer.test.ts`)
+- runtime 未変更 ✅
+- fake visual なし ✅
+- semantic/consciousness/emotion claim なし ✅
 - build が通る ✅
 
 ---
