@@ -1411,3 +1411,38 @@ Diagnostic Mode で表示する renderer 信頼性指標。
 | `coverage_low` | info | active coverage ratio が低い。field の activity 集中 or sampling/display 問題の可能性。 |
 
 これらは renderer の信頼性確認に使う。field 値そのものは変更しない。
+
+---
+
+## U4 Field Layer Visualization — Layer Status Metrics
+
+Field Layer Visualization（U4）では、各 layer の現在状態を `FieldLayerSummary` として提供する。
+
+### FieldLayerSummary
+
+| field | 型 | 説明 |
+|---|---|---|
+| `layerId` | FieldLayerId | 対象 layer の ID |
+| `visible` | boolean | 現在表示中かどうか |
+| `status` | FieldLayerStatus | 観測状況（inactive / low / moderate / high / warning） |
+| `shortText` | string | 短い観測テキスト（emotion / consciousness claim 禁止） |
+| `valueKind` | FieldLayerValueKind | measured / derived / proxy / presentation-smoothed |
+| `magnitude` | number | 正規化された 0–1 の magnitude proxy |
+
+### FieldLayerStatus の定義
+
+| status | 説明 |
+|---|---|
+| `inactive` | 意味のある信号が検出されない |
+| `low` | 通常動作域より低い信号が存在する |
+| `moderate` | 通常動作域の信号 |
+| `high` | 通常動作域より高い信号 |
+| `warning` | Risk Overlay 専用：リスク閾値を超えた状態 |
+
+### 注記
+
+- これらは observation metrics であり、field state そのものを変更しない
+- status は field observation の magnitude proxy であり、subjective state の断定ではない
+- shortText は観測語のみを使用し、emotion / consciousness / semantic claim を含まない
+- magnitude はおおよその参考値であり、厳密な物理量ではない
+- U5 Now Summary との接続準備として提供されている

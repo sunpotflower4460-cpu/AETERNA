@@ -181,6 +181,61 @@ U3 で以下の renderer 基盤が実装された。
 
 ---
 
+## U4 実装済み（Field Layer Visualization）
+
+U4 で以下の field layer visualization 基盤が実装された。
+
+### 実装済みファイル
+
+| ファイル | 内容 |
+|---|---|
+| `src/ui/render/fieldLayerRegistry.ts` | Field Layer Registry（FieldLayerDefinition, FieldLayerId, FieldLayerValueKind） |
+| `src/ui/render/fieldLayerOverlayRules.ts` | Overlay composition rules（maxOpacity, priority, blendMode） |
+| `src/ui/render/fieldLayerSummaries.ts` | Per-layer status summaries（U5 Now Summary 接続準備） |
+| `src/tests/ui/fieldLayerVisualization.test.ts` | U4 smoke tests（204件） |
+
+### Field Layers 一覧
+
+| Layer ID | Label | valueKind | Color | デフォルト表示 |
+|---|---|---|---|---|
+| `energyActivity` | Energy / Activity | derived | Blue/Cyan | ON |
+| `traceResidue` | Trace / Residue | derived | Purple | ON |
+| `actuationPulse` | Actuation Pulse | measured | Cyan-White | OFF |
+| `sensoryReturn` | Sensory Return | measured | Orange | ON |
+| `closureMatch` | Closure Match | proxy | Light Purple | OFF |
+| `mediumEchoDelay` | Medium Echo / Delay | derived | Orange/Amber | OFF |
+| `localExcitability` | Local Excitability | derived | Green/White | OFF |
+| `repeatedFlowPath` | Repeated Flow Path | derived | Cyan | OFF |
+| `protoNetworkCandidate` | Proto-Network Candidate | proxy | Indigo-Purple | OFF |
+| `riskOverlay` | Risk Overlay | proxy | Red/Amber | ON (threshold only) |
+
+### Layer Overlay Rules
+
+- 各 layer に maxOpacity（0–1）と priority（z-order）を設定
+- riskOverlay が最高 priority（常に上に出る）
+- protoNetworkCandidate が最低 maxOpacity（非常に薄い）
+- additive blend は energyActivity / actuationPulse / localExcitability のみ
+- 複数 additive layer が同時表示の場合は overbright 検出が可能
+- Diagnostic mode では opacity cap を解除して構造を優先
+- RECOMMENDED_MAX_ACTIVE_LAYERS = 4 を推奨
+
+### Layer Summary（U5 接続準備）
+
+各 layer は `FieldLayerSummary`（layerId / visible / status / shortText / valueKind / magnitude）を返すことができる。
+status は `'inactive' | 'low' | 'moderate' | 'high' | 'warning'` の5段階。
+shortText は観測語のみを使用し、emotion / consciousness claim を含まない。
+
+### U4 禁止事項（再確認）
+
+- fake energy / fake trace / fake flow layer を追加しない
+- runtime dynamics / field calculation を変更しない
+- runtime graph / network edge を作成しない
+- semantic network / knowledge graph として proto-network candidate を描かない
+- consciousness / self-awareness / emotion claim を UI に出さない
+- 値がない場所を光らせない
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

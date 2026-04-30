@@ -228,6 +228,57 @@ NaN / Infinity / clipping / overbright / backside_hidden / coverage_low の警�
 
 ---
 
+## 3.8 U4 Field Layer Visualization 実装（Field Layer Layer）
+
+U4 で field layer visualization 基盤が整備された。これは presentation layer であり、field dynamics には影響しない。
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/ui/render/fieldLayerRegistry.ts` | Field Layer Registry（FieldLayerDefinition / FieldLayerId / FieldLayerValueKind / disclaimer） |
+| `src/ui/render/fieldLayerOverlayRules.ts` | Overlay composition rules（maxOpacity / priority / blendMode） |
+| `src/ui/render/fieldLayerSummaries.ts` | Per-layer status summaries（U5 Now Summary 接続準備） |
+| `src/tests/ui/fieldLayerVisualization.test.ts` | U4 smoke tests（204件） |
+
+### Field Layer 一覧
+
+| ID | Label | valueKind | Color | Default |
+|---|---|---|---|---|
+| `energyActivity` | Energy / Activity | derived | Blue/Cyan | ON |
+| `traceResidue` | Trace / Residue | derived | Purple | ON |
+| `actuationPulse` | Actuation Pulse | measured | Cyan-White | OFF |
+| `sensoryReturn` | Sensory Return | measured | Orange | ON |
+| `closureMatch` | Closure Match | proxy | Light Purple | OFF |
+| `mediumEchoDelay` | Medium Echo / Delay | derived | Orange/Amber | OFF |
+| `localExcitability` | Local Excitability | derived | Green/White | OFF |
+| `repeatedFlowPath` | Repeated Flow Path | derived | Cyan | OFF |
+| `protoNetworkCandidate` | Proto-Network Candidate | proxy | Indigo-Purple | OFF |
+| `riskOverlay` | Risk Overlay | proxy | Red/Amber | ON (threshold) |
+
+### Overlay Rules
+
+各 layer は maxOpacity / priority / blendMode を持つ。
+- riskOverlay: 最高 priority（常に前面）
+- protoNetworkCandidate: 最低 maxOpacity（非常に薄い）
+- additive blend は energyActivity / actuationPulse / localExcitability のみ
+- 推奨同時表示上限: 3〜4 layers
+
+### Layer Summary
+
+各 layer は `FieldLayerSummary`（layerId / visible / status / shortText / valueKind / magnitude）を返せる。
+U5 Now Summary との接続準備として提供されている。
+
+### 注記
+
+- field layer modules は presentation layer のみ
+- runtime dynamics / field calculation は変更しない
+- runtime graph / network edge を作成しない
+- fake visual を追加しない
+- proto-network candidate は semantic network / knowledge graph ではない
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則
