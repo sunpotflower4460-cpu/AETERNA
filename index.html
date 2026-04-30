@@ -493,6 +493,57 @@
         /* ── Misc ── */
         .border-divider { border-top:1px solid rgba(255,255,255,0.07); margin:6px 0; padding-top:6px; }
         .section-label  { font-size:7px; color:rgba(34,211,238,0.55); font-weight:bold; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:4px; }
+
+        /* ── U5: Now Summary ── */
+        .now-summary-line {
+            font-size:9px; color:rgba(255,255,255,0.75); line-height:1.5;
+            padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+        }
+        .now-summary-line:last-child { border-bottom:none; }
+        .now-summary-line[data-priority="1"],
+        .now-summary-line[data-priority="2"] {
+            color:rgba(251,191,36,0.9); font-weight:bold;
+        }
+        .now-summary-line[data-priority="7"],
+        .now-summary-line[data-priority="8"],
+        .now-summary-line[data-priority="9"] {
+            color:rgba(255,255,255,0.4); font-style:italic;
+        }
+        .now-summary-kind {
+            font-size:6.5px; color:rgba(255,255,255,0.25); font-style:italic; margin-left:4px;
+        }
+
+        /* ── U5: Overview sparklines ── */
+        .ov-spark { display:block; margin-top:3px; border-radius:2px; }
+        @media (max-width:768px) { .ov-spark { display:none; } }
+
+        /* ── U5: Integrity check rows ── */
+        .ov-integrity-row {
+            display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:8px;
+        }
+        .ov-integrity-label { color:rgba(255,255,255,0.45); flex:1; }
+        .ov-integrity-value { font-family:monospace; font-weight:bold; color:#34d399; }
+        .ov-integrity-value[data-level="warning"] { color:#f87171; }
+        .ov-integrity-kind { font-size:6.5px; color:rgba(255,255,255,0.2); font-style:italic; }
+
+        /* ── U5: Event Timeline in Overview ── */
+        .event-tl-row {
+            display:flex; gap:5px; align-items:baseline;
+            font-size:8px; font-family:monospace;
+            padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+        }
+        .event-tl-row:last-child { border-bottom:none; }
+        .event-tl-tick { color:rgba(34,211,238,0.5); flex-shrink:0; min-width:50px; }
+        .event-tl-text { color:rgba(255,255,255,0.7); flex:1; line-height:1.4; }
+        .event-tl-row[data-severity="warning"] .event-tl-text { color:rgba(251,191,36,0.85); }
+        .event-tl-row[data-severity="notice"]  .event-tl-text { color:rgba(255,255,255,0.75); }
+        .event-tl-kind { font-size:6.5px; color:rgba(255,255,255,0.2); flex-shrink:0; }
+        .event-tl-empty { display:block; }
+
+        /* ── U5: Event Strip severity colors ── */
+        .event-strip-item[data-severity="warning"] { color:rgba(251,191,36,0.7); }
+        .event-strip-item[data-severity="notice"]  { color:rgba(34,211,238,0.6); }
+        .event-strip-item[data-severity="info"]    { color:rgba(255,255,255,0.4); }
     </style>
 </head>
 <body>
@@ -571,53 +622,132 @@
 
             <!-- ── Tab: Overview ── -->
             <div id="tab-overview" class="rtab-content rtab-visible custom-scrollbar">
-                <div class="section-label mb-3">NOW / Field Summary</div>
 
-                <!-- Overview Cards -->
-                <div id="overview-cards">
-                    <div class="ov-card" id="ov-card-flow">
-                        <div class="ov-card-label">Flow Continuity</div>
-                        <div class="ov-card-value" id="ov-flow-val">—</div>
-                        <div class="ov-card-sub">Derived · σ cascade</div>
+                <!-- ── Now Summary (U5) ── -->
+                <div class="border-divider" id="now-summary-section">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <div class="section-label">Now Summary</div>
+                        <span id="now-summary-status" class="text-[7px] text-white/30 bg-white/5 px-1.5 py-0.5 rounded font-mono">—</span>
                     </div>
-                    <div class="ov-card" id="ov-card-return">
-                        <div class="ov-card-label">Return Strength</div>
-                        <div class="ov-card-value" id="ov-return-val">—</div>
-                        <div class="ov-card-sub">Derived · recovery pressure</div>
+                    <div id="now-summary-lines" class="space-y-1">
+                        <div class="now-summary-line">Field observation data loading…</div>
                     </div>
-                    <div class="ov-card" id="ov-card-energy">
-                        <div class="ov-card-label">Energy</div>
-                        <div class="ov-card-value" id="ov-energy-val">—</div>
-                        <div class="ov-card-sub">Derived</div>
-                    </div>
-                    <div class="ov-card" id="ov-card-echo">
-                        <div class="ov-card-label">Echo Persistence</div>
-                        <div class="ov-card-value" id="ov-echo-val">—</div>
-                        <div class="ov-card-sub">Derived · medium</div>
-                    </div>
-                    <div class="ov-card" id="ov-card-saturation">
-                        <div class="ov-card-label">Saturation Risk</div>
-                        <div class="ov-card-value" id="ov-saturation-val">—</div>
-                        <div class="ov-card-sub">Proxy</div>
-                    </div>
-                    <div class="ov-card" id="ov-card-collapse">
-                        <div class="ov-card-label">Collapse Risk</div>
-                        <div class="ov-card-value" id="ov-collapse-val">—</div>
-                        <div class="ov-card-sub">Proxy</div>
-                    </div>
-                    <div class="ov-card" id="ov-card-mode">
-                        <div class="ov-card-label">Mode / Action</div>
-                        <div class="ov-card-value" id="ov-mode-val">—</div>
-                        <div class="ov-card-sub">Derived</div>
-                    </div>
-                    <div class="ov-card" id="ov-card-semantic">
-                        <div class="ov-card-label">Semantic Leak</div>
-                        <div class="ov-card-value" id="ov-semantic-val">0</div>
-                        <div class="ov-card-sub">Check · always 0</div>
+                    <div id="now-summary-confidence" class="text-[6.5px] text-white/20 mt-1.5 text-right font-mono">conf —</div>
+                </div>
+
+                <!-- ── Overview Cards (U5 enhanced) ── -->
+                <div class="border-divider">
+                    <div class="section-label mb-1.5">Field Metrics</div>
+                    <div id="overview-cards">
+                        <div class="ov-card" id="ov-card-flow">
+                            <div class="ov-card-label">Flow Continuity</div>
+                            <div class="ov-card-value" id="ov-flow-val">—</div>
+                            <div class="ov-card-sub">Derived</div>
+                            <canvas id="ov-spark-flow" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-return">
+                            <div class="ov-card-label">Return Strength</div>
+                            <div class="ov-card-value" id="ov-return-val">—</div>
+                            <div class="ov-card-sub">Derived</div>
+                            <canvas id="ov-spark-return" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-energy">
+                            <div class="ov-card-label">Energy Throughput</div>
+                            <div class="ov-card-value" id="ov-energy-val">—</div>
+                            <div class="ov-card-sub">Derived</div>
+                            <canvas id="ov-spark-energy" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-echo">
+                            <div class="ov-card-label">Echo Persistence</div>
+                            <div class="ov-card-value" id="ov-echo-val">—</div>
+                            <div class="ov-card-sub">Derived · medium</div>
+                            <canvas id="ov-spark-echo" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-closure">
+                            <div class="ov-card-label">Closure Stability</div>
+                            <div class="ov-card-value" id="ov-closure-val">—</div>
+                            <div class="ov-card-sub">Proxy</div>
+                            <canvas id="ov-spark-closure" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-saturation">
+                            <div class="ov-card-label">Saturation Risk</div>
+                            <div class="ov-card-value" id="ov-saturation-val">—</div>
+                            <div class="ov-card-sub">Proxy</div>
+                            <canvas id="ov-spark-saturation" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-collapse">
+                            <div class="ov-card-label">Extinction Risk</div>
+                            <div class="ov-card-value" id="ov-collapse-val">—</div>
+                            <div class="ov-card-sub">Proxy</div>
+                            <canvas id="ov-spark-extinction" class="ov-spark" width="80" height="16"></canvas>
+                        </div>
+                        <div class="ov-card" id="ov-card-boundary">
+                            <div class="ov-card-label">Boundary Exchange</div>
+                            <div class="ov-card-value" id="ov-boundary-val">—</div>
+                            <div class="ov-card-sub">Derived</div>
+                        </div>
+                        <div class="ov-card" id="ov-card-mode">
+                            <div class="ov-card-label">Mode / Action</div>
+                            <div class="ov-card-value" id="ov-mode-val">—</div>
+                            <div class="ov-card-sub">Derived</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Guide Sparklines and History -->
+                <!-- ── Safety / Integrity Checks ── -->
+                <div class="border-divider" id="ov-integrity-section">
+                    <div class="section-label mb-1">Integrity Checks</div>
+                    <div class="ov-integrity-row">
+                        <span class="ov-integrity-label">Semantic Leak</span>
+                        <span id="ov-semantic-val" class="ov-integrity-value" data-level="clear">0</span>
+                        <span class="ov-integrity-kind">Check</span>
+                    </div>
+                    <div class="ov-integrity-row">
+                        <span class="ov-integrity-label">LLM Teacher</span>
+                        <span id="ov-llm-teacher-val" class="ov-integrity-value" data-level="clear">inactive</span>
+                        <span class="ov-integrity-kind">Check</span>
+                    </div>
+                    <div class="ov-integrity-row">
+                        <span class="ov-integrity-label">Node Bridge</span>
+                        <span id="ov-node-bridge-val" class="ov-integrity-value" data-level="clear">inactive</span>
+                        <span class="ov-integrity-kind">Check</span>
+                    </div>
+                    <div class="ov-integrity-row">
+                        <span class="ov-integrity-label">NaN / Infinity</span>
+                        <span id="ov-nan-val" class="ov-integrity-value" data-level="clear">0</span>
+                        <span class="ov-integrity-kind">Diagnostic</span>
+                    </div>
+                    <div class="ov-integrity-row">
+                        <span class="ov-integrity-label">Consciousness Claim</span>
+                        <span id="ov-consciousness-val" class="ov-integrity-value" data-level="clear">none</span>
+                        <span class="ov-integrity-kind">Check</span>
+                    </div>
+                </div>
+
+                <!-- ── Event Timeline (U5) ── -->
+                <div class="border-divider" id="ov-event-timeline-section">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <div class="section-label">Event Timeline</div>
+                        <div class="flex gap-1">
+                            <select id="event-filter" class="bg-black/40 border border-white/10 rounded px-1 text-white/60 outline-none text-[7px] font-mono" onchange="filterEventTimeline(this.value)">
+                                <option value="all">All</option>
+                                <option value="actuationPulse">Pulse</option>
+                                <option value="sensoryReturn">Return</option>
+                                <option value="closureMetricChange">Closure</option>
+                                <option value="riskChange">Risk</option>
+                                <option value="localExcitabilityShift">Local Field</option>
+                                <option value="repeatedFlowPathObserved">Paths</option>
+                                <option value="protoNetworkCandidateObserved">Network</option>
+                                <option value="diagnosticWarning">Diagnostic</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="event-timeline-list" class="space-y-0.5 max-h-32 overflow-y-auto custom-scrollbar">
+                        <div class="event-tl-empty text-[8px] text-white/25 font-mono py-1">Awaiting observations…</div>
+                    </div>
+                </div>
+
+                <!-- ── Guide Sparklines and History (existing) ── -->
                 <div class="border-divider">
                     <div class="section-label">Reality Guide</div>
                     <div class="flex justify-between items-center mb-1">

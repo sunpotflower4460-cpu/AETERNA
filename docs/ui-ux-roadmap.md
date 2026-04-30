@@ -17,7 +17,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U2** | Torus Camera / Controls | ✅ 完了 |
 | **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | ✅ 完了 |
-| **U5** | Overview / Now Summary / Event Timeline | 未着手 |
+| **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
 | **U6** | Guide / Explanation System | 未着手 |
 | **U7** | Scenario UX | 未着手 |
 | **U8** | Visual QA / Scientific QA | 未着手 |
@@ -258,7 +258,62 @@ backside faint display / inactive surface visibility / coverage map / raw-smooth
 **目的**: 現在の viability 状態・主要 metrics を Observation HUD（Layer B）として表示し、過去の主要イベントを Timeline として確認できるようにする。  
 数値の羅列ではなく、状態の要約として伝える。
 
----
+**実装内容**:
+
+- `OverviewState` / `OverviewMetric` 型（`src/types/overviewState.ts`）
+- `NowSummaryState` / `NowSummaryLine` 型（`src/types/nowSummary.ts`）
+- `AeternaEvent` / `AeternaEventKind` 型（`src/types/aeternaEvent.ts`）
+- `deriveOverviewState`（`src/ui/overview/deriveOverviewState.ts`）— rule-based / no LLM
+- `deriveNowSummary`（`src/ui/summary/deriveNowSummary.ts`）— 3〜5行 / rule-based / no LLM
+- `deriveAeternaEvents`（`src/ui/timeline/deriveAeternaEvents.ts`）— delta-based / no fake events
+- `MiniMetricSparkline`（`src/ui/overview/MiniMetricSparkline.ts`）— canvas sparklines
+- `ExplainableObservationSnapshot`（`src/ui/explain/explainableObservationSnapshot.ts`）— U6 接続準備
+- U5 smoke tests（`src/tests/ui/overviewNowSummaryTimeline.test.ts`）— 41件
+
+**Overview Panel 表示項目**:
+
+| ID | Label | valueKind |
+|---|---|---|
+| `flowContinuity` | Flow Continuity | derived |
+| `energyThroughput` | Energy Throughput | derived |
+| `boundaryExchange` | Boundary Exchange | derived |
+| `returnStrength` | Return Strength | derived |
+| `echoPersistence` | Echo Persistence | derived |
+| `closureStability` | Closure Stability | proxy |
+| `saturationRisk` | Saturation Risk | proxy |
+| `extinctionRisk` | Extinction Risk | proxy |
+| `semanticLeak` | Semantic Leak | check |
+| `nanOrInfinity` | NaN / Infinity | check |
+| `llmTeacher` | LLM Teacher | check |
+| `nodeBridge` | Node Bridge | check |
+
+**重要方針**:
+
+- No LLM / API — rule-based / local のみ
+- fake event を作らない（delta detection のみ）
+- 感情・意思・意識 claim を UI に出さない
+- raw / derived / proxy / check を区別して表示
+- semantic node / LLM teacher / Node bridge は追加しない
+- runtime dynamics は変更しない
+- fake visual を追加しない
+
+**完了条件**:
+
+- Overview Panel がある ✅
+- OverviewState / OverviewMetric 型がある ✅
+- Now Summary がある（3〜5行）✅
+- NowSummaryState 型がある ✅
+- deriveNowSummary は LLM/API 不要 ✅
+- Event Timeline / Event Strip がある ✅
+- AeternaEvent 型がある ✅
+- Semantic Leak status が表示可能 ✅
+- Mini time-series sparkline がある ✅
+- Explain Button 接続準備がある（ExplainableObservationSnapshot）✅
+- runtime 未変更 ✅
+- fake event なし ✅
+- semantic/consciousness/emotion claim なし ✅
+- build が通る ✅
+- 41件の smoke tests 通過 ✅
 
 ## U6: Guide / Explanation System
 

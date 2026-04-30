@@ -213,3 +213,42 @@ Field Layer Visualization のすべてのレイヤーは、実際の観測値（
 - `docs/ui-ux-roadmap.md` — U0〜U8 ロードマップ
 - `docs/natural-emergence-principles.md` — Natural Emergence 原則
 - `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
+
+---
+
+## §3 U5 原則: Overview / Now Summary / Event Timeline
+
+### §3.1 Overview Panel
+
+- 各メトリクスには `valueKind` を付与すること（measured / derived / proxy / check）
+- `overallStatus` は観測カテゴリであり、感情・意識状態ではない
+  - `quiet` = 低活動状態、`active` = 活動状態（眠りや寂しさではない）
+- "生命力" / "気分" / "意識状態" / "感情" をラベルに使わない
+- Semantic Leak / LLM Teacher / Node Bridge status は常に表示可能にすること
+
+### §3.2 Now Summary
+
+- rule-based / local のみ — LLM / API key 不要
+- 3〜5行の観測語短文
+- 禁止: "thinking" / "wants" / "feels" / "conscious" / "lonely" / "understands" / "remembered you"
+- 日本語禁止: "考えています" / "寂しがっています" / "意識が生まれました"
+- risk が高い場合は warning を出してよい — ただし過剰に怖くしない
+- 欠損 state があっても fallback
+
+### §3.3 Event Timeline
+
+- delta-based — fake event を生成しない
+- 観測事実のみを文字列にする
+- 禁止: "AETERNA wanted to respond" / "AETERNA remembered a path" / "AETERNA felt unstable"
+- severity: info / notice / warning のみ
+
+### §3.4 Mini Time-Series Sparkline
+
+- trend 把握用の小さなグラフ
+- 値を誇張しない・派手にしない
+- mobile では折りたたみ可能
+
+### §3.5 ExplainableObservationSnapshot
+
+- U6 Guide 用の素材として整える（U5 では LLM 呼び出しをしない）
+- OverviewState / NowSummaryState / AeternaEvent[] を束ねた snapshot

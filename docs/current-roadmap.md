@@ -48,7 +48,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進める。
 | **U2** | Torus Camera / Controls | ✅ 完了 |
 | **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | ✅ 完了 |
-| **U5** | Overview / Now Summary / Event Timeline | 未着手 |
+| **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
 | **U6** | Guide / Explanation System | 未着手 |
 | **U7** | Scenario UX | 未着手 |
 | **U8** | Visual QA / Scientific QA | 未着手 |
