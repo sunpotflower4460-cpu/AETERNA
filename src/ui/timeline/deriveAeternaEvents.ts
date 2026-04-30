@@ -340,12 +340,15 @@ export function recordScenarioControlEvent(
     tick: number
 ): void {
     const eventKind = kind === 'summary' ? 'scenarioSummary' as const : 'scenarioControl' as const;
-    const actionText = kind === 'start'   ? 'started'
-        : kind === 'pause'  ? 'paused'
-        : kind === 'resume' ? 'resumed'
-        : kind === 'stop'   ? 'stopped'
-        : kind === 'reset'  ? 'reset'
-        : 'summary generated';
+    const actionTextMap: Record<typeof kind, string> = {
+        start:   'started',
+        pause:   'paused',
+        resume:  'resumed',
+        stop:    'stopped',
+        reset:   'reset',
+        summary: 'summary generated',
+    };
+    const actionText = actionTextMap[kind];
 
     push(makeEvent(
         eventKind,
