@@ -127,6 +127,9 @@ let _currentExplainSnapshot = null;
 let _currentRenderMode = null;
 let _currentViewMode = null;
 
+/** Cached promise for the localGuideEngine module (loaded once on first use). */
+let _guideModulePromise = null;
+
 /**
  * Set the latest ExplainableObservationSnapshot so the guide can use it.
  * Called from the main frame loop — does NOT modify any runtime state.
@@ -155,9 +158,13 @@ export function toggleExplain() {
 /**
  * Generate and render the current guide explanation into the panel DOM.
  * Uses localGuideEngine — no LLM / API calls.
+ * The guide module is loaded lazily on first call and cached thereafter.
  */
 function _renderGuide() {
-    import('../guide/localGuideEngine.ts').then(({ generateGuide, renderGuideToDOM }) => {
+    if (!_guideModulePromise) {
+        _guideModulePromise = import('../guide/localGuideEngine.ts');
+    }
+    _guideModulePromise.then(({ generateGuide, renderGuideToDOM }) => {
         const guide = generateGuide(
             _currentExplainSnapshot,
             _currentRenderMode,

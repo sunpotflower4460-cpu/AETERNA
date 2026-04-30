@@ -165,8 +165,8 @@ export function renderGuideToDOM(explanation: GuideExplanation | null): void {
 
     _updateSectionTitles();
 
-    // Attach action handlers
-    _attachActionHandlers();
+    // Ensure delegated action listener is set up (idempotent)
+    _ensureActionDelegate();
 }
 
 // ── Section title sync ─────────────────────────────────────────────────────────
@@ -188,32 +188,33 @@ function _updateSectionTitles(): void {
 // ── Guide action handlers ──────────────────────────────────────────────────────
 
 /**
- * Attach click handlers to guide suggestion elements.
+ * Set up a single delegated event listener on the guide panel for suggestion clicks.
  * Handlers perform UI-only operations (panel open, layer toggle, view reset).
  * Runtime dynamics are never modified.
+ * Called once; subsequent calls from renderGuideToDOM are no-ops.
  */
-function _attachActionHandlers(): void {
-    const suggestions = document.querySelectorAll('.guide-suggestion[data-action]');
-    suggestions.forEach(el => {
-        // Remove existing handler to avoid double-binding
-        const clone = el.cloneNode(true) as HTMLElement;
-        el.parentNode?.replaceChild(clone, el);
-        clone.addEventListener('click', _handleSuggestionClick);
-        clone.style.cursor = 'pointer';
-    });
+let _actionDelegateAttached = false;
+
+function _ensureActionDelegate(): void {
+    if (_actionDelegateAttached) return;
+    // Use document-level delegation — targets any .guide-suggestion[data-action] element
+    document.addEventListener('click', _delegatedSuggestionClick);
+    _actionDelegateAttached = true;
 }
 
-function _handleSuggestionClick(this: HTMLElement): void {
-    const action = this.dataset['action'] as string | undefined;
-    const panel  = this.dataset['panel'];
-    const layer  = this.dataset['layer'];
+function _delegatedSuggestionClick(e: Event): void {
+    const target = (e.target as HTMLElement).closest?.('.guide-suggestion[data-action]') as HTMLElement | null;
+    if (!target) return;
+
+    const action = target.dataset['action'] as string | undefined;
+    const panel  = target.dataset['panel'];
+    const layer  = target.dataset['layer'];
 
     if (!action) return;
 
     switch (action) {
         case 'openPanel':
             if (panel && typeof window !== 'undefined') {
-                // Open research panel and switch to tab — UI-only
                 if (typeof (window as Record<string, unknown>)['selectResearchTab'] === 'function') {
                     (window as Record<string, unknown>)['selectResearchTab'](panel);
                 }
@@ -227,7 +228,6 @@ function _handleSuggestionClick(this: HTMLElement): void {
             break;
 
         case 'toggleLayer':
-            // Layer toggle: fire a custom event; actual layer state managed elsewhere
             if (layer && typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('guide:toggleLayer', { detail: { layerId: layer } }));
             }

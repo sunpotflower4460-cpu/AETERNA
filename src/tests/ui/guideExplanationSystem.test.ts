@@ -460,7 +460,7 @@ describe('guide actions — UI only, no runtime mutation', () => {
         // All custom events dispatched are prefixed with 'guide:'
         const eventMatches = srcLocalEngine.match(/new CustomEvent\('([^']+)'/g) ?? [];
         eventMatches.forEach(match => {
-            const name = match.replace("new CustomEvent('", '').replace("'", '');
+            const name = match.replace("new CustomEvent('", '').replaceAll("'", '');
             expect(name.startsWith('guide:')).toBe(true);
         });
     });
