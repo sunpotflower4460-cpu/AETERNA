@@ -187,6 +187,47 @@ Camera Controls は Layer A（Main Field View）内に統合される観察補�
 
 ---
 
+## 3.7 U3 Scientific Torus Renderer 実装（Renderer Layer）
+
+U3 で renderer 基盤が整備された。これは renderer 層（presentation layer）であり、field dynamics には影響しない。
+
+### 実装ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `src/types/torusRenderState.ts` | TorusRenderMode / TorusNormalizationMode / TorusPerformanceMode / TorusRenderState 型 |
+| `src/ui/render/torusColorMap.ts` | 固定カラーマップ（観測値 → 色対応） |
+| `src/ui/render/torusLayerRegistry.ts` | 観測レイヤー レジストリ |
+| `src/ui/render/torusCoverageMetrics.ts` | coverage metrics 計算 |
+| `src/ui/render/torusDiagnosticWarnings.ts` | diagnostic warnings 計算 |
+| `src/ui/render/torusRenderModeManager.ts` | レンダーモード状態管理・DOM sync |
+| `src/tests/ui/scientificTorusRenderer.test.ts` | U3 smoke tests |
+
+### Renderer Mode
+
+| モード | 説明 |
+|---|---|
+| raw | 実値に最も近い表示 |
+| smooth | presentation smoothing 適用（`[S]` と明記） |
+| overlay | 複数観測レイヤー重ね |
+| diagnostic | grid / coverage / warnings 確認 |
+
+### Coverage Map
+
+coverage metrics が活動の実態と表示上の問題を切り分ける手段を提供する。
+
+### Diagnostic Warnings
+
+NaN / Infinity / clipping / overbright / backside_hidden / coverage_low の警告が表示できる。
+
+### 注記
+
+- renderer modules は presentation layer のみ
+- runtime dynamics / field calculation は変更しない
+- fake visual を追加しない
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則

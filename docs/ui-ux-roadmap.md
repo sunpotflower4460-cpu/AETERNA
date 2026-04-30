@@ -15,7 +15,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U0** | UI/UX 原則固定 | ✅ 完了（docs のみ） |
 | **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | ✅ 完了 |
-| **U3** | Scientific Torus Renderer | 未着手 |
+| **U3** | Scientific Torus Renderer | ✅ 完了 |
 | **U4** | Field Layer Visualization | 未着手 |
 | **U5** | Overview / Now Summary / Event Timeline | 未着手 |
 | **U6** | Guide / Explanation System | 未着手 |
@@ -148,6 +148,48 @@ runtime 挙動は変更しない。fake visual を追加しない。
 **目的**: fake energy・fake flow を追加せず、実際の field 値を色・光・透明度に変換する Scientific Renderer を実装する。  
 backside faint display / inactive surface visibility / coverage map / raw-smoothed toggle を含む。  
 `docs/torus-visualization-requirements.md` §4.2〜4.4 の要件を実装する。
+
+**実装内容**:
+
+- `TorusRenderMode`（raw / smooth / overlay / diagnostic）
+- `TorusNormalizationMode`（global / local）
+- `TorusPerformanceMode`（high / balanced / battery / diagnostic）
+- `TorusRenderState` 型定義（`src/types/torusRenderState.ts`）
+- 固定カラーマップ（Blue/Cyan=flow, Green=recovery, White=coherent, Purple=trace, Orange=return, Red=saturation only）
+- 観測レイヤーレジストリ（energy / trace / actuationPulse / sensoryReturn / closureMatch / localExcitability / repeatedFlow / protoNetwork）
+- Coverage Map metrics（activeRegionCount / inactiveRegionCount / activeCoverageRatio / activeRegionConcentration / visibleCoverageRatio）
+- Diagnostic Warnings（NaN / Infinity / clipping / overbright / backside_hidden / coverage_low）
+- Render Mode Manager（DOM sync, mode labels, bloom/mesh/particle factors）
+- U3 smoke tests（scientificTorusRenderer.test.ts）
+- docs 更新（torus-visualization-requirements, visualization-integrity-principles, scientific-ui-ux-principles, ui-information-architecture, ui-ux-roadmap, current-roadmap）
+
+**新規ファイル**:
+
+- `src/types/torusRenderState.ts`
+- `src/ui/render/torusColorMap.ts`
+- `src/ui/render/torusLayerRegistry.ts`
+- `src/ui/render/torusCoverageMetrics.ts`
+- `src/ui/render/torusDiagnosticWarnings.ts`
+- `src/ui/render/torusRenderModeManager.ts`
+- `src/tests/ui/scientificTorusRenderer.test.ts`
+
+**完了条件**:
+
+- Renderer Mode がある（raw / smooth / overlay / diagnostic） ✅
+- Full Torus Visibility 方針が docs に反映されている ✅
+- inactive surface / backside faint display / grid の方針がある ✅
+- Coverage Map / coverage metrics がある ✅
+- Color Mapping が固定されている ✅
+- Value Legend がある / 追加方針がある ✅
+- Raw / Smoothed toggle の設計がある ✅
+- Global / Local normalization の設計がある ✅
+- Performance Mode の設計がある ✅
+- Diagnostic warnings の設計がある ✅
+- runtime dynamics を変更していない ✅
+- fake visual を追加していない ✅
+- semantic / consciousness / emotion claim なし ✅
+- docs が更新されている ✅
+- build が通る ✅
 
 ---
 
