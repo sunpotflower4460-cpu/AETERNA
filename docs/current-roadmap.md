@@ -349,3 +349,24 @@ S8 verifies long-run natural emergence behavior across quiet, repeated return, d
 - Node bridge 未実装 ✅
 - semantic / consciousness claim なし ✅
 - build が通る ✅
+
+
+---
+
+## U7: Scenario UX
+
+**目的**: シナリオ観測条件プリセットの定義と、UI シナリオ実行状態・結果サマリー・比較機能を実装する。  
+runtime 挙動は変更しない。fake results は生成しない。
+
+**実装済み**:
+- `src/types/scenarioPreset.ts` — ScenarioPreset / ScenarioPresetId 型定義
+- `src/scenario/scenarioPresetRegistry.ts` — 10 シナリオプリセット + getScenarioPreset()
+- `src/ui/scenario/ScenarioRunState.ts` — シナリオ実行状態管理（DOM なし）
+- `src/ui/scenario/ScenarioResultSummary.ts` — 結果サマリー型 + ファクトリ関数
+- `src/ui/scenario/ScenarioComparison.ts` — 2 結果の比較
+- `src/types/aeternaEvent.ts` — scenarioControl / scenarioSummary を AeternaEventKind に追加
+- `src/ui/timeline/deriveAeternaEvents.ts` — recordScenarioControlEvent() 追加
+- `src/ui/guide/deriveGuideExplanation.ts` — Guide buildTryNext にシナリオ提案 3 件追加
+- `src/tests/ui/scenarioUx.test.ts` — U7 ユニットテスト
+
+U7 は観測条件プリセットのみを実装する。生命・意識・感情・学習の主張はしない。

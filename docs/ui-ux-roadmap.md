@@ -19,7 +19,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U4** | Field Layer Visualization | ✅ 完了 |
 | **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
 | **U6** | Guide / Explanation System | ✅ 完了 |
-| **U7** | Scenario UX | 未着手 |
+| **U7** | Scenario UX | ✅ 完了 |
 | **U8** | Visual QA / Scientific QA | 未着手 |
 
 ---
@@ -370,6 +370,33 @@ backside faint display / inactive surface visibility / coverage map / raw-smooth
 
 **目的**: シナリオの選択・実行・観察を UI から行えるようにし、"次に試せること" を明確に案内する。  
 ユーザーが AETERNA の挙動を能動的に探索できるようにする。
+
+**実装内容**:
+- `src/types/scenarioPreset.ts` — ScenarioPreset / ScenarioPresetId 型定義
+- `src/scenario/scenarioPresetRegistry.ts` — 10 シナリオプリセット定義 + getScenarioPreset()
+- `src/ui/scenario/ScenarioRunState.ts` — シナリオ実行状態管理（DOM なし）
+- `src/ui/scenario/ScenarioResultSummary.ts` — シナリオ結果サマリー型 + ファクトリ関数
+- `src/ui/scenario/ScenarioComparison.ts` — 2 シナリオ結果の比較
+- `src/types/aeternaEvent.ts` — AeternaEventKind に scenarioControl / scenarioSummary 追加
+- `src/ui/timeline/deriveAeternaEvents.ts` — recordScenarioControlEvent() 追加
+- `src/ui/guide/deriveGuideExplanation.ts` — buildTryNext に Slow Echo World / Repeated Gentle Touch / High Resistance World シナリオ提案追加
+- `src/tests/ui/scenarioUx.test.ts` — U7 ユニットテスト
+
+**完了条件**:
+- ScenarioPreset 型定義がある ✅
+- 10 シナリオプリセットが定義されている ✅
+- 全プリセットに forbidden terms なし ✅
+- ScenarioRunState が run / pause / resume / stop / reset をサポート ✅
+- ScenarioResultSummary が params から値を取得（hardcoded 結果なし） ✅
+- ScenarioComparison が動作 ✅
+- AeternaEventKind に scenarioControl / scenarioSummary が追加 ✅
+- recordScenarioControlEvent が real event を push ✅
+- Guide: echo / localExcitability / extinctionRisk 条件でシナリオ提案を追加 ✅
+- runtime dynamics を変更していない ✅
+- fake results を生成していない ✅
+- semantic / consciousness / emotion claim なし ✅
+- build が通る ✅
+- U7 テストが全通過 ✅
 
 ---
 

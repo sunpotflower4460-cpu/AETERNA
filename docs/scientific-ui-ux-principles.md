@@ -252,3 +252,13 @@ Field Layer Visualization のすべてのレイヤーは、実際の観測値（
 
 - U6 Guide 用の素材として整える（U5 では LLM 呼び出しをしない）
 - OverviewState / NowSummaryState / AeternaEvent[] を束ねた snapshot
+
+### §3.6 Scenario UX (U7)
+
+- シナリオは「観測条件プリセット」である — 生命っぽいふるまいシステムではない
+- シナリオの title / description / observationGoal はすべて neutral / scientific
+- 禁止: "wants" / "feels" / "conscious" / "learns" / "remembers" / 感情・意識・欲求語
+- expectedSignals は "possible" であり "guaranteed" ではない
+- ScenarioRunState は UI 状態管理のみ — runtime field 値を変更しない
+- ScenarioResultSummary の値はすべて外部から供給される params から取得する（hardcoded 結果なし）
+- recordScenarioControlEvent は real AeternaEvent を push する — fake event は生成しない
