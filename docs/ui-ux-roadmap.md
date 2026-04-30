@@ -16,7 +16,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U1** | Layout 再設計 | ✅ 完了 |
 | **U2** | Torus Camera / Controls | ✅ 完了 |
 | **U3** | Scientific Torus Renderer | ✅ 完了 |
-| **U4** | Field Layer Visualization | 未着手 |
+| **U4** | Field Layer Visualization | ✅ 完了 |
 | **U5** | Overview / Now Summary / Event Timeline | 未着手 |
 | **U6** | Guide / Explanation System | 未着手 |
 | **U7** | Scenario UX | 未着手 |
@@ -197,6 +197,59 @@ backside faint display / inactive surface visibility / coverage map / raw-smooth
 
 **目的**: Energy Flow / Trace / Residue / Local Excitability / Repeated Flow Path / Proto-Network Candidate / Closure Match を、独立した観測レイヤーとして重ね合わせて表示できるようにする。  
 `docs/ui-information-architecture.md` §3.1 の表示対象を実装する。
+
+**実装内容**:
+
+- `FieldLayerRegistry`（fieldLayerRegistry.ts）— 10 layers 定義
+- `FieldLayerOverlayRules`（fieldLayerOverlayRules.ts）— overlay composition rules
+- `FieldLayerSummaries`（fieldLayerSummaries.ts）— U5 Now Summary 接続準備
+- U4 smoke tests（fieldLayerVisualization.test.ts）— 204件
+
+**新規ファイル**:
+
+- `src/ui/render/fieldLayerRegistry.ts` — Field Layer Registry
+- `src/ui/render/fieldLayerOverlayRules.ts` — Overlay rules
+- `src/ui/render/fieldLayerSummaries.ts` — Layer summaries
+- `src/tests/ui/fieldLayerVisualization.test.ts` — smoke tests
+
+**Field Layers**:
+
+| ID | Label | valueKind | Color | Default |
+|---|---|---|---|---|
+| `energyActivity` | Energy / Activity | derived | Blue/Cyan | ON |
+| `traceResidue` | Trace / Residue | derived | Purple | ON |
+| `actuationPulse` | Actuation Pulse | measured | Cyan-White | OFF |
+| `sensoryReturn` | Sensory Return | measured | Orange | ON |
+| `closureMatch` | Closure Match | proxy | Light Purple | OFF |
+| `mediumEchoDelay` | Medium Echo / Delay | derived | Orange/Amber | OFF |
+| `localExcitability` | Local Excitability | derived | Green/White | OFF |
+| `repeatedFlowPath` | Repeated Flow Path | derived | Cyan | OFF |
+| `protoNetworkCandidate` | Proto-Network Candidate | proxy | Indigo-Purple | OFF |
+| `riskOverlay` | Risk Overlay | proxy | Red/Amber | ON (threshold) |
+
+**重要方針**:
+
+- layer は観測値の翻訳であり、fake visual / fake energy を追加しない
+- runtime dynamics / field calculation を変更しない
+- runtime graph / network edge を作成しない
+- proto-network candidate は semantic network ではなく observer-side pre-semantic candidate
+- raw / derived / proxy / presentation-smoothed を区別して表示
+- 各 layer に semantic disclaimer を持たせる
+
+**完了条件**:
+
+- Field Layer Registry がある ✅
+- 10 layers 定義されている ✅
+- 各 layer に valueKind がある ✅
+- 各 layer に semantic disclaimer がある ✅
+- Layer Overlay Rules がある ✅
+- Layer Summaries がある ✅
+- runtime 未変更 ✅
+- fake visual なし ✅
+- runtime graph / network edge なし ✅
+- semantic/consciousness/emotion claim なし ✅
+- build が通る ✅
+- 204件の smoke tests 通過 ✅
 
 ---
 

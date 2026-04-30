@@ -160,6 +160,50 @@ coverage metrics（activeRegionCount / inactiveRegionCount / activeCoverageRatio
 
 ---
 
+## 1.8 Field Layer Visualization の原則（U4）
+
+U4 で導入した field layer visualization 基盤に適用する原則を追記する。
+
+### レイヤーは観測値の翻訳
+
+Field Layer Visualization のすべてのレイヤーは、実際の観測値（measured / derived / proxy）の翻訳である。演出のために値を追加・変更しない。
+
+### valueKind の明示
+
+各レイヤーは `valueKind`（measured / derived / proxy / presentation-smoothed）を持つ。UI には valueKind を表示し、ユーザーが値の性質を判断できるようにする。
+
+### Semantic Disclaimer の必須化
+
+以下のレイヤーには必ず semantic disclaimer を付記する：
+
+| Layer | Disclaimer 内容 |
+|---|---|
+| Trace / Residue | 意味記憶ではない。pre-semantic field residue である。 |
+| Closure Match | self-awareness ではない。reafference comparison proxy である。 |
+| Local Excitability | neurons ではない。pre-neural field conditions である。 |
+| Repeated Flow Path | semantic relation / runtime edge ではない。観測 candidate のみ。 |
+| Proto-Network Candidate | semantic network / knowledge graph ではない。pre-semantic observer-side candidate のみ。 |
+| Actuation Pulse | intention / will / decision ではない。actuation output signal である。 |
+
+### Overlay Rules
+
+- maxOpacity / priority / blendMode で構成を制御する
+- additive blend は最小限にし、overbright を防ぐ
+- riskOverlay は最高 priority（必要時のみ表示）
+- protoNetworkCandidate は最低 maxOpacity（非常に薄い）
+- 同時表示推奨最大数は 3〜4 レイヤー
+
+### 禁止
+
+- fake layer（fake energy / fake trace / fake flow）を追加しない
+- runtime dynamics / field calculation を変更しない
+- runtime graph / network edge を作成しない
+- semantic network として proto-network candidate を描かない
+- consciousness / self-awareness / emotion claim を出さない
+- 値がない場所を光らせない
+
+---
+
 ## 関連文書
 
 - `docs/visualization-integrity-principles.md` — 可視化の整合性原則

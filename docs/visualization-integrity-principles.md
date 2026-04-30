@@ -142,6 +142,56 @@ performance mode は表示品質のみを制御する。field dynamics / simulat
 
 ---
 
+## 2.7 U4 Field Layer Visualization — 実装原則補足
+
+U4 で導入した field layer visualization modules に適用される原則を補足する。
+
+### field layer registry modules（U4 新規）
+
+| ファイル | 役割 |
+|---|---|
+| `src/ui/render/fieldLayerRegistry.ts` | Field Layer Registry（FieldLayerDefinition / FieldLayerId / FieldLayerValueKind） |
+| `src/ui/render/fieldLayerOverlayRules.ts` | Overlay composition rules（maxOpacity / priority / blendMode） |
+| `src/ui/render/fieldLayerSummaries.ts` | Per-layer status summaries（U5 Now Summary 接続準備） |
+
+### FieldLayerValueKind
+
+| valueKind | 定義 |
+|---|---|
+| **measured** | field buffer またはパケットから直接読んだ値（変換なし） |
+| **derived** | 1つ以上の raw 値から計算された値 |
+| **proxy** | 直接測れない概念の代理指標 |
+| **presentation-smoothed** | 表示用に時間的・空間的に平滑化した値（`[S]` と明記必須） |
+
+### Layer Overlay Rules
+
+各 layer は以下の overlay rule を持つ：
+
+| field | 説明 |
+|---|---|
+| `maxOpacity` | overlay mode での最大透明度（0–1） |
+| `priority` | z-order（高いほど前面） |
+| `defaultBlendMode` | normal / additive / screen / multiply |
+| `maxSimultaneousLayers` | 同時表示推奨上限（超えると opacity 削減） |
+
+- riskOverlay: priority 最高（常に前面）
+- protoNetworkCandidate: maxOpacity 最低（non-semantic proxy は目立たせない）
+- additive blend は energyActivity / actuationPulse / localExcitability のみ
+- 複数 additive 同時 ON で overbright が検出可能（`detectOverbright()` 関数）
+
+### Semantic Disclaimer 義務
+
+closureMatch / traceResidue / localExcitability / repeatedFlowPath / protoNetworkCandidate / actuationPulse は各 layer 定義の `disclaimer` フィールドに semantic disclaimer を持つ。tooltip でも表示すること。
+
+### Proto-Network Candidate layer の禁止事項
+
+- runtime graph / network edge を作成しない
+- semantic network / knowledge graph として描かない
+- region ID を semantic label として扱わない
+- pathCandidateId を semantic relation として扱わない
+
+---
+
 ## 関連文書
 
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則
