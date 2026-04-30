@@ -60,9 +60,9 @@ export function toggleRenderFlag(flag: keyof Pick<TorusRenderState,
     'showGrid' | 'showBackside' | 'showInactiveSurface' | 'showCoverage' |
     'smoothingEnabled' | 'showLegend' | 'showDiagnosticWarnings'>
 ): boolean {
-    (_state as Record<string, unknown>)[flag] = !(_state as Record<string, unknown>)[flag];
+    _state[flag] = !_state[flag];
     syncRenderModeUI();
-    return (_state as Record<string, unknown>)[flag] as boolean;
+    return _state[flag];
 }
 
 // ── DOM Sync ─────────────────────────────────────────────────────────────────
