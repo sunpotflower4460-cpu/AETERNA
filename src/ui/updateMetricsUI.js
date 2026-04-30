@@ -2,6 +2,12 @@ import { state } from '../organism/state.js';
 import { UI, updateUIRow } from './domCache.js';
 import { PHI } from '../constants/aeternaConstants.js';
 import { updateStateTrends } from './trendSparkline.js';
+import { deriveOverviewState } from './overview/deriveOverviewState.ts';
+import { deriveNowSummary } from './summary/deriveNowSummary.ts';
+import { deriveAeternaEvents } from './timeline/deriveAeternaEvents.ts';
+import { pushOverviewSparklineValues } from './overview/MiniMetricSparkline.ts';
+import { buildExplainableSnapshot } from './explain/explainableObservationSnapshot.ts';
+import { updateNowSummary, updateEventTimeline } from './layout/layoutControls.js';
 
 // Phase 1: Running ongoingness accumulators for the live observer
 let _ong_totalFrames = 0;
@@ -384,6 +390,11 @@ export function updateMetricsUI(dyn, engineState) {
     if (_ong_totalFrames % 10 === 0) {
         _updateOverviewCards(dyn);
     }
+
+    // U5: Derive and update Overview / Now Summary / Event Timeline (every 30 frames)
+    if (_ong_totalFrames % 30 === 0) {
+        _updateU5(dyn);
+    }
 }
 
 // ── U1 helpers: HUD chips ─────────────────────────────────────────────────────
@@ -481,4 +492,136 @@ function _updateOverviewCards(dyn) {
     const mode = dyn.modeState || 'wake';
     const action = dyn.actionState || 'idle';
     _setCard('ov-card-mode', `${mode} / ${action}`, 'normal');
+
+    // U5: Boundary Exchange and Closure Stability cards
+    const be = dyn.boundaryExchange || 0;
+    _setCard('ov-card-boundary', be.toFixed(3), 'normal');
+    const cs = dyn.closureStability || 0;
+    _setCard('ov-card-closure', cs.toFixed(3), cs < 0.2 ? 'critical' : 'normal');
+}
+
+// ── U5: Overview / Now Summary / Event Timeline update ───────────────────────
+
+/** Cached observation snapshot for ExplainButton (U6 will read this). */
+export let currentExplainableSnapshot = null;
+
+/** Simulation tick counter (approximated from frame count). */
+let _u5_tick = 0;
+
+function _updateU5(dyn) {
+    _u5_tick += 30; // approximate tick (updated every 30 frames)
+
+    // ── Gather available observation states ──────────────────────────────────
+    // These are on state.network; null if not yet computed
+    const network = state.network;
+    const closure   = network?.lastBodyWorldClosureState ?? null;
+    const mediumProfile = network?.lastMediumProfileState ?? null;
+    // localField, repeatedFlowPaths, protoNetwork are not currently computed
+    // in the main loop — pass null and derive functions degrade gracefully
+    const localField = null;
+    const repeatedFlowPaths = null;
+    const protoNetwork = null;
+
+    // Build a lightweight viability proxy from the dyn values already available.
+    // This is NOT a full DynamicViabilityState — it's a presentation-smoothed proxy.
+    const sig = dyn.sigmaDisplay || 0;
+    const viability = {
+        timestamp: Date.now(),
+        flowContinuity:      Math.min(1, Math.max(0, sig > 1.15 ? 0.85 : sig > 0.9 ? 0.55 : 0.2)),
+        energyThroughput:    Math.min(1, Math.max(0, dyn.energy || 0)),
+        dissipationBalance:  Math.min(1, Math.max(0, 1 - (dyn.mediumEchoPersistence || 0))),
+        resistanceBalance:   0.5,
+        delayCoherence:      0.5,
+        boundaryExchange:    Math.min(1, Math.max(0, dyn.boundaryExchange || 0)),
+        underCouplingRisk:   0,
+        overCouplingRisk:    0,
+        saturationRisk:      Math.min(1, Math.max(0, _ong_totalFrames > 0 ? _ong_saturationFrames / _ong_totalFrames : 0)),
+        extinctionRisk:      Math.min(1, Math.max(0, dyn.collapseRisk || 0)),
+        viabilityConfidence: 0.5,
+    };
+
+    const timestamp = Date.now();
+    const tick = _u5_tick;
+
+    // ── Derive OverviewState ─────────────────────────────────────────────────
+    const overviewState = deriveOverviewState({
+        viability, closure, localField, repeatedFlowPaths, protoNetwork,
+        semanticLeakCount: 0,
+        nanOrInfinityCount: 0,
+        timestamp,
+    });
+
+    // ── Update Overview integrity cards ─────────────────────────────────────
+    _updateIntegrityCards(overviewState);
+
+    // ── Push sparkline values ────────────────────────────────────────────────
+    const findMetric = (id) => overviewState.metrics.find(m => m.id === id);
+    pushOverviewSparklineValues({
+        flowContinuity:   Number(findMetric('flowContinuity')?.value   ?? 0),
+        energyThroughput: Number(findMetric('energyThroughput')?.value ?? 0),
+        returnStrength:   Number(findMetric('returnStrength')?.value   ?? 0),
+        echoPersistence:  Number(findMetric('echoPersistence')?.value  ?? 0),
+        closureStability: Number(findMetric('closureStability')?.value ?? 0),
+        saturationRisk:   Number(findMetric('saturationRisk')?.value   ?? 0),
+        extinctionRisk:   Number(findMetric('extinctionRisk')?.value   ?? 0),
+    });
+
+    // ── Update system state badge ────────────────────────────────────────────
+    _updateSystemStateBadge(overviewState.overallStatus);
+
+    // ── Derive and update Now Summary ────────────────────────────────────────
+    const nowSummaryState = deriveNowSummary({
+        overview: overviewState, viability, closure, mediumProfile,
+        localField, repeatedFlowPaths, protoNetwork,
+        semanticLeakCount: 0, nanOrInfinityCount: 0,
+        timestamp,
+    });
+    updateNowSummary(nowSummaryState);
+
+    // ── Derive and update Event Timeline ─────────────────────────────────────
+    const recentEvents = deriveAeternaEvents({
+        viability, closure, localField, repeatedFlowPaths, protoNetwork,
+        semanticLeakCount: 0, nanOrInfinityCount: 0,
+        tick, timestamp,
+    });
+    updateEventTimeline(recentEvents);
+
+    // ── Build ExplainableObservationSnapshot for U6 ──────────────────────────
+    currentExplainableSnapshot = buildExplainableSnapshot(
+        overviewState, nowSummaryState, recentEvents.slice(0, 10)
+    );
+}
+
+function _updateIntegrityCards(overviewState) {
+    const findMetric = (id) => overviewState.metrics.find(m => m.id === id);
+
+    const leak = findMetric('semanticLeak');
+    const nanM = findMetric('nanOrInfinity');
+
+    const leakEl = document.getElementById('ov-semantic-val');
+    if (leakEl && leak) {
+        leakEl.textContent = String(leak.value);
+        leakEl.dataset.level = leak.status;
+    }
+
+    const nanEl = document.getElementById('ov-nan-val');
+    if (nanEl && nanM) {
+        nanEl.textContent = String(nanM.value);
+        nanEl.dataset.level = nanM.status;
+    }
+}
+
+const _STATUS_LABELS = {
+    'quiet':           'QUIET',
+    'active':          'ACTIVE',
+    'unstable':        'UNSTABLE',
+    'saturated-risk':  'SAT-RISK',
+    'extinction-risk': 'EXT-RISK',
+    'unknown':         'UNKNOWN',
+};
+
+function _updateSystemStateBadge(overallStatus) {
+    const badge = document.getElementById('system-state-badge');
+    if (!badge) return;
+    badge.textContent = _STATUS_LABELS[overallStatus] ?? overallStatus;
 }

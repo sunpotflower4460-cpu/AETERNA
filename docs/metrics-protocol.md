@@ -1446,3 +1446,77 @@ Field Layer Visualization（U4）では、各 layer の現在状態を `FieldLay
 - shortText は観測語のみを使用し、emotion / consciousness / semantic claim を含まない
 - magnitude はおおよその参考値であり、厳密な物理量ではない
 - U5 Now Summary との接続準備として提供されている
+
+---
+
+## U5: Overview / Now Summary / Event Timeline metrics
+
+### OverviewMetric
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `id` | string | メトリクス固有 ID |
+| `label` | string | 表示用ラベル（感情語禁止） |
+| `value` | number \| string | 0–1 の数値、または check 系は文字列 |
+| `status` | OverviewMetricStatus | low / moderate / high / warning / clear / unknown |
+| `valueKind` | string | measured / derived / proxy / check |
+| `source` | string | 元となる state フィールドのパス |
+
+### OverviewMetricStatus の定義
+
+| status | 説明 |
+|---|---|
+| `low` | 低い活動状態 |
+| `moderate` | 中程度の活動状態 |
+| `high` | 高い活動状態 |
+| `warning` | Risk 系：閾値を超えた状態 |
+| `clear` | Integrity check：問題なし |
+| `unknown` | データ欠損 |
+
+### NowSummaryLine
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `id` | string | 行固有 ID |
+| `priority` | number | 優先度（小さいほど高優先） |
+| `text` | string | 観測語のみ。emotion / consciousness claim 禁止 |
+| `source` | string | 元となる state フィールド |
+| `valueKind` | string | measured / derived / proxy / presentation-smoothed / check |
+
+### AeternaEvent
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `id` | string | イベント固有 ID |
+| `tick` | number | シミュレーション tick |
+| `timestamp` | number | wall-clock ms |
+| `kind` | AeternaEventKind | イベント種別 |
+| `severity` | info / notice / warning | 重要度 |
+| `text` | string | 観測語のみ。emotion / consciousness claim 禁止 |
+| `source` | string | 元となる state フィールド |
+| `valueKind` | string | measured / derived / proxy / check |
+
+### AeternaEventKind 一覧
+
+| kind | 説明 |
+|---|---|
+| `actuationPulse` | Flow 変化 |
+| `worldMediumChange` | World Medium 変化 |
+| `sensoryReturn` | Sensory Return 変化 |
+| `reafferenceComparison` | Reafference mismatch 変化 |
+| `closureMetricChange` | Closure Stability 変化 |
+| `mediumProfileChange` | Medium Profile 変化 |
+| `localExcitabilityShift` | Local Excitability 変化 |
+| `repeatedFlowPathObserved` | Repeated Flow Path 増加 |
+| `protoNetworkCandidateObserved` | Proto-Network Candidate 増加 |
+| `riskChange` | Risk 閾値変化 |
+| `semanticLeakCheck` | Semantic Leak チェック（常に 0） |
+| `diagnosticWarning` | NaN / Infinity 検出 |
+
+### 注記
+
+- OverviewState.overallStatus は観測カテゴリであり、感情・意識状態ではない
+  - `quiet` = 低活動状態、`active` = 活動状態、`unstable` = 不安定状態
+- deriveNowSummary は rule-based / local — LLM / API 不要
+- deriveAeternaEvents は delta-based — fake event を生成しない
+- consciousness / emotion / semantic claim を含む文字列を出力してはならない
