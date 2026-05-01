@@ -20,7 +20,7 @@ AETERNA の UI / UX / Visualization 改善を段階的に進めるためのロ�
 | **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
 | **U6** | Guide / Explanation System | ✅ 完了 |
 | **U7** | Scenario UX | ✅ 完了 |
-| **U8** | Visual QA / Scientific QA | 未着手 |
+| **U8** | Visual QA / Scientific QA | ✅ 完了 |
 
 ---
 

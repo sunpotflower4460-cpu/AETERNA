@@ -199,3 +199,13 @@ closureMatch / traceResidue / localExcitability / repeatedFlowPath / protoNetwor
 - `docs/torus-visualization-requirements.md` — トーラス表示要件
 - `docs/natural-emergence-principles.md` — Natural Emergence 原則
 - `docs/implementation-language-guardrails.md` — 実装言語の禁止事項
+
+
+---
+
+## 2.8 U8 QA addendum
+
+- U8 では Raw / Smooth / Diagnostic の違いが UI 上で追跡できることを再確認する
+- activeCoverageRatio / visibleCoverageRatio / activeRegionConcentration により、実活動偏りと表示偏りを切り分ける
+- fake visual / fake flow / fake trace / artificial fluctuation の未追加を guard test で再確認する
+- visual baseline は screenshot test が難しい場合でも manual checklist を維持する

@@ -50,8 +50,8 @@ AETERNA の UI / UX / Visualization 改善を段階的に進める。
 | **U4** | Field Layer Visualization | ✅ 完了 |
 | **U5** | Overview / Now Summary / Event Timeline | ✅ 完了 |
 | **U6** | Guide / Explanation System | ✅ 完了 |
-| **U7** | Scenario UX | 未着手 |
-| **U8** | Visual QA / Scientific QA | 未着手 |
+| **U7** | Scenario UX | ✅ 完了 |
+| **U8** | Visual QA / Scientific QA | ✅ 完了 |
 
 詳細は `docs/ui-ux-roadmap.md` を参照。
 
@@ -178,6 +178,25 @@ AETERNA の次段階（W-Series の後）では、自然発生原則に基づく
 - path weight 強化を実装していない ✅
 - semantic leak がない ✅
 - build が通る ✅
+
+
+### U8 完了条件
+
+- `docs/visual-qa-checklist.md` がある ✅
+- `docs/scientific-qa-checklist.md` がある ✅
+- `docs/language-claim-qa.md` がある ✅
+- `docs/performance-qa-notes.md` がある ✅
+- `docs/manual-visual-baseline-checklist.md` がある ✅
+- `docs/ui-ux-qa-report.md` がある ✅
+- `src/tests/ui/languageClaimGuard.test.ts` がある ✅
+- `src/tests/ui/fakeVisualGuard.test.ts` がある ✅
+- `src/tests/ui/rawSmoothDiagnosticMode.test.ts` がある ✅
+- runtime dynamics を変更していない ✅
+- fake visual / fake event を追加していない ✅
+- semantic / consciousness / emotion claim を UI copy から除去 ✅
+- build が通る ✅
+
+---
 
 ## W-Series: Body-World Closure Phases
 

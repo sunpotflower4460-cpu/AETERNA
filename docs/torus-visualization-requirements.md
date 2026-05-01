@@ -242,3 +242,13 @@ shortText は観測語のみを使用し、emotion / consciousness claim を含�
 - `docs/visualization-integrity-principles.md` — 可視化の整合性原則
 - `docs/ui-information-architecture.md` — UI 情報アーキテクチャ
 - `docs/ui-ux-roadmap.md` — U0〜U8 ロードマップ（U2, U3, U4 にて実装）
+
+
+---
+
+## U8 QA follow-up
+
+- U8 では初期視点・inside rim・diagnostic view・inactive surface faint visibility を再監査する
+- coverage metrics を使い、"実際に一部だけ活動" と "表示上そう見える" を切り分ける
+- mobile bottom nav / bottom sheet / safe-area / gesture conflict を確認する
+- performance mode は display-only であり simulation dynamics を変更しないことを再確認する

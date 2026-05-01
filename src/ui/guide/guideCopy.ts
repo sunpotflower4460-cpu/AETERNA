@@ -37,7 +37,7 @@ export const COPY_NAN_INFINITY =
 // ── Integrity notes (always shown) ────────────────────────────────────────────
 
 export const INTEGRITY_NOTES: readonly string[] = [
-    'This guide explains observation metrics — not emotions or consciousness.',
+    'This guide explains observation metrics only.',
     'Smooth rendering is presentation-only and does not reflect raw field values.',
     'Proto-network candidates are pre-semantic observations, not knowledge graphs.',
     'External LLM guide is inactive. All explanations are rule-based and local.',
@@ -91,7 +91,7 @@ export const FULL_GLOSSARY: readonly GuideGlossaryHint[] = [
     },
     {
         term: 'Repeated Flow Path Candidate',
-        shortDefinition: 'A field path that has been activated repeatedly. An observer-side candidate — not a learned memory or semantic route.',
+        shortDefinition: 'A field path that has been activated repeatedly. An observer-side candidate for repeated propagation, not a semantic route.',
         valueKind: 'proxy',
     },
     {

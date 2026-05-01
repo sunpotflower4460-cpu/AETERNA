@@ -102,8 +102,8 @@ describe('U1: Layout Structure', () => {
         it('Collapse Risk card exists', () => {
             expect(html).toContain('id="ov-card-collapse"');
         });
-        it('Semantic Leak card shows 0 (semantic layer is not active)', () => {
-            expect(html).toContain('ov-card-semantic');
+        it('Semantic Leak integrity row shows 0 and notes always 0', () => {
+            expect(html).toContain('id="ov-semantic-val"');
             expect(html).toContain('always 0');
         });
     });
@@ -184,7 +184,7 @@ describe('U1: Layout Structure', () => {
             expect(emotionClaims.length).toBe(0);
         });
         it('semantic layer note correctly indicates inactive status', () => {
-            // The ov-card-semantic shows "always 0" to indicate semantic layer is not active
+            // The semantic leak integrity row shows "always 0" to indicate semantic layer is not active
             expect(html).toContain('always 0');
         });
     });
