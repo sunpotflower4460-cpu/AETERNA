@@ -1660,3 +1660,48 @@ Field Layer Visualization（U4）では、各 layer の現在状態を `FieldLay
 - resistanceScale is clamped to [minResistanceScale, maxResistanceScale] always.
 - No network edges, semantic nodes, or Node bridge connections are created.
 - PHI_INV / SCHUMANN_RES are not affected by this channel.
+
+
+---
+
+## Observed Ratios (N6)
+
+### Reference
+
+- `referenceRatioId` — unique identifier for a reference ratio (e.g. 'goldenRatio', 'schumannFundamental')
+- `referenceRatioLabel` — human-readable label
+- `referenceRatioCategory` — category: 'mathematical' | 'geophysical' | 'musical' | 'custom'
+- `referenceRatioValue` — numeric value of the reference ratio
+
+### Derived
+
+- `observedRatioId` — unique identifier for an observed ratio from field dynamics
+- `observedRatioSource` — source: 'amplitudePeak' | 'vortexSpacing' | 'flowDelay' | 'closureTiming' | 'phaseCoherence' | 'other'
+- `observedRatioValue` — derived ratio value (numerator / denominator)
+- `observedRatioConfidence` — confidence in the observed ratio estimate (0–1)
+- `absoluteDistance` — |observed − reference|
+- `relativeDistance` — absoluteDistance / |reference|
+- `centsDistance` — 1200 × log₂(observed / reference), only when both > 0
+
+### Proxy
+
+- `matchStrength` — 1 − clamp(relativeDistance / tolerance, 0, 1); range: 0–1
+- `emergentResonanceProxy` — average matchStrength of top-N matches; range: 0–1
+- `averageMatchStrength` — average matchStrength across all reference matches; range: 0–1
+- `observationConfidence` — average confidence across all observed ratios; range: 0–1
+
+### Check
+
+- `externalConstantsMode` — 'neutral' | 'legacy'; default: 'neutral'
+- `legacyConstantsActive` — true only when externalConstantsMode='legacy' AND allowLegacyExternalConstants=true
+- `nanOrInfinityCount` — count of NaN/Infinity values in observed ratios and matches (should be 0)
+
+### Guardrails
+
+- referenceRatios.ts is observer-side; it must NOT be imported by dynamicCore.ts.
+- observedRatio values are NOT fed back into runtime dynamics.
+- A high matchStrength or emergentResonanceProxy is an observational comparison only.
+- It does NOT prove meaning, life, consciousness, resonance, or mystical alignment.
+- A low matchStrength is not a failure.
+- Legacy mode is for before/after comparison only; it must NOT be the production default.
+- No semantic, consciousness, emotion, healing, or mystical proof claims are made.
