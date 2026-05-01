@@ -46,6 +46,7 @@ import {
     buildTraceResidueSummary,
     buildActuationPulseSummary,
     buildSensoryReturnSummary,
+    buildMembraneLayerSummary,
     buildTorusCurvatureSummary,
     buildClosureMatchSummary,
     buildMediumEchoDelaySummary,
@@ -81,6 +82,7 @@ const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'traceResidue',
     'actuationPulse',
     'sensoryReturn',
+    'membraneState',
     'torusCurvature',
     'closureMatch',
     'mediumEchoDelay',
@@ -193,6 +195,12 @@ describe('U4: Field Layer Registry', () => {
         const def = getFieldLayerDefinition('energyActivity')!;
         expect(def.allowedModes).toContain('raw');
     });
+
+    it('membraneState is diagnostic / overlay only', () => {
+        const def = getFieldLayerDefinition('membraneState')!;
+        expect(def.allowedModes).toEqual(['overlay', 'diagnostic']);
+        expect(def.defaultVisible).toBe(false);
+    });
 });
 
 // ── Layer Overlay Rules ───────────────────────────────────────────────────────
@@ -257,6 +265,12 @@ describe('U4: Field Layer Overlay Rules', () => {
         const overCap = (rule.maxSimultaneousLayers ?? 6) + 2;
         const eff = computeEffectiveOpacity(rule, overCap);
         expect(eff).toBeLessThan(rule.maxOpacity);
+    });
+
+    it('membraneState overlay rule uses a valid priority and blend mode', () => {
+        const rule = getLayerOverlayRule('membraneState');
+        expect(rule.priority).toBeGreaterThan(0);
+        expect(['normal', 'additive', 'screen', 'multiply']).toContain(rule.defaultBlendMode);
     });
 
     it('computeEffectiveOpacity() in diagnostic mode returns maxOpacity always', () => {
@@ -331,6 +345,13 @@ describe('U4: Field Layer Summaries', () => {
     it('buildSensoryReturnSummary() notes delay when delayHint > 0.5', () => {
         const s = buildSensoryReturnSummary(true, 0.5, 0.8);
         expect(s.shortText).toContain('[delayed]');
+    });
+
+    it('buildMembraneLayerSummary() returns membraneState summary', () => {
+        const s = buildMembraneLayerSummary(true, 0.4, 0.3, 0.8);
+        expect(s.layerId).toBe('membraneState');
+        expect(s.valueKind).toBe('proxy');
+        expect(s.shortText.toLowerCase()).toContain('membrane');
     });
 
     it('buildTorusCurvatureSummary() returns correct layerId and valueKind', () => {
@@ -424,6 +445,7 @@ describe('U4: Field Layer Summaries', () => {
             buildTraceResidueSummary(true, 0.5, 0.5),
             buildActuationPulseSummary(true, 0.5, 0.5),
             buildSensoryReturnSummary(true, 0.5, 0.5),
+            buildMembraneLayerSummary(true, 0.5, 0.5, 0.8),
             buildTorusCurvatureSummary(true, 0.5, 8, 8, 1),
             buildClosureMatchSummary(true, 0.5, 0.5),
             buildMediumEchoDelaySummary(true, 0.5, 0.5, 0.5),

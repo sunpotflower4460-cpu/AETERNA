@@ -85,6 +85,13 @@ export const TORUS_COLOR_MAP: Record<string, TorusColorEntry> = {
         valueType: 'raw',
         description: 'Incoming sensory return signal and echo influence. Orange.',
     },
+    membrane: {
+        hex: '#a7f3d0',
+        r: 0.655, g: 0.953, b: 0.816,
+        observationLabel: 'Membrane Mediation',
+        valueType: 'proxy',
+        description: 'Boundary mediating layer showing permeability, tension, deformation, and overlap. Cyan-green / blue-purple composite reference.',
+    },
     closure: {
         hex: '#c084fc',
         r: 0.753, g: 0.518, b: 0.988,
@@ -217,6 +224,7 @@ export const TORUS_COLOR_LEGEND: Array<{ key: string; label: string; hex: string
     { key: 'coherentActivity', label: 'High Coherent Activity', hex: TORUS_COLOR_MAP.coherentActivity.hex, valueType: 'Derived' },
     { key: 'trace',          label: 'Trace Residue',            hex: TORUS_COLOR_MAP.trace.hex,          valueType: 'Derived' },
     { key: 'sensoryReturn',  label: 'Sensory Return / Echo',    hex: TORUS_COLOR_MAP.sensoryReturn.hex,  valueType: 'Raw' },
+    { key: 'membrane',       label: 'Membrane Layer',           hex: TORUS_COLOR_MAP.membrane.hex,       valueType: 'Proxy' },
     { key: 'closure',        label: 'Closure Match',            hex: TORUS_COLOR_MAP.closure.hex,        valueType: 'Proxy' },
     { key: 'torusCurvature', label: 'Torus Curvature',          hex: TORUS_COLOR_MAP.torusCurvature.hex, valueType: 'Derived' },
     { key: 'excitability',   label: 'Local Excitability',       hex: TORUS_COLOR_MAP.excitability.hex,   valueType: 'Derived' },

@@ -219,6 +219,8 @@ describe('guideCopy', () => {
         expect(terms).toContain('Flow Continuity');
         expect(terms).toContain('Echo Persistence');
         expect(terms).toContain('Closure Stability');
+        expect(terms).toContain('Membrane Layer');
+        expect(terms).toContain('Boundary Mediation');
         expect(terms).toContain('Trace / Residue');
         expect(terms).toContain('Local Excitability');
         expect(terms).toContain('Proto-Network Candidate');
@@ -352,6 +354,21 @@ describe('deriveGuideExplanation', () => {
         const snapshot = makeSnapshot({ overview });
         const guide = deriveGuideExplanation({ snapshot, timestamp: 0 });
         const suggestion = guide.whatToLookAt.find(s => s.targetPanel === 'world');
+        expect(suggestion).toBeDefined();
+    });
+
+    it('detects membrane overlap and suggests Membrane Layer', () => {
+        const overview = makeOverview({
+            metrics: [
+                ...makeOverview().metrics,
+                { id: 'membraneOverlap', label: 'Actuation / Return Overlap', value: 0.24, status: 'moderate', valueKind: 'proxy', source: 'membrane' },
+                { id: 'membraneIntegrity', label: 'Membrane Integrity', value: 0.82, status: 'moderate', valueKind: 'proxy', source: 'membrane' },
+                { id: 'membraneDeformation', label: 'Membrane Deformation', value: 0.31, status: 'moderate', valueKind: 'derived', source: 'membrane' },
+            ],
+        });
+        const snapshot = makeSnapshot({ overview });
+        const guide = deriveGuideExplanation({ snapshot, timestamp: 0 });
+        const suggestion = guide.whatToLookAt.find(s => s.targetLayer === 'membraneState');
         expect(suggestion).toBeDefined();
     });
 

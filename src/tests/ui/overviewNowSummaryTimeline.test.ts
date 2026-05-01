@@ -94,6 +94,25 @@ function makeClosure(overrides: Record<string, number> = {}) {
     };
 }
 
+function makeMembraneObservation(overrides: Record<string, number> = {}) {
+    return {
+        timestamp: 1000,
+        averagePermeability: 0.5,
+        averageTension: 0.45,
+        averageDeformation: 0.2,
+        averageTwoSidedness: 0.15,
+        highDeformationRegionCount: 1,
+        highTwoSidednessRegionCount: 0,
+        actuationReturnOverlap: 0.12,
+        membraneRecoveryBalance: 0.8,
+        membraneAsymmetry: 0.1,
+        membraneIntegrity: 0.85,
+        observationConfidence: 0.9,
+        nanOrInfinityCount: 0,
+        ...overrides,
+    };
+}
+
 // ── Type definition tests ─────────────────────────────────────────────────────
 
 describe('U5 type definitions', () => {
@@ -220,6 +239,19 @@ describe('deriveOverviewState', () => {
         });
     });
 
+    it('includes membrane metrics when membrane observation is provided', () => {
+        const state = deriveOverviewState({
+            viability: makeViability(),
+            closure: makeClosure(),
+            membraneObservation: makeMembraneObservation({ averageDeformation: 0.42, actuationReturnOverlap: 0.28 }),
+            timestamp: 0,
+        });
+        const ids = state.metrics.map(m => m.id);
+        expect(ids).toContain('membraneDeformation');
+        expect(ids).toContain('membraneOverlap');
+        expect(ids).toContain('membraneIntegrity');
+    });
+
     it('does not contain consciousness / emotion claim strings in output logic', () => {
         // Check that actual consciousness / emotion claim strings are not in text output
         // (Comments that document forbidden terms are acceptable; actual claim strings are not.)
@@ -296,6 +328,20 @@ describe('deriveNowSummary', () => {
         const summary = deriveNowSummary({ timestamp: 0, semanticLeakCount: 0 });
         const checkLine = summary.lines.find(l => l.id === 'semanticLeakClear' || l.id === 'semanticLeakFound');
         expect(checkLine).toBeDefined();
+    });
+
+    it('adds membrane observation text when membrane data is present', () => {
+        const summary = deriveNowSummary({
+            viability: makeViability(),
+            closure: makeClosure(),
+            membraneObservation: makeMembraneObservation({
+                averageDeformation: 0.48,
+                actuationReturnOverlap: 0.26,
+                membraneIntegrity: 0.8,
+            }),
+            timestamp: 0,
+        });
+        expect(summary.lines.some(l => l.text.includes('Membrane deformation'))).toBe(true);
     });
 
     it('does NOT use LLM, API, or fetch', () => {
@@ -409,6 +455,25 @@ describe('deriveAeternaEvents', () => {
         const riskEv = events.find(e => e.kind === 'riskChange' && e.text.includes('Saturation'));
         expect(riskEv).toBeDefined();
         expect(riskEv?.severity).toBe('warning');
+    });
+
+    it('detects membrane deformation increase and emits a membraneObservation event', () => {
+        deriveAeternaEvents({
+            viability: makeViability(),
+            closure: makeClosure(),
+            membraneObservation: makeMembraneObservation({ averageDeformation: 0.05, actuationReturnOverlap: 0.02 }),
+            tick: 1,
+            timestamp: Date.now(),
+        });
+        const events = deriveAeternaEvents({
+            viability: makeViability(),
+            closure: makeClosure(),
+            membraneObservation: makeMembraneObservation({ averageDeformation: 0.42, actuationReturnOverlap: 0.28 }),
+            tick: 2,
+            timestamp: Date.now(),
+        });
+        const membraneEv = events.find(e => e.kind === 'membraneObservation');
+        expect(membraneEv).toBeDefined();
     });
 
     it('does NOT emit events when values do not change significantly', () => {

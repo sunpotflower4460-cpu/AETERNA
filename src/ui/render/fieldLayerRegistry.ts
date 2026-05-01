@@ -53,6 +53,7 @@ export type FieldLayerId =
     | 'traceResidue'
     | 'actuationPulse'
     | 'sensoryReturn'
+    | 'membraneState'
     | 'torusCurvature'
     | 'closureMatch'
     | 'mediumEchoDelay'
@@ -225,6 +226,30 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'SensoryReturnPacket.returnDelayHint',
             'SensoryReturnPacket.worldOriginStrength',
             'ReafferenceComparisonState.actualReturn',
+        ],
+    },
+
+    membraneState: {
+        id: 'membraneState',
+        label: 'Membrane Layer',
+        description:
+            'Permeability, tension, deformation, actuation imprint, return imprint, and overlap ' +
+            'observed on the mediating layer between BodySurface and WorldMedium.',
+        disclaimer:
+            'This layer shows a computational mediating layer only. ' +
+            'It is NOT a soul membrane, ego membrane, or consciousness claim.',
+        valueKind: 'proxy',
+        defaultVisible: false,
+        colorRole: 'membrane',
+        allowedModes: ['overlay', 'diagnostic'],
+        sourceStates: [
+            'MembraneState.averagePermeability',
+            'MembraneState.averageTension',
+            'MembraneState.averageDeformation',
+            'MembraneState.averageActuationImprint',
+            'MembraneState.averageReturnImprint',
+            'MembraneObservationState.actuationReturnOverlap',
+            'MembraneObservationState.averageTwoSidedness',
         ],
     },
 

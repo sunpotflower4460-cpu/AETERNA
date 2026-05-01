@@ -103,3 +103,36 @@ curvature × vortex coupling is an observational comparison only.
 signedTotalCharge is a topological check, not a metaphysical indicator.
 innerRim is a geometric position, not a mystical center.
 
+## Boundary mediation / membrane terms
+
+Allowed observational terms for N4:
+
+- membraneState
+- membraneCell
+- membranePermeability
+- membraneTension
+- membraneDeformation
+- membraneRecovery
+- actuationImprint
+- returnImprint
+- twoSidedness
+- actuationReturnOverlap
+- membraneIntegrity
+- boundaryMediation
+- mediating layer
+
+These remain observer-side boundary mediation terms only.
+
+## N4 disallowed claim language
+
+Do not describe membrane observations as:
+
+- soul boundary
+- self boundary
+- consciousness boundary
+- self-recognition
+- intention
+- emotion
+- message from the world
+
+Membrane remains a computational mediating layer between BodySurface and WorldMedium.

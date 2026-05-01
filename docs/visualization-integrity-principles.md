@@ -183,6 +183,14 @@ U4 で導入した field layer visualization modules に適用される原則を
 
 closureMatch / traceResidue / localExcitability / repeatedFlowPath / protoNetworkCandidate / actuationPulse は各 layer 定義の `disclaimer` フィールドに semantic disclaimer を持つ。tooltip でも表示すること。
 
+### N4 Membrane layer addendum
+
+- `membraneState` は BodySurface / WorldMedium の間にある mediating layer の observer-side 表示とする
+- deformation / permeability / tension / imprint overlap は actual membrane values からのみ表示する
+- fake membrane deformation / fake return / fake glow を追加しない
+- `membraneState` を soul / self / consciousness boundary として描かない
+- default visibility は off または diagnostic 寄りとする
+
 ### N1 Curvature layer addendum
 
 - `torusCurvature` は geometry-derived layer としてのみ表示する
