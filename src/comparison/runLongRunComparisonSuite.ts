@@ -31,7 +31,6 @@ import type {
     LongRunVariantSnapshot,
     LongRunVariantSummary,
     LongRunVariantSkipRecord,
-    ComparisonVariantId,
 } from '../types/longRunComparison.ts';
 
 // ── Safety helpers ─────────────────────────────────────────────────────────────
