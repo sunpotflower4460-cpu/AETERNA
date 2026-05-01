@@ -28,6 +28,7 @@ import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowP
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 import type { CurvatureVortexCouplingState } from '../../types/curvatureVortexCoupling.ts';
 import type { WeakPlasticityObservationState } from '../../types/weakPlasticityObservation.ts';
+import type { ObservedRatiosState } from '../../types/observedRatios.ts';
 
 // ── Parameters ─────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ export interface DeriveNowSummaryParams {
     protoNetwork?: ProtoNetworkObservationState | null;
     curvatureVortexCoupling?: CurvatureVortexCouplingState | null;
     weakPlasticity?: WeakPlasticityObservationState | null;
+    observedRatios?: ObservedRatiosState | null;
     semanticLeakCount?: number;
     nanOrInfinityCount?: number;
     timestamp: number;
@@ -73,6 +75,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
         protoNetwork,
         curvatureVortexCoupling,
         weakPlasticity,
+        observedRatios,
         semanticLeakCount = 0,
         nanOrInfinityCount = 0,
         timestamp,
@@ -461,6 +464,54 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 priority: 7,
                 text: 'Weak plasticity channel is active but traces remain near zero.',
                 source: 'WeakPlasticityObservationState.plasticityDormancyRisk',
+                valueKind: 'proxy',
+            });
+        }
+    }
+
+    // ── Priority 7: Observed Ratios (N6) ─────────────────────────────────────
+
+    if (observedRatios && observedRatios.observedRatios.length > 0) {
+        dataCount++;
+        const mode = observedRatios.externalConstantsMode;
+        const modeLabel = mode === 'neutral' ? 'neutral (no external constants as causal factors)' : 'legacy (comparison mode)';
+
+        candidates.push({
+            id: 'externalConstantsMode',
+            priority: 7,
+            text: `Core dynamics are running in ${modeLabel}.`,
+            source: 'CoreDynamicsConstantsConfig.externalConstantsMode',
+            valueKind: 'check',
+        });
+
+        const proxy = observedRatios.emergentResonanceProxy;
+        const ratioCount = observedRatios.observedRatios.length;
+        const strongest = observedRatios.strongestMatch;
+
+        candidates.push({
+            id: 'observedRatiosSummary',
+            priority: 7,
+            text: `${ratioCount} ratio(s) observed from field dynamics and compared to ${observedRatios.referenceMatches.length / ratioCount || 0} reference value(s) (observer-side only).`,
+            source: 'ObservedRatiosState.observedRatios',
+            valueKind: 'proxy',
+        });
+
+        if (strongest && strongest.matchStrength >= 0.5) {
+            candidates.push({
+                id: 'observedRatioMatch',
+                priority: 7,
+                text: `Observed ratio "${strongest.observedRatioId}" is close to reference "${strongest.referenceRatioId}" (match strength ${strongest.matchStrength.toFixed(2)}) — reference comparison only, not a proof.`,
+                source: 'ObservedRatiosState.strongestMatch',
+                valueKind: 'proxy',
+            });
+        }
+
+        if (proxy >= 0.5) {
+            candidates.push({
+                id: 'emergentResonanceProxy',
+                priority: 7,
+                text: `Emergent resonance proxy is ${proxy.toFixed(2)} — several observed ratios are close to reference values. This is an observational similarity proxy only.`,
+                source: 'ObservedRatiosState.emergentResonanceProxy',
                 valueKind: 'proxy',
             });
         }

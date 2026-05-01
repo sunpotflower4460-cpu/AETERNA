@@ -401,6 +401,18 @@ function buildTryNext(
         });
     }
 
+    // Observed ratio match events → suggest Research panel (N6)
+    const ratioMatchEvents = snapshot.recentEvents.filter(e => e.kind === 'observedRatioMatch');
+    if (ratioMatchEvents.length > 0) {
+        suggestions.push({
+            id: 'try-observed-ratios-panel',
+            label: 'Research → Observed Ratios',
+            reason: 'Observed ratio matches were recorded recently. Open the Research panel to inspect observed vs reference ratio distances (observer-side comparison only).',
+            targetPanel: 'research',
+            action: 'openPanel',
+        });
+    }
+
     return suggestions.slice(0, 5);
 }
 
@@ -442,6 +454,12 @@ function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): Retur
     const plasticityEvents = snapshot.recentEvents.filter(e => e.kind === 'weakPlasticityTrace');
     if (plasticityEvents.length > 0) {
         terms.push('Weak Plasticity Trace', 'Resistance Delta', 'Plasticity Ablation');
+    }
+
+    // N6: Observed ratios
+    const ratioEvents = snapshot.recentEvents.filter(e => e.kind === 'observedRatioMatch' || e.kind === 'externalConstantsModeChange');
+    if (ratioEvents.length > 0) {
+        terms.push('Observed Ratio', 'Reference Ratio', 'Match Strength', 'Emergent Resonance Proxy');
     }
 
     const leakVal = metricValue(metrics, 'semanticLeak');

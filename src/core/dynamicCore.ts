@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// N6: PHI_INV and SCHUMANN_RES are only imported for the legacy code path.
+// In neutral mode (default), these constants are NOT used as causal ingredients.
+// See docs/external-constants-removal.md
 import { PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
 import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRandom.ts';
 import { getLivingStateInfluence } from '../organism/livingState.ts';
+import { defaultCoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
+import type { CoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
@@ -130,10 +135,36 @@ export function updatePredictionError(network: any) {
   for (let i = 0; i < network.numNodes; i++) network.predictionError[i] = network.currentBuffer[i] - network.localPrediction[i];
 }
 
+/**
+ * Resolve the CoreDynamicsConstantsConfig to use for this update cycle.
+ * Reads from network.coreDynamicsConstantsConfig if present; otherwise uses the
+ * module-level default (neutral mode).
+ */
+function resolveCoreDynamicsConfig(network: any): CoreDynamicsConstantsConfig {
+  return network.coreDynamicsConstantsConfig ?? defaultCoreDynamicsConstantsConfig;
+}
+
 export function updateDynamicsCore(network: any) {
-  const freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
-  const waveSpeed = 0.1 + 0.15 * freqRatio;
-  const damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
+  const cfg = resolveCoreDynamicsConfig(network);
+
+  let freqRatio: number;
+  let waveSpeed: number;
+  let damping: number;
+
+  if (cfg.externalConstantsMode === 'legacy' && cfg.allowLegacyExternalConstants) {
+    // Legacy comparison mode: restores pre-N6 behaviour using external constants.
+    // For before/after comparison only. Do NOT use as the production default.
+    freqRatio = (state.disk.omega_t - SCHUMANN_RES) / (GAMMA_SYNC - SCHUMANN_RES);
+    waveSpeed = 0.1 + 0.15 * freqRatio;
+    damping = 0.985 - (1.0 - PHI_INV) * 0.02 * (1.0 - freqRatio);
+  } else {
+    // Neutral mode (default): core dynamics use only explicit config parameters.
+    // No external constant names (PHI_INV, SCHUMANN_RES) are used as causal factors.
+    const rangeSpan = Math.max(cfg.freqRangeMax - cfg.freqRangeMin, 1e-6);
+    freqRatio = Math.max(0, Math.min(1, (state.disk.omega_t - cfg.freqRangeMin) / rangeSpan));
+    waveSpeed = cfg.waveSpeedBase + cfg.waveSpeedFreqScale * freqRatio;
+    damping = cfg.dampingBase - cfg.dampingLoss * (1.0 - freqRatio);
+  }
 
   // Phase E2: Apply top-down threshold modulation
   const thresholdDelta = network.topDownModulation?.thresholdDelta ?? 0;

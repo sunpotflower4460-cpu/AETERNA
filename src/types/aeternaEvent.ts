@@ -37,7 +37,9 @@ export type AeternaEventKind =
     | 'semanticLeakCheck'               // Semantic leak integrity check result
     | 'diagnosticWarning'              // NaN / Infinity / coverage / other diagnostic
     | 'scenarioControl'                // Scenario started / paused / stopped / reset
-    | 'scenarioSummary';               // Scenario result summary generated
+    | 'scenarioSummary'                // Scenario result summary generated
+    | 'observedRatioMatch'             // Observed ratio compared to reference ratio (N6)
+    | 'externalConstantsModeChange';   // External constants mode changed (N6)
 
 // ── AeternaEvent ──────────────────────────────────────────────────────────────
 

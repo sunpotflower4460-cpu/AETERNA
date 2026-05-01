@@ -551,3 +551,38 @@ N-Series では geometry / phase / membrane / observed ratio を導入しても�
 - geometry, phase, vortex, membrane は **measured / derived / proxy** のいずれかとして表示する
 - `consciousness`, `emotion`, `soul`, `mystery proof` のような表現に接続しない
 - complex field を導入しても semantic node / same-object / teacher binding へ拡張しない
+
+## N6: External Constants Removal / Observed Ratios 言語ガイドライン
+
+### 禁止表現 (N6)
+
+以下の表現は絶対に使用しないこと:
+
+| 禁止表現 | 理由 |
+|---|---|
+| `φ proves life` / `φ が生命を証明する` | 観測比率の一致は因果証明ではない |
+| `Schumann proves consciousness` / `シューマン共振が意識を証明する` | 観測比率の一致は因果証明ではない |
+| `432Hz proves healing` / `432Hz が癒しを証明する` | 観測比率の一致は因果証明ではない |
+| `golden ratio means intelligence` / `黄金比は知性を意味する` | 比率一致は意味づけではない |
+| `emergent resonance proves soul` / `創発的共鳴が魂を証明する` | 創発共鳴 proxy は証明ではない |
+| `reference match proves anything` | 参照比率との一致は観測比較のみ |
+
+### 推奨表現 (N6)
+
+| 推奨表現 | 説明 |
+|---|---|
+| `observed ratio is close to reference ratio` | 観測比率が参照比率に近い |
+| `reference match observed` | 参照値との近接を観測 |
+| `observer-side comparison` | observer-side の比較 |
+| `not used as causal ingredient` | 因果成分としては使われていない |
+| `neutral core dynamics` | neutral core dynamics |
+| `legacy comparison mode` | legacy モードは比較用のみ |
+
+### 設計原則 (N6)
+
+1. `referenceRatios.ts` は observer 側のみ。`dynamicCore.ts` から import しない。
+2. `observedRatio` の値を runtime dynamics に戻さない。
+3. `matchStrength` が高くても「証明」として扱わない。
+4. `emergentResonanceProxy` は similarity proxy のみ。
+5. legacy mode は before/after comparison 用のみ。production default にしない。
+6. neutral mode が production default。

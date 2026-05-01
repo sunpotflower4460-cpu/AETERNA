@@ -23,6 +23,7 @@ import type { MembraneObservationState } from '../../types/membraneObservation.t
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 import type { WeakPlasticityObservationState } from '../../types/weakPlasticityObservation.ts';
+import type { ObservedRatiosState } from '../../types/observedRatios.ts';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,9 @@ interface PrevSnapshot {
     semanticLeakCount:  number;
     plasticityAcc:      number;
     plasticitySatRisk:  number;
+    observedRatioMatchStrength: number;
+    emergentResonanceProxy:     number;
+    externalConstantsMode:      string;
 }
 
 let _prevSnapshot: PrevSnapshot | null = null;
@@ -99,6 +103,7 @@ export interface DeriveAeternaEventsParams {
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
     weakPlasticity?: WeakPlasticityObservationState | null;
+    observedRatios?: ObservedRatiosState | null;
     semanticLeakCount?: number;
     nanOrInfinityCount?: number;
     tick: number;
@@ -124,6 +129,7 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         repeatedFlowPaths,
         protoNetwork,
         weakPlasticity,
+        observedRatios,
         semanticLeakCount = 0,
         nanOrInfinityCount = 0,
         tick,
@@ -144,6 +150,9 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         semanticLeakCount,
         plasticityAcc:     weakPlasticity?.totalAccumulation ?? 0,
         plasticitySatRisk: weakPlasticity?.plasticitySaturationRisk ?? 0,
+        observedRatioMatchStrength: observedRatios?.averageMatchStrength ?? 0,
+        emergentResonanceProxy:     observedRatios?.emergentResonanceProxy ?? 0,
+        externalConstantsMode:      observedRatios?.externalConstantsMode ?? 'neutral',
     };
 
     // First call — initialise snapshot and emit a startup check
@@ -370,6 +379,50 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
             'info',
             `tick ${tick}: Semantic leak check — count: ${semanticLeakCount} — ${semanticLeakCount === 0 ? 'clear' : 'warning'}`,
             'integrity check',
+            tick,
+            'check'
+        ));
+    }
+
+    // ── Observed ratio match change (N6) ─────────────────────────────────────
+
+    const RATIO_MATCH_THRESHOLD = 0.15;
+    if (observedRatios && observedRatios.observedRatios.length > 0) {
+        const matchDelta = Math.abs(cur.observedRatioMatchStrength - prev.observedRatioMatchStrength);
+        if (matchDelta >= RATIO_MATCH_THRESHOLD) {
+            const dir = cur.observedRatioMatchStrength > prev.observedRatioMatchStrength ? 'increased' : 'decreased';
+            push(makeEvent(
+                'observedRatioMatch',
+                'info',
+                `tick ${tick}: Observed ratio average match strength ${dir} → ${cur.observedRatioMatchStrength.toFixed(2)} (observer-side comparison only)`,
+                'ObservedRatiosState.averageMatchStrength',
+                tick,
+                'proxy'
+            ));
+        }
+
+        // Emit only when a particularly close match is found (matchStrength ≥ 0.9)
+        const strongest = observedRatios.strongestMatch;
+        if (strongest && strongest.matchStrength >= 0.9) {
+            push(makeEvent(
+                'observedRatioMatch',
+                'info',
+                `tick ${tick}: Observed ratio "${strongest.observedRatioId}" close to reference "${strongest.referenceRatioId}" (rel. dist. ${strongest.relativeDistance.toFixed(3)}) — reference match only, not a proof`,
+                'ObservedRatiosState.strongestMatch',
+                tick,
+                'proxy'
+            ));
+        }
+    }
+
+    // ── External constants mode change (N6) ─────────────────────────────────
+
+    if (cur.externalConstantsMode !== prev.externalConstantsMode) {
+        push(makeEvent(
+            'externalConstantsModeChange',
+            'notice',
+            `tick ${tick}: External constants mode changed → ${cur.externalConstantsMode}`,
+            'CoreDynamicsConstantsConfig.externalConstantsMode',
             tick,
             'check'
         ));

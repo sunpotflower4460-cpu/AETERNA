@@ -178,3 +178,50 @@ Do not describe weak plasticity observations as:
 - concept learning
 
 Weak plasticity is a pre-semantic, pre-learning medium-condition trace. It describes the medium, not the system's intent or awareness.
+
+## N6: External Constants Removal / Observed Ratios terms
+
+Allowed observational terms for N6:
+
+- externalConstantsMode
+- neutralDynamics / neutral mode
+- legacyExternalConstants / legacy mode
+- runtimeCausalConstant
+- observerReferenceConstant
+- referenceRatio
+- observedRatio
+- referenceRatioDistance
+- absoluteDistance
+- relativeDistance
+- centsDistance
+- matchStrength
+- emergentResonanceProxy
+- observer-side comparison
+- reference match observed
+
+These remain observer-side measurement terms only. They do NOT imply causal relationships.
+
+## N6 disallowed claim language
+
+Do not describe external constants or ratio matches as:
+
+- φ proves life
+- φ proves consciousness
+- φ means intelligence
+- Schumann proves consciousness
+- Schumann resonance proves healing
+- 432 Hz proves healing
+- golden ratio means self
+- emergent resonance proves soul
+- reference match proves meaning
+- ratio alignment proves mystical resonance
+
+Also disallowed in Japanese:
+- φ が生命を証明する
+- シューマン共振が意識を証明する
+- 432Hz が癒しを証明する
+- 黄金比は知性を意味する
+- 創発的共鳴が魂を証明する
+
+Observed ratio matches are observational comparisons only.
+They do not establish causality, meaning, life, consciousness, or mystical significance.
