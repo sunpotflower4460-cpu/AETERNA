@@ -11,7 +11,7 @@ import {
 import {
   generateNetworkGeometry as generateLegacyNetworkGeometry,
   updateNetworkRadius as updateLegacyNetworkRadius,
-  updateRenderBuffers,
+  updateRenderBuffers as updateLegacyRenderBuffers,
 } from './networkGeometry.ts';
 
 export interface TorusGeometryConfig {
@@ -217,4 +217,8 @@ export function setNetworkTorusMetricMode(network: any, metricMode: TorusMetricM
   network.torusMetricMode = metricMode;
   assignTorusMetricGeometry(network);
   return network.torusMetricConfig;
+}
+
+export function updateRenderBuffers(network: any, diskNodeIdx: number) {
+  return updateLegacyRenderBuffers(network, diskNodeIdx);
 }

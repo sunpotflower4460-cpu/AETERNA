@@ -209,7 +209,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
         id: 'torusCurvature',
         label: 'Torus Curvature',
         description:
-            'Geometric torus curvature distribution derived from majorRadius and minorRadius. ' +
+            'Geometry-derived torus curvature distribution derived from majorRadius and minorRadius. ' +
             'Shows where outer-rim regions are curvature-positive and inner-rim regions are curvature-negative.',
         disclaimer:
             'This layer shows geometry-derived metric data only. ' +

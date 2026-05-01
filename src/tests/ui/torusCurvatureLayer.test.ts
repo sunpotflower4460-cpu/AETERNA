@@ -49,6 +49,6 @@ describe('torus curvature field layer + UI wiring', () => {
     expect(html).toContain("id=\"torus-metric-curved-btn\"");
     expect(html).toContain("id=\"row-gaussian-range\"");
     expect(html).toContain("id=\"row-curvature-asymmetry\"");
-    expect(html).toContain('Curved metric is enabled for observation only');
+    expect(html).toContain("id=\"torus-metric-note\"");
   });
 });
