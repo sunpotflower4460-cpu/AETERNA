@@ -1,0 +1,41 @@
+# AETERNA Natural Roadmap
+
+## N0 Geometry / Dynamics Audit
+
+現在の core dynamics を geometry / field / constants / observer-runtime boundary の観点から監査し、比較基準を固定する。  
+runtime は変更しない。
+
+## N1 Curved Torus Metric
+
+flat torus 更新から、曲率と面積要素を持つ curved torus metric へ進む。  
+inner rim / outer rim の幾何差が flow にどう入るかを明示する。
+
+## N2 Complex Scalar Field
+
+単一実数場から complex scalar field へ進む。  
+amplitude / phase / phase gradient を導入するが、semantic interpretation はしない。
+
+## N3 Curvature × Vortex Coupling
+
+曲率場と位相欠陥候補の相互作用を observer-side から監査する。  
+vortex はまず candidate として扱い、意味づけしない。
+
+## N4 Boundary as Mediating Layer
+
+boundary を単なる wrap 条件ではなく、媒介層として整理する。  
+膜的なふるまいを入れても、soul / self boundary の主張には進まない。
+
+## N5 Weak Plasticity Channel
+
+observer-side と runtime の間に極小の plasticity channel を 1 本だけ導入する。  
+必ず tiny / ablatable / non-semantic に保つ。
+
+## N6 External Constants Removal / Observed Ratios
+
+`PHI_INV` や `SCHUMANN_RES` のような外来定数を core update equations から外し、可能なら observer/reference ratio へ移す。  
+研究比較のための observed ratio は残してよい。
+
+## N7 Long-Run Comparison Suite
+
+N0〜N6 の差分を長時間シナリオで比較できる suite を固定する。  
+geometry, field, plasticity, constants removal の影響を見える化する。
