@@ -64,7 +64,30 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - `amplitudeClampCount`
 - `phaseUnwrapWarning`
 
-### A. Ongoingness
+### Curvature × Vortex Coupling (N3)
+
+#### Derived
+
+- `signedTotalCharge = Σ candidate.topologicalCharge`
+- `chargeDeviation = |signedTotalCharge − 0|`
+- `vortexDensityByCurvature` (per curvature band: regionCount, vortexCount, positiveChargeCount, negativeChargeCount, vortexDensity, averageVortexConfidence, averageVortexLifetime)
+- `vortexStatsByRegion` (per geometric region: outerRim / innerRim / upperRim / lowerRim / neutral — vortexCount, positiveChargeCount, negativeChargeCount, averageConfidence, averageLifetime, density)
+- `vortexPairCount`
+- `averageVortexPairLifetime`
+
+#### Proxy
+
+- `curvatureVortexCorrelation` — Pearson correlation between Gaussian curvature at vortex sites and candidate confidence; correlation ≠ causation
+- `curvatureBiasStrength` — how unevenly vortex candidates are distributed across curvature bands [0, 1]
+- `observationConfidence` — overall quality of coupling observation
+
+#### Check
+
+- `nanOrInfinityCount` — NaN / Infinity values encountered during derivation
+- `expectedSignedCharge` — always 0 (Euler characteristic of torus)
+- `flatVsCurvedComparisonAvailable` — whether snapshot comparison was performed
+
+
 
 **Definition**: The system maintains internal activity without external input.
 

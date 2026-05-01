@@ -36,6 +36,21 @@ Implemented in N2 as:
 曲率場と位相欠陥候補の相互作用を observer-side から監査する。  
 vortex はまず candidate として扱い、意味づけしない。
 
+Implemented in N3 as:
+
+- observer-side `CurvatureVortexCouplingState` type
+- `deriveCurvatureVortexCoupling()` — pure function combining N1 geometry + N2 vortex observation
+- `signedTotalCharge` / `chargeDeviation` topological check (expected 0 on torus)
+- five curvature bands with per-band vortex density statistics
+- five geometric regions (outerRim / innerRim / upperRim / lowerRim / neutral)
+- `curvatureVortexCorrelation` (Pearson, curvature at vortex site vs confidence)
+- `curvatureBiasStrength` proxy
+- `deriveVortexPairs()` — proximity-based ±-charge pair detection
+- `compareFlatCurvedVortexStats()` — flat vs curved snapshot comparison scaffolding
+- `curvatureVortexCoupling` field layer in registry (overlay/diagnostic, default OFF)
+- `deriveNowSummary` extended with coupling observation lines
+- docs/curvature-vortex-coupling.md
+
 ## N4 Boundary as Mediating Layer
 
 boundary を単なる wrap 条件ではなく、媒介層として整理する。  

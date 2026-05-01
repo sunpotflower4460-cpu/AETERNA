@@ -62,3 +62,44 @@ Do not describe complex-field observations as:
 - mystical core
 
 Phase and vortex remain observer-side research terms, not semantic interpretations.
+
+## Curvature × Vortex Coupling terms
+
+Allowed observational terms for N3:
+
+- curvatureVortexCoupling
+- curvature band (negativeHigh / negativeLow / nearZero / positiveLow / positiveHigh)
+- curvature bias strength
+- curvature-vortex correlation
+- signedTotalCharge
+- expectedSignedCharge
+- chargeDeviation
+- vortexDensityByCurvature
+- vortexStatsByRegion
+- region (outerRim / innerRim / upperRim / lowerRim / neutral)
+- vortex pair candidate
+- vortex pair lifetime
+- flat vs curved vortex comparison
+- observational coupling
+
+These remain mathematical / geometric / observational terms only.
+
+## N3 disallowed claim language
+
+Do not describe curvature-vortex coupling as:
+
+- consciousness
+- emotion
+- desire
+- self
+- soul
+- intention
+- mystical core
+- meaning
+- causation (as in "curvature causes vortices")
+- a runtime feedback
+
+curvature × vortex coupling is an observational comparison only.
+signedTotalCharge is a topological check, not a metaphysical indicator.
+innerRim is a geometric position, not a mystical center.
+

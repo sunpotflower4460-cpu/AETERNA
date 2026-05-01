@@ -25,6 +25,7 @@ import type { MediumProfileState } from '../../types/mediumProfileState.ts';
 import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityField.ts';
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
+import type { CurvatureVortexCouplingState } from '../../types/curvatureVortexCoupling.ts';
 
 // ── Parameters ─────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export interface DeriveNowSummaryParams {
     localField?: LocalExcitabilityFieldState | null;
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
+    curvatureVortexCoupling?: CurvatureVortexCouplingState | null;
     semanticLeakCount?: number;
     nanOrInfinityCount?: number;
     timestamp: number;
@@ -64,6 +66,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
         localField,
         repeatedFlowPaths,
         protoNetwork,
+        curvatureVortexCoupling,
         semanticLeakCount = 0,
         nanOrInfinityCount = 0,
         timestamp,
@@ -330,6 +333,54 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
             source: 'ProtoNetworkObservationState',
             valueKind: 'proxy',
         });
+    }
+
+    // ── Priority 6: Curvature × Vortex Coupling (N3) ─────────────────────────
+
+    if (curvatureVortexCoupling) {
+        dataCount++;
+        const charge = curvatureVortexCoupling.signedTotalCharge;
+        const dev = curvatureVortexCoupling.chargeDeviation;
+        const vortexCount = curvatureVortexCoupling.totalVortexCount;
+
+        if (vortexCount > 0) {
+            if (dev < 1) {
+                candidates.push({
+                    id: 'vortexChargeBalanced',
+                    priority: 6,
+                    text: `Vortex candidates are currently balanced in signed charge (Σ=${charge}).`,
+                    source: 'CurvatureVortexCouplingState.signedTotalCharge',
+                    valueKind: 'proxy',
+                });
+            } else {
+                candidates.push({
+                    id: 'vortexChargeDeviation',
+                    priority: 6,
+                    text: `Vortex candidate signed charge deviation is ${dev.toFixed(1)} (Σ=${charge}).`,
+                    source: 'CurvatureVortexCouplingState.chargeDeviation',
+                    valueKind: 'proxy',
+                });
+            }
+
+            const biasStrength = curvatureVortexCoupling.curvatureBiasStrength;
+            if (biasStrength > 0.4) {
+                candidates.push({
+                    id: 'vortexCurvatureBias',
+                    priority: 6,
+                    text: 'Vortex candidates are unevenly distributed across curvature bands — curvature bias is being observed.',
+                    source: 'CurvatureVortexCouplingState.curvatureBiasStrength',
+                    valueKind: 'proxy',
+                });
+            }
+        } else {
+            candidates.push({
+                id: 'vortexCouplingDiag',
+                priority: 6,
+                text: 'Curvature-vortex coupling is being observed in diagnostic mode. No vortex candidates detected.',
+                source: 'CurvatureVortexCouplingState',
+                valueKind: 'proxy',
+            });
+        }
     }
 
     // ── Priority 7: Safety checks ─────────────────────────────────────────────

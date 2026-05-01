@@ -173,6 +173,14 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         maxSimultaneousLayers: 3,
     },
 
+    curvatureVortexCoupling: {
+        layerId: 'curvatureVortexCoupling',
+        maxOpacity: 0.40,
+        priority: 78,
+        defaultBlendMode: 'normal',
+        maxSimultaneousLayers: 3,
+    },
+
     riskOverlay: {
         layerId: 'riskOverlay',
         maxOpacity: 0.70,
