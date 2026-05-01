@@ -57,7 +57,7 @@ N1 はこの差を埋め、曲率・面積要素・内外 rim の差が dynamics
 
 現在の core は **A. Single real scalar field with auxiliary traces** に最も近い。
 
-> The current core is best described as a single real scalar field with auxiliary residue/trace/error channels, not yet a two-field reaction-diffusion system or a complex scalar field.
+The current core is best described as a single real scalar field with auxiliary residue/trace/error channels, not yet a two-field reaction-diffusion system or a complex scalar field.
 
 根拠:
 

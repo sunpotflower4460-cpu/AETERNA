@@ -201,6 +201,9 @@ This vocabulary is introduced in **Phase 5: Observation Layer Purification** and
 この段階では、まだ実装済みの runtime feature として扱わないでください。  
 名前は研究用 observation term であり、semantic claim ではありません。
 
+These are planned future observation terms for the N-Series roadmap.  
+At N0 they must be treated as vocabulary only, not as already implemented runtime structures.
+
 ### Geometry / metric terms
 
 - `majorRadius`
