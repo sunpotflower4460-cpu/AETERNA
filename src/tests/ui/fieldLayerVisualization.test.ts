@@ -100,9 +100,9 @@ describe('U4: Field Layer Registry', () => {
         expect(typeof FIELD_LAYER_REGISTRY).toBe('object');
     });
 
-    it('getAllFieldLayerDefinitions() returns all 13 layers', () => {
+    it('getAllFieldLayerDefinitions() returns all required layers', () => {
         const defs = getAllFieldLayerDefinitions();
-        expect(defs).toHaveLength(13);
+        expect(defs).toHaveLength(REQUIRED_LAYER_IDS.length);
     });
 
     it.each(REQUIRED_LAYER_IDS)('layer "%s" is defined', (id) => {

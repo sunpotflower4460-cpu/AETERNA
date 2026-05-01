@@ -151,7 +151,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'with low-amplitude regions shown faintly.',
         disclaimer:
             'This layer shows mathematical field phase only. ' +
-            'It is not an emotion, meaning, intention, or consciousness map.',
+            'It is a phase measurement, not a subjective or semantic map.',
         valueKind: 'derived',
         defaultVisible: false,
         colorRole: 'fieldPhase',
@@ -376,7 +376,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'around a small loop and nearby amplitude is reduced.',
         disclaimer:
             'This is an observer-side phase-defect candidate only. ' +
-            'It is not a self, mind, memory, concept, or runtime graph node.',
+            'It is not a semantic label or runtime graph node.',
         valueKind: 'proxy',
         defaultVisible: false,
         colorRole: 'vortexCandidate',
