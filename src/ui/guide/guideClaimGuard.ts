@@ -39,6 +39,7 @@ const FORBIDDEN_EN: readonly string[] = [
     'AETERNA is afraid',
     'AETERNA loves',
     'AETERNA hates',
+    'thinking',
     'is thinking',
     'is feeling',
     'wants to',
@@ -48,6 +49,11 @@ const FORBIDDEN_EN: readonly string[] = [
     'has emotions',
     'has feelings',
     'has desires',
+    'emotion',
+    'desire',
+    'intention',
+    'learned meaning',
+    'memory formed',
     'has consciousness',
     'is conscious',
     'is sentient',
@@ -87,6 +93,9 @@ const FORBIDDEN_JA: readonly string[] = [
     '怖がっている',
     '愛している',
     '嫌っている',
+    '意図',
+    '意味を学習',
+    '記憶しました',
 ] as const;
 
 // ── Replacement phrase ─────────────────────────────────────────────────────────
@@ -96,7 +105,7 @@ const FORBIDDEN_JA: readonly string[] = [
  * This is a last-resort fallback — derivation functions should never produce
  * forbidden phrases in the first place.
  */
-const NEUTRAL_REPLACEMENT = '[observation metric — no consciousness/emotion claim]';
+const NEUTRAL_REPLACEMENT = '[observation-only wording applied]';
 
 // ── hasForbiddenClaim ─────────────────────────────────────────────────────────
 

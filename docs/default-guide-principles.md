@@ -125,3 +125,12 @@ It must remain optional and never require a frontend API key.
 - `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則
 - `docs/ui-information-architecture.md` — UI 情報アーキテクチャ（Guide Panel 構成）
 - `docs/ui-ux-roadmap.md` — U6: Guide / Explanation System にて実装完了
+
+
+---
+
+## 5.6 U8 Guide QA follow-up
+
+- Guide / Explanation copy を再監査し、forbidden claim 語が UI 表示に残っていないかを確認する
+- Explain button / Current explanation / What to look at / Try next / Glossary / Integrity notes の導線を再確認する
+- Guide suggestions は UI aid のみであり、runtime dynamics を変更しないことを再確認する

@@ -128,7 +128,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'Derived from currentBuffer mean activity, flowContinuity, and energyThroughput.',
         disclaimer:
             'This layer shows derived field activity values. ' +
-            'It does not represent subjective experience, emotion, or intention.',
+            'It maps activity distribution only.',
         valueKind: 'derived',
         defaultVisible: true,
         colorRole: 'flow',
@@ -147,8 +147,8 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'Residue left by past flow, perturbation, and return activity in the field. ' +
             'Derived from TraceState.traceStrength, salienceResidue, and local field traceResidue.',
         disclaimer:
-            'This layer shows pre-semantic field residue — NOT memory, thought trace, or emotional residue. ' +
-            'It is a physical-like persistence of past activity in the field.',
+            'This layer shows pre-semantic field residue from prior activity. ' +
+            'It is a persistence map for earlier field flow, not a semantic record.',
         valueKind: 'derived',
         defaultVisible: true,
         colorRole: 'trace',
@@ -169,7 +169,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'Shows pulse intensity and locality as a brief outward wave.',
         disclaimer:
             'This layer shows the actuation output signal. ' +
-            'It does NOT represent intention, will, desire, or decision-making.',
+            'It maps outward signal intensity and locality only.',
         valueKind: 'measured',
         defaultVisible: false,
         colorRole: 'activity',
@@ -211,9 +211,8 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'Proxy measure of how strongly actuation pulses and sensory returns form a closed loop. ' +
             'Thin arcs connect pulse region to return region; opacity reflects match strength.',
         disclaimer:
-            'This is a reafference comparison proxy — NOT self-awareness. ' +
-            '"Closure Match" indicates how well the pulse-return loop closes, ' +
-            'not that AETERNA knows it caused the return. ' +
+            'This is a reafference comparison proxy. ' +
+            '"Closure Match" indicates pulse-return correspondence only. ' +
             'Value kind: proxy.',
         valueKind: 'proxy',
         defaultVisible: false,
@@ -237,7 +236,7 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'Shown as a faint outer shell / ring on the torus surface boundary.',
         disclaimer:
             'This layer shows World Medium conditions — echo, delay, resistance. ' +
-            'It does NOT represent the world having intentions or sending messages.',
+            'It maps medium conditions only.',
         valueKind: 'derived',
         defaultVisible: false,
         colorRole: 'sensoryReturn',

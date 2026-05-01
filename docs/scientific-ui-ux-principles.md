@@ -262,3 +262,15 @@ Field Layer Visualization のすべてのレイヤーは、実際の観測値（
 - ScenarioRunState は UI 状態管理のみ — runtime field 値を変更しない
 - ScenarioResultSummary の値はすべて外部から供給される params から取得する（hardcoded 結果なし）
 - recordScenarioControlEvent は real AeternaEvent を push する — fake event は生成しない
+
+
+---
+
+## §4 U8 Visual QA / Scientific QA
+
+- U8 では Visual QA / Scientific QA を docs / tests / manual audit で確認する
+- UI 改善が scientific integrity を壊していないかを確認する
+- fake visual / fake event / fake claim を検査する
+- mobile / performance / visual baseline を確認する
+- 問題が見つかった場合は label / tooltip / spacing / safe-area などの小修正のみを許可する
+- runtime dynamics / field calculation / closure logic / proto-network observation logic は変更しない
