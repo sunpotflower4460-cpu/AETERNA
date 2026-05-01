@@ -45,6 +45,7 @@ import {
     buildTraceResidueSummary,
     buildActuationPulseSummary,
     buildSensoryReturnSummary,
+    buildTorusCurvatureSummary,
     buildClosureMatchSummary,
     buildMediumEchoDelaySummary,
     buildLocalExcitabilitySummary,
@@ -77,6 +78,7 @@ const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'traceResidue',
     'actuationPulse',
     'sensoryReturn',
+    'torusCurvature',
     'closureMatch',
     'mediumEchoDelay',
     'localExcitability',
@@ -94,9 +96,9 @@ describe('U4: Field Layer Registry', () => {
         expect(typeof FIELD_LAYER_REGISTRY).toBe('object');
     });
 
-    it('getAllFieldLayerDefinitions() returns all 10 layers', () => {
+    it('getAllFieldLayerDefinitions() returns all 11 layers', () => {
         const defs = getAllFieldLayerDefinitions();
-        expect(defs).toHaveLength(10);
+        expect(defs).toHaveLength(11);
     });
 
     it.each(REQUIRED_LAYER_IDS)('layer "%s" is defined', (id) => {
@@ -320,6 +322,17 @@ describe('U4: Field Layer Summaries', () => {
         expect(s.shortText).toContain('[delayed]');
     });
 
+    it('buildTorusCurvatureSummary() returns correct layerId and valueKind', () => {
+        const s = buildTorusCurvatureSummary(true, 0.45, 8, 8, 1);
+        expect(s.layerId).toBe('torusCurvature');
+        expect(s.valueKind).toBe('derived');
+    });
+
+    it('buildTorusCurvatureSummary() is inactive when curvature asymmetry is zero', () => {
+        const s = buildTorusCurvatureSummary(true, 0, 0, 0, 1);
+        expect(s.status).toBe('inactive');
+    });
+
     it('buildClosureMatchSummary() valueKind is "proxy"', () => {
         const s = buildClosureMatchSummary(false, 0.7, 0.2);
         expect(s.layerId).toBe('closureMatch');
@@ -392,6 +405,7 @@ describe('U4: Field Layer Summaries', () => {
             buildTraceResidueSummary(true, 0.5, 0.5),
             buildActuationPulseSummary(true, 0.5, 0.5),
             buildSensoryReturnSummary(true, 0.5, 0.5),
+            buildTorusCurvatureSummary(true, 0.5, 8, 8, 1),
             buildClosureMatchSummary(true, 0.5, 0.5),
             buildMediumEchoDelaySummary(true, 0.5, 0.5, 0.5),
             buildLocalExcitabilitySummary(true, 0.5, 3, 10),

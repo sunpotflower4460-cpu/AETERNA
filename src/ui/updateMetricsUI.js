@@ -62,6 +62,57 @@ export function updateMetricsUI(dyn, engineState) {
     updateUIRow(UI['row-schumann'], UI['val-schumann'], disk.schumannLock?'YES':'NO', disk.schumannLock);
     updateUIRow(UI['row-torus-formed'], UI['val-torus-formed'], disk.torusFormed?'YES':'NO', disk.torusFormed);
     const irr = disk._irrationalScore(disk.phaseRatio); updateUIRow(UI['row-irrational'], UI['val-irrational'], irr.toFixed(3), irr > 0.7);
+    const curvature = dyn.torusCurvatureObservation || null;
+    const metricMode = dyn.metricMode || 'flat';
+    const metricModeLabel = metricMode === 'curved'
+        ? (dyn.curvatureInfluence > 0 ? 'Curved' : 'Curved (observation only)')
+        : 'Flat';
+    updateUIRow(UI['row-metric-mode'], UI['val-metric-mode'], metricModeLabel, metricMode === 'curved');
+    updateUIRow(UI['row-major-radius'], UI['val-major-radius'], (dyn.majorRadius ?? 0).toFixed(3), (dyn.majorRadius ?? 0) > 0);
+    updateUIRow(UI['row-minor-radius'], UI['val-minor-radius'], (dyn.minorRadius ?? 0).toFixed(3), (dyn.minorRadius ?? 0) > 0);
+    updateUIRow(
+        UI['row-gaussian-range'],
+        UI['val-gaussian-range'],
+        curvature ? `${curvature.minGaussianCurvature.toFixed(4)} .. ${curvature.maxGaussianCurvature.toFixed(4)}` : '—',
+        !!curvature && (curvature.positiveCurvatureRegionCount > 0 || curvature.negativeCurvatureRegionCount > 0),
+    );
+    updateUIRow(
+        UI['row-mean-range'],
+        UI['val-mean-range'],
+        curvature ? `${curvature.minMeanCurvature.toFixed(4)} .. ${curvature.maxMeanCurvature.toFixed(4)}` : '—',
+        !!curvature,
+    );
+    updateUIRow(
+        UI['row-curvature-asymmetry'],
+        UI['val-curvature-asymmetry'],
+        curvature ? curvature.curvatureAsymmetry.toFixed(4) : '—',
+        !!curvature && Math.abs(curvature.curvatureAsymmetry) > 0.0001,
+    );
+    updateUIRow(
+        UI['row-curvature-regions'],
+        UI['val-curvature-regions'],
+        curvature
+            ? `+${curvature.positiveCurvatureRegionCount} / -${curvature.negativeCurvatureRegionCount} | outer ${curvature.outerRimRegionCount} / inner ${curvature.innerRimRegionCount}`
+            : '—',
+        !!curvature,
+    );
+    updateUIRow(
+        UI['row-geometry-confidence'],
+        UI['val-geometry-confidence'],
+        curvature ? curvature.geometryConfidence.toFixed(3) : '—',
+        !!curvature && curvature.geometryConfidence >= 0.99,
+    );
+    if (UI['torus-metric-note']) {
+        UI['torus-metric-note'].innerText = metricMode === 'curved'
+            ? (dyn.curvatureInfluence > 0
+                ? 'Curved metric is enabled with weak geometry coupling.'
+                : 'Curved metric is enabled for observation only; dynamics remain unchanged.')
+            : 'Flat metric preserves legacy runtime behavior while retaining torus geometry for comparison.';
+    }
+    const flatMetricBtn = document.getElementById('torus-metric-flat-btn');
+    const curvedMetricBtn = document.getElementById('torus-metric-curved-btn');
+    if (flatMetricBtn) flatMetricBtn.classList.toggle('cam-mode-active', metricMode === 'flat');
+    if (curvedMetricBtn) curvedMetricBtn.classList.toggle('cam-mode-active', metricMode === 'curved');
     
     if(UI['val-firing']) UI['val-firing'].innerText = (dyn.arousal * 100).toFixed(1) + "%";
     if(UI['val-cluster']) UI['val-cluster'].innerText = (dyn.ignitionRatio * 100).toFixed(1) + "%";

@@ -811,8 +811,23 @@
     </div>
     <div id="sec-geometry" class="accordion-grid">
         <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+            <div class="section-label pt-1">Metric</div>
+            <div class="flex gap-1 pb-1">
+                <button id="torus-metric-flat-btn" class="cam-mode-btn cam-mode-active" onclick="setTorusMetricMode('flat')">Flat</button>
+                <button id="torus-metric-curved-btn" class="cam-mode-btn" onclick="setTorusMetricMode('curved')">Curved</button>
+            </div>
+            <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Flat preserves legacy runtime behavior. Curved exposes area element and curvature derived from major/minor radius." id="row-metric-mode"><span>Metric mode</span><span id="val-metric-mode" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Geometric torus major radius used for area and curvature derivation." id="row-major-radius"><span>Major radius</span><span id="val-major-radius" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Geometric torus minor radius used for area and curvature derivation." id="row-minor-radius"><span>Minor radius</span><span id="val-minor-radius" class="text-white ">—</span></div>
             <div class="metric-row" id="row-torus-formed"><span>Torus formed</span><span id="val-torus-formed" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Frequency ratio irrationality proxy" id="row-irrational"><span>Irrationality</span><span id="val-irrational" class="text-white ">—</span></div>
+            <div class="section-label pt-2">Curvature observation</div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Gaussian curvature range from torus metric. Outer rim is positive, inner rim is negative when curved mode is active." id="row-gaussian-range"><span>Gaussian K</span><span id="val-gaussian-range" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Mean curvature range from torus metric." id="row-mean-range"><span>Mean H</span><span id="val-mean-range" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Difference between outer-rim and inner-rim Gaussian curvature averages." id="row-curvature-asymmetry"><span>Curvature asym.</span><span id="val-curvature-asymmetry" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Positive/negative curvature region counts and inner/outer rim coverage." id="row-curvature-regions"><span>Curvature regions</span><span id="val-curvature-regions" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Confidence that torus geometry cells are finite and normalized." id="row-geometry-confidence"><span>Geometry conf.</span><span id="val-geometry-confidence" class="text-white ">—</span></div>
+            <div id="torus-metric-note" class="text-[7px] text-white/35 leading-relaxed pt-1">Flat metric preserves legacy runtime behavior while retaining torus geometry for comparison.</div>
         </div>
     </div>
 </div>

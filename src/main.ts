@@ -41,6 +41,7 @@ window.toggleAutoRotate = () => {
     }
 };
 window.setCameraViewMode = (mode: string) => state.cameraControls?.setViewMode(mode);
+window.setTorusMetricMode = (mode: string) => state.network?.setTorusMetricMode(mode);
 window.toggleMobileHelp = () => {
     const overlay = document.getElementById('mobile-help-overlay');
     if (overlay) {
