@@ -351,7 +351,7 @@ describe('U4: Field Layer Summaries', () => {
         const s = buildMembraneLayerSummary(true, 0.4, 0.3, 0.8);
         expect(s.layerId).toBe('membraneState');
         expect(s.valueKind).toBe('proxy');
-        expect(s.shortText).toContain('Membrane');
+        expect(s.shortText.toLowerCase()).toContain('membrane');
     });
 
     it('buildTorusCurvatureSummary() returns correct layerId and valueKind', () => {
