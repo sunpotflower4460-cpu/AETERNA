@@ -367,6 +367,12 @@ function buildZeroedSummary(
 // ── Difference highlights ──────────────────────────────────────────────────────
 
 /**
+ * Minimum difference magnitude between strongest and weakest variant
+ * before a metric qualifies for a difference highlight.
+ */
+const MIN_DIFFERENCE_THRESHOLD = 0.01;
+
+/**
  * Candidate metrics for difference highlights, in priority order.
  */
 const HIGHLIGHT_METRICS: Array<keyof LongRunVariantSummary> = [
@@ -429,7 +435,7 @@ function generateDifferenceHighlights(
         const diff = maxVal - minVal;
 
         // Only produce a highlight if the difference is non-trivial
-        if (diff < 0.01) continue;
+        if (diff < MIN_DIFFERENCE_THRESHOLD) continue;
 
         const strongestIdx = values.indexOf(maxVal);
         const weakestIdx = values.indexOf(minVal);

@@ -54,6 +54,12 @@ export const COMPARISON_METRIC_TABLE_ROWS: MetricTableRow[] = [
     { label: 'NaN/Infinity Count',           metric: 'nanOrInfinityCount',               decimals: 0 },
 ];
 
+/**
+ * Minimum absolute difference between max and min cell values in a row
+ * before isMax / isMin annotations are applied.
+ */
+const SIGNIFICANCE_THRESHOLD = 0.0001;
+
 // ── Cell rendering ─────────────────────────────────────────────────────────────
 
 function fmtCell(v: number, decimals: number): string {
@@ -105,8 +111,8 @@ export function buildComparisonTableData(
 
         const cells: ComparisonTableCell[] = values.map(v => ({
             value: fmtCell(v, decimals),
-            isMax: v === maxVal && diff > 0.0001,
-            isMin: v === minVal && diff > 0.0001,
+            isMax: v === maxVal && diff > SIGNIFICANCE_THRESHOLD,
+            isMin: v === minVal && diff > SIGNIFICANCE_THRESHOLD,
             isNonZeroWarning:
                 (metric === 'semanticLeakCount' || metric === 'nanOrInfinityCount') && v > 0,
         }));

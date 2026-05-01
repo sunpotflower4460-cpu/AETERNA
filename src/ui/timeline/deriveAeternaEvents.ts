@@ -483,6 +483,22 @@ export function recordScenarioControlEvent(
 
 // ── Long-run comparison events (N7) ──────────────────────────────────────────
 
+const COMPARISON_EVENT_KIND_MAP = {
+    started:           'comparisonStarted',
+    variantCompleted:  'comparisonVariantCompleted',
+    variantSkipped:    'comparisonVariantSkipped',
+    summaryGenerated:  'comparisonSummaryGenerated',
+} as const;
+
+type ComparisonEventKind = keyof typeof COMPARISON_EVENT_KIND_MAP;
+
+const COMPARISON_SEVERITY_MAP: Record<ComparisonEventKind, AeternaEventSeverity> = {
+    started:           'info',
+    variantCompleted:  'info',
+    variantSkipped:    'notice',
+    summaryGenerated:  'info',
+};
+
 /**
  * Record a long-run comparison suite event.
  *
@@ -492,25 +508,12 @@ export function recordScenarioControlEvent(
  * Does NOT use observed ratios as runtime feedback.
  */
 export function recordComparisonEvent(
-    kind: 'started' | 'variantCompleted' | 'variantSkipped' | 'summaryGenerated',
+    kind: ComparisonEventKind,
     detail: string,
     tick: number
 ): void {
-    const eventKindMap = {
-        started:           'comparisonStarted',
-        variantCompleted:  'comparisonVariantCompleted',
-        variantSkipped:    'comparisonVariantSkipped',
-        summaryGenerated:  'comparisonSummaryGenerated',
-    } as const;
-
-    const eventKind = eventKindMap[kind];
-    const severityMap = {
-        started:           'info',
-        variantCompleted:  'info',
-        variantSkipped:    'notice',
-        summaryGenerated:  'info',
-    } as const;
-    const severity = severityMap[kind];
+    const eventKind = COMPARISON_EVENT_KIND_MAP[kind];
+    const severity = COMPARISON_SEVERITY_MAP[kind];
 
     push(makeEvent(
         eventKind,
