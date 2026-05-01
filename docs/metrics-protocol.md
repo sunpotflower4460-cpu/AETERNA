@@ -1625,3 +1625,38 @@ Field Layer Visualization（U4）では、各 layer の現在状態を `FieldLay
 - deriveNowSummary は rule-based / local — LLM / API 不要
 - deriveAeternaEvents は delta-based — fake event を生成しない
 - consciousness / emotion / semantic claim を含む文字列を出力してはならない
+
+## N5 Weak Plasticity Channel
+
+### Derived
+
+- `vortexTrace` — per-cell trace accumulation from vortex-candidate activity
+- `repeatedFlowTrace` — per-cell trace from repeated-flow-path candidate from/to regions
+- `localExcitabilityTrace` — per-cell trace from high-excitability, near-threshold regions
+- `membraneTrace` — per-cell trace from global membrane observation (uniform application)
+- `accumulatedTrace` — sum of all four trace channels per cell
+- `resistanceDelta` — signed resistance change derived from accumulatedTrace (negative = more permeable)
+- `resistanceScale` — multiplicative resistance modifier clamped to [minResistanceScale, maxResistanceScale]
+
+### Proxy
+
+- `weakPlasticityTrace` — field-layer proxy combining accumulatedTrace and resistanceDelta for visualization
+- `plasticityAccumulation` — total and average accumulation across all cells
+- `plasticitySaturationRisk` — proxy risk that accumulation is near saturation ceiling
+- `plasticityDormancyRisk` — proxy risk that accumulation is near-zero (inactive)
+
+### Check
+
+- `ablationEnabled` — whether plasticity is ablated (observe-only, no runtime feedback)
+- `mode` — current operating mode ('off' | 'observeOnly' | 'resistanceOnly')
+- `nanOrInfinityCount` — count of cells that produced NaN/Infinity during update (should be 0)
+- `resistanceClampCount` — number of cells where resistanceScale was clamped to bounds
+
+### Guardrails
+
+- Weak plasticity is NOT semantic memory. accumulatedTrace does not represent stored concepts.
+- learningRate and maxDeltaPerTick must remain at 10^-4 order or below.
+- Runtime feedback only permitted when: enabled=true AND ablationEnabled=false AND mode=resistanceOnly.
+- resistanceScale is clamped to [minResistanceScale, maxResistanceScale] always.
+- No network edges, semantic nodes, or Node bridge connections are created.
+- PHI_INV / SCHUMANN_RES are not affected by this channel.

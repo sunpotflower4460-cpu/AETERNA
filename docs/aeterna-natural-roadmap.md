@@ -61,6 +61,19 @@ boundary を単なる wrap 条件ではなく、媒介層として整理する�
 observer-side と runtime の間に極小の plasticity channel を 1 本だけ導入する。  
 必ず tiny / ablatable / non-semantic に保つ。
 
+Implemented in N5 as:
+
+- `WeakPlasticityConfig` / `defaultWeakPlasticityConfig` — triple-gated safety config
+- `WeakPlasticityCellTrace` / `WeakPlasticityState` — per-cell trace accumulation types
+- `createWeakPlasticityState()` / `updateWeakPlasticityState()` — core logic with decay, clamp, NaN guard
+- `getResistanceScale()` — triple-gate runtime accessor (returns 1.0 unless all gates open)
+- `WeakPlasticityObservationState` / `deriveWeakPlasticityObservation()` — observer-side summary
+- `weakPlasticityTrace` field layer (defaultVisible=false, diagnostic/overlay only, multiply blend)
+- Event timeline, Now Summary, Guide integration (neutral observational language only)
+- docs/weak-plasticity-channel.md, metrics-protocol.md N5 section, vocabulary N5 section
+- Tests: weakPlasticity.test.ts, weakPlasticityObservation.test.ts, weakPlasticityLayer.test.ts
+- Default: enabled=false, ablationEnabled=true, mode=observeOnly (no runtime impact)
+
 ## N6 External Constants Removal / Observed Ratios
 
 `PHI_INV` や `SCHUMANN_RES` のような外来定数を core update equations から外し、可能なら observer/reference ratio へ移す。  

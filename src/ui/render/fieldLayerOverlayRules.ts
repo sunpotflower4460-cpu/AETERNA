@@ -189,6 +189,16 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         maxSimultaneousLayers: 3,
     },
 
+    weakPlasticityTrace: {
+        layerId: 'weakPlasticityTrace',
+        // Very subtle overlay — must not dominate or suggest active "glow"
+        maxOpacity: 0.30,
+        priority: 72,
+        // multiply blend keeps it subtle; avoids fake-learning "glow" artefact
+        defaultBlendMode: 'multiply',
+        maxSimultaneousLayers: 3,
+    },
+
     riskOverlay: {
         layerId: 'riskOverlay',
         maxOpacity: 0.70,

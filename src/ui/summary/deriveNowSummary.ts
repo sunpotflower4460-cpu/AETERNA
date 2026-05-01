@@ -27,6 +27,7 @@ import type { MembraneObservationState } from '../../types/membraneObservation.t
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 import type { CurvatureVortexCouplingState } from '../../types/curvatureVortexCoupling.ts';
+import type { WeakPlasticityObservationState } from '../../types/weakPlasticityObservation.ts';
 
 // ── Parameters ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ export interface DeriveNowSummaryParams {
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
     curvatureVortexCoupling?: CurvatureVortexCouplingState | null;
+    weakPlasticity?: WeakPlasticityObservationState | null;
     semanticLeakCount?: number;
     nanOrInfinityCount?: number;
     timestamp: number;
@@ -70,6 +72,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
         repeatedFlowPaths,
         protoNetwork,
         curvatureVortexCoupling,
+        weakPlasticity,
         semanticLeakCount = 0,
         nanOrInfinityCount = 0,
         timestamp,
@@ -414,6 +417,50 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 priority: 6,
                 text: 'Curvature-vortex coupling is being observed in diagnostic mode. No vortex candidates detected.',
                 source: 'CurvatureVortexCouplingState',
+                valueKind: 'proxy',
+            });
+        }
+    }
+
+    // ── Priority 6: Weak Plasticity ───────────────────────────────────────────
+
+    if (weakPlasticity && weakPlasticity.mode !== 'off') {
+        dataCount++;
+        const acc = weakPlasticity.totalAccumulation;
+        const satRisk = weakPlasticity.plasticitySaturationRisk;
+        const dormRisk = weakPlasticity.plasticityDormancyRisk;
+        const ablated = weakPlasticity.ablationEnabled;
+        const mode = weakPlasticity.mode;
+
+        // Minimum accumulation before showing trace activity in the summary
+        const PLASTICITY_ACCUMULATION_DISPLAY_THRESHOLD = 0.0001;
+        // Minimum dormancy risk before showing dormancy message
+        const PLASTICITY_DORMANCY_RISK_THRESHOLD = 0.8;
+
+        if (satRisk >= 0.7) {
+            candidates.push({
+                id: 'plasticitySatRisk',
+                priority: 4,
+                text: `Weak plasticity trace accumulation saturation risk is elevated (${satRisk.toFixed(2)}).`,
+                source: 'WeakPlasticityObservationState.plasticitySaturationRisk',
+                valueKind: 'proxy',
+            });
+        } else if (acc > PLASTICITY_ACCUMULATION_DISPLAY_THRESHOLD) {
+            const ablationNote = ablated ? ' Resistance coupling is disabled by ablation.' : '';
+            const modeNote = mode === 'observeOnly' ? ' Plasticity is observe-only.' : '';
+            candidates.push({
+                id: 'plasticityTrace',
+                priority: 6,
+                text: `Weak plasticity traces are accumulating slowly in the medium.${ablationNote}${modeNote}`,
+                source: 'WeakPlasticityObservationState.totalAccumulation',
+                valueKind: 'proxy',
+            });
+        } else if (dormRisk >= PLASTICITY_DORMANCY_RISK_THRESHOLD) {
+            candidates.push({
+                id: 'plasticityDormant',
+                priority: 7,
+                text: 'Weak plasticity channel is active but traces remain near zero.',
+                source: 'WeakPlasticityObservationState.plasticityDormancyRisk',
                 valueKind: 'proxy',
             });
         }
