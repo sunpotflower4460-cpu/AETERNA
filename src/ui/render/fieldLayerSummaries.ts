@@ -190,6 +190,25 @@ export function buildSensoryReturnSummary(
 }
 
 /**
+ * Build a Membrane Layer summary.
+ */
+export function buildMembraneLayerSummary(
+    visible: boolean,
+    deformation: number,
+    twoSidedness: number,
+    integrity: number,
+): FieldLayerSummary {
+    const magnitude = Math.min(1, deformation * 0.45 + twoSidedness * 0.35 + (1 - integrity) * 0.20);
+    const status = magnitudeToStatus(magnitude);
+    const shortText =
+        status === 'inactive' ? 'Membrane layer near baseline' :
+        status === 'low'      ? 'Low membrane deformation or overlap observed' :
+        status === 'moderate' ? 'Membrane mediation is moderately active' :
+                                'Membrane deformation or overlap is elevated';
+    return { layerId: 'membraneState', visible, status, shortText, valueKind: 'proxy', magnitude };
+}
+
+/**
  * Build a Torus Curvature layer summary.
  *
  * @param visible               Whether the layer is currently toggled on

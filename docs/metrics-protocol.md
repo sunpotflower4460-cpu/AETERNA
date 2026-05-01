@@ -87,6 +87,32 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - `expectedSignedCharge` — always 0 (Euler characteristic of torus)
 - `flatVsCurvedComparisonAvailable` — whether snapshot comparison was performed
 
+### Membrane / Boundary Mediation (N4)
+
+#### Derived
+
+- `permeability`
+- `tension`
+- `deformation`
+- `recovery`
+- `actuationImprint`
+- `returnImprint`
+
+#### Proxy
+
+- `twoSidedness`
+- `actuationReturnOverlap`
+- `membraneIntegrity`
+- `membraneAsymmetry`
+- `membraneRecoveryBalance`
+
+#### Check
+
+- `nanOrInfinityCount`
+- `deformationClampCount`
+- `permeabilityClampCount`
+- `tensionClampCount`
+
 
 
 **Definition**: The system maintains internal activity without external input.

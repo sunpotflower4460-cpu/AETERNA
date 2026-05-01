@@ -131,6 +131,8 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
     const leakVal = metricValue(metrics, 'semanticLeak');
     const nanVal  = metricValue(metrics, 'nanOrInfinity');
     const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
+    const membraneIntegrity = asNum(metricValue(metrics, 'membraneIntegrity'));
+    const membraneOverlap = asNum(metricValue(metrics, 'membraneOverlap'));
 
     // Return delayed → suggest Medium panel
     if (retStatus === 'low' || retStatus === 'warning') {
@@ -183,6 +185,26 @@ function buildWhatToLookAt(snapshot: ExplainableObservationSnapshot): GuideSugge
             label: 'Turn on Local Excitability layer',
             reason: 'Local excitability is elevated. Enable the Local Excitability layer to see which regions are affected.',
             targetLayer: 'localExcitability',
+            action: 'toggleLayer',
+        });
+    }
+
+    if (membraneIntegrity !== null && membraneIntegrity < 0.55) {
+        suggestions.push({
+            id: 'look-membrane-section',
+            label: 'Medium → Membrane section',
+            reason: 'Membrane integrity is reduced. Open the Medium panel to inspect boundary mediation metrics.',
+            targetPanel: 'medium',
+            action: 'openPanel',
+        });
+    }
+
+    if (membraneOverlap !== null && membraneOverlap > 0.18) {
+        suggestions.push({
+            id: 'look-membrane-layer',
+            label: 'Turn on Membrane Layer',
+            reason: 'Actuation and return overlap is present on the membrane. The Membrane Layer highlights the mediating regions.',
+            targetLayer: 'membraneState',
             action: 'toggleLayer',
         });
     }
@@ -251,6 +273,7 @@ function buildTryNext(
     const satRisk = asNum(metricValue(metrics, 'saturationRisk'));
     const echoStatus = metricStatus(metrics, 'echoPersistence');
     const localExcitabilityStatus = metricStatus(metrics, 'localExcitability');
+    const membraneDeformation = asNum(metricValue(metrics, 'membraneDeformation'));
 
     // Rotate torus (always a useful suggestion)
     suggestions.push({
@@ -327,6 +350,16 @@ function buildTryNext(
         });
     }
 
+    if (membraneDeformation !== null && membraneDeformation > 0.2) {
+        suggestions.push({
+            id: 'try-membrane-layer',
+            label: 'Turn on Membrane Layer',
+            reason: 'Membrane deformation is present. Enable the Membrane Layer to compare deformation and imprint overlap.',
+            targetLayer: 'membraneState',
+            action: 'toggleLayer',
+        });
+    }
+
     // High Resistance World if extinction risk is high
     if (extRisk !== null && extRisk > 0.5) {
         suggestions.push({
@@ -369,6 +402,7 @@ function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): Retur
     const echoStatus = metricStatus(metrics, 'echoPersistence');
     const satRisk = asNum(metricValue(metrics, 'saturationRisk'));
     const extRisk = asNum(metricValue(metrics, 'extinctionRisk'));
+    const membraneOverlap = asNum(metricValue(metrics, 'membraneOverlap'));
 
     if (retStatus === 'low' || retStatus === 'warning') {
         terms.push('Return Strength', 'Boundary Exchange');
@@ -381,6 +415,9 @@ function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): Retur
     }
     if (extRisk !== null && extRisk > 0.3) {
         terms.push('Flow Continuity', 'Energy Throughput', 'Closure Stability');
+    }
+    if (membraneOverlap !== null && membraneOverlap > 0.1) {
+        terms.push('Membrane Layer', 'Boundary Mediation', 'Two-sidedness');
     }
 
     const protoEvents = snapshot.recentEvents.filter(

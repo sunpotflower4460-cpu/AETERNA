@@ -117,6 +117,14 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         maxSimultaneousLayers: 5,
     },
 
+    membraneState: {
+        layerId: 'membraneState',
+        maxOpacity: 0.42,
+        priority: 55,
+        defaultBlendMode: 'screen',
+        maxSimultaneousLayers: 4,
+    },
+
     torusCurvature: {
         layerId: 'torusCurvature',
         maxOpacity: 0.50,

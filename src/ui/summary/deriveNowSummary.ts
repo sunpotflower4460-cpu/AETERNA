@@ -23,6 +23,7 @@ import type { DynamicViabilityState } from '../../types/dynamicViabilityState.ts
 import type { BodyWorldClosureState } from '../../types/bodyWorldClosureState.ts';
 import type { MediumProfileState } from '../../types/mediumProfileState.ts';
 import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityField.ts';
+import type { MembraneObservationState } from '../../types/membraneObservation.ts';
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 import type { CurvatureVortexCouplingState } from '../../types/curvatureVortexCoupling.ts';
@@ -33,6 +34,7 @@ export interface DeriveNowSummaryParams {
     overview?: OverviewState | null;
     viability?: DynamicViabilityState | null;
     closure?: BodyWorldClosureState | null;
+    membraneObservation?: MembraneObservationState | null;
     mediumProfile?: MediumProfileState | null;
     localField?: LocalExcitabilityFieldState | null;
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
@@ -62,6 +64,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
     const {
         viability,
         closure,
+        membraneObservation,
         mediumProfile,
         localField,
         repeatedFlowPaths,
@@ -243,6 +246,39 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 priority: 4,
                 text: 'Closure loop match is weak — loop closure is not well-established.',
                 source: 'BodyWorldClosureState.closureStability',
+                valueKind: 'proxy',
+            });
+        }
+    }
+
+    if (membraneObservation) {
+        dataCount++;
+        if (membraneObservation.averageDeformation >= 0.4) {
+            candidates.push({
+                id: 'membraneDeformationModerate',
+                priority: 4,
+                text: 'Membrane deformation is moderate.',
+                source: 'MembraneObservationState.averageDeformation',
+                valueKind: 'derived',
+            });
+        }
+
+        if (membraneObservation.actuationReturnOverlap >= 0.18) {
+            candidates.push({
+                id: 'membraneOverlapPresent',
+                priority: 5,
+                text: 'Actuation and return imprints overlap in a few membrane regions.',
+                source: 'MembraneObservationState.actuationReturnOverlap',
+                valueKind: 'proxy',
+            });
+        }
+
+        if (membraneObservation.membraneIntegrity >= 0.55) {
+            candidates.push({
+                id: 'membraneIntegrityStable',
+                priority: 5,
+                text: 'Membrane integrity remains stable.',
+                source: 'MembraneObservationState.membraneIntegrity',
                 valueKind: 'proxy',
             });
         }

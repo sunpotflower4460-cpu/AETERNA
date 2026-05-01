@@ -28,7 +28,7 @@ import type { AeternaEvent } from '../../types/aeternaEvent.ts';
  * System (U6).
  *
  * Contains:
- * - overview:      Current OverviewState (metric cards + overall status)
+ * - overview:      Current OverviewState (metric cards + overall status, including membrane observers when available)
  * - nowSummary:    Current NowSummaryState (3–5 line observation summary)
  * - recentEvents:  Most recent AeternaEvent entries (newest first)
  *

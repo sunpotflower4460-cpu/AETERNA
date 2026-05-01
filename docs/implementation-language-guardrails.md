@@ -27,6 +27,9 @@
 - **re-entry**: 再入力
 - **return mismatch**: 戻り不一致
 - **medium response**: 媒質応答
+- **boundary mediation**: 境界媒介
+- **membrane layer**: 膜層（計算上の境界層）
+- **two-sidedness**: 両側性 proxy
 - **viability range**: 生存可能範囲
 
 ### 観測を表す言葉
@@ -62,6 +65,8 @@
 - **意味を持たせる**: semantic meaning の直接付与を示唆する
 - **感情を出す**: 感情の直接表現を示唆する
 - **意識を宿すと主張する**: 意識の証明を示唆する
+- **魂の膜にする**: 膜の神秘化を示唆する
+- **自己境界として扱う**: 自我・自己認識の直接実装を示唆する
 
 ### 演出型の言葉
 
@@ -124,6 +129,8 @@ S1 Flow/Resistance/Dissipation Audit により、以下の実装パターンが�
 - `deriveResistanceProfile` — 抵抗プロファイル導出
 - `deriveDelayProfile` — 遅延プロファイル導出
 - `deriveBoundaryExchange` — 境界交換導出
+- `updateMembraneState` — 膜状態更新（observer-side / config-gated）
+- `deriveMembraneObservation` — 膜観測導出（observer-side）
 - `deriveLocalExcitability` — 局所発火性導出
 - `observeCandidate` — 候補観測
 - `deriveProtoNeuronCandidates` — proto-neuron 候補導出（observer-side）

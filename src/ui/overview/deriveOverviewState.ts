@@ -25,6 +25,7 @@ import type {
 import type { DynamicViabilityState } from '../../types/dynamicViabilityState.ts';
 import type { BodyWorldClosureState } from '../../types/bodyWorldClosureState.ts';
 import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityField.ts';
+import type { MembraneObservationState } from '../../types/membraneObservation.ts';
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 
@@ -94,6 +95,7 @@ function checkMetric(
 export interface DeriveOverviewStateParams {
     viability?: DynamicViabilityState | null;
     closure?: BodyWorldClosureState | null;
+    membraneObservation?: MembraneObservationState | null;
     localField?: LocalExcitabilityFieldState | null;
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
@@ -116,6 +118,7 @@ export function deriveOverviewState(params: DeriveOverviewStateParams): Overview
     const {
         viability,
         closure,
+        membraneObservation,
         localField,
         repeatedFlowPaths,
         protoNetwork,
@@ -188,6 +191,42 @@ export function deriveOverviewState(params: DeriveOverviewStateParams): Overview
         valueKind: 'proxy',
         source: 'BodyWorldClosureState.closureStability',
     });
+
+    if (membraneObservation) {
+        metrics.push({
+            id: 'membraneDeformation',
+            label: 'Membrane Deformation',
+            value: clamp01(membraneObservation.averageDeformation),
+            status: valueToStatus(clamp01(membraneObservation.averageDeformation)),
+            valueKind: 'derived',
+            source: 'MembraneObservationState.averageDeformation',
+        });
+        metrics.push({
+            id: 'membraneTwoSidedness',
+            label: 'Membrane Two-sidedness',
+            value: clamp01(membraneObservation.averageTwoSidedness),
+            status: valueToStatus(clamp01(membraneObservation.averageTwoSidedness)),
+            valueKind: 'proxy',
+            source: 'MembraneObservationState.averageTwoSidedness',
+        });
+        metrics.push({
+            id: 'membraneOverlap',
+            label: 'Actuation / Return Overlap',
+            value: clamp01(membraneObservation.actuationReturnOverlap),
+            status: valueToStatus(clamp01(membraneObservation.actuationReturnOverlap)),
+            valueKind: 'proxy',
+            source: 'MembraneObservationState.actuationReturnOverlap',
+        });
+        metrics.push({
+            id: 'membraneIntegrity',
+            label: 'Membrane Integrity',
+            value: clamp01(membraneObservation.membraneIntegrity),
+            status: valueToStatus(clamp01(membraneObservation.membraneIntegrity)),
+            valueKind: 'proxy',
+            source: 'MembraneObservationState.membraneIntegrity',
+        });
+        dataCount++;
+    }
 
     // ── Saturation Risk (risk metric) ─────────────────────────────────────────
     const saturationRisk = viability?.saturationRisk ?? 0;

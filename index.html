@@ -752,6 +752,7 @@
                                 <option value="all">All</option>
                                 <option value="actuationPulse">Pulse</option>
                                 <option value="sensoryReturn">Return</option>
+                                <option value="membraneObservation">Membrane</option>
                                 <option value="closureMetricChange">Closure</option>
                                 <option value="riskChange">Risk</option>
                                 <option value="localExcitabilityShift">Local Field</option>
@@ -986,6 +987,27 @@
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Balance readout only." id="row-medium-resistance-balance"><span>Resistance balance</span><span id="val-medium-resistance-balance" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Spread between resistance conditions." id="row-medium-resistance-variance"><span>Resistance variance</span><span id="val-medium-resistance-variance" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Composite confidence for medium profile." id="row-medium-profile-confidence"><span>Profile confidence</span><span id="val-medium-profile-confidence" class="text-white ">—</span></div>
+        </div>
+    </div>
+</div>
+<div class="acc-section">
+    <div class="acc-header" onclick="toggleAccordion('sec-membrane-layer','icon-membrane-layer')">
+        <span class="acc-title">MEMBRANE / BOUNDARY MEDIATION</span>
+        <svg id="icon-membrane-layer" class="transform transition-transform collapsed-icon" style="transform:rotate(-180deg)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div id="sec-membrane-layer" class="accordion-grid collapsed">
+        <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+            <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Membrane observer mode. weakCoupling remains gated and default-off." id="row-membrane-mode"><span>Membrane mode</span><span id="val-membrane-mode" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane permeability across the mediating layer." id="row-membrane-average-permeability"><span>Avg permeability</span><span id="val-membrane-average-permeability" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane tension across the mediating layer." id="row-membrane-average-tension"><span>Avg tension</span><span id="val-membrane-average-tension" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane deformation from actuation/return influence." id="row-membrane-average-deformation"><span>Avg deformation</span><span id="val-membrane-average-deformation" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Coexistence of actuation and return imprints on the same membrane state." id="row-membrane-average-two-sidedness"><span>Avg two-sidedness</span><span id="val-membrane-average-two-sidedness" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Overlap of actuation imprint and return imprint on membrane regions." id="row-membrane-overlap"><span>Imprint overlap</span><span id="val-membrane-overlap" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Balance between membrane recovery and deformation load." id="row-membrane-recovery-balance"><span>Recovery balance</span><span id="val-membrane-recovery-balance" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Integrity proxy for the mediating layer staying finite and bounded." id="row-membrane-integrity"><span>Membrane integrity</span><span id="val-membrane-integrity" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Count of membrane regions with elevated deformation." id="row-membrane-high-deformation-count"><span>High deformation regions</span><span id="val-membrane-high-deformation-count" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] NaN / Infinity count for membrane derivation." id="row-membrane-nan"><span>NaN / Infinity</span><span id="val-membrane-nan" class="text-white ">—</span></div>
+            <div id="membrane-section-note" class="text-[7px] text-white/35 leading-relaxed pt-1">Membrane is a computational mediating layer between BodySurface and WorldMedium. It is not a soul or consciousness boundary.</div>
         </div>
     </div>
 </div>

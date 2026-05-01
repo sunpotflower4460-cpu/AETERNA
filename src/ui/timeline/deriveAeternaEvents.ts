@@ -19,6 +19,7 @@ import type { AeternaEvent, AeternaEventKind, AeternaEventSeverity } from '../..
 import type { DynamicViabilityState } from '../../types/dynamicViabilityState.ts';
 import type { BodyWorldClosureState } from '../../types/bodyWorldClosureState.ts';
 import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityField.ts';
+import type { MembraneObservationState } from '../../types/membraneObservation.ts';
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
 
@@ -40,6 +41,8 @@ interface PrevSnapshot {
     returnStrength:     number;
     closureStability:   number;
     mismatch:           number;
+    membraneDeformation: number;
+    membraneOverlap:     number;
     localExciteHigh:    number;
     repeatedPathCount:  number;
     protoNetCount:      number;
@@ -88,6 +91,7 @@ function push(ev: AeternaEvent): void {
 export interface DeriveAeternaEventsParams {
     viability?: DynamicViabilityState | null;
     closure?: BodyWorldClosureState | null;
+    membraneObservation?: MembraneObservationState | null;
     localField?: LocalExcitabilityFieldState | null;
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
@@ -111,6 +115,7 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
     const {
         viability,
         closure,
+        membraneObservation,
         localField,
         repeatedFlowPaths,
         protoNetwork,
@@ -126,6 +131,8 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         returnStrength:    closure?.returnStrength ?? 0,
         closureStability:  closure?.closureStability ?? 0,
         mismatch:          closure?.returnMismatch ?? 0,
+        membraneDeformation: membraneObservation?.averageDeformation ?? 0,
+        membraneOverlap:     membraneObservation?.actuationReturnOverlap ?? 0,
         localExciteHigh:   localField?.highExcitabilityRegionCount ?? 0,
         repeatedPathCount: repeatedFlowPaths?.pathCandidateCount ?? 0,
         protoNetCount:     protoNetwork?.networkCandidateCount ?? 0,
@@ -224,6 +231,30 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
             'notice',
             `tick ${tick}: Closure loop stability ${dir} → ${cur.closureStability.toFixed(2)}`,
             'BodyWorldClosureState.closureStability',
+            tick,
+            'proxy'
+        ));
+    }
+
+    if (Math.abs(cur.membraneDeformation - prev.membraneDeformation) >= CLOSURE_CHANGE_THRESHOLD) {
+        const dir = cur.membraneDeformation > prev.membraneDeformation ? 'increased' : 'decreased';
+        push(makeEvent(
+            'membraneObservation',
+            'notice',
+            `tick ${tick}: Membrane deformation ${dir} → ${cur.membraneDeformation.toFixed(2)}`,
+            'MembraneObservationState.averageDeformation',
+            tick,
+            'derived'
+        ));
+    }
+
+    if (Math.abs(cur.membraneOverlap - prev.membraneOverlap) >= CLOSURE_CHANGE_THRESHOLD) {
+        const dir = cur.membraneOverlap > prev.membraneOverlap ? 'increased' : 'decreased';
+        push(makeEvent(
+            'membraneObservation',
+            'info',
+            `tick ${tick}: Actuation and return imprints on membrane ${dir} → ${cur.membraneOverlap.toFixed(2)}`,
+            'MembraneObservationState.actuationReturnOverlap',
             tick,
             'proxy'
         ));

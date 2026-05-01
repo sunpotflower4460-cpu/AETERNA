@@ -47,6 +47,9 @@ import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
 import { deriveMediumProfileState } from '../closure/deriveMediumProfileState.ts';
+import { defaultMembraneConfig } from '../config/membraneConfig.ts';
+import { createMembraneState, updateMembraneState } from '../boundary/membrane.ts';
+import { deriveMembraneObservation } from '../observer/deriveMembraneObservation.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -387,6 +390,12 @@ export class AeternaNetwork {
         this.lastReafferenceComparisonState = null;
         this.lastBodyWorldClosureState = null;
         this.lastMediumProfileState = null;
+        this.membraneConfig = { ...defaultMembraneConfig };
+        this.lastMembraneState = createMembraneState({
+            segments: this.segments,
+            timestamp: 0,
+        });
+        this.lastMembraneObservationState = deriveMembraneObservation(this.lastMembraneState);
     }
 
     initializeTemporaryWorkBuffers() {
@@ -968,6 +977,21 @@ export class AeternaNetwork {
             dt
         );
 
+        this.lastMembraneState = updateMembraneState({
+            previous: this.lastMembraneState ?? createMembraneState({
+                segments: this.segments,
+                timestamp: this.simTime,
+            }),
+            actuationPulse: this.lastActuationPulse,
+            sensoryReturns: this.lastSensoryReturnPackets,
+            bodySurface: this.lastBodySurfaceState,
+            worldMedium: this.worldMediumState,
+            config: this.membraneConfig,
+            timestamp: this.simTime,
+            dt,
+        });
+        this.lastMembraneObservationState = deriveMembraneObservation(this.lastMembraneState);
+
         // W5: Derive Reafference Comparison
         // Compare Actuation Pulse (what was sent) with Sensory Return (what came back)
         // This is pre-semantic comparison, NOT self-awareness
@@ -1275,6 +1299,16 @@ export class AeternaNetwork {
             mediumResistanceBalance: this.lastMediumProfileState?.resistance.resistanceBalance ?? 0,
             mediumResistanceVariance: this.lastMediumProfileState?.resistance.resistanceVariance ?? 0,
             mediumProfileConfidence: this.lastMediumProfileState?.profileConfidence ?? 0,
+            membraneMode: this.membraneConfig.mode,
+            membraneAveragePermeability: this.lastMembraneState?.averagePermeability ?? 0,
+            membraneAverageTension: this.lastMembraneState?.averageTension ?? 0,
+            membraneAverageDeformation: this.lastMembraneState?.averageDeformation ?? 0,
+            membraneAverageTwoSidedness: this.lastMembraneObservationState?.averageTwoSidedness ?? 0,
+            membraneActuationReturnOverlap: this.lastMembraneObservationState?.actuationReturnOverlap ?? 0,
+            membraneRecoveryBalance: this.lastMembraneObservationState?.membraneRecoveryBalance ?? 0,
+            membraneIntegrity: this.lastMembraneObservationState?.membraneIntegrity ?? 0,
+            membraneHighDeformationRegionCount: this.lastMembraneObservationState?.highDeformationRegionCount ?? 0,
+            membraneNanOrInfinityCount: this.lastMembraneObservationState?.nanOrInfinityCount ?? 0,
             // Beautiful Loop L3: Modulation deltas
             bl_noveltyBiasDelta: this.currentModulation.noveltyBiasDelta,
             bl_withdrawBiasDelta: this.currentModulation.withdrawBiasDelta,

@@ -434,6 +434,16 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-medium-resistance-balance'])   UI['val-medium-resistance-balance'].innerText   = (dyn.mediumResistanceBalance || 0).toFixed(3);
     if (UI['val-medium-resistance-variance'])  UI['val-medium-resistance-variance'].innerText  = (dyn.mediumResistanceVariance || 0).toFixed(3);
     if (UI['val-medium-profile-confidence'])   UI['val-medium-profile-confidence'].innerText   = (dyn.mediumProfileConfidence || 0).toFixed(3);
+    if (UI['val-membrane-mode'])               UI['val-membrane-mode'].innerText               = dyn.membraneMode || 'observerOnly';
+    if (UI['val-membrane-average-permeability']) UI['val-membrane-average-permeability'].innerText = (dyn.membraneAveragePermeability || 0).toFixed(3);
+    if (UI['val-membrane-average-tension'])    UI['val-membrane-average-tension'].innerText    = (dyn.membraneAverageTension || 0).toFixed(3);
+    if (UI['val-membrane-average-deformation']) UI['val-membrane-average-deformation'].innerText = (dyn.membraneAverageDeformation || 0).toFixed(3);
+    if (UI['val-membrane-average-two-sidedness']) UI['val-membrane-average-two-sidedness'].innerText = (dyn.membraneAverageTwoSidedness || 0).toFixed(3);
+    if (UI['val-membrane-overlap'])            UI['val-membrane-overlap'].innerText            = (dyn.membraneActuationReturnOverlap || 0).toFixed(3);
+    if (UI['val-membrane-recovery-balance'])   UI['val-membrane-recovery-balance'].innerText   = (dyn.membraneRecoveryBalance || 0).toFixed(3);
+    if (UI['val-membrane-integrity'])          UI['val-membrane-integrity'].innerText          = (dyn.membraneIntegrity || 0).toFixed(3);
+    if (UI['val-membrane-high-deformation-count']) UI['val-membrane-high-deformation-count'].innerText = `${dyn.membraneHighDeformationRegionCount || 0}`;
+    if (UI['val-membrane-nan'])                UI['val-membrane-nan'].innerText                = `${dyn.membraneNanOrInfinityCount || 0}`;
 
     // Phase I & M: System State Badge & Robust conditions
     const badge = UI['system-state-badge'];
@@ -657,6 +667,7 @@ function _updateU5(dyn) {
     const network = state.network;
     const closure   = network?.lastBodyWorldClosureState ?? null;
     const mediumProfile = network?.lastMediumProfileState ?? null;
+    const membraneObservation = network?.lastMembraneObservationState ?? null;
     // localField, repeatedFlowPaths, protoNetwork are not currently computed
     // in the main loop — pass null and derive functions degrade gracefully
     const localField = null;
@@ -686,7 +697,7 @@ function _updateU5(dyn) {
 
     // ── Derive OverviewState ─────────────────────────────────────────────────
     const overviewState = deriveOverviewState({
-        viability, closure, localField, repeatedFlowPaths, protoNetwork,
+        viability, closure, membraneObservation, localField, repeatedFlowPaths, protoNetwork,
         semanticLeakCount: 0,
         nanOrInfinityCount: 0,
         timestamp,
@@ -712,7 +723,7 @@ function _updateU5(dyn) {
 
     // ── Derive and update Now Summary ────────────────────────────────────────
     const nowSummaryState = deriveNowSummary({
-        overview: overviewState, viability, closure, mediumProfile,
+        overview: overviewState, viability, closure, membraneObservation, mediumProfile,
         localField, repeatedFlowPaths, protoNetwork,
         semanticLeakCount: 0, nanOrInfinityCount: 0,
         timestamp,
@@ -721,7 +732,7 @@ function _updateU5(dyn) {
 
     // ── Derive and update Event Timeline ─────────────────────────────────────
     const recentEvents = deriveAeternaEvents({
-        viability, closure, localField, repeatedFlowPaths, protoNetwork,
+        viability, closure, membraneObservation, localField, repeatedFlowPaths, protoNetwork,
         semanticLeakCount: 0, nanOrInfinityCount: 0,
         tick, timestamp,
     });

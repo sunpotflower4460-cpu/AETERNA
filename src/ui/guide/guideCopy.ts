@@ -80,6 +80,21 @@ export const FULL_GLOSSARY: readonly GuideGlossaryHint[] = [
         valueKind: 'proxy',
     },
     {
+        term: 'Membrane Layer',
+        shortDefinition: 'Observer-visible mediating layer between BodySurface and WorldMedium where permeability, tension, deformation, and imprint overlap are tracked.',
+        valueKind: 'proxy',
+    },
+    {
+        term: 'Boundary Mediation',
+        shortDefinition: 'How the membrane layer links outward actuation traces and incoming return traces without replacing body-side or world-side state.',
+        valueKind: 'proxy',
+    },
+    {
+        term: 'Two-sidedness',
+        shortDefinition: 'Proxy for coexisting actuation and return imprints on the same membrane regions. It is not self-recognition.',
+        valueKind: 'proxy',
+    },
+    {
         term: 'Trace / Residue',
         shortDefinition: 'Residual activity left in field regions after propagation has passed.',
         valueKind: 'derived',

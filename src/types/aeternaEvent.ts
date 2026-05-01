@@ -24,6 +24,7 @@
 export type AeternaEventKind =
     | 'actuationPulse'                  // Actuation pulse observed / changed
     | 'worldMediumChange'               // World medium echo or resistance changed
+    | 'membraneObservation'             // Membrane deformation / overlap changed
     | 'sensoryReturn'                   // Sensory return packet detected
     | 'reafferenceComparison'           // Reafference mismatch changed
     | 'closureMetricChange'             // Closure stability or loop gain changed
