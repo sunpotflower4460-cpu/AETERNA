@@ -19,7 +19,7 @@ describe('N2 vortex candidate observation', () => {
 
     expect(result.candidateCount).toBeGreaterThan(0);
     expect(result.positiveChargeCount).toBeGreaterThan(0);
-    expect(result.totalTopologicalCharge).toBeGreaterThan(0);
+    expect(Array.from(result.topologicalCharge).some((value) => value > 0)).toBe(true);
     expect(result.candidates[0]?.topologicalCharge).toBe(1);
   });
 
