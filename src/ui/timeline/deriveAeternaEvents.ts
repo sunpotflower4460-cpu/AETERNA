@@ -322,8 +322,10 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
     // ── Weak plasticity trace ─────────────────────────────────────────────────
 
     const PLASTICITY_ACC_THRESHOLD = 0.001;
+    // Require 5× the base threshold as minimum change to emit an event (prevents spam)
+    const PLASTICITY_ACC_CHANGE_MULTIPLIER = 5;
     if (weakPlasticity && cur.plasticityAcc > PLASTICITY_ACC_THRESHOLD
-        && Math.abs(cur.plasticityAcc - prev.plasticityAcc) > PLASTICITY_ACC_THRESHOLD * 5) {
+        && Math.abs(cur.plasticityAcc - prev.plasticityAcc) > PLASTICITY_ACC_THRESHOLD * PLASTICITY_ACC_CHANGE_MULTIPLIER) {
         const dir = cur.plasticityAcc > prev.plasticityAcc ? 'increasing' : 'decreasing';
         push(makeEvent(
             'weakPlasticityTrace',

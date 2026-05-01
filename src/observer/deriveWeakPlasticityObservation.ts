@@ -109,8 +109,11 @@ export function deriveWeakPlasticityObservation(
     }
 
     // If no cells had non-zero rs, reset min/max to 1.0
-    if (minResScale > 1.5) minResScale = 1.0;
-    if (maxResScale < 0.5) maxResScale = 1.0;
+    // Sentinels: min init was 2.0 (above any valid value), max init was 0.0 (below any valid value)
+    const UNINITIALIZED_MIN_SENTINEL = 1.5; // if min stayed above this, no real cell updated it
+    const UNINITIALIZED_MAX_SENTINEL = 0.5; // if max stayed below this, no real cell updated it
+    if (minResScale > UNINITIALIZED_MIN_SENTINEL) minResScale = 1.0;
+    if (maxResScale < UNINITIALIZED_MAX_SENTINEL) maxResScale = 1.0;
 
     const avgAcc      = totalAcc / n;
     const avgResScale = totalResScale / n;
@@ -127,7 +130,9 @@ export function deriveWeakPlasticityObservation(
     const satRisk = clamp(maxAcc / SATURATION_CEILING, 0, 1);
 
     // plasticityDormancyRisk: high when avgAcc is very small
-    // Full dormancy risk at avgAcc=0; near-zero at avgAcc ≥ 0.01
+    // Full dormancy risk at avgAcc=0; near-zero at avgAcc ≥ DORMANCY_THRESHOLD.
+    // DORMANCY_THRESHOLD is set to 10× the default accumulationDecayRate (1e-5),
+    // representing one decay cycle worth of minimum meaningful accumulation.
     const DORMANCY_THRESHOLD = 0.001;
     const dormancyRisk = clamp(1 - Math.min(avgAcc / DORMANCY_THRESHOLD, 1), 0, 1);
 

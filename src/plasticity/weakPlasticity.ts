@@ -312,7 +312,10 @@ export function updateWeakPlasticityState(
         const acc = vt + rft + lex + mem;
 
         // 8. Resistance delta: concentrated flow → slightly more permeable
-        const maxDeltaRange = 4 * maxDelta * 100;
+        // 4 = number of trace channels; 100 = scaling headroom for multi-tick accumulation
+        const NUM_TRACE_CHANNELS = 4;
+        const RESISTANCE_DELTA_HEADROOM = 100;
+        const maxDeltaRange = NUM_TRACE_CHANNELS * maxDelta * RESISTANCE_DELTA_HEADROOM;
         const resistanceDelta = -clamp(acc, 0, maxDeltaRange);
         const resistanceScale  = clamp(1 + resistanceDelta, minResMin, maxResMax);
 

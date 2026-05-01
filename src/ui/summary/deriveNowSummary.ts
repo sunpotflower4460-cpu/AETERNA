@@ -432,6 +432,11 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
         const ablated = weakPlasticity.ablationEnabled;
         const mode = weakPlasticity.mode;
 
+        // Minimum accumulation before showing trace activity in the summary
+        const PLASTICITY_ACCUMULATION_DISPLAY_THRESHOLD = 0.0001;
+        // Minimum dormancy risk before showing dormancy message
+        const PLASTICITY_DORMANCY_RISK_THRESHOLD = 0.8;
+
         if (satRisk >= 0.7) {
             candidates.push({
                 id: 'plasticitySatRisk',
@@ -440,7 +445,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 source: 'WeakPlasticityObservationState.plasticitySaturationRisk',
                 valueKind: 'proxy',
             });
-        } else if (acc > 0.0001) {
+        } else if (acc > PLASTICITY_ACCUMULATION_DISPLAY_THRESHOLD) {
             const ablationNote = ablated ? ' Resistance coupling is disabled by ablation.' : '';
             const modeNote = mode === 'observeOnly' ? ' Plasticity is observe-only.' : '';
             candidates.push({
@@ -450,7 +455,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 source: 'WeakPlasticityObservationState.totalAccumulation',
                 valueKind: 'proxy',
             });
-        } else if (dormRisk >= 0.8) {
+        } else if (dormRisk >= PLASTICITY_DORMANCY_RISK_THRESHOLD) {
             candidates.push({
                 id: 'plasticityDormant',
                 priority: 7,
