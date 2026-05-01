@@ -8,6 +8,29 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 
 ## Metric Categories
 
+### Geometry / Curvature (N1)
+
+#### Config / Measured
+
+- `segments`
+- `majorRadius`
+- `minorRadius`
+
+#### Derived
+
+- `areaElement = r * (R + r cos v)`
+- `gaussianCurvature = cos v / (r * (R + r cos v))`
+- `meanCurvature = (R + 2r cos v) / (2r * (R + r cos v))`
+- `normal`
+- `majorTangent`
+- `minorTangent`
+
+#### Proxy
+
+- `curvatureAsymmetry`
+- `innerOuterBias`
+- `geometryConfidence`
+
 ### A. Ongoingness
 
 **Definition**: The system maintains internal activity without external input.

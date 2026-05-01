@@ -52,6 +52,7 @@ export type FieldLayerId =
     | 'traceResidue'
     | 'actuationPulse'
     | 'sensoryReturn'
+    | 'torusCurvature'
     | 'closureMatch'
     | 'mediumEchoDelay'
     | 'localExcitability'
@@ -201,6 +202,27 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'SensoryReturnPacket.returnDelayHint',
             'SensoryReturnPacket.worldOriginStrength',
             'ReafferenceComparisonState.actualReturn',
+        ],
+    },
+
+    torusCurvature: {
+        id: 'torusCurvature',
+        label: 'Torus Curvature',
+        description:
+            'Geometry-derived torus curvature distribution derived from majorRadius and minorRadius. ' +
+            'Shows where outer-rim regions are curvature-positive and inner-rim regions are curvature-negative.',
+        disclaimer:
+            'This layer shows geometry-derived metric data only. ' +
+            'It is not a visual effect, semantic tag, or organism-state claim.',
+        valueKind: 'derived',
+        defaultVisible: false,
+        colorRole: 'torusCurvature',
+        allowedModes: ['raw', 'smooth', 'overlay', 'diagnostic'],
+        sourceStates: [
+            'TorusGeometryCell.gaussianCurvature',
+            'TorusGeometryCell.meanCurvature',
+            'TorusCurvatureObservation.curvatureAsymmetry',
+            'TorusCurvatureObservation.geometryConfidence',
         ],
     },
 

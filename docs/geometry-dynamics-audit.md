@@ -202,3 +202,9 @@ Future phases should support ablation or seeded reproducibility.
 
 5. **N7 Long-Run Comparison Suite**  
    N0 baseline, N1 curved metric, N2 complex field, N6 constant removal の比較を長時間テストで固定する。
+
+## N1 follow-up snapshot
+
+N1 では `src/core/torusGeometry.ts` に geometry-derived torus cells を追加し、`areaElement`, `gaussianCurvature`, `meanCurvature`, tangent, normal を observer/UI 側へ接続した。  
+`dynamicCore.ts` の更新式は引き続き flat periodic grid のままで、大規模な runtime rewrite はまだ行っていない。  
+したがって N1 の比較軸は **same dynamics / different metric observation** を安全に確保することにある。

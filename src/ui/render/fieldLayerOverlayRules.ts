@@ -67,6 +67,7 @@ export interface LayerOverlayRule {
  * - Trace / Residue:           multiply to show where energy AND trace co-exist
  * - Actuation Pulse:           additive brief wave, keep opacity low
  * - Sensory Return:            normal, clearly visible on top of energy
+ * - Torus Curvature:           normal geometry map, low-to-moderate opacity
  * - Closure Match:             screen, faint arcs over return
  * - Medium Echo / Delay:       normal, outer ring at low opacity
  * - Local Excitability:        additive subtle highlights only
@@ -104,6 +105,14 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         layerId: 'sensoryReturn',
         maxOpacity: 0.65,
         priority: 50,
+        defaultBlendMode: 'normal',
+        maxSimultaneousLayers: 5,
+    },
+
+    torusCurvature: {
+        layerId: 'torusCurvature',
+        maxOpacity: 0.50,
+        priority: 25,
         defaultBlendMode: 'normal',
         maxSimultaneousLayers: 5,
     },

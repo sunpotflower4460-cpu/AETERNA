@@ -172,6 +172,58 @@ export function buildSensoryReturnSummary(
 }
 
 /**
+ * Build a Torus Curvature layer summary.
+ *
+ * @param visible               Whether the layer is currently toggled on
+ * @param curvatureAsymmetry    Difference between outer and inner rim curvature
+ * @param positiveRegionCount   Number of positive-curvature regions
+ * @param negativeRegionCount   Number of negative-curvature regions
+ * @param geometryConfidence    Confidence that geometry values are finite/valid
+ */
+export function buildTorusCurvatureSummary(
+    visible: boolean,
+    curvatureAsymmetry: number,
+    positiveRegionCount: number,
+    negativeRegionCount: number,
+    geometryConfidence: number,
+): FieldLayerSummary {
+    const CURVATURE_ASYMMETRY_WEIGHT = 0.85;
+    const CURVATURE_BALANCE_WEIGHT = 0.10;
+    const GEOMETRY_CONFIDENCE_WEIGHT = 0.05;
+
+    if (Math.abs(curvatureAsymmetry) < 1e-9 && positiveRegionCount === 0 && negativeRegionCount === 0) {
+        return {
+            layerId: 'torusCurvature',
+            visible,
+            status: 'inactive',
+            shortText: 'Flat-equivalent metric; curvature near zero',
+            valueKind: 'derived',
+            magnitude: 0,
+        };
+    }
+    const asymmetryMagnitude = Math.min(1, Math.abs(curvatureAsymmetry));
+    const balanceMagnitude = positiveRegionCount + negativeRegionCount > 0
+        ? Math.min(1, Math.abs(positiveRegionCount - negativeRegionCount) / (positiveRegionCount + negativeRegionCount))
+        : 0;
+    const magnitude = Math.min(
+        1,
+        asymmetryMagnitude * CURVATURE_ASYMMETRY_WEIGHT
+            + balanceMagnitude * CURVATURE_BALANCE_WEIGHT
+            + Math.min(1, geometryConfidence) * GEOMETRY_CONFIDENCE_WEIGHT,
+    );
+    const status = magnitudeToStatus(magnitude);
+    const regionNote = positiveRegionCount + negativeRegionCount > 0
+        ? ` (+${positiveRegionCount} / -${negativeRegionCount})`
+        : '';
+    const shortText =
+        status === 'inactive' ? 'Flat-equivalent metric; curvature near zero' :
+        status === 'low'      ? `Low torus curvature asymmetry${regionNote}` :
+        status === 'moderate' ? `Moderate torus curvature asymmetry${regionNote}` :
+                                `Strong torus curvature asymmetry observed${regionNote}`;
+    return { layerId: 'torusCurvature', visible, status, shortText, valueKind: 'derived', magnitude };
+}
+
+/**
  * Build a Closure Match layer summary.
  *
  * @param visible          Whether the layer is currently toggled on
@@ -345,6 +397,7 @@ export function formatLayerEventStripText(
         traceResidue:         'Trace / Residue',
         actuationPulse:       'Actuation Pulse',
         sensoryReturn:        'Sensory Return',
+        torusCurvature:       'Torus Curvature',
         closureMatch:         'Closure Match',
         mediumEchoDelay:      'Medium Echo / Delay',
         localExcitability:    'Local Excitability',

@@ -85,6 +85,13 @@ export const TORUS_COLOR_MAP: Record<string, TorusColorEntry> = {
         valueType: 'proxy',
         description: 'Actuation-return closure match strength. Light purple.',
     },
+    torusCurvature: {
+        hex: '#2dd4bf',
+        r: 0.176, g: 0.831, b: 0.749,
+        observationLabel: 'Torus Curvature',
+        valueType: 'derived',
+        description: 'Geometry-derived torus curvature map. Cyan/green for positive regions, cooler tones for negative regions.',
+    },
     excitability: {
         hex: '#4ade80',
         r: 0.290, g: 0.871, b: 0.502,
@@ -196,6 +203,7 @@ export const TORUS_COLOR_LEGEND: Array<{ key: string; label: string; hex: string
     { key: 'trace',          label: 'Trace Residue',            hex: TORUS_COLOR_MAP.trace.hex,          valueType: 'Derived' },
     { key: 'sensoryReturn',  label: 'Sensory Return / Echo',    hex: TORUS_COLOR_MAP.sensoryReturn.hex,  valueType: 'Raw' },
     { key: 'closure',        label: 'Closure Match',            hex: TORUS_COLOR_MAP.closure.hex,        valueType: 'Proxy' },
+    { key: 'torusCurvature', label: 'Torus Curvature',          hex: TORUS_COLOR_MAP.torusCurvature.hex, valueType: 'Derived' },
     { key: 'excitability',   label: 'Local Excitability',       hex: TORUS_COLOR_MAP.excitability.hex,   valueType: 'Derived' },
     { key: 'repeatedFlow',   label: 'Repeated Flow Path',       hex: TORUS_COLOR_MAP.repeatedFlow.hex,   valueType: 'Derived' },
     { key: 'protoNetwork',   label: 'Proto-Network Candidate',  hex: TORUS_COLOR_MAP.protoNetwork.hex,   valueType: 'Proxy' },

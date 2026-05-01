@@ -183,6 +183,13 @@ U4 で導入した field layer visualization modules に適用される原則を
 
 closureMatch / traceResidue / localExcitability / repeatedFlowPath / protoNetworkCandidate / actuationPulse は各 layer 定義の `disclaimer` フィールドに semantic disclaimer を持つ。tooltip でも表示すること。
 
+### N1 Curvature layer addendum
+
+- `torusCurvature` は geometry-derived layer としてのみ表示する
+- 曲率を fake glow / fake energy に変換しない
+- flat / curved の切り替えは observation policy として明示する
+- `curvatureInfluence = 0` のときは observation-only と表示する
+
 ### Proto-Network Candidate layer の禁止事項
 
 - runtime graph / network edge を作成しない

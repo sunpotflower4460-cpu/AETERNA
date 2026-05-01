@@ -5,7 +5,7 @@ import { clampFinite, clamp01 } from './coreConstants.ts';
 import { autoPredictAndError, injectPredictionError, runTorusDynamicsStage, triggerNoise, updatePredictionError } from './torusDynamics.ts';
 import { computeIntegrationProxy, computeLargestCluster, computeMeanLocalPredError, computeMeanPredictionError, computePhaseCoherence, runTorusMetricsStage, updateDerivedStateCaches } from './torusMetrics.ts';
 import { buildDormantDebugSummary, initializeDormantNodes, updateDormantNodes } from './dormantNodes.ts';
-import { generateNetworkGeometry, updateNetworkRadius, updateRenderBuffers } from './torusGeometry.ts';
+import { generateNetworkGeometry, setNetworkTorusMetricMode, updateNetworkRadius, updateRenderBuffers } from './torusGeometry.ts';
 import { injectSTDPExternal, normalizeDirectionalWeights } from './torusWeights.ts';
 import { runBaselineActivityStage, updateBaseline, updateResidue } from '../mode/baselineActivity.ts';
 import { buildPredictionPacket, runLocalPredictorStage, updateLocalPrediction } from '../perception/localPredictor.ts';
@@ -54,6 +54,11 @@ import {
     createDefaultModulationConfig,
     createZeroModulation,
 } from './beautifulLoopModulation.ts';
+import {
+    defaultTorusMetricConfig,
+    normalizeTorusMetricConfig,
+} from '../config/torusMetricConfig.ts';
+import { deriveTorusCurvatureObservation } from '../observer/deriveTorusCurvatureObservation.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -61,6 +66,12 @@ export class AeternaNetwork {
         this.numNodes = segments * segments;
         this.R = PHI;
         this.r = 1.0;
+        this.torusMetricConfig = normalizeTorusMetricConfig({
+            ...defaultTorusMetricConfig,
+            majorRadius: this.R,
+            minorRadius: this.r,
+        });
+        this.torusMetricMode = this.torusMetricConfig.metricMode;
 
         this.initializeGeometryRenderState();
         this.initializeCoreDynamicState();
@@ -102,6 +113,9 @@ export class AeternaNetwork {
         this.vertexPositions = new Float32Array(this.numNodes * 3);
         this.normals = new Float32Array(this.numNodes * 3);
         this.colors = new Float32Array(this.numNodes * 3);
+        this.curvedTorusGeometry = null;
+        this.torusGeometry = null;
+        this.lastTorusCurvatureObservation = null;
     }
 
     initializeCoreDynamicState() {
@@ -375,8 +389,28 @@ export class AeternaNetwork {
         return this.clampFinite(0.25 + energy * 0.75, 0.25, 1.0, 1.0);
     }
 
-    generate() { generateNetworkGeometry(this); initializeDormantNodes(this); }
-    updateRadius(newR) { updateNetworkRadius(this, newR); }
+    refreshTorusMetricObservation() {
+        this.lastTorusCurvatureObservation = deriveTorusCurvatureObservation({
+            geometry: this.torusGeometry,
+            timestamp: this.simTime,
+        });
+        return this.lastTorusCurvatureObservation;
+    }
+
+    generate() {
+        generateNetworkGeometry(this);
+        this.refreshTorusMetricObservation();
+        initializeDormantNodes(this);
+    }
+    updateRadius(newR) {
+        updateNetworkRadius(this, newR);
+        this.refreshTorusMetricObservation();
+    }
+    setTorusMetricMode(metricMode) {
+        const nextConfig = setNetworkTorusMetricMode(this, metricMode);
+        this.refreshTorusMetricObservation();
+        return nextConfig;
+    }
     normalizeDirectionalWeights(index) { normalizeDirectionalWeights(this, index); }
     computeIntegrationProxy() { return computeIntegrationProxy(this); }
     computePhaseCoherence() { return computePhaseCoherence(this); }
@@ -568,6 +602,7 @@ export class AeternaNetwork {
         } = this.updatePostPropagationState(perceptionPacket, baselinePacket, dynamicsPacket);
         const metricsPacket = runTorusMetricsStage(this, dynamicsPacket);
         const dormantDebug = buildDormantDebugSummary(this);
+        const torusCurvatureObservation = this.refreshTorusMetricObservation();
         this.updateRenderBuffers(diskNodeIdx);
         this.autoPredictAndError();
 
@@ -824,6 +859,12 @@ export class AeternaNetwork {
             ignitionRatio: metricsPacket.clusterRatio,
             phiApprox: metricsPacket.phiProxy,
             phaseCoherence: metricsPacket.phaseCoherence,
+            metricMode: this.torusMetricConfig.metricMode,
+            curvatureInfluence: this.torusMetricConfig.curvatureInfluence,
+            areaNormalizationEnabled: this.torusMetricConfig.areaNormalizationEnabled,
+            majorRadius: this.torusMetricConfig.majorRadius,
+            minorRadius: this.torusMetricConfig.minorRadius,
+            torusCurvatureObservation,
             meanPredictionError: predictionPacket.meanPredictionError,
             meanLocalPredError: predictionPacket.meanLocalPredictionError,
             arousal: metricsPacket.arousal,

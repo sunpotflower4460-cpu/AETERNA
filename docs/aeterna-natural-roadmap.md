@@ -10,6 +10,13 @@ runtime は変更しない。
 flat torus 更新から、曲率と面積要素を持つ curved torus metric へ進む。  
 inner rim / outer rim の幾何差が flow にどう入るかを明示する。
 
+Implemented in N1 as:
+
+- torus geometry cell generation
+- area / curvature / tangent / normal validation
+- flat / curved metric ablation mode
+- observer/UI geometry exposure with default runtime still flat
+
 ## N2 Complex Scalar Field
 
 単一実数場から complex scalar field へ進む。  
