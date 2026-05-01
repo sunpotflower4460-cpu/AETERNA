@@ -2,14 +2,15 @@
 
 ## 実施した QA 項目
 
-- Visual QA checklist 作成と静的監査
+- Visual QA checklist 作成と静的/DOM 監査
 - Scientific QA checklist 作成と source/test 対応確認
 - Language / Claim QA 実施
 - Fake Visual QA 実施
 - Raw / Smooth / Diagnostic QA 実施
 - Coverage QA 実施
 - Guide / Scenario / Mobile / Performance / visual baseline の docs 監査
-- build / lint / test 実行
+- local preview のレンダリングテキスト確認（build 済み preview 取得）
+- build / lint / targeted UI tests / full test 実行
 
 ## 通った項目
 
@@ -18,11 +19,16 @@
 - fake visual function names are absent from audited UI source
 - Guide / Summary / Scenario generated copy remains observation-based
 - Safe-area CSS and mobile bottom-nav structure are present
+- U8 targeted UI tests pass (`languageClaimGuard`, `fakeVisualGuard`, `rawSmoothDiagnosticMode`, `layoutStructure`, `fieldLayerVisualization`)
+- `npm run build` passes
 
 ## 問題が残る項目
 
 - `npm run lint` は observer 系の既存 2 errors で失敗
-- repo-wide `npm run test:run` は既存 behavioral/import failures が残る
+- repo-wide `npm run test:run` は既存 3 failures が残る
+  - `src/tests/behavioral/sensoryReturn.test.ts` import failure
+  - `src/tests/scenario.test.ts` Scenario J assertion failure
+  - `src/tests/scenario.test.ts` Scenario AW assertion failure
 - mobile nav の `View` / `Touch` ラベルは camera mode ではなく panel shortcuts に見えやすく、用語面の改善余地がある
 - explicit `devicePixelRatio` cap は未実装
 
@@ -32,6 +38,7 @@
 - Semantic Leak row に `always 0` note を追加
 - Guide fallback copy を neutral wording に変更
 - Layer disclaimers から claim-like wording を除去
+- U8 docs / tests に合わせて既存 layout / field-layer assertions を更新
 
 ## 次フェーズに回す改善
 

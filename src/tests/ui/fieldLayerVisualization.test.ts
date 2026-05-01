@@ -527,10 +527,10 @@ describe('U4: Semantic disclaimers are present in registry', () => {
         expect(def.disclaimer.toLowerCase()).toContain('not');
     });
 
-    it('closureMatch disclaimer mentions proxy and NOT self-awareness', () => {
+    it('closureMatch disclaimer mentions proxy and pulse-return correspondence', () => {
         const def = getFieldLayerDefinition('closureMatch')!;
         expect(def.disclaimer.toLowerCase()).toContain('proxy');
-        expect(def.disclaimer.toLowerCase()).toContain('not');
+        expect(def.disclaimer.toLowerCase()).toContain('pulse-return correspondence');
     });
 
     it('traceResidue disclaimer says NOT memory', () => {
@@ -544,8 +544,9 @@ describe('U4: Semantic disclaimers are present in registry', () => {
         expect(def.disclaimer.toLowerCase()).toContain('not');
     });
 
-    it('actuationPulse disclaimer says NOT intention or will', () => {
+    it('actuationPulse disclaimer stays tied to output signal wording', () => {
         const def = getFieldLayerDefinition('actuationPulse')!;
-        expect(def.disclaimer.toLowerCase()).toContain('not');
+        expect(def.disclaimer.toLowerCase()).toContain('output signal');
+        expect(def.disclaimer.toLowerCase()).toContain('locality');
     });
 });
