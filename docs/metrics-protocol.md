@@ -31,6 +31,39 @@ These metrics are not arbitrary performance indicators. They are **operationaliz
 - `innerOuterBias`
 - `geometryConfidence`
 
+### Complex Field / Vortex (N2)
+
+#### Config / Measured
+
+- `fieldRuntimeMode`
+- `complexField.enabled`
+- `complexField.mode`
+- `currentBufferReal`
+- `currentBufferImag`
+- `previousBufferReal`
+- `previousBufferImag`
+
+#### Derived
+
+- `amplitude`
+- `phase`
+- `phaseCoherence`
+- `phaseGradient`
+
+#### Proxy
+
+- `vorticity`
+- `vortexCandidate`
+- `topologicalCharge`
+- `vortexConfidence`
+- `vortexLifetime`
+
+#### Check
+
+- `nanOrInfinityCount`
+- `amplitudeClampCount`
+- `phaseUnwrapWarning`
+
 ### A. Ongoingness
 
 **Definition**: The system maintains internal activity without external input.

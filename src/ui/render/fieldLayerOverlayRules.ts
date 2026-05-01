@@ -85,6 +85,14 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         maxSimultaneousLayers: 6,
     },
 
+    fieldPhase: {
+        layerId: 'fieldPhase',
+        maxOpacity: 0.55,
+        priority: 15,
+        defaultBlendMode: 'normal',
+        maxSimultaneousLayers: 5,
+    },
+
     traceResidue: {
         layerId: 'traceResidue',
         maxOpacity: 0.60,
@@ -154,6 +162,14 @@ export const FIELD_LAYER_OVERLAY_RULES: Record<FieldLayerId, LayerOverlayRule> =
         maxOpacity: 0.30,
         priority: 65,
         defaultBlendMode: 'multiply',
+        maxSimultaneousLayers: 3,
+    },
+
+    vortexCandidate: {
+        layerId: 'vortexCandidate',
+        maxOpacity: 0.35,
+        priority: 75,
+        defaultBlendMode: 'screen',
         maxSimultaneousLayers: 3,
     },
 

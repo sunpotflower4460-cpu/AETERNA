@@ -43,6 +43,13 @@ export const TORUS_COLOR_MAP: Record<string, TorusColorEntry> = {
         valueType: 'derived',
         description: 'Ongoing flow and activity. Blue / Cyan.',
     },
+    fieldPhase: {
+        hex: '#e879f9',
+        r: 0.910, g: 0.475, b: 0.976,
+        observationLabel: 'Complex Field Phase',
+        valueType: 'derived',
+        description: 'Actual complex-field phase hue reference. No semantic meaning assigned.',
+    },
     activity: {
         hex: '#38bdf8',
         r: 0.220, g: 0.741, b: 0.973,
@@ -112,6 +119,13 @@ export const TORUS_COLOR_MAP: Record<string, TorusColorEntry> = {
         observationLabel: 'Proto-Network Candidate',
         valueType: 'proxy',
         description: 'Region associated with a proto-network candidate. Indigo-purple.',
+    },
+    vortexCandidate: {
+        hex: '#e0f2fe',
+        r: 0.878, g: 0.949, b: 0.996,
+        observationLabel: 'Vortex Candidate',
+        valueType: 'proxy',
+        description: 'Observer-side phase-defect candidate marker. Cyan/white for positive charge, purple marker for negative charge.',
     },
     saturation: {
         hex: '#ef4444',
@@ -198,6 +212,7 @@ export function mapActivityToColor(normalizedValue: number): { r: number; g: num
 /** Color legend entries for display in the UI. */
 export const TORUS_COLOR_LEGEND: Array<{ key: string; label: string; hex: string; valueType: string }> = [
     { key: 'flow',           label: 'Flow / Activity',          hex: TORUS_COLOR_MAP.flow.hex,           valueType: 'Derived' },
+    { key: 'fieldPhase',     label: 'Field Phase',              hex: TORUS_COLOR_MAP.fieldPhase.hex,     valueType: 'Derived' },
     { key: 'recovery',       label: 'Recovery / Viability',     hex: TORUS_COLOR_MAP.recovery.hex,       valueType: 'Derived' },
     { key: 'coherentActivity', label: 'High Coherent Activity', hex: TORUS_COLOR_MAP.coherentActivity.hex, valueType: 'Derived' },
     { key: 'trace',          label: 'Trace Residue',            hex: TORUS_COLOR_MAP.trace.hex,          valueType: 'Derived' },
@@ -207,5 +222,6 @@ export const TORUS_COLOR_LEGEND: Array<{ key: string; label: string; hex: string
     { key: 'excitability',   label: 'Local Excitability',       hex: TORUS_COLOR_MAP.excitability.hex,   valueType: 'Derived' },
     { key: 'repeatedFlow',   label: 'Repeated Flow Path',       hex: TORUS_COLOR_MAP.repeatedFlow.hex,   valueType: 'Derived' },
     { key: 'protoNetwork',   label: 'Proto-Network Candidate',  hex: TORUS_COLOR_MAP.protoNetwork.hex,   valueType: 'Proxy' },
+    { key: 'vortexCandidate', label: 'Vortex Candidate',        hex: TORUS_COLOR_MAP.vortexCandidate.hex, valueType: 'Proxy' },
     { key: 'saturation',     label: 'Saturation / Overload Risk', hex: TORUS_COLOR_MAP.saturation.hex,  valueType: 'Raw' },
 ];

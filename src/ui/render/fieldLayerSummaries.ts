@@ -105,6 +105,24 @@ export function buildEnergyActivitySummary(
 }
 
 /**
+ * Build a Field Phase layer summary.
+ */
+export function buildFieldPhaseSummary(
+    visible: boolean,
+    phaseCoherence: number,
+    averageAmplitude: number
+): FieldLayerSummary {
+    const magnitude = Math.min(1, (Math.max(0, phaseCoherence) + Math.min(1, averageAmplitude)) / 2);
+    const status = magnitudeToStatus(magnitude);
+    const shortText =
+        status === 'inactive' ? 'Complex-field phase near baseline visibility' :
+        status === 'low'      ? 'Low-visibility complex-field phase structure' :
+        status === 'moderate' ? 'Moderate complex-field phase structure observed' :
+                                'High phase coherence in complex-field observation';
+    return { layerId: 'fieldPhase', visible, status, shortText, valueKind: 'derived', magnitude };
+}
+
+/**
  * Build a Trace / Residue layer summary.
  *
  * @param visible         Whether the layer is currently toggled on
@@ -346,6 +364,28 @@ export function buildProtoNetworkCandidateSummary(
 }
 
 /**
+ * Build a Vortex Candidate layer summary.
+ */
+export function buildVortexCandidateSummary(
+    visible: boolean,
+    candidateCount: number,
+    averageConfidence: number
+): FieldLayerSummary {
+    const magnitude = Math.min(1, averageConfidence);
+    const status = magnitudeToStatus(magnitude);
+    const countNote = candidateCount > 0 ? ` (${candidateCount} candidate(s))` : '';
+    const shortText =
+        status === 'inactive'
+            ? 'No vortex candidates observed'
+            : status === 'low'
+            ? `Low-confidence vortex candidates${countNote} [observer-side proxy]`
+            : status === 'moderate'
+            ? `Moderate-confidence vortex candidates${countNote} [proxy]`
+            : `High-confidence vortex candidates${countNote} [proxy]`;
+    return { layerId: 'vortexCandidate', visible, status, shortText, valueKind: 'proxy', magnitude };
+}
+
+/**
  * Build a Risk Overlay layer summary.
  *
  * @param visible              Whether the layer is currently toggled on
@@ -394,6 +434,7 @@ export function formatLayerEventStripText(
 ): string {
     const labels: Record<FieldLayerId, string> = {
         energyActivity:       'Energy / Activity',
+        fieldPhase:           'Field Phase',
         traceResidue:         'Trace / Residue',
         actuationPulse:       'Actuation Pulse',
         sensoryReturn:        'Sensory Return',
@@ -403,6 +444,7 @@ export function formatLayerEventStripText(
         localExcitability:    'Local Excitability',
         repeatedFlowPath:     'Repeated Flow Path',
         protoNetworkCandidate:'Proto-Network Candidate',
+        vortexCandidate:      'Vortex Candidate',
         riskOverlay:          'Risk Overlay',
     };
     const label = labels[layerId] ?? layerId;

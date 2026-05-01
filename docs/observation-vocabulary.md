@@ -204,6 +204,28 @@ This vocabulary is introduced in **Phase 5: Observation Layer Purification** and
 These are planned future observation terms for the N-Series roadmap.  
 At N0 they must be treated as vocabulary only, not as already implemented runtime structures.
 
+## N2 update: implemented complex-field observation terms
+
+The following N-series observation terms are now implemented as observer/runtime
+complex-field vocabulary in N2:
+
+- `complexField`
+- `realComponent`
+- `imaginaryComponent`
+- `amplitude`
+- `phase`
+- `phaseGradient`
+- `phaseWinding`
+- `vorticity`
+- `topologicalCharge`
+- `vortexCenter`
+- `vortexCandidate`
+- `vortexLifetime`
+- `vortexPair`
+
+These remain observer-side research terms. They are still not semantic labels,
+not selfhood terms, and not consciousness claims.
+
 ### Geometry / metric terms
 
 - `majorRadius`
@@ -213,17 +235,6 @@ At N0 they must be treated as vocabulary only, not as already implemented runtim
 - `meanCurvature`
 - `majorAngle`
 - `minorAngle`
-
-### Field / phase terms
-
-- `amplitude`
-- `phase`
-- `phaseGradient`
-- `vorticity`
-- `topologicalCharge`
-- `vortexCenter`
-- `vortexLifetime`
-- `vortexPair`
 
 ### Boundary / membrane terms
 

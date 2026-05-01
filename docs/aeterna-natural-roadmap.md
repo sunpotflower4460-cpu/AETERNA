@@ -22,6 +22,15 @@ Implemented in N1 as:
 単一実数場から complex scalar field へ進む。  
 amplitude / phase / phase gradient を導入するが、semantic interpretation はしない。
 
+Implemented in N2 as:
+
+- guarded `ComplexFieldState` / `ComplexFieldConfig`
+- observer-side amplitude / phase / phase-gradient derivation
+- reproducible quiet seeding for real / imag buffers
+- observer-side vortex candidate detection with topological charge
+- `fieldPhase` / `vortexCandidate` layer registration
+- default scalar runtime preserved
+
 ## N3 Curvature × Vortex Coupling
 
 曲率場と位相欠陥候補の相互作用を observer-side から監査する。  

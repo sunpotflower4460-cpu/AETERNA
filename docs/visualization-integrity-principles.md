@@ -190,6 +190,15 @@ closureMatch / traceResidue / localExcitability / repeatedFlowPath / protoNetwor
 - flat / curved の切り替えは observation policy として明示する
 - `curvatureInfluence = 0` のときは observation-only と表示する
 
+### N2 Complex field / vortex addendum
+
+- `fieldPhase` は actual complex phase からのみ導出する
+- 振幅が低い領域では phase color を暗くする
+- `vortexCandidate` は observer-side marker のみ
+- positive / negative charge は actual winding sign に従う
+- phase color に emotion や semantic label を割り当てない
+- fake phase animation / fake vortex marker を追加しない
+
 ### Proto-Network Candidate layer の禁止事項
 
 - runtime graph / network edge を作成しない
