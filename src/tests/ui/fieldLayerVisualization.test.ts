@@ -42,6 +42,7 @@ import {
 
 import {
     buildEnergyActivitySummary,
+    buildFieldPhaseSummary,
     buildTraceResidueSummary,
     buildActuationPulseSummary,
     buildSensoryReturnSummary,
@@ -51,6 +52,7 @@ import {
     buildLocalExcitabilitySummary,
     buildRepeatedFlowPathSummary,
     buildProtoNetworkCandidateSummary,
+    buildVortexCandidateSummary,
     buildRiskOverlaySummary,
     formatLayerEventStripText,
 } from '../../ui/render/fieldLayerSummaries.js';
@@ -75,6 +77,7 @@ const allU4Srcs = [registrySrc, overlaySrc, summariesSrc];
 
 const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'energyActivity',
+    'fieldPhase',
     'traceResidue',
     'actuationPulse',
     'sensoryReturn',
@@ -84,6 +87,7 @@ const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'localExcitability',
     'repeatedFlowPath',
     'protoNetworkCandidate',
+    'vortexCandidate',
     'riskOverlay',
 ];
 
@@ -96,9 +100,9 @@ describe('U4: Field Layer Registry', () => {
         expect(typeof FIELD_LAYER_REGISTRY).toBe('object');
     });
 
-    it('getAllFieldLayerDefinitions() returns all 11 layers', () => {
+    it('getAllFieldLayerDefinitions() returns all 13 layers', () => {
         const defs = getAllFieldLayerDefinitions();
-        expect(defs).toHaveLength(11);
+        expect(defs).toHaveLength(13);
     });
 
     it.each(REQUIRED_LAYER_IDS)('layer "%s" is defined', (id) => {
@@ -297,6 +301,12 @@ describe('U4: Field Layer Summaries', () => {
         expect(s.status).toBe('high');
     });
 
+    it('buildFieldPhaseSummary() returns correct layerId and valueKind', () => {
+        const s = buildFieldPhaseSummary(true, 0.65, 0.4);
+        expect(s.layerId).toBe('fieldPhase');
+        expect(s.valueKind).toBe('derived');
+    });
+
     it('buildTraceResidueSummary() returns correct layerId and valueKind', () => {
         const s = buildTraceResidueSummary(true, 0.4, 0.3);
         expect(s.layerId).toBe('traceResidue');
@@ -371,6 +381,13 @@ describe('U4: Field Layer Summaries', () => {
         expect(s.shortText.toLowerCase()).toContain('pre-semantic');
     });
 
+    it('buildVortexCandidateSummary() valueKind is "proxy"', () => {
+        const s = buildVortexCandidateSummary(false, 2, 0.7);
+        expect(s.layerId).toBe('vortexCandidate');
+        expect(s.valueKind).toBe('proxy');
+        expect(s.shortText).toContain('2 candidate(s)');
+    });
+
     it('buildRiskOverlaySummary() valueKind is "proxy"', () => {
         const s = buildRiskOverlaySummary(true, 0.1, 0.1, 0.1);
         expect(s.layerId).toBe('riskOverlay');
@@ -402,6 +419,7 @@ describe('U4: Field Layer Summaries', () => {
     it('all summary builders return a magnitude in [0, 1]', () => {
         const summaries = [
             buildEnergyActivitySummary(true, 0.5, 0.5, 0.5),
+            buildFieldPhaseSummary(true, 0.5, 0.5),
             buildTraceResidueSummary(true, 0.5, 0.5),
             buildActuationPulseSummary(true, 0.5, 0.5),
             buildSensoryReturnSummary(true, 0.5, 0.5),
@@ -411,6 +429,7 @@ describe('U4: Field Layer Summaries', () => {
             buildLocalExcitabilitySummary(true, 0.5, 3, 10),
             buildRepeatedFlowPathSummary(true, 2, 0.5),
             buildProtoNetworkCandidateSummary(true, 1, 0.5),
+            buildVortexCandidateSummary(true, 1, 0.5),
             buildRiskOverlaySummary(true, 0.5, 0.5, 0.5),
         ];
         for (const s of summaries) {

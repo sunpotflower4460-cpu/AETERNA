@@ -49,6 +49,7 @@ export type FieldLayerValueKind =
  */
 export type FieldLayerId =
     | 'energyActivity'
+    | 'fieldPhase'
     | 'traceResidue'
     | 'actuationPulse'
     | 'sensoryReturn'
@@ -58,6 +59,7 @@ export type FieldLayerId =
     | 'localExcitability'
     | 'repeatedFlowPath'
     | 'protoNetworkCandidate'
+    | 'vortexCandidate'
     | 'riskOverlay';
 
 // ── Layer Definition ──────────────────────────────────────────────────────────
@@ -138,6 +140,26 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'DynamicViabilityState.flowContinuity',
             'DynamicViabilityState.energyThroughput',
             'organism.currentBuffer (mean absolute activity)',
+        ],
+    },
+
+    fieldPhase: {
+        id: 'fieldPhase',
+        label: 'Field Phase',
+        description:
+            'Complex-field phase arg(ψ) mapped from the actual phase buffer, ' +
+            'with low-amplitude regions shown faintly.',
+        disclaimer:
+            'This layer shows mathematical field phase only. ' +
+            'It is not an emotion, meaning, intention, or consciousness map.',
+        valueKind: 'derived',
+        defaultVisible: false,
+        colorRole: 'fieldPhase',
+        allowedModes: ['raw', 'smooth', 'overlay', 'diagnostic'],
+        sourceStates: [
+            'ComplexFieldState.phase',
+            'ComplexFieldState.amplitude',
+            'ComplexFieldState.phaseCoherence',
         ],
     },
 
@@ -343,6 +365,26 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'ProtoNetworkCandidate.confidence',
             'ProtoNetworkObservationState.candidates',
             'ProtoNetworkObservationState.averageConfidence',
+        ],
+    },
+
+    vortexCandidate: {
+        id: 'vortexCandidate',
+        label: 'Vortex Candidate',
+        description:
+            'Local phase-winding candidates where the complex-field phase wraps ' +
+            'around a small loop and nearby amplitude is reduced.',
+        disclaimer:
+            'This is an observer-side phase-defect candidate only. ' +
+            'It is not a self, mind, memory, concept, or runtime graph node.',
+        valueKind: 'proxy',
+        defaultVisible: false,
+        colorRole: 'vortexCandidate',
+        allowedModes: ['overlay', 'diagnostic'],
+        sourceStates: [
+            'VortexObservationState.candidates',
+            'VortexObservationState.topologicalCharge',
+            'VortexObservationState.vorticity',
         ],
     },
 

@@ -59,6 +59,10 @@ import {
     normalizeTorusMetricConfig,
 } from '../config/torusMetricConfig.ts';
 import { deriveTorusCurvatureObservation } from '../observer/deriveTorusCurvatureObservation.ts';
+import { createComplexFieldState } from './complexField.ts';
+import { updateComplexField } from './updateComplexField.ts';
+import { deriveVortexCandidates } from '../observer/deriveVortexCandidates.ts';
+import { defaultComplexFieldConfig } from '../types/complexField.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -75,6 +79,7 @@ export class AeternaNetwork {
 
         this.initializeGeometryRenderState();
         this.initializeCoreDynamicState();
+        this.initializeComplexFieldObserverState();
         this.initializeStructuralState();
         this.initializeSensoryPerceptualState();
         this.initializePredictionState();
@@ -134,6 +139,30 @@ export class AeternaNetwork {
         this.attractorLibrary = [];
         this.currentAttractorId = -1;
         this.currentAttractorSim = 0;
+    }
+
+    initializeComplexFieldObserverState() {
+        const initialState = createComplexFieldState({
+            segments: this.segments,
+            seed: this.segments,
+            initialAmplitude: 0.01,
+        });
+        this.fieldRuntimeMode = 'scalar';
+        this.complexFieldConfig = { ...defaultComplexFieldConfig };
+        this.complexFieldState = initialState;
+        this.lastComplexFieldState = initialState;
+        this.lastVortexObservationState = null;
+        this.currentBufferReal = initialState.real;
+        this.currentBufferImag = initialState.imag;
+        this.previousBufferReal = initialState.previousReal;
+        this.previousBufferImag = initialState.previousImag;
+        this.complexAmplitude = initialState.amplitude;
+        this.complexPhase = initialState.phase;
+        this.phaseGradient = initialState.phaseGradient;
+        this.vorticity = initialState.vorticity;
+        this.topologicalCharge = initialState.topologicalCharge;
+        this.vortexCandidate = initialState.vortexCandidate;
+        this.complexFieldSeededFromScalar = false;
     }
 
     initializeStructuralState() {
@@ -395,6 +424,149 @@ export class AeternaNetwork {
             timestamp: this.simTime,
         });
         return this.lastTorusCurvatureObservation;
+    }
+
+    configureComplexField(config = {}) {
+        this.complexFieldConfig = {
+            ...this.complexFieldConfig,
+            ...config,
+        };
+        return this.complexFieldConfig;
+    }
+
+    setFieldRuntimeMode(mode = 'scalar') {
+        this.fieldRuntimeMode = mode;
+        return this.fieldRuntimeMode;
+    }
+
+    resolveComplexFieldMode() {
+        if (this.fieldRuntimeMode === 'complexRuntime') return 'runtime';
+        if (this.fieldRuntimeMode === 'complexObserver') return 'observerOnly';
+        if (this.complexFieldConfig.enabled) return this.complexFieldConfig.mode;
+        return 'off';
+    }
+
+    seedComplexFieldFromScalar() {
+        const amplitudeClamp = this.clampFinite(
+            this.complexFieldConfig.amplitudeClamp ?? 5,
+            0.25,
+            64,
+            5
+        );
+        const seedScale = Math.min(0.05, amplitudeClamp * 0.01);
+        for (let i = 0; i < this.numNodes; i++) {
+            const scalarValue = this.clampFinite(this.currentBuffer[i], -seedScale, seedScale, 0);
+            const quietImag = Math.sin((i + 1) * 12.9898 + this.segments) * 0.0005;
+            this.currentBufferReal[i] = scalarValue;
+            this.currentBufferImag[i] = quietImag;
+            this.previousBufferReal[i] = scalarValue;
+            this.previousBufferImag[i] = quietImag;
+        }
+        this.complexFieldSeededFromScalar = true;
+    }
+
+    updateComplexFieldObservation() {
+        const complexMode = this.resolveComplexFieldMode();
+        if (complexMode === 'off') {
+            return {
+                complexMode: 'off',
+                observation: null,
+                vortexObservation: null,
+                renderRefreshNeeded: false,
+            };
+        }
+
+        if (!this.complexFieldSeededFromScalar) {
+            this.seedComplexFieldFromScalar();
+        }
+
+        const config = {
+            ...this.complexFieldConfig,
+            enabled: true,
+            mode: complexMode,
+        };
+        const nextState = updateComplexField({
+            state: this.complexFieldState,
+            config,
+            timestamp: this.simTime,
+            metricMode: this.torusMetricConfig.metricMode,
+            geometry: this.torusGeometry,
+            curvatureInfluence: this.torusMetricConfig.curvatureInfluence,
+        });
+
+        this.complexFieldState = nextState;
+        this.lastComplexFieldState = nextState;
+        this.currentBufferReal = nextState.real;
+        this.currentBufferImag = nextState.imag;
+        this.previousBufferReal = nextState.previousReal;
+        this.previousBufferImag = nextState.previousImag;
+        this.complexAmplitude = nextState.amplitude;
+        this.complexPhase = nextState.phase;
+        this.phaseGradient = nextState.phaseGradient;
+
+        const vortexObservation = deriveVortexCandidates({
+            timestamp: this.simTime,
+            phase: nextState.phase,
+            amplitude: nextState.amplitude,
+            phaseGradient: nextState.phaseGradient,
+            segments: this.segments,
+        });
+
+        const previousCandidates = new Map(
+            (this.lastVortexObservationState?.candidates ?? []).map((candidate) => [
+                `${candidate.regionId}:${candidate.topologicalCharge}`,
+                candidate,
+            ])
+        );
+        vortexObservation.candidates.forEach((candidate) => {
+            const previousCandidate = previousCandidates.get(
+                `${candidate.regionId}:${candidate.topologicalCharge}`
+            );
+            candidate.lifetimeTicks = previousCandidate
+                ? (previousCandidate.lifetimeTicks ?? 1) + 1
+                : 1;
+        });
+
+        this.lastVortexObservationState = vortexObservation;
+        this.vorticity = vortexObservation.vorticity;
+        this.topologicalCharge = vortexObservation.topologicalCharge;
+        this.vortexCandidate = vortexObservation.vortexCandidateMask;
+        this.complexFieldState = {
+            ...nextState,
+            vorticity: vortexObservation.vorticity,
+            topologicalCharge: vortexObservation.topologicalCharge,
+            vortexCandidate: vortexObservation.vortexCandidateMask,
+            phaseUnwrapWarningCount: vortexObservation.phaseUnwrapWarningCount,
+        };
+        this.lastComplexFieldState = this.complexFieldState;
+
+        let renderRefreshNeeded = false;
+        if (complexMode === 'runtime') {
+            const coupling = this.clampFinite(
+                config.couplingToScalar,
+                0,
+                0.25,
+                0
+            );
+            if (coupling > 0) {
+                for (let i = 0; i < this.numNodes; i++) {
+                    this.currentBuffer[i] = this.clampFinite(
+                        this.currentBuffer[i] * (1 - coupling) + this.currentBufferReal[i] * coupling,
+                        -8,
+                        8,
+                        this.currentBuffer[i]
+                    );
+                }
+                renderRefreshNeeded = true;
+            }
+        }
+
+        return {
+            complexMode,
+            observation: this.complexFieldState,
+            vortexObservation,
+            renderRefreshNeeded,
+        };
     }
 
     generate() {
@@ -854,11 +1026,37 @@ export class AeternaNetwork {
         this.lastSelfWorldModelPacket = selfWorldModelPacket;
         this.lastArousalAwarenessState = arousalAwarenessState;
         this.lastTraceState = traceState;
+        const complexFieldUpdate = this.updateComplexFieldObservation();
+        if (complexFieldUpdate.renderRefreshNeeded) {
+            this.updateRenderBuffers(diskNodeIdx);
+        }
 
         return {
             ignitionRatio: metricsPacket.clusterRatio,
             phiApprox: metricsPacket.phiProxy,
             phaseCoherence: metricsPacket.phaseCoherence,
+            fieldRuntimeMode: this.fieldRuntimeMode,
+            complexFieldMode: complexFieldUpdate.complexMode,
+            complexFieldEnabled: complexFieldUpdate.complexMode !== 'off',
+            complexFieldMaxAmplitude: complexFieldUpdate.observation?.maxAmplitude ?? 0,
+            complexFieldAverageAmplitude: complexFieldUpdate.observation?.averageAmplitude ?? 0,
+            complexFieldPhaseCoherence: complexFieldUpdate.observation?.phaseCoherence ?? 0,
+            complexFieldAveragePhaseGradient: complexFieldUpdate.vortexObservation?.averagePhaseGradient
+                ?? complexFieldUpdate.observation?.phaseGradient.reduce((sum, value) => sum + value, 0) / Math.max(1, this.numNodes)
+                ?? 0,
+            complexFieldAverageVorticity: complexFieldUpdate.vortexObservation?.averageVorticity ?? 0,
+            complexFieldNanOrInfinityCount: complexFieldUpdate.observation?.nanOrInfinityCount ?? 0,
+            complexFieldAmplitudeClampCount: complexFieldUpdate.observation?.amplitudeClampCount ?? 0,
+            complexFieldPhaseUnwrapWarningCount: complexFieldUpdate.vortexObservation?.phaseUnwrapWarningCount
+                ?? complexFieldUpdate.observation?.phaseUnwrapWarningCount
+                ?? 0,
+            vortexCandidateCount: complexFieldUpdate.vortexObservation?.candidateCount ?? 0,
+            vortexPositiveChargeCount: complexFieldUpdate.vortexObservation?.positiveChargeCount ?? 0,
+            vortexNegativeChargeCount: complexFieldUpdate.vortexObservation?.negativeChargeCount ?? 0,
+            vortexTotalTopologicalCharge: complexFieldUpdate.vortexObservation?.totalTopologicalCharge ?? 0,
+            vortexAverageConfidence: complexFieldUpdate.vortexObservation?.averageConfidence ?? 0,
+            vortexMaxConfidence: complexFieldUpdate.vortexObservation?.maxConfidence ?? 0,
+            vortexObservationConfidence: complexFieldUpdate.vortexObservation?.observationConfidence ?? 0,
             metricMode: this.torusMetricConfig.metricMode,
             curvatureInfluence: this.torusMetricConfig.curvatureInfluence,
             areaNormalizationEnabled: this.torusMetricConfig.areaNormalizationEnabled,

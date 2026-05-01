@@ -32,6 +32,12 @@ function formatMetricModeLabel(metricMode, curvatureInfluence) {
     return 'Flat';
 }
 
+function formatComplexModeLabel(fieldRuntimeMode, complexFieldMode, enabled) {
+    if (!enabled || complexFieldMode === 'off') return 'scalar (default)';
+    if (fieldRuntimeMode === 'complexRuntime' || complexFieldMode === 'runtime') return 'complexRuntime';
+    return 'complexObserver';
+}
+
 export function updateMetricsUI(dyn, engineState) {
     const disk = state.disk;
     const tensionLoad = state.tensionLoad;
@@ -125,6 +131,84 @@ export function updateMetricsUI(dyn, engineState) {
     if(UI['val-phi']) UI['val-phi'].innerText = dyn.phiApprox.toFixed(4);
     if(UI['val-coherence']) UI['val-coherence'].innerText = dyn.phaseCoherence.toFixed(3);
     if(UI['val-arousal']) UI['val-arousal'].innerText = dyn.arousal.toFixed(3);
+    const complexModeLabel = formatComplexModeLabel(
+        dyn.fieldRuntimeMode,
+        dyn.complexFieldMode,
+        dyn.complexFieldEnabled
+    );
+    updateUIRow(UI['row-complex-mode'], UI['val-complex-mode'], complexModeLabel, dyn.complexFieldEnabled);
+    updateUIRow(
+        UI['row-complex-max-amplitude'],
+        UI['val-complex-max-amplitude'],
+        (dyn.complexFieldMaxAmplitude || 0).toFixed(3),
+        (dyn.complexFieldMaxAmplitude || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-average-amplitude'],
+        UI['val-complex-average-amplitude'],
+        (dyn.complexFieldAverageAmplitude || 0).toFixed(3),
+        (dyn.complexFieldAverageAmplitude || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-phase-coherence'],
+        UI['val-complex-phase-coherence'],
+        (dyn.complexFieldPhaseCoherence || 0).toFixed(3),
+        (dyn.complexFieldPhaseCoherence || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-phase-gradient'],
+        UI['val-complex-phase-gradient'],
+        (dyn.complexFieldAveragePhaseGradient || 0).toFixed(3),
+        (dyn.complexFieldAveragePhaseGradient || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-vortex-count'],
+        UI['val-complex-vortex-count'],
+        `${dyn.vortexCandidateCount || 0}`,
+        (dyn.vortexCandidateCount || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-positive-charge'],
+        UI['val-complex-positive-charge'],
+        `${dyn.vortexPositiveChargeCount || 0}`,
+        (dyn.vortexPositiveChargeCount || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-negative-charge'],
+        UI['val-complex-negative-charge'],
+        `${dyn.vortexNegativeChargeCount || 0}`,
+        (dyn.vortexNegativeChargeCount || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-total-charge'],
+        UI['val-complex-total-charge'],
+        `${dyn.vortexTotalTopologicalCharge || 0}`,
+        Math.abs(dyn.vortexTotalTopologicalCharge || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-average-vortex-confidence'],
+        UI['val-complex-average-vortex-confidence'],
+        (dyn.vortexAverageConfidence || 0).toFixed(3),
+        (dyn.vortexAverageConfidence || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-nan'],
+        UI['val-complex-nan'],
+        `${dyn.complexFieldNanOrInfinityCount || 0}`,
+        (dyn.complexFieldNanOrInfinityCount || 0) === 0
+    );
+    updateUIRow(
+        UI['row-complex-amplitude-clamp'],
+        UI['val-complex-amplitude-clamp'],
+        `${dyn.complexFieldAmplitudeClampCount || 0}`,
+        (dyn.complexFieldAmplitudeClampCount || 0) === 0
+    );
+    updateUIRow(
+        UI['row-complex-phase-unwrap'],
+        UI['val-complex-phase-unwrap'],
+        `${dyn.complexFieldPhaseUnwrapWarningCount || 0}`,
+        (dyn.complexFieldPhaseUnwrapWarningCount || 0) === 0
+    );
     
     const sig = dyn.sigmaDisplay; updateUIRow(UI['row-branching'], UI['val-branching'], sig.toFixed(3), Math.abs(sig-1.0)<0.05);
     if(UI['val-branching']) UI['val-branching'].style.color = engineState==='WHITE'?'#86efac':engineState==='BLACK'?'#fca5a5':'';

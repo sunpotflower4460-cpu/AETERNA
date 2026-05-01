@@ -865,6 +865,30 @@
     </div>
 </div>
 <div class="acc-section">
+    <div class="acc-header" onclick="toggleAccordion('sec-complex-field','icon-complex-field')">
+        <span class="acc-title">COMPLEX FIELD / VORTEX OBSERVER</span>
+        <svg id="icon-complex-field" class="transform transition-transform collapsed-icon" style="transform:rotate(-180deg)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div id="sec-complex-field" class="accordion-grid collapsed">
+        <div class="accordion-inner space-y-0.5 pt-0.5 pb-1">
+            <div class="metric-row has-tooltip" data-tooltip="[CONFIG] scalar / complexObserver / complexRuntime policy. Default stays scalar." id="row-complex-mode"><span>Complex mode</span><span id="val-complex-mode" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Max amplitude of the complex field |ψ|." id="row-complex-max-amplitude"><span>Max amplitude</span><span id="val-complex-max-amplitude" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Mean amplitude of the complex field |ψ|." id="row-complex-average-amplitude"><span>Average amplitude</span><span id="val-complex-average-amplitude" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Mean unit-phase-vector coherence from actual complex phase." id="row-complex-phase-coherence"><span>Phase coherence</span><span id="val-complex-phase-coherence" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Mean wrapped phase-gradient magnitude across the torus." id="row-complex-phase-gradient"><span>Phase gradient</span><span id="val-complex-phase-gradient" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Observer-side phase-defect candidate count." id="row-complex-vortex-count"><span>Vortex candidates</span><span id="val-complex-vortex-count" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Positive topological-charge candidate count." id="row-complex-positive-charge"><span>Positive charge</span><span id="val-complex-positive-charge" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Negative topological-charge candidate count." id="row-complex-negative-charge"><span>Negative charge</span><span id="val-complex-negative-charge" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Sum of observer-side topological charges in the current observation." id="row-complex-total-charge"><span>Total topological charge</span><span id="val-complex-total-charge" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Mean confidence of current vortex candidates." id="row-complex-average-vortex-confidence"><span>Average vortex conf.</span><span id="val-complex-average-vortex-confidence" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] Non-finite values found in complex buffers." id="row-complex-nan"><span>NaN / Infinity</span><span id="val-complex-nan" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] Number of amplitude clamp activations in the latest complex update." id="row-complex-amplitude-clamp"><span>Amplitude clamps</span><span id="val-complex-amplitude-clamp" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] Wrapped phase differences that approached ±π in the latest observation." id="row-complex-phase-unwrap"><span>Phase unwrap warn</span><span id="val-complex-phase-unwrap" class="text-white ">—</span></div>
+            <div class="text-[7px] text-white/35 leading-relaxed pt-1">Complex field phase and vortex values are mathematical observations only. Vortex candidates remain observer-side and do not create runtime graph structures.</div>
+        </div>
+    </div>
+</div>
+<div class="acc-section">
     <div class="acc-header" onclick="toggleAccordion('sec-ongoingness','icon-ongoingness')">
         <span class="acc-title">ONGOINGNESS</span>
         <svg id="icon-ongoingness" class="transform transition-transform collapsed-icon" style="transform:rotate(-180deg)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
