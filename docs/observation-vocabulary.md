@@ -238,10 +238,22 @@ not selfhood terms, and not consciousness claims.
 
 ### Boundary / membrane terms
 
+- `membraneState`
+- `membraneCell`
 - `membranePermeability`
 - `membraneTension`
 - `membraneDeformation`
+- `membraneRecovery`
+- `actuationImprint`
+- `returnImprint`
 - `twoSidedness`
+- `actuationReturnOverlap`
+- `membraneIntegrity`
+- `boundaryMediation`
+
+These are implemented observer-side membrane / boundary mediation terms in N4.
+They describe a computational mediating layer between `BodySurfaceState` and `WorldMediumState`.
+They do not describe soul, self, or consciousness boundaries.
 
 ### Plasticity / comparison terms
 
@@ -254,9 +266,10 @@ not selfhood terms, and not consciousness claims.
 
 ### Guardrail
 
-- これらは **planned vocabulary / future observation terms** であり、N0 時点で「すでにある」と書かない
+- plasticity / comparison terms は **planned vocabulary / future observation terms** であり、N5/N6 より前に「すでにある」と書かない
 - `phase` を emotion や meaning と結びつけない
 - `vortex` を self / mind / soul と結びつけない
+- `membrane` を soul / self / consciousness boundary と結びつけない
 
 ---
 

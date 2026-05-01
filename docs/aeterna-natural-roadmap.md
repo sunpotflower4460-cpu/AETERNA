@@ -56,6 +56,16 @@ Implemented in N3 as:
 boundary を単なる wrap 条件ではなく、媒介層として整理する。  
 膜的なふるまいを入れても、soul / self boundary の主張には進まない。
 
+Implemented in N4 as:
+
+- `MembraneState` / `MembraneCell` / `MembraneObservationState`
+- `MembraneConfig` with `observerOnly` default and config-gated `weakCoupling`
+- `createMembraneState()` / `updateMembraneState()` for per-cell imprint, deformation, recovery, permeability, and tension updates
+- `deriveMembraneObservation()` for overlap, two-sidedness, integrity, recovery balance, and asymmetry proxies
+- `membraneState` field layer plus Medium-panel membrane metrics
+- neutral Event / Now Summary / Guide copy for membrane observation
+- docs/boundary-mediating-layer.md
+
 ## N5 Weak Plasticity Channel
 
 observer-side と runtime の間に極小の plasticity channel を 1 本だけ導入する。  

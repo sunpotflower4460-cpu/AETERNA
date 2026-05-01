@@ -14,6 +14,8 @@
 - PR11 minimal survival + action loop
 - N1 curved torus metric baseline
 - N2 complex scalar field observer
+- N3 curvature × vortex coupling observer
+- N4 boundary as mediating layer
 
 ## Phase 1: 持続する生命場の再確認と安定化
 
