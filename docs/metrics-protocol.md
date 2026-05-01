@@ -1705,3 +1705,48 @@ Field Layer Visualization（U4）では、各 layer の現在状態を `FieldLay
 - A low matchStrength is not a failure.
 - Legacy mode is for before/after comparison only; it must NOT be the production default.
 - No semantic, consciousness, emotion, healing, or mystical proof claims are made.
+
+---
+
+## Long-Run Comparison (N7)
+
+### Summary Metrics
+
+Per-variant aggregated statistics from a `LongRunComparisonSuite` run.
+
+| Metric | Type | Description |
+|---|---|---|
+| `averageVortexCount` | derived | Mean vortex candidate count across snapshots |
+| `averageVortexLifetime` | derived | Estimated mean vortex lifetime in ticks |
+| `averagePhaseCoherence` | derived | Mean phase coherence (complex field variants only) |
+| `signedTotalChargeMean` | derived | Mean signed topological charge |
+| `signedTotalChargeAbsMean` | derived | Mean absolute signed topological charge |
+| `averageCurvatureVortexCorrelation` | proxy | Curvature–vortex correlation proxy |
+| `averageMembraneTwoSidedness` | derived | Mean membrane two-sidedness |
+| `totalPlasticityAccumulation` | derived | Total plasticity trace accumulation over the run |
+| `averageObservedRatioMatchStrength` | proxy | Mean observed ratio match strength |
+| `maxSaturationRisk` | proxy | Maximum saturation risk across the run |
+| `semanticLeakCount` | check | Count of semantic layer activations (always 0) |
+| `nanOrInfinityCount` | check | Count of NaN/Infinity values (always 0 when healthy) |
+
+### Comparison Metrics
+
+Cross-variant difference metrics derived from variant summary aggregation.
+
+| Metric | Type | Description |
+|---|---|---|
+| `differenceMagnitude` | derived | Absolute difference between strongest and weakest variant |
+| `strongestVariantId` | check | Variant with highest value for this metric |
+| `weakestVariantId` | check | Variant with lowest value for this metric |
+| `comparisonConfidence` | derived | Overall confidence score for the comparison [0, 1] |
+
+### Guardrails
+
+- `averageVortexCount` is a pre-semantic phase-defect count. It does NOT indicate consciousness.
+- `averageObservedRatioMatchStrength` is an observer-side ratio proximity measure. It does NOT prove mystical resonance.
+- `totalPlasticityAccumulation` is a trace accumulation measure. It is NOT semantic memory.
+- `averageClosureStability` is a loop continuity proxy. It is NOT self-awareness.
+- `comparisonConfidence` reflects run length, NaN rate, and skipped fraction. It is NOT a quality score for emergence.
+- Observed ratios are NEVER fed back into runtime dynamics.
+- Legacy constants mode is for comparison use ONLY.
+- Absence of emergence is a valid result.

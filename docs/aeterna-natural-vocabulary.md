@@ -225,3 +225,53 @@ Also disallowed in Japanese:
 
 Observed ratio matches are observational comparisons only.
 They do not establish causality, meaning, life, consciousness, or mystical significance.
+
+## Long-Run Comparison terms (N7)
+
+Allowed observational terms for N7:
+
+- long-run comparison
+- comparison variant
+- comparison suite
+- comparison config
+- variant registry
+- comparison result
+- variant summary
+- difference highlight
+- comparison confidence
+- shared seed comparison
+- ablation comparison
+- legacy flat scalar (comparison baseline)
+- curved only (N1 isolation)
+- complex only (N2 isolation)
+- curved + complex (N1 + N2)
+- full natural variant
+- snapshot sampling
+- sample every ticks
+- max snapshots per variant
+- semantic leak count
+- nan/infinity count
+
+### Allowed interpretation language
+
+- "observed difference"
+- "higher/lower tendency"
+- "candidate count"
+- "proxy metric"
+- "comparison result"
+- "needs longer run"
+- "pre-semantic comparison"
+- "baseline variant"
+
+### Disallowed comparison language
+
+Do not describe comparison results as:
+
+- consciousness increased
+- intelligence emerged
+- soul resonance increased
+- life was proven
+- memory formed
+- awareness improved
+- self recognised
+- sentience detected

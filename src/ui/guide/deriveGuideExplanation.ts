@@ -413,6 +413,20 @@ function buildTryNext(
         });
     }
 
+    // Long-run comparison events → suggest Comparison panel (N7)
+    const comparisonEvents = snapshot.recentEvents.filter(
+        e => e.kind === 'comparisonSummaryGenerated'
+    );
+    if (comparisonEvents.length > 0) {
+        suggestions.push({
+            id: 'try-comparison-panel',
+            label: 'Research → Long-Run Comparison',
+            reason: 'A comparison summary was generated recently. Open the Research panel to inspect variant differences (pre-semantic observation only).',
+            targetPanel: 'research',
+            action: 'openPanel',
+        });
+    }
+
     return suggestions.slice(0, 5);
 }
 
