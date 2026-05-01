@@ -195,6 +195,60 @@ This vocabulary is introduced in **Phase 5: Observation Layer Purification** and
 
 ---
 
+## Planned vocabulary / future observation terms
+
+以下は **N-Series で将来使う予定の観測語彙** です。  
+この段階では、まだ実装済みの runtime feature として扱わないでください。  
+名前は研究用 observation term であり、semantic claim ではありません。
+
+These are planned future observation terms for the N-Series roadmap.  
+At N0 they must be treated as vocabulary only, not as already implemented runtime structures.
+
+### Geometry / metric terms
+
+- `majorRadius`
+- `minorRadius`
+- `areaElement`
+- `gaussianCurvature`
+- `meanCurvature`
+- `majorAngle`
+- `minorAngle`
+
+### Field / phase terms
+
+- `amplitude`
+- `phase`
+- `phaseGradient`
+- `vorticity`
+- `topologicalCharge`
+- `vortexCenter`
+- `vortexLifetime`
+- `vortexPair`
+
+### Boundary / membrane terms
+
+- `membranePermeability`
+- `membraneTension`
+- `membraneDeformation`
+- `twoSidedness`
+
+### Plasticity / comparison terms
+
+- `weakPlasticityTrace`
+- `plasticityAccumulation`
+- `plasticityAblationFlag`
+- `observedRatio`
+- `referenceRatioDistance`
+- `emergentResonance`
+
+### Guardrail
+
+- これらは **planned vocabulary / future observation terms** であり、N0 時点で「すでにある」と書かない
+- `phase` を emotion や meaning と結びつけない
+- `vortex` を self / mind / soul と結びつけない
+
+---
+
 ## Phase 7 Addition: Detailed Proto-Point Observation
 
 **Phase 7: proto-point の観測導入** extends the proto-point candidate vocabulary with

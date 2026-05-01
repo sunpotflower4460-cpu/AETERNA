@@ -8,6 +8,8 @@ AETERNA is a repo for growing a primitive-organism-like brain with ongoing basel
 - Preserved prototypes and displaced notes: `archive/`
 - Core development principles: `docs/aeterna-core-principles.md`
 - Current roadmap: `docs/current-roadmap.md`
+- N-series roadmap: `docs/aeterna-natural-roadmap.md`
+- Geometry / dynamics audit baseline: `docs/geometry-dynamics-audit.md`
 - Agent rules for small safe changes: `docs/agent-guardrails.md`
 - Current structure map: `docs/system-map.md`
 

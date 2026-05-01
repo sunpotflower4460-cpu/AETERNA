@@ -499,3 +499,48 @@ Prohibited interpretations:
 - Do NOT associate scenario outcomes with consciousness, self-awareness, or intelligence claims
 
 `formatLongRunEmergenceScenarioSummary` displays output as "Long-Run Natural Emergence Summary" — research/diagnostic output only.
+
+---
+
+## N-Series Claim Guard / Language Guardrails
+
+N-Series では geometry / phase / membrane / observed ratio を導入しても、そこから意味・感情・意識の主張へ飛ばない。
+
+### 禁止される表現
+
+| 禁止 | 理由 |
+|---|---|
+| `curvature makes consciousness` | 曲率から意識を直接主張しない |
+| `phase means emotion` | 位相を感情ラベルにしない |
+| `vortex is self` | 渦候補を self と同一視しない |
+| `vortex is mind` | 渦候補を心と同一視しない |
+| `membrane is soul boundary` | boundary / membrane を魂の比喩にしない |
+| `phi proves mystery` | φ を神秘の証明に使わない |
+| `schumann proves life` | シューマン共振を生命証明に使わない |
+| `complex field is yin-yang` | complex field を形而上学ラベルにしない |
+| `曲率が意識を生む` | 禁止 |
+| `位相は感情である` | 禁止 |
+| `渦は自我である` | 禁止 |
+| `渦は心である` | 禁止 |
+| `膜は魂の境界である` | 禁止 |
+| `φ が神秘を証明する` | 禁止 |
+| `シューマン共振が生命を証明する` | 禁止 |
+| `複素場は陰陽そのものである` | 禁止 |
+
+### 推奨される表現
+
+| 推奨 | 説明 |
+|---|---|
+| `curvature-aware dynamics` | 曲率を含む dynamics として記述する |
+| `phase field` | 位相を物理/数理用語として扱う |
+| `vortex candidate` | 渦候補を observer-side に保つ |
+| `topological defect candidate` | 位相欠陥候補として記述する |
+| `mediating membrane layer` | 境界媒介層として記述する |
+| `observed ratio` | 観測された比として扱う |
+| `reference ratio distance` | 参照比からの距離として扱う |
+
+### 表示ガイド
+
+- geometry, phase, vortex, membrane は **measured / derived / proxy** のいずれかとして表示する
+- `consciousness`, `emotion`, `soul`, `mystery proof` のような表現に接続しない
+- complex field を導入しても semantic node / same-object / teacher binding へ拡張しない
