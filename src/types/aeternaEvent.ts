@@ -32,6 +32,7 @@ export type AeternaEventKind =
     | 'localExcitabilityShift'          // Local excitability shifted in one or more regions
     | 'repeatedFlowPathObserved'        // Repeated flow path candidate observed
     | 'protoNetworkCandidateObserved'   // Proto-network candidate observed
+    | 'weakPlasticityTrace'             // Weak plasticity accumulation changed
     | 'riskChange'                      // Saturation or extinction risk changed significantly
     | 'semanticLeakCheck'               // Semantic leak integrity check result
     | 'diagnosticWarning'              // NaN / Infinity / coverage / other diagnostic

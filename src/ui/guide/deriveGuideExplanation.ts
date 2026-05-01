@@ -389,6 +389,18 @@ function buildTryNext(
         });
     }
 
+    // Weak plasticity trace layer suggestion
+    const plasticityEvents = snapshot.recentEvents.filter(e => e.kind === 'weakPlasticityTrace');
+    if (plasticityEvents.length > 0) {
+        suggestions.push({
+            id: 'try-plasticity-layer',
+            label: 'Enable Weak Plasticity Trace layer',
+            reason: 'Plasticity trace activity was detected. Enable the Weak Plasticity Trace layer in Diagnostic mode to observe resistance history accumulation.',
+            targetLayer: 'weakPlasticityTrace',
+            action: 'toggleLayer',
+        });
+    }
+
     return suggestions.slice(0, 5);
 }
 
@@ -425,6 +437,11 @@ function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): Retur
     );
     if (protoEvents.length > 0) {
         terms.push('Repeated Flow Path Candidate', 'Proto-Network Candidate');
+    }
+
+    const plasticityEvents = snapshot.recentEvents.filter(e => e.kind === 'weakPlasticityTrace');
+    if (plasticityEvents.length > 0) {
+        terms.push('Weak Plasticity Trace', 'Resistance Delta', 'Plasticity Ablation');
     }
 
     const leakVal = metricValue(metrics, 'semanticLeak');

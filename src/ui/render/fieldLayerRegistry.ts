@@ -62,6 +62,7 @@ export type FieldLayerId =
     | 'protoNetworkCandidate'
     | 'vortexCandidate'
     | 'curvatureVortexCoupling'
+    | 'weakPlasticityTrace'
     | 'riskOverlay';
 
 // ── Layer Definition ──────────────────────────────────────────────────────────
@@ -440,6 +441,37 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'CurvatureVortexCouplingState.curvatureVortexCorrelation',
             'TorusGeometryCell.gaussianCurvature',
             'VortexObservationState.candidates',
+        ],
+    },
+
+    weakPlasticityTrace: {
+        id: 'weakPlasticityTrace',
+        label: 'Weak Plasticity Trace',
+        description:
+            '観測された渦候補・反復流路・局所励起・膜痕跡から導出される、ごく弱い媒質抵抗の履歴を表示します。\n' +
+            'Displays the extremely weak medium-resistance history derived from observed vortex candidates, ' +
+            'repeated flow paths, local excitability, and membrane traces. ' +
+            'accumulatedTrace is shown as a subtle green/cyan stain; ' +
+            'resistanceDelta as faint blue-green; saturation risk as amber only when elevated. ' +
+            'These are pre-semantic residue traces — NOT semantic memory, NOT learned knowledge.',
+        disclaimer:
+            'This layer is NOT a learning indicator, NOT a memory indicator, and NOT a consciousness indicator. ' +
+            'It shows the observer-side accumulation of weak medium-resistance history. ' +
+            'resistanceScale is only fed to runtime when mode=resistanceOnly AND ablation is disabled. ' +
+            'Default: OFF (diagnostic mode only).',
+        valueKind: 'proxy',
+        defaultVisible: false,
+        colorRole: 'trace',
+        allowedModes: ['overlay', 'diagnostic'],
+        sourceStates: [
+            'WeakPlasticityCellTrace.accumulatedTrace',
+            'WeakPlasticityCellTrace.resistanceDelta',
+            'WeakPlasticityCellTrace.resistanceScale',
+            'WeakPlasticityCellTrace.vortexTrace',
+            'WeakPlasticityCellTrace.repeatedFlowTrace',
+            'WeakPlasticityCellTrace.localExcitabilityTrace',
+            'WeakPlasticityCellTrace.membraneTrace',
+            'WeakPlasticityObservationState.plasticitySaturationRisk',
         ],
     },
 

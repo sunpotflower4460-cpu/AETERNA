@@ -22,6 +22,7 @@ import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityF
 import type { MembraneObservationState } from '../../types/membraneObservation.ts';
 import type { RepeatedFlowPathObservationState } from '../../types/repeatedFlowPath.ts';
 import type { ProtoNetworkObservationState } from '../../types/protoNetworkCandidate.ts';
+import type { WeakPlasticityObservationState } from '../../types/weakPlasticityObservation.ts';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ interface PrevSnapshot {
     repeatedPathCount:  number;
     protoNetCount:      number;
     semanticLeakCount:  number;
+    plasticityAcc:      number;
+    plasticitySatRisk:  number;
 }
 
 let _prevSnapshot: PrevSnapshot | null = null;
@@ -95,6 +98,7 @@ export interface DeriveAeternaEventsParams {
     localField?: LocalExcitabilityFieldState | null;
     repeatedFlowPaths?: RepeatedFlowPathObservationState | null;
     protoNetwork?: ProtoNetworkObservationState | null;
+    weakPlasticity?: WeakPlasticityObservationState | null;
     semanticLeakCount?: number;
     nanOrInfinityCount?: number;
     tick: number;
@@ -119,6 +123,7 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         localField,
         repeatedFlowPaths,
         protoNetwork,
+        weakPlasticity,
         semanticLeakCount = 0,
         nanOrInfinityCount = 0,
         tick,
@@ -137,6 +142,8 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
         repeatedPathCount: repeatedFlowPaths?.pathCandidateCount ?? 0,
         protoNetCount:     protoNetwork?.networkCandidateCount ?? 0,
         semanticLeakCount,
+        plasticityAcc:     weakPlasticity?.totalAccumulation ?? 0,
+        plasticitySatRisk: weakPlasticity?.plasticitySaturationRisk ?? 0,
     };
 
     // First call — initialise snapshot and emit a startup check
@@ -307,6 +314,34 @@ export function deriveAeternaEvents(params: DeriveAeternaEventsParams): AeternaE
             'info',
             `tick ${tick}: Proto-network candidate count increased → ${cur.protoNetCount}`,
             'ProtoNetworkObservationState.networkCandidateCount',
+            tick,
+            'proxy'
+        ));
+    }
+
+    // ── Weak plasticity trace ─────────────────────────────────────────────────
+
+    const PLASTICITY_ACC_THRESHOLD = 0.001;
+    if (weakPlasticity && cur.plasticityAcc > PLASTICITY_ACC_THRESHOLD
+        && Math.abs(cur.plasticityAcc - prev.plasticityAcc) > PLASTICITY_ACC_THRESHOLD * 5) {
+        const dir = cur.plasticityAcc > prev.plasticityAcc ? 'increasing' : 'decreasing';
+        push(makeEvent(
+            'weakPlasticityTrace',
+            'info',
+            `tick ${tick}: Weak plasticity trace accumulation ${dir} → ${cur.plasticityAcc.toExponential(2)} [${weakPlasticity.mode}]`,
+            'WeakPlasticityObservationState.totalAccumulation',
+            tick,
+            'proxy'
+        ));
+    }
+
+    if (weakPlasticity && cur.plasticitySatRisk >= 0.7
+        && cur.plasticitySatRisk > (prev.plasticitySatRisk + 0.1)) {
+        push(makeEvent(
+            'weakPlasticityTrace',
+            'notice',
+            `tick ${tick}: Plasticity saturation risk elevated → ${cur.plasticitySatRisk.toFixed(2)}`,
+            'WeakPlasticityObservationState.plasticitySaturationRisk',
             tick,
             'proxy'
         ));

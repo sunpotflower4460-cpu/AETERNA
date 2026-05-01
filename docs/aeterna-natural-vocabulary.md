@@ -136,3 +136,45 @@ Do not describe membrane observations as:
 - message from the world
 
 Membrane remains a computational mediating layer between BodySurface and WorldMedium.
+
+## Weak Plasticity Channel terms (N5)
+
+Allowed observational terms for N5:
+
+- weakPlasticityTrace
+- plasticityAccumulation
+- plasticityAblationFlag
+- resistanceDelta
+- resistanceScale
+- observeOnlyPlasticity
+- resistanceOnlyPlasticity
+- plasticitySaturationRisk
+- plasticityDormancyRisk
+- medium resistance history
+- resistance trace
+- plasticity ablation
+- trace decay
+- trace accumulation
+
+These remain medium-condition / field-history terms only. They do NOT imply learning, memory, or adaptation.
+
+## N5 disallowed claim language
+
+Do not describe weak plasticity observations as:
+
+- learned
+- remembered
+- memory formed
+- adapted intentionally
+- consciousness
+- emotion
+- self-modification
+- AETERNA learned
+- AETERNA remembered
+- AETERNA formed memory
+- AETERNA adapted intentionally
+- semantic memory
+- knowledge
+- concept learning
+
+Weak plasticity is a pre-semantic, pre-learning medium-condition trace. It describes the medium, not the system's intent or awareness.

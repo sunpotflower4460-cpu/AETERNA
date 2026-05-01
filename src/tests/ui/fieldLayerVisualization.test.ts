@@ -91,6 +91,7 @@ const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'protoNetworkCandidate',
     'vortexCandidate',
     'curvatureVortexCoupling',
+    'weakPlasticityTrace',
     'riskOverlay',
 ];
 
