@@ -88,6 +88,7 @@ const REQUIRED_LAYER_IDS: FieldLayerId[] = [
     'repeatedFlowPath',
     'protoNetworkCandidate',
     'vortexCandidate',
+    'curvatureVortexCoupling',
     'riskOverlay',
 ];
 

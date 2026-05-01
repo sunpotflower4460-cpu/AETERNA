@@ -60,6 +60,7 @@ export type FieldLayerId =
     | 'repeatedFlowPath'
     | 'protoNetworkCandidate'
     | 'vortexCandidate'
+    | 'curvatureVortexCoupling'
     | 'riskOverlay';
 
 // ── Layer Definition ──────────────────────────────────────────────────────────
@@ -385,6 +386,35 @@ export const FIELD_LAYER_REGISTRY: Record<FieldLayerId, FieldLayerDefinition> = 
             'VortexObservationState.candidates',
             'VortexObservationState.topologicalCharge',
             'VortexObservationState.vorticity',
+        ],
+    },
+
+    curvatureVortexCoupling: {
+        id: 'curvatureVortexCoupling',
+        label: 'Curvature × Vortex',
+        description:
+            'Overlay showing the relationship between torus curvature distribution ' +
+            'and vortex candidate positions, charges, and densities. ' +
+            'Displays curvature background (faint), vortex candidate markers, ' +
+            'and inner/outer/upper/lower region boundaries.',
+        disclaimer:
+            'This layer shows the observational relationship between geometry and ' +
+            'phase-defect candidates. ' +
+            'It is NOT a causal proof that curvature creates vortices. ' +
+            'It is NOT a consciousness, subjective-state, memory, or meaning indicator. ' +
+            'This is a geometry-vortex observation in diagnostic mode.',
+        valueKind: 'proxy',
+        defaultVisible: false,
+        colorRole: 'torusCurvature',
+        allowedModes: ['overlay', 'diagnostic'],
+        sourceStates: [
+            'CurvatureVortexCouplingState.vortexDensityByCurvature',
+            'CurvatureVortexCouplingState.vortexStatsByRegion',
+            'CurvatureVortexCouplingState.signedTotalCharge',
+            'CurvatureVortexCouplingState.chargeDeviation',
+            'CurvatureVortexCouplingState.curvatureVortexCorrelation',
+            'TorusGeometryCell.gaussianCurvature',
+            'VortexObservationState.candidates',
         ],
     },
 

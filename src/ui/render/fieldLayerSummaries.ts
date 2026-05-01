@@ -386,6 +386,31 @@ export function buildVortexCandidateSummary(
 }
 
 /**
+ * Build a Curvature × Vortex Coupling layer summary.
+ *
+ * @param visible              Whether the layer is currently toggled on
+ * @param vortexCount          Total vortex candidate count
+ * @param curvatureBiasStrength  CurvatureVortexCouplingState.curvatureBiasStrength (0–1)
+ * @param observationConfidence  CurvatureVortexCouplingState.observationConfidence (0–1)
+ */
+export function buildCurvatureVortexCouplingSummary(
+    visible: boolean,
+    vortexCount: number,
+    curvatureBiasStrength: number,
+    observationConfidence = 0
+): FieldLayerSummary {
+    const magnitude = Math.min(1, (Math.max(0, curvatureBiasStrength) + Math.min(1, observationConfidence)) / 2);
+    const status = magnitudeToStatus(magnitude);
+    const shortText =
+        vortexCount === 0 ? 'No vortex candidates observed — curvature-vortex coupling: baseline [proxy]' :
+        status === 'low'  ? `${vortexCount} vortex candidate(s) — low curvature bias [proxy]` :
+        status === 'moderate' ? `${vortexCount} vortex candidate(s) — moderate curvature bias observed [proxy]` :
+        status === 'high'     ? `${vortexCount} vortex candidate(s) — curvature bias elevated [proxy]` :
+                                `Geometry-vortex coupling observation active [proxy]`;
+    return { layerId: 'curvatureVortexCoupling', visible, status, shortText, valueKind: 'proxy', magnitude };
+}
+
+/**
  * Build a Risk Overlay layer summary.
  *
  * @param visible              Whether the layer is currently toggled on
@@ -433,19 +458,20 @@ export function formatLayerEventStripText(
     tick: number
 ): string {
     const labels: Record<FieldLayerId, string> = {
-        energyActivity:       'Energy / Activity',
-        fieldPhase:           'Field Phase',
-        traceResidue:         'Trace / Residue',
-        actuationPulse:       'Actuation Pulse',
-        sensoryReturn:        'Sensory Return',
-        torusCurvature:       'Torus Curvature',
-        closureMatch:         'Closure Match',
-        mediumEchoDelay:      'Medium Echo / Delay',
-        localExcitability:    'Local Excitability',
-        repeatedFlowPath:     'Repeated Flow Path',
-        protoNetworkCandidate:'Proto-Network Candidate',
-        vortexCandidate:      'Vortex Candidate',
-        riskOverlay:          'Risk Overlay',
+        energyActivity:             'Energy / Activity',
+        fieldPhase:                 'Field Phase',
+        traceResidue:               'Trace / Residue',
+        actuationPulse:             'Actuation Pulse',
+        sensoryReturn:              'Sensory Return',
+        torusCurvature:             'Torus Curvature',
+        closureMatch:               'Closure Match',
+        mediumEchoDelay:            'Medium Echo / Delay',
+        localExcitability:          'Local Excitability',
+        repeatedFlowPath:           'Repeated Flow Path',
+        protoNetworkCandidate:      'Proto-Network Candidate',
+        vortexCandidate:            'Vortex Candidate',
+        curvatureVortexCoupling:    'Curvature × Vortex',
+        riskOverlay:                'Risk Overlay',
     };
     const label = labels[layerId] ?? layerId;
     return `tick ${tick}: ${label} layer — status → ${newStatus}`;
