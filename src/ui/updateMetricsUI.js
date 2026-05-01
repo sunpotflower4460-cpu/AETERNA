@@ -24,6 +24,14 @@ function formatDormantEvents(events) {
     return events.slice(0, 3).map(event => `node:${event.node}@time:${event.timestamp}`).join(' | ');
 }
 
+function formatMetricModeLabel(metricMode, curvatureInfluence) {
+    if (metricMode === 'curved') {
+        return curvatureInfluence > 0 ? 'Curved' : 'Curved (observation only)';
+    }
+
+    return 'Flat';
+}
+
 export function updateMetricsUI(dyn, engineState) {
     const disk = state.disk;
     const tensionLoad = state.tensionLoad;
@@ -64,9 +72,7 @@ export function updateMetricsUI(dyn, engineState) {
     const irr = disk._irrationalScore(disk.phaseRatio); updateUIRow(UI['row-irrational'], UI['val-irrational'], irr.toFixed(3), irr > 0.7);
     const curvature = dyn.torusCurvatureObservation || null;
     const metricMode = dyn.metricMode || 'flat';
-    const metricModeLabel = metricMode === 'curved'
-        ? (dyn.curvatureInfluence > 0 ? 'Curved' : 'Curved (observation only)')
-        : 'Flat';
+    const metricModeLabel = formatMetricModeLabel(metricMode, dyn.curvatureInfluence);
     updateUIRow(UI['row-metric-mode'], UI['val-metric-mode'], metricModeLabel, metricMode === 'curved');
     updateUIRow(UI['row-major-radius'], UI['val-major-radius'], (dyn.majorRadius ?? 0).toFixed(3), (dyn.majorRadius ?? 0) > 0);
     updateUIRow(UI['row-minor-radius'], UI['val-minor-radius'], (dyn.minorRadius ?? 0).toFixed(3), (dyn.minorRadius ?? 0) > 0);

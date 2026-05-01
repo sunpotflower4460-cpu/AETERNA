@@ -187,6 +187,10 @@ export function buildTorusCurvatureSummary(
     negativeRegionCount: number,
     geometryConfidence: number,
 ): FieldLayerSummary {
+    const CURVATURE_ASYMMETRY_WEIGHT = 0.85;
+    const CURVATURE_BALANCE_WEIGHT = 0.10;
+    const GEOMETRY_CONFIDENCE_WEIGHT = 0.05;
+
     if (Math.abs(curvatureAsymmetry) < 1e-9 && positiveRegionCount === 0 && negativeRegionCount === 0) {
         return {
             layerId: 'torusCurvature',
@@ -201,7 +205,12 @@ export function buildTorusCurvatureSummary(
     const balanceMagnitude = positiveRegionCount + negativeRegionCount > 0
         ? Math.min(1, Math.abs(positiveRegionCount - negativeRegionCount) / (positiveRegionCount + negativeRegionCount))
         : 0;
-    const magnitude = Math.min(1, asymmetryMagnitude * 0.85 + balanceMagnitude * 0.1 + Math.min(1, geometryConfidence) * 0.05);
+    const magnitude = Math.min(
+        1,
+        asymmetryMagnitude * CURVATURE_ASYMMETRY_WEIGHT
+            + balanceMagnitude * CURVATURE_BALANCE_WEIGHT
+            + Math.min(1, geometryConfidence) * GEOMETRY_CONFIDENCE_WEIGHT,
+    );
     const status = magnitudeToStatus(magnitude);
     const regionNote = positiveRegionCount + negativeRegionCount > 0
         ? ` (+${positiveRegionCount} / -${negativeRegionCount})`

@@ -2,6 +2,7 @@ import type { TorusGeometry, TorusGeometryConfig } from './torusGeometry.ts';
 
 const UNIT_VECTOR_TOLERANCE = 1e-5;
 const MIN_RADIUS_DELTA = 1e-3;
+const MIN_RADIUS_SEPARATION_RATIO = 0.1;
 
 function vectorMagnitude([x, y, z]: [number, number, number]): number {
   return Math.hypot(x, y, z);
@@ -30,7 +31,7 @@ export function sanitizeTorusGeometryConfig(config: TorusGeometryConfig): {
   const warnings: string[] = [];
   let majorRadius = config.majorRadius;
   if (majorRadius <= config.minorRadius) {
-    majorRadius = config.minorRadius + Math.max(config.minorRadius * 0.1, MIN_RADIUS_DELTA);
+    majorRadius = config.minorRadius + Math.max(config.minorRadius * MIN_RADIUS_SEPARATION_RATIO, MIN_RADIUS_DELTA);
     warnings.push(
       `majorRadius (${config.majorRadius}) must be greater than minorRadius (${config.minorRadius}); using ${majorRadius.toFixed(6)} instead.`,
     );
