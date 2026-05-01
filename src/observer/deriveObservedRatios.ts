@@ -63,6 +63,28 @@ function computeCentsDistance(observed: number, reference: number): number | nul
     return isFinite(c) ? c : null;
 }
 
+// ── Confidence scale constants ─────────────────────────────────────────────────
+
+/**
+ * Scale factor applied to flow delay confidence.
+ * Flow path confidence is observed indirectly (max/avg ratio), so we apply
+ * a moderate discount to reflect lower certainty relative to direct measurements.
+ */
+const FLOW_DELAY_CONFIDENCE_SCALE = 0.6;
+
+/**
+ * Default confidence for closure timing ratios.
+ * These are proxy metrics (returnStrength / closureStability), not direct measurements.
+ */
+const CLOSURE_TIMING_CONFIDENCE_DEFAULT = 0.5;
+
+/**
+ * Scale factor applied to phase coherence ratio confidence.
+ * Phase coherence itself is used as both the data source and the confidence proxy,
+ * so we discount it to avoid overconfidence when coherence happens to be high.
+ */
+const PHASE_COHERENCE_CONFIDENCE_FACTOR = 0.7;
+
 // ── Observed ratio candidates ──────────────────────────────────────────────────
 
 /**
@@ -144,7 +166,7 @@ function deriveFlowDelayRatios(
     const r = safeRatio(maxConf, avgConf);
     if (r === null || r <= 0) return [];
 
-    const confidence = clamp(repeatedFlowPaths.observationConfidence ?? 0, 0, 1) * 0.6;
+    const confidence = clamp(repeatedFlowPaths.observationConfidence ?? 0, 0, 1) * FLOW_DELAY_CONFIDENCE_SCALE;
 
     return [
         {
@@ -174,7 +196,7 @@ function deriveClosureTimingRatios(
     const r = safeRatio(returnStrength, closureStability);
     if (r === null || r <= 0) return [];
 
-    const confidence = 0.5; // Moderate confidence; these are proxy metrics
+    const confidence = CLOSURE_TIMING_CONFIDENCE_DEFAULT; // Moderate confidence; these are proxy metrics
 
     return [
         {
@@ -213,7 +235,7 @@ function derivePhaseCoherenceRatios(
             denominator: 1 - pc,
             value: r,
             source: 'phaseCoherence',
-            confidence: clamp(pc * 0.7, 0, 1),
+            confidence: clamp(pc * PHASE_COHERENCE_CONFIDENCE_FACTOR, 0, 1),
         },
     ];
 }
