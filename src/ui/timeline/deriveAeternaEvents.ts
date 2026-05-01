@@ -480,3 +480,44 @@ export function recordScenarioControlEvent(
         'check'
     ));
 }
+
+// ── Long-run comparison events (N7) ──────────────────────────────────────────
+
+/**
+ * Record a long-run comparison suite event.
+ *
+ * Pushes a real AeternaEvent to the history.
+ * Does NOT create fake events — only called explicitly by comparison suite handlers.
+ * Does NOT modify any runtime simulation state.
+ * Does NOT use observed ratios as runtime feedback.
+ */
+export function recordComparisonEvent(
+    kind: 'started' | 'variantCompleted' | 'variantSkipped' | 'summaryGenerated',
+    detail: string,
+    tick: number
+): void {
+    const eventKindMap = {
+        started:           'comparisonStarted',
+        variantCompleted:  'comparisonVariantCompleted',
+        variantSkipped:    'comparisonVariantSkipped',
+        summaryGenerated:  'comparisonSummaryGenerated',
+    } as const;
+
+    const eventKind = eventKindMap[kind];
+    const severityMap = {
+        started:           'info',
+        variantCompleted:  'info',
+        variantSkipped:    'notice',
+        summaryGenerated:  'info',
+    } as const;
+    const severity = severityMap[kind];
+
+    push(makeEvent(
+        eventKind,
+        severity,
+        `tick ${tick}: Long-run comparison — ${detail}`,
+        'LongRunComparisonSuite',
+        tick,
+        'check'
+    ));
+}

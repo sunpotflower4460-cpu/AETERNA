@@ -39,7 +39,11 @@ export type AeternaEventKind =
     | 'scenarioControl'                // Scenario started / paused / stopped / reset
     | 'scenarioSummary'                // Scenario result summary generated
     | 'observedRatioMatch'             // Observed ratio compared to reference ratio (N6)
-    | 'externalConstantsModeChange';   // External constants mode changed (N6)
+    | 'externalConstantsModeChange'    // External constants mode changed (N6)
+    | 'comparisonStarted'              // Long-run comparison suite run started (N7)
+    | 'comparisonVariantCompleted'     // A comparison variant run completed (N7)
+    | 'comparisonVariantSkipped'       // A comparison variant was skipped (N7)
+    | 'comparisonSummaryGenerated';    // Comparison result summary generated (N7)
 
 // ── AeternaEvent ──────────────────────────────────────────────────────────────
 

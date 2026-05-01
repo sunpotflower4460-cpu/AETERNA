@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint 'src/**/*.ts'",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "compare:longrun": "tsx src/comparison/runLongRunComparisonCli.ts"
   },
   "dependencies": {
     "three": "^0.170.0"
