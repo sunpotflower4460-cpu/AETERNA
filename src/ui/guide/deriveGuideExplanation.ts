@@ -54,6 +54,7 @@ function asNum(v: number | string | null): number | null {
     return null;
 }
 
+// Keep guide output short enough to fit the panel without overwhelming the user.
 const MAX_EXPLANATION_LINES = 5;
 
 // ── Current Explanation ────────────────────────────────────────────────────────

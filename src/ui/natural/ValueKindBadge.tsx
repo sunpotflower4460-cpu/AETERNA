@@ -166,6 +166,6 @@ export function getValueKindDefinition(kind: ValueKind): ValueKindDefinition {
 }
 
 export function formatValueKindLabel(kind: ValueKind | string): string {
-    if (kind === 'presentation-smoothed') return 'Presentation-smoothed';
-    return `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+    return VALUE_KIND_DEFINITIONS[kind as ValueKind]?.label
+        ?? `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
 }
