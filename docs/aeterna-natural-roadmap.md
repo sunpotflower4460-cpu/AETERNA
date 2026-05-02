@@ -83,3 +83,27 @@ Implemented in N5 as:
 
 N0〜N6 の差分を長時間シナリオで比較できる suite を固定する。  
 geometry, field, plasticity, constants removal の影響を見える化する。
+
+## v1.0 Stabilization
+
+N0〜N7 実装後の安定化・安全化・比較可能化フェーズ。
+
+**Status:** ✅ 完了 (2026-05-01)
+
+目的:
+- `AeternaNaturalRuntimeConfig` で N-series config を一括管理
+- 7 つの presets (safeBaseline / geometryPreview / complexObserverPreview / naturalObserverSuite / plasticityObserveOnly / fullNaturalExperimental / legacyComparison)
+- Safety gate (validateAeternaNaturalConfig) — safe / research / experimental mode 階層
+- Runtime Mode HUD — 今どの mode で動いているか UI で可視化
+- `NaturalDiagnosticState` — NaN / Infinity / saturation / clamp を統合診断
+- Long-run execution profiles (test / default / full) — CI は test のみ
+- 5 つの stabilization tests (config / presets / safety gate / forbidden claims / feedback leak / constants leak)
+- docs/aeterna-natural-v1-stabilization.md
+
+詳細: docs/aeterna-natural-v1-stabilization.md
+
+## v1.1 Observation UX Polish（次フェーズ候補）
+
+v1.0 安定化後の次候補。  
+NaturalDiagnosticState / Runtime Mode HUD / long-run profiles の UI 表示をより詳しく整備する。
+

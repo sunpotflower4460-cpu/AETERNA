@@ -123,6 +123,24 @@
             #hud-title-row h1 { font-size: 1rem; }
         }
 
+        /* ── N-Series Runtime Mode HUD (v1.0 Stabilization) ── */
+        #natural-mode-hud {
+            display: flex; flex-wrap: wrap; gap: 4px; pointer-events: none;
+            margin-top: 3px; opacity: 0.7;
+        }
+        .nm-chip {
+            padding: 2px 7px; border-radius: 20px; font-size: 9px;
+            font-family: monospace; background: rgba(5,10,15,0.5);
+            border: 1px solid rgba(100,150,180,0.2); color: rgba(150,200,220,0.7);
+            white-space: nowrap;
+        }
+        .nm-chip[data-mode="experimental"] { border-color: rgba(239,68,68,0.5); color: #f87171; }
+        .nm-chip[data-mode="legacy"]        { border-color: rgba(251,191,36,0.4); color: #fbbf24; }
+        .nm-chip[data-mode="research"]      { border-color: rgba(52,211,153,0.3); color: #34d399; }
+        @media (max-width:768px) {
+            #natural-mode-hud { display: none; }
+        }
+
         /* ── Layer C: Research Panel (PC right sidebar + mobile sheet) ── */
         #research-panel {
             position: fixed; top: 0; right: 0; bottom: 0;
@@ -610,6 +628,16 @@
             <span class="hud-chip" id="hud-chip-return" title="Return Strength (recovery pressure)">Return —</span>
             <span class="hud-chip" id="hud-chip-echo" title="Echo Persistence">Echo —</span>
             <span class="hud-chip" id="hud-chip-risk" title="Saturation / Collapse Risk">Risk —</span>
+        </div>
+        <!-- N-Series Runtime Mode HUD — shows which mode configuration is active -->
+        <!-- Not a claim about life, intelligence, or mystical proof -->
+        <div id="natural-mode-hud" title="N-Series Runtime Mode (v1.0 Stabilization)">
+            <span class="nm-chip" id="nm-metric"  title="Torus metric mode (N1)">Metric: flat</span>
+            <span class="nm-chip" id="nm-field"   title="Field runtime mode (N2)">Field: scalar</span>
+            <span class="nm-chip" id="nm-membrane" title="Membrane mode (N4)">Membrane: observer</span>
+            <span class="nm-chip" id="nm-plasticity" title="Weak plasticity mode (N5)">Plasticity: off</span>
+            <span class="nm-chip" id="nm-constants" title="External constants mode (N6)">Constants: neutral</span>
+            <span class="nm-chip" id="nm-safety"  title="Safety mode">Safety: safe</span>
         </div>
         <!-- Camera HUD — observation aid; camera motion does not affect field dynamics -->
         <div id="camera-hud">
