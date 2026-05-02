@@ -15,6 +15,7 @@
 - N1 curved torus metric baseline
 - N2 complex scalar field observer
 - N0–N7 + v1.0 Stabilization ✅ 完了 (2026-05-01)
+- AETERNA-NATURAL v1.1 Observation UX Polish ✅ 完了 (2026-05-02)
 
 ## Phase 1: 持続する生命場の再確認と安定化
 

@@ -26,10 +26,11 @@ import type {
 export function renderHighlightText(h: LongRunDifferenceHighlight): string[] {
     return [
         `Metric: ${h.metric}`,
-        `  Strongest variant: ${h.strongestVariantId}`,
-        `  Weakest variant:   ${h.weakestVariantId}`,
-        `  Difference:        ${h.differenceMagnitude.toFixed(4)}`,
+        `  Highest observed value: ${h.strongestVariantId}`,
+        `  Lowest observed value:  ${h.weakestVariantId}`,
+        `  Observed spread:        ${h.differenceMagnitude.toFixed(4)}`,
         `  Interpretation:    ${h.interpretation}`,
+        `  Note:              Read this with risk and safety checks; it is not a winner label.`,
     ];
 }
 
@@ -50,13 +51,16 @@ export function renderHighlightsMarkdown(result: LongRunComparisonResult): strin
     }
 
     const lines: string[] = [];
+    lines.push('> Difference highlights are observational comparisons only. They do not identify a winner or causal proof.');
+    lines.push('');
     for (const h of result.differenceHighlights) {
         lines.push(`### ${h.metric}`);
         lines.push('');
-        lines.push(`- **Strongest variant:** \`${h.strongestVariantId}\``);
-        lines.push(`- **Weakest variant:** \`${h.weakestVariantId}\``);
-        lines.push(`- **Difference magnitude:** ${h.differenceMagnitude.toFixed(4)}`);
+        lines.push(`- **Highest observed value:** \`${h.strongestVariantId}\``);
+        lines.push(`- **Lowest observed value:** \`${h.weakestVariantId}\``);
+        lines.push(`- **Observed spread:** ${h.differenceMagnitude.toFixed(4)}`);
         lines.push(`- ${h.interpretation}`);
+        lines.push(`- Read together with safety checks, saturation risk, and NaN / Infinity counts.`);
         lines.push('');
     }
 
@@ -79,10 +83,10 @@ export function renderTopHighlightsSummary(
         return 'No notable differences observed.';
     }
 
-    return top
+    return ['Observation-only spread summary (ranking is not implied).', ...top
         .map(h =>
             `${h.metric}: diff=${h.differenceMagnitude.toFixed(3)}`
-            + ` (${h.strongestVariantId} > ${h.weakestVariantId})`,
+            + ` (${h.strongestVariantId} vs ${h.weakestVariantId})`,
         )
-        .join('\n');
+    ].join('\n');
 }

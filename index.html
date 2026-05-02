@@ -125,20 +125,23 @@
 
         /* ── N-Series Runtime Mode HUD (v1.0 Stabilization) ── */
         #natural-mode-hud {
-            display: flex; flex-wrap: wrap; gap: 4px; pointer-events: none;
-            margin-top: 3px; opacity: 0.7;
+            display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto;
+            margin-top: 5px; max-width: min(100%, 720px);
         }
         .nm-chip {
-            padding: 2px 7px; border-radius: 20px; font-size: 9px;
-            font-family: monospace; background: rgba(5,10,15,0.5);
-            border: 1px solid rgba(100,150,180,0.2); color: rgba(150,200,220,0.7);
-            white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 8px; border-radius: 999px; font-size: 9px;
+            font-family: monospace; background: rgba(5,10,15,0.72);
+            border: 1px solid rgba(148,163,184,0.24); color: rgba(226,232,240,0.8);
+            white-space: nowrap; min-height: 24px;
         }
-        .nm-chip[data-mode="experimental"] { border-color: rgba(239,68,68,0.5); color: #f87171; }
-        .nm-chip[data-mode="legacy"]        { border-color: rgba(251,191,36,0.4); color: #fbbf24; }
-        .nm-chip[data-mode="research"]      { border-color: rgba(52,211,153,0.3); color: #34d399; }
+        .nm-chip[data-mode="safe"]         { border-color: rgba(148,163,184,0.32); color: rgba(226,232,240,0.82); }
+        .nm-chip[data-mode="research"]     { border-color: rgba(34,211,238,0.45); color: #67e8f9; background: rgba(8,47,73,0.35); }
+        .nm-chip[data-mode="experimental"] { border-color: rgba(251,191,36,0.5); color: #fbbf24; background: rgba(120,53,15,0.32); }
+        .nm-chip[data-mode="legacy"]       { border-color: rgba(148,163,184,0.28); color: rgba(203,213,225,0.72); border-style: dashed; }
         @media (max-width:768px) {
-            #natural-mode-hud { display: none; }
+            #natural-mode-hud { gap: 4px; max-width: calc(100vw - 28px); }
+            .nm-chip { font-size: 8px; padding: 3px 7px; }
         }
 
         /* ── Layer C: Research Panel (PC right sidebar + mobile sheet) ── */
@@ -364,7 +367,15 @@
         .explain-section { margin-bottom: 12px; }
         .explain-section-title { font-size: 9px; font-weight: bold; color: #22d3ee; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
         .explain-placeholder { color: rgba(255,255,255,0.4); font-style: italic; font-size: 10px; }
-        @media (max-width:768px) { #explain-panel { right:12px; left:12px; width:auto; } }
+        @media (max-width:768px) {
+            #explain-panel {
+                right: 0; left: 0; bottom: 0; width: auto;
+                border-radius: 16px 16px 0 0;
+                border-left: none; border-right: none; border-bottom: none;
+                max-height: min(62vh, 520px);
+                padding-bottom: max(22px, env(safe-area-inset-bottom, 22px));
+            }
+        }
 
         /* ── Guide Panel (U6) ── */
         #explain-panel { max-height: min(80vh, 580px); overflow-y: auto; }
@@ -384,6 +395,148 @@
         .guide-glossary-kind { font-size: 8px; color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); padding: 1px 4px; border-radius: 3px; margin-right: 4px; font-family: monospace; }
         .guide-glossary-def { display: block; font-size: 9px; color: rgba(255,255,255,0.6); line-height: 1.45; margin-top: 2px; }
         .guide-integrity-note { font-size: 9px; color: rgba(255,255,255,0.38); line-height: 1.45; margin-bottom: 3px; padding-left: 8px; border-left: 2px solid rgba(255,255,255,0.1); }
+
+        /* ── Observation UX polish ── */
+        #observation-dashboard-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+        }
+        .obd-section {
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .obd-section-title {
+            font-size: 8px;
+            font-weight: bold;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(103,232,249,0.85);
+            margin-bottom: 6px;
+        }
+        .obd-section-note {
+            font-size: 7px;
+            line-height: 1.45;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 6px;
+        }
+        .obd-badge-list,
+        .obd-rows,
+        .natural-warning-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .runtime-mode-badge {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            border-radius: 8px;
+            padding: 6px 7px;
+            border: 1px solid rgba(148,163,184,0.2);
+            background: rgba(2,6,23,0.45);
+        }
+        .runtime-mode-badge[data-tone="research"] { border-color: rgba(34,211,238,0.35); }
+        .runtime-mode-badge[data-tone="experimental"] { border-color: rgba(251,191,36,0.35); }
+        .runtime-mode-badge[data-tone="legacy"] { border-color: rgba(148,163,184,0.25); border-style: dashed; }
+        .runtime-mode-badge-label {
+            font-size: 7px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(148,163,184,0.72);
+        }
+        .runtime-mode-badge-value {
+            font-size: 9px;
+            color: rgba(255,255,255,0.86);
+        }
+        .runtime-mode-badge-default {
+            font-size: 6.5px;
+            color: rgba(148,163,184,0.8);
+            border: 1px solid rgba(148,163,184,0.18);
+            border-radius: 999px;
+            padding: 1px 4px;
+        }
+        .obd-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: start;
+            font-size: 8px;
+        }
+        .obd-row.is-subdued .obd-row-label,
+        .obd-row.is-subdued .obd-row-value {
+            color: rgba(255,255,255,0.42);
+        }
+        .obd-row-label {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            color: rgba(255,255,255,0.62);
+        }
+        .obd-row-value {
+            text-align: right;
+            color: rgba(255,255,255,0.88);
+            font-family: monospace;
+        }
+        .value-kind-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border-radius: 999px;
+            font-size: 6.5px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid rgba(148,163,184,0.18);
+            color: rgba(226,232,240,0.78);
+            background: rgba(15,23,42,0.5);
+            margin-left: 4px;
+        }
+        .value-kind-badge[data-kind="derived"] { border-color: rgba(34,211,238,0.28); color: #67e8f9; }
+        .value-kind-badge[data-kind="proxy"] { border-color: rgba(192,132,252,0.28); color: #d8b4fe; }
+        .value-kind-badge[data-kind="check"] { border-color: rgba(248,250,252,0.24); color: rgba(226,232,240,0.82); }
+        .value-kind-badge[data-kind="reference"] { border-color: rgba(250,204,21,0.24); color: #fde68a; }
+        .value-kind-badge[data-kind="presentation-smoothed"] { border-color: rgba(74,222,128,0.24); color: #86efac; }
+        .value-kind-badge[data-kind="raw"],
+        .value-kind-badge[data-kind="measured"] { border-color: rgba(251,146,60,0.24); color: #fdba74; }
+        .natural-warning-item {
+            border-left: 3px solid rgba(148,163,184,0.3);
+            padding-left: 7px;
+        }
+        .natural-warning-item[data-severity="info"] { border-color: rgba(34,211,238,0.3); }
+        .natural-warning-item[data-severity="notice"] { border-color: rgba(96,165,250,0.32); }
+        .natural-warning-item[data-severity="warning"] { border-color: rgba(251,191,36,0.42); }
+        .natural-warning-item[data-severity="critical"] { border-color: rgba(248,113,113,0.58); }
+        .natural-warning-item[data-severity="experimental"] { border-color: rgba(245,158,11,0.42); }
+        .natural-warning-title {
+            font-size: 8px;
+            color: rgba(255,255,255,0.82);
+            margin-bottom: 2px;
+        }
+        .natural-warning-detail {
+            font-size: 7px;
+            line-height: 1.45;
+            color: rgba(255,255,255,0.48);
+        }
+        .now-summary-kind {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 4px;
+            padding: 1px 5px;
+            border-radius: 999px;
+            font-size: 6.5px;
+            color: rgba(226,232,240,0.74);
+            border: 1px solid rgba(148,163,184,0.18);
+            background: rgba(15,23,42,0.5);
+        }
+        @media (max-width:768px) {
+            #observation-dashboard-sections { grid-template-columns: 1fr; }
+            .obd-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+            .obd-row-value { text-align: left; }
+        }
 
         /* ── Event Strip (bottom, PC) ── */
         #event-strip {
@@ -741,6 +894,19 @@
                     </div>
                 </div>
 
+                <div class="border-divider" id="observation-dashboard">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <div class="section-label">Observation Dashboard</div>
+                        <span class="text-[7px] text-white/30 font-mono">N-series observation map</span>
+                    </div>
+                    <div id="observation-dashboard-sections">
+                        <div class="obd-section">
+                            <div class="obd-section-title">Current Runtime Mode</div>
+                            <div class="obd-section-note">Runtime badges and observation summaries are loading…</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ── Safety / Integrity Checks ── -->
                 <div class="border-divider" id="ov-integrity-section">
                     <div class="section-label mb-1">Integrity Checks</div>
@@ -848,6 +1014,7 @@
             <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Flat preserves legacy runtime behavior. Curved exposes area element and curvature derived from major/minor radius." id="row-metric-mode"><span>Metric mode</span><span id="val-metric-mode" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Geometric torus major radius used for area and curvature derivation." id="row-major-radius"><span>Major radius</span><span id="val-major-radius" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CONFIG] Geometric torus minor radius used for area and curvature derivation." id="row-minor-radius"><span>Minor radius</span><span id="val-minor-radius" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Area element range across the current torus metric." id="row-area-element-range"><span>Area element range</span><span id="val-area-element-range" class="text-white ">—</span></div>
             <div class="metric-row" id="row-torus-formed"><span>Torus formed</span><span id="val-torus-formed" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Frequency ratio irrationality proxy" id="row-irrational"><span>Irrationality</span><span id="val-irrational" class="text-white ">—</span></div>
             <div class="section-label pt-2">Curvature observation</div>
@@ -908,12 +1075,15 @@
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Observer-side phase-defect candidate count." id="row-complex-vortex-count"><span>Vortex candidates</span><span id="val-complex-vortex-count" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Positive topological-charge candidate count." id="row-complex-positive-charge"><span>Positive charge</span><span id="val-complex-positive-charge" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Negative topological-charge candidate count." id="row-complex-negative-charge"><span>Negative charge</span><span id="val-complex-negative-charge" class="text-white ">—</span></div>
-            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Sum of observer-side topological charges in the current observation." id="row-complex-total-charge"><span>Total topological charge</span><span id="val-complex-total-charge" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] Signed total charge is a topological consistency check for observed vortex candidates." id="row-complex-total-charge"><span>Signed total charge</span><span id="val-complex-total-charge" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[CHECK] Absolute deviation from the expected zero signed charge on a torus." id="row-complex-charge-deviation"><span>Charge deviation</span><span id="val-complex-charge-deviation" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Mean confidence of current vortex candidates." id="row-complex-average-vortex-confidence"><span>Average vortex conf.</span><span id="val-complex-average-vortex-confidence" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Mean lifetime of observed vortex candidates." id="row-complex-average-vortex-lifetime"><span>Average vortex lifetime</span><span id="val-complex-average-vortex-lifetime" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[PROXY] Correlation between curvature at vortex sites and vortex confidence. Correlation does not imply causation." id="row-complex-curvature-vortex-correlation"><span>Curvature-vortex corr.</span><span id="val-complex-curvature-vortex-correlation" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CHECK] Non-finite values found in complex buffers." id="row-complex-nan"><span>NaN / Infinity</span><span id="val-complex-nan" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CHECK] Number of amplitude clamp activations in the latest complex update." id="row-complex-amplitude-clamp"><span>Amplitude clamps</span><span id="val-complex-amplitude-clamp" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CHECK] Wrapped phase differences that approached ±π in the latest observation." id="row-complex-phase-unwrap"><span>Phase unwrap warn</span><span id="val-complex-phase-unwrap" class="text-white ">—</span></div>
-            <div class="text-[7px] text-white/35 leading-relaxed pt-1">Complex field phase and vortex values are mathematical observations only. Vortex candidates remain observer-side and do not create runtime graph structures.</div>
+            <div class="text-[7px] text-white/35 leading-relaxed pt-1">Phase は数学的位相です。Vortex candidate は observer-side の位相欠陥候補であり、意識・記憶・意味ではありません。Signed total charge は topological check として読みます。</div>
         </div>
     </div>
 </div>
@@ -1029,13 +1199,15 @@
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane permeability across the mediating layer." id="row-membrane-average-permeability"><span>Avg permeability</span><span id="val-membrane-average-permeability" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane tension across the mediating layer." id="row-membrane-average-tension"><span>Avg tension</span><span id="val-membrane-average-tension" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average membrane deformation from actuation/return influence." id="row-membrane-average-deformation"><span>Avg deformation</span><span id="val-membrane-average-deformation" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average actuation imprint across the membrane state." id="row-membrane-average-actuation-imprint"><span>Actuation imprint</span><span id="val-membrane-average-actuation-imprint" class="text-white ">—</span></div>
+            <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Average return imprint across the membrane state." id="row-membrane-average-return-imprint"><span>Return imprint</span><span id="val-membrane-average-return-imprint" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Coexistence of actuation and return imprints on the same membrane state." id="row-membrane-average-two-sidedness"><span>Avg two-sidedness</span><span id="val-membrane-average-two-sidedness" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Overlap of actuation imprint and return imprint on membrane regions." id="row-membrane-overlap"><span>Imprint overlap</span><span id="val-membrane-overlap" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Balance between membrane recovery and deformation load." id="row-membrane-recovery-balance"><span>Recovery balance</span><span id="val-membrane-recovery-balance" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[PROXY] Integrity proxy for the mediating layer staying finite and bounded." id="row-membrane-integrity"><span>Membrane integrity</span><span id="val-membrane-integrity" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[DERIVED] Count of membrane regions with elevated deformation." id="row-membrane-high-deformation-count"><span>High deformation regions</span><span id="val-membrane-high-deformation-count" class="text-white ">—</span></div>
             <div class="metric-row has-tooltip" data-tooltip="[CHECK] NaN / Infinity count for membrane derivation." id="row-membrane-nan"><span>NaN / Infinity</span><span id="val-membrane-nan" class="text-white ">—</span></div>
-            <div id="membrane-section-note" class="text-[7px] text-white/35 leading-relaxed pt-1">Membrane is a computational mediating layer between BodySurface and WorldMedium. It is not a soul or meaning boundary.</div>
+            <div id="membrane-section-note" class="text-[7px] text-white/35 leading-relaxed pt-1">Membrane は BodySurface と WorldMedium の間にある計算上の境界層です。魂・自我・意識の境界ではありません。</div>
         </div>
     </div>
 </div>

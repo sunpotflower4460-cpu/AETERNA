@@ -65,9 +65,12 @@ UI 上でも可能な限りこの区分を表示する方針とする。
 | 区分 | 定義 | 例 |
 |---|---|---|
 | **Measured** | 実際に直接測っている値 | pulse intensity, echoLevel, return intensity |
+| **Raw** | ほぼ加工前の値 | raw buffer sample |
 | **Derived** | Measured や state から計算された値 | flowContinuity, returnStrength, traceResidue |
 | **Proxy** | 直接測れない概念の代理指標 | closureStability, selfCausedMatch, proto-network confidence |
+| **Check** | 整合性・有限性・安全性の確認値 | signed total charge, NaN / Infinity count |
 | **Presentation-smoothed** | 人間が見やすいように補間・平滑化した表示値 | （raw と区別する） |
+| **Reference** | 比較専用の参照値 | reference ratio |
 
 ---
 

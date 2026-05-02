@@ -40,11 +40,12 @@ export function renderVariantSummaryCardText(data: VariantSummaryCardData): stri
     const lines: string[] = [
         `=== ${summary.label} ===`,
         `Status:             ${isSkipped ? 'SKIPPED' : 'completed'}`,
+        `Scenario:           ${summary.scenarioId}`,
         `Metric mode:        ${variant.metricMode}`,
         `Field mode:         ${variant.fieldRuntimeMode}`,
-        `Membrane:           ${variant.membraneEnabled ? variant.membraneMode : 'off'}`,
-        `Plasticity:         ${variant.weakPlasticityEnabled ? variant.weakPlasticityMode : 'off'}`,
-        `Constants:          ${variant.externalConstantsMode}`,
+        `Membrane mode:      ${variant.membraneEnabled ? variant.membraneMode : 'off'}`,
+        `Plasticity mode:    ${variant.weakPlasticityEnabled ? variant.weakPlasticityMode : 'off'}`,
+        `Constants mode:     ${variant.externalConstantsMode}`,
         `Ticks:              ${summary.ticks}`,
         `Seed:               ${summary.seed}`,
         ``,
@@ -71,7 +72,7 @@ export function renderVariantSummaryCardText(data: VariantSummaryCardData): stri
         `Saturation risk max:    ${fmt(summary.plasticitySaturationRiskMax)}`,
         ``,
         `--- Observed ratios ---`,
-        `Ratio match avg:        ${fmt(summary.averageObservedRatioMatchStrength)}`,
+        `Observed ratio match:   ${fmt(summary.averageObservedRatioMatchStrength)}`,
         `Resonance proxy max:    ${fmt(summary.maxEmergentResonanceProxy)}`,
         ``,
         `--- Safety / integrity ---`,
@@ -79,6 +80,7 @@ export function renderVariantSummaryCardText(data: VariantSummaryCardData): stri
         `NaN/Infinity count:     ${summary.nanOrInfinityCount}`,
         `Max saturation risk:    ${fmt(summary.maxSaturationRisk)}`,
         `Max extinction risk:    ${fmt(summary.maxExtinctionRisk)}`,
+        `Interpretation:         observation-only card, not a winner board`,
     ];
 
     if (summary.notes.length > 0) {

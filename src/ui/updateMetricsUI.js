@@ -8,6 +8,23 @@ import { deriveAeternaEvents } from './timeline/deriveAeternaEvents.ts';
 import { pushOverviewSparklineValues } from './overview/MiniMetricSparkline.ts';
 import { buildExplainableSnapshot } from './explain/explainableObservationSnapshot.ts';
 import { updateNowSummary, updateEventTimeline } from './layout/layoutControls.js';
+import { deriveCurvatureVortexCoupling } from '../observer/deriveCurvatureVortexCoupling.ts';
+import { deriveObservedRatios } from '../observer/deriveObservedRatios.ts';
+import { deriveNaturalDiagnosticState } from '../observer/deriveNaturalDiagnosticState.ts';
+import { deriveRuntimeModeBadges } from './natural/RuntimeModeBadge.tsx';
+import { NATURAL_VALUE_KIND_ROW_MAP, VALUE_KIND_DEFINITIONS } from './natural/ValueKindBadge.tsx';
+import {
+    COMPLEX_FIELD_INTERPRETATION_NOTE,
+    MEMBRANE_INTERPRETATION_NOTE,
+    OBSERVED_RATIO_INTERPRETATION_NOTE,
+    WEAK_PLASTICITY_INTERPRETATION_NOTE,
+    LONG_RUN_COMPARISON_INTERPRETATION_NOTE,
+} from './natural/InterpretationNote.tsx';
+import { createNaturalWarningList } from './natural/NaturalWarningList.tsx';
+import {
+    createObservationDashboardState,
+    renderObservationDashboardHtml,
+} from './natural/ObservationDashboard.tsx';
 
 // Phase 1: Running ongoingness accumulators for the live observer
 let _ong_totalFrames = 0;
@@ -18,6 +35,7 @@ let _ong_quietBaselineCount = 0;
 let _ong_ignitionCount = 0;
 let _ong_prevBelowFloor = false;
 let _ong_recentMeans = /** @type {number[]} */ ([]);
+let _naturalValueKindsApplied = false;
 
 function formatDormantEvents(events) {
     if (!Array.isArray(events) || events.length === 0) return '—';
@@ -38,10 +56,53 @@ function formatComplexModeLabel(fieldRuntimeMode, complexFieldMode, enabled) {
     return 'complexObserver';
 }
 
+function formatSigned(value, digits = 3) {
+    const num = Number(value || 0);
+    return `${num >= 0 ? '+' : ''}${num.toFixed(digits)}`;
+}
+
+function formatRange(min, max, digits = 3) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return '—';
+    return `${min.toFixed(digits)} .. ${max.toFixed(digits)}`;
+}
+
+function formatPercent(value) {
+    const num = Number(value || 0);
+    return `${(num * 100).toFixed(1)}%`;
+}
+
+function applyNaturalValueKindBadges() {
+    if (_naturalValueKindsApplied) return;
+
+    Object.entries(NATURAL_VALUE_KIND_ROW_MAP).forEach(([rowId, meta]) => {
+        const row = document.getElementById(rowId);
+        if (!row || row.children.length < 2) return;
+
+        const labelEl = row.children[0];
+        if (!labelEl || labelEl.querySelector('.value-kind-badge')) return;
+
+        const badgeMeta = VALUE_KIND_DEFINITIONS[meta.kind];
+        const badge = document.createElement('span');
+        badge.className = 'value-kind-badge';
+        badge.dataset.kind = meta.kind;
+        badge.textContent = badgeMeta.label;
+        badge.title = meta.tooltip || badgeMeta.tooltip;
+        labelEl.appendChild(badge);
+
+        if (row.classList.contains('has-tooltip')) {
+            const existingTooltip = row.dataset.tooltip ? `${row.dataset.tooltip} ` : '';
+            row.dataset.tooltip = `${existingTooltip}[${badgeMeta.label}] ${meta.tooltip || badgeMeta.tooltip}`.trim();
+        }
+    });
+
+    _naturalValueKindsApplied = true;
+}
+
 export function updateMetricsUI(dyn, engineState) {
     const disk = state.disk;
     const tensionLoad = state.tensionLoad;
     const touchMem = state.touchMem;
+    applyNaturalValueKindBadges();
     const formatDirection = (direction) => Array.isArray(direction) && direction.length >= 2
         ? `${direction[0].toFixed(2)}, ${direction[1].toFixed(2)}`
         : '—';
@@ -83,9 +144,17 @@ export function updateMetricsUI(dyn, engineState) {
     updateUIRow(UI['row-major-radius'], UI['val-major-radius'], (dyn.majorRadius ?? 0).toFixed(3), (dyn.majorRadius ?? 0) > 0);
     updateUIRow(UI['row-minor-radius'], UI['val-minor-radius'], (dyn.minorRadius ?? 0).toFixed(3), (dyn.minorRadius ?? 0) > 0);
     updateUIRow(
+        UI['row-area-element-range'],
+        UI['val-area-element-range'],
+        state.network?.torusGeometry
+            ? formatRange(state.network.torusGeometry.minAreaElement, state.network.torusGeometry.maxAreaElement, 4)
+            : '—',
+        !!state.network?.torusGeometry,
+    );
+    updateUIRow(
         UI['row-gaussian-range'],
         UI['val-gaussian-range'],
-        curvature ? `${curvature.minGaussianCurvature.toFixed(4)} .. ${curvature.maxGaussianCurvature.toFixed(4)}` : '—',
+        curvature ? formatRange(curvature.minGaussianCurvature, curvature.maxGaussianCurvature, 4) : '—',
         !!curvature && (curvature.positiveCurvatureRegionCount > 0 || curvature.negativeCurvatureRegionCount > 0),
     );
     updateUIRow(
@@ -185,11 +254,37 @@ export function updateMetricsUI(dyn, engineState) {
         `${dyn.vortexTotalTopologicalCharge || 0}`,
         Math.abs(dyn.vortexTotalTopologicalCharge || 0) > 0
     );
+    const liveCurvatureVortexCoupling = state.network?.torusGeometry && state.network?.lastVortexObservationState
+        ? deriveCurvatureVortexCoupling({
+            geometry: state.network.torusGeometry,
+            vortexObservation: state.network.lastVortexObservationState,
+            metricMode: dyn.metricMode || 'flat',
+            timestamp: Date.now(),
+        })
+        : null;
+    updateUIRow(
+        UI['row-complex-charge-deviation'],
+        UI['val-complex-charge-deviation'],
+        (liveCurvatureVortexCoupling?.chargeDeviation ?? 0).toFixed(3),
+        (liveCurvatureVortexCoupling?.chargeDeviation ?? 0) < 1,
+    );
     updateUIRow(
         UI['row-complex-average-vortex-confidence'],
         UI['val-complex-average-vortex-confidence'],
         (dyn.vortexAverageConfidence || 0).toFixed(3),
         (dyn.vortexAverageConfidence || 0) > 0
+    );
+    updateUIRow(
+        UI['row-complex-average-vortex-lifetime'],
+        UI['val-complex-average-vortex-lifetime'],
+        (liveCurvatureVortexCoupling?.averageVortexLifetime ?? 0).toFixed(1),
+        (liveCurvatureVortexCoupling?.averageVortexLifetime ?? 0) > 0,
+    );
+    updateUIRow(
+        UI['row-complex-curvature-vortex-correlation'],
+        UI['val-complex-curvature-vortex-correlation'],
+        formatSigned(liveCurvatureVortexCoupling?.curvatureVortexCorrelation ?? 0, 3),
+        Math.abs(liveCurvatureVortexCoupling?.curvatureVortexCorrelation ?? 0) > 0.05,
     );
     updateUIRow(
         UI['row-complex-nan'],
@@ -438,6 +533,8 @@ export function updateMetricsUI(dyn, engineState) {
     if (UI['val-membrane-average-permeability']) UI['val-membrane-average-permeability'].innerText = (dyn.membraneAveragePermeability || 0).toFixed(3);
     if (UI['val-membrane-average-tension'])    UI['val-membrane-average-tension'].innerText    = (dyn.membraneAverageTension || 0).toFixed(3);
     if (UI['val-membrane-average-deformation']) UI['val-membrane-average-deformation'].innerText = (dyn.membraneAverageDeformation || 0).toFixed(3);
+    if (UI['val-membrane-average-actuation-imprint']) UI['val-membrane-average-actuation-imprint'].innerText = (state.network?.lastMembraneState?.averageActuationImprint || 0).toFixed(3);
+    if (UI['val-membrane-average-return-imprint']) UI['val-membrane-average-return-imprint'].innerText = (state.network?.lastMembraneState?.averageReturnImprint || 0).toFixed(3);
     if (UI['val-membrane-average-two-sidedness']) UI['val-membrane-average-two-sidedness'].innerText = (dyn.membraneAverageTwoSidedness || 0).toFixed(3);
     if (UI['val-membrane-overlap'])            UI['val-membrane-overlap'].innerText            = (dyn.membraneActuationReturnOverlap || 0).toFixed(3);
     if (UI['val-membrane-recovery-balance'])   UI['val-membrane-recovery-balance'].innerText   = (dyn.membraneRecoveryBalance || 0).toFixed(3);
@@ -669,6 +766,37 @@ function _updateU5(dyn) {
     const closure   = network?.lastBodyWorldClosureState ?? null;
     const mediumProfile = network?.lastMediumProfileState ?? null;
     const membraneObservation = network?.lastMembraneObservationState ?? null;
+    const curvatureObservation = network?.lastTorusCurvatureObservation ?? dyn.torusCurvatureObservation ?? null;
+    const vortexObservation = network?.lastVortexObservationState ?? null;
+    const curvatureVortexCoupling = network?.torusGeometry && vortexObservation
+        ? deriveCurvatureVortexCoupling({
+            geometry: network.torusGeometry,
+            vortexObservation,
+            metricMode: dyn.metricMode || 'flat',
+            timestamp: Date.now(),
+        })
+        : null;
+    const observedRatios = deriveObservedRatios({
+        complexField: network?.lastComplexFieldState ?? null,
+        curvatureVortexCoupling,
+        closure,
+        timestamp: Date.now(),
+        externalConstantsMode: dyn.naturalExternalConstantsMode || 'neutral',
+    });
+    const diagnostics = deriveNaturalDiagnosticState({
+        timestamp: Date.now(),
+        curvatureObservation,
+        vortexObservation,
+        membraneObservation,
+        observedRatiosState: observedRatios,
+        externalSaturationRisks: [
+            dyn.collapseRisk || 0,
+            dyn.mediumEchoSaturationRisk || 0,
+        ],
+        externalClampCounts: [
+            dyn.complexFieldAmplitudeClampCount || 0,
+        ],
+    });
     // localField, repeatedFlowPaths, protoNetwork are not currently computed
     // in the main loop — pass null and derive functions degrade gracefully
     const localField = null;
@@ -725,8 +853,9 @@ function _updateU5(dyn) {
     // ── Derive and update Now Summary ────────────────────────────────────────
     const nowSummaryState = deriveNowSummary({
         overview: overviewState, viability, closure, membraneObservation, mediumProfile,
-        localField, repeatedFlowPaths, protoNetwork,
-        semanticLeakCount: 0, nanOrInfinityCount: 0,
+        localField, repeatedFlowPaths, protoNetwork, curvatureVortexCoupling,
+        observedRatios,
+        semanticLeakCount: 0, nanOrInfinityCount: diagnostics.totalNanOrInfinityCount,
         timestamp,
     });
     updateNowSummary(nowSummaryState);
@@ -734,7 +863,8 @@ function _updateU5(dyn) {
     // ── Derive and update Event Timeline ─────────────────────────────────────
     const recentEvents = deriveAeternaEvents({
         viability, closure, membraneObservation, localField, repeatedFlowPaths, protoNetwork,
-        semanticLeakCount: 0, nanOrInfinityCount: 0,
+        observedRatios,
+        semanticLeakCount: 0, nanOrInfinityCount: diagnostics.totalNanOrInfinityCount,
         tick, timestamp,
     });
     updateEventTimeline(recentEvents);
@@ -743,6 +873,15 @@ function _updateU5(dyn) {
     currentExplainableSnapshot = buildExplainableSnapshot(
         overviewState, nowSummaryState, recentEvents.slice(0, 10)
     );
+
+    _updateObservationDashboard(dyn, {
+        curvatureObservation,
+        curvatureVortexCoupling,
+        closure,
+        membraneObservation,
+        observedRatios,
+        diagnostics,
+    });
 }
 
 function _updateIntegrityCards(overviewState) {
@@ -789,51 +928,172 @@ function _updateSystemStateBadge(overallStatus) {
  * @param {object} dyn - current dynamics object from the main loop
  */
 function _updateNaturalModeHud(dyn) {
-    // Metric mode (N1): read from dyn.naturalMetricMode or fall back to 'flat'
-    const metricMode = dyn.naturalMetricMode || (dyn.metricMode) || 'flat';
-    _setNmChip('nm-metric', `Metric: ${metricMode}`, metricMode === 'curved' ? 'research' : null);
+    const badges = deriveRuntimeModeBadges({
+        metricMode: dyn.naturalMetricMode || dyn.metricMode || 'flat',
+        fieldMode: dyn.naturalFieldRuntimeMode || dyn.fieldRuntimeMode || 'scalar',
+        membraneMode: dyn.naturalMembraneMode || dyn.membraneMode || 'observerOnly',
+        plasticityMode: dyn.naturalPlasticityMode || 'off',
+        constantsMode: dyn.naturalExternalConstantsMode || 'neutral',
+        safetyMode: dyn.naturalSafetyMode || 'safe',
+    });
 
-    // Field runtime mode (N2)
-    const fieldMode = dyn.naturalFieldRuntimeMode || dyn.fieldRuntimeMode || 'scalar';
-    const fieldData =
-        fieldMode === 'complexRuntime' ? ['complexRuntime', 'experimental'] :
-        fieldMode === 'complexObserver' ? ['complexObserver', 'research'] :
-        ['scalar', null];
-    _setNmChip('nm-field', `Field: ${fieldData[0]}`, fieldData[1]);
-
-    // Membrane mode (N4)
-    const memMode = dyn.naturalMembraneMode || dyn.membraneMode || 'observerOnly';
-    const memDisplay =
-        memMode === 'weakCoupling' ? 'weak' :
-        memMode === 'observerOnly' ? 'observer' :
-        'off';
-    const memLevel = memMode === 'weakCoupling' ? 'experimental' : null;
-    _setNmChip('nm-membrane', `Membrane: ${memDisplay}`, memLevel);
-
-    // Plasticity mode (N5)
-    const plasticityMode = dyn.naturalPlasticityMode || 'off';
-    const plasticityDisplay =
-        plasticityMode === 'resistanceOnly' ? 'resistance' :
-        plasticityMode === 'observeOnly' ? 'observe' :
-        'off';
-    const plasticityLevel = plasticityMode === 'resistanceOnly' ? 'experimental' : null;
-    _setNmChip('nm-plasticity', `Plasticity: ${plasticityDisplay}`, plasticityLevel);
-
-    // External constants mode (N6)
-    const constsMode = dyn.naturalExternalConstantsMode || 'neutral';
-    _setNmChip('nm-constants', `Constants: ${constsMode}`, constsMode === 'legacy' ? 'legacy' : null);
-
-    // Safety mode
-    const safetyMode = dyn.naturalSafetyMode || 'safe';
-    _setNmChip('nm-safety', `Safety: ${safetyMode}`,
-        safetyMode === 'experimental' ? 'experimental' :
-        safetyMode === 'research' ? 'research' : null);
+    badges.forEach((badge) => {
+        _setNmChip(`nm-${badge.id}`, badge.shortText, badge.tone, badge.note);
+    });
 }
 
-function _setNmChip(id, text, mode) {
+function _setNmChip(id, text, mode, title) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = text;
-    if (mode) el.dataset.mode = mode;
-    else delete el.dataset.mode;
+    el.dataset.mode = mode || 'safe';
+    if (title) el.title = title;
+}
+
+function _updateObservationDashboard(dyn, context) {
+    const container = document.getElementById('observation-dashboard-sections');
+    if (!container) return;
+    const membraneState = state.network?.lastMembraneState ?? null;
+
+    const badges = deriveRuntimeModeBadges({
+        metricMode: dyn.naturalMetricMode || dyn.metricMode || 'flat',
+        fieldMode: dyn.naturalFieldRuntimeMode || dyn.fieldRuntimeMode || 'scalar',
+        membraneMode: dyn.naturalMembraneMode || dyn.membraneMode || 'observerOnly',
+        plasticityMode: dyn.naturalPlasticityMode || 'off',
+        constantsMode: dyn.naturalExternalConstantsMode || 'neutral',
+        safetyMode: dyn.naturalSafetyMode || 'safe',
+    });
+
+    const warnings = createNaturalWarningList({
+        runtimeBadges: badges,
+        vortexCandidateCount: dyn.vortexCandidateCount || 0,
+        plasticitySaturationRisk: 0,
+        nanOrInfinityCount: context.diagnostics?.totalNanOrInfinityCount || 0,
+        observedRatioMatchStrength: context.observedRatios?.averageMatchStrength || 0,
+    });
+
+    const strongestMatch = context.observedRatios?.strongestMatch ?? null;
+    const constantsValue = badges.find((badge) => badge.id === 'constants')?.value ?? 'Neutral';
+    const comparisonStatus = context.diagnostics?.validForLongRun
+        ? 'Ready for comparison'
+        : 'Read diagnostics before comparison';
+
+    const dashboardState = createObservationDashboardState({
+        runtimeBadges: badges,
+        sections: [
+            {
+                id: 'field-status',
+                title: 'Current Field Status',
+                items: [
+                    { label: 'System state', value: document.getElementById('system-state-badge')?.textContent || '—', kind: 'check' },
+                    { label: 'σ cascade', value: (dyn.sigmaDisplay || 0).toFixed(3), kind: 'derived' },
+                    { label: 'Phase coherence', value: (dyn.phaseCoherence || 0).toFixed(3), kind: 'derived' },
+                    { label: 'Return strength', value: (context.closure?.returnStrength ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Extinction risk', value: (dyn.collapseRisk || 0).toFixed(3), kind: 'proxy' },
+                ],
+            },
+            {
+                id: 'geometry',
+                title: 'Natural Geometry',
+                note: 'Flat は周期境界つき 2D grid、Curved は導出トーラス幾何の観測です。',
+                items: [
+                    { label: 'Metric mode', value: badges.find((badge) => badge.id === 'metric')?.value || 'Flat', kind: 'check' },
+                    { label: 'Major radius', value: (dyn.majorRadius ?? 0).toFixed(3), kind: 'measured' },
+                    { label: 'Minor radius', value: (dyn.minorRadius ?? 0).toFixed(3), kind: 'measured' },
+                    { label: 'Gaussian curvature range', value: formatRange(context.curvatureObservation?.minGaussianCurvature, context.curvatureObservation?.maxGaussianCurvature, 4), kind: 'derived' },
+                    { label: 'Mean curvature range', value: formatRange(context.curvatureObservation?.minMeanCurvature, context.curvatureObservation?.maxMeanCurvature, 4), kind: 'derived' },
+                    { label: 'Curvature asymmetry', value: (context.curvatureObservation?.curvatureAsymmetry ?? 0).toFixed(4), kind: 'proxy' },
+                    { label: 'Inner / outer rim regions', value: `${context.curvatureObservation?.innerRimRegionCount ?? 0} / ${context.curvatureObservation?.outerRimRegionCount ?? 0}`, kind: 'derived' },
+                ],
+            },
+            {
+                id: 'complex-field',
+                title: 'Complex Field / Vortex',
+                note: COMPLEX_FIELD_INTERPRETATION_NOTE,
+                items: [
+                    { label: 'Complex mode', value: badges.find((badge) => badge.id === 'field')?.value || 'Scalar', kind: 'check' },
+                    { label: 'Phase coherence', value: (dyn.complexFieldPhaseCoherence || 0).toFixed(3), kind: 'derived' },
+                    { label: 'Max amplitude', value: (dyn.complexFieldMaxAmplitude || 0).toFixed(3), kind: 'derived' },
+                    { label: 'Average amplitude', value: (dyn.complexFieldAverageAmplitude || 0).toFixed(3), kind: 'derived' },
+                    { label: 'Vortex candidate count', value: `${dyn.vortexCandidateCount || 0}`, kind: 'proxy' },
+                    { label: 'Positive / negative charge', value: `${dyn.vortexPositiveChargeCount || 0} / ${dyn.vortexNegativeChargeCount || 0}`, kind: 'proxy' },
+                    { label: 'Signed total charge', value: `${dyn.vortexTotalTopologicalCharge || 0}`, kind: 'check' },
+                    { label: 'Charge deviation', value: (context.curvatureVortexCoupling?.chargeDeviation ?? 0).toFixed(3), kind: 'check' },
+                    { label: 'Average vortex confidence', value: (dyn.vortexAverageConfidence || 0).toFixed(3), kind: 'proxy' },
+                    { label: 'Average vortex lifetime', value: (context.curvatureVortexCoupling?.averageVortexLifetime ?? 0).toFixed(1), kind: 'proxy' },
+                    { label: 'Curvature-vortex correlation', value: formatSigned(context.curvatureVortexCoupling?.curvatureVortexCorrelation ?? 0, 3), kind: 'proxy' },
+                ],
+            },
+            {
+                id: 'membrane',
+                title: 'Boundary / Membrane',
+                note: MEMBRANE_INTERPRETATION_NOTE,
+                items: [
+                    { label: 'Membrane mode', value: badges.find((badge) => badge.id === 'membrane')?.value || 'Observer', kind: 'check' },
+                    { label: 'Average permeability', value: (context.membraneObservation?.averagePermeability ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Average tension', value: (context.membraneObservation?.averageTension ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Average deformation', value: (context.membraneObservation?.averageDeformation ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Actuation imprint', value: (membraneState?.averageActuationImprint ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Return imprint', value: (membraneState?.averageReturnImprint ?? 0).toFixed(3), kind: 'derived' },
+                    { label: 'Actuation-return overlap', value: (context.membraneObservation?.actuationReturnOverlap ?? 0).toFixed(3), kind: 'proxy' },
+                    { label: 'Two-sidedness proxy', value: (context.membraneObservation?.averageTwoSidedness ?? 0).toFixed(3), kind: 'proxy' },
+                    { label: 'Membrane integrity', value: (context.membraneObservation?.membraneIntegrity ?? 0).toFixed(3), kind: 'check' },
+                ],
+            },
+            {
+                id: 'plasticity',
+                title: 'Weak Plasticity',
+                note: WEAK_PLASTICITY_INTERPRETATION_NOTE,
+                items: [
+                    { label: 'Plasticity mode', value: badges.find((badge) => badge.id === 'plasticity')?.value || 'Off', kind: 'check' },
+                    { label: 'Ablation', value: 'Observer-side guard on', kind: 'check' },
+                    { label: 'Total accumulation', value: '0.0000', kind: 'proxy', subdued: true },
+                    { label: 'Affected regions', value: '0', kind: 'proxy', subdued: true },
+                    { label: 'Average resistance scale', value: '1.000', kind: 'proxy', subdued: true },
+                    { label: 'Saturation risk', value: '0.000', kind: 'proxy', subdued: true },
+                    { label: 'Dormancy risk', value: badges.find((badge) => badge.id === 'plasticity')?.value === 'Off' ? 'inactive' : 'observe-only', kind: 'check' },
+                ],
+            },
+            {
+                id: 'observed-ratios',
+                title: 'Observed Ratios',
+                note: OBSERVED_RATIO_INTERPRETATION_NOTE,
+                items: [
+                    { label: 'Constants mode', value: constantsValue, kind: 'check' },
+                    { label: 'Legacy constants active', value: constantsValue === 'Legacy' ? 'yes (comparison only)' : 'no', kind: 'check' },
+                    { label: 'Observed ratios', value: `${context.observedRatios?.observedRatios.length ?? 0}`, kind: 'derived' },
+                    { label: 'Closest reference', value: strongestMatch?.referenceRatioId ?? '—', kind: 'reference' },
+                    { label: 'Absolute distance', value: strongestMatch ? strongestMatch.absoluteDistance.toFixed(4) : '—', kind: 'reference' },
+                    { label: 'Relative distance', value: strongestMatch ? strongestMatch.relativeDistance.toFixed(4) : '—', kind: 'reference' },
+                    { label: 'Cents distance', value: strongestMatch?.centsDistance !== null && strongestMatch?.centsDistance !== undefined ? strongestMatch.centsDistance.toFixed(1) : '—', kind: 'reference' },
+                    { label: 'Match strength', value: strongestMatch ? strongestMatch.matchStrength.toFixed(3) : '—', kind: 'proxy' },
+                    { label: 'Emergent resonance proxy', value: (context.observedRatios?.emergentResonanceProxy ?? 0).toFixed(3), kind: 'proxy' },
+                ],
+            },
+            {
+                id: 'comparison',
+                title: 'Long-Run Comparison',
+                note: LONG_RUN_COMPARISON_INTERPRETATION_NOTE,
+                items: [
+                    { label: 'Comparison setup', value: 'Shared seed / ticks / scenario required', kind: 'check' },
+                    { label: 'Variant cards', value: 'Show mode stack, semantic leak, NaN / Infinity', kind: 'check' },
+                    { label: 'Metric table', value: 'Read differences with risk and safety checks', kind: 'check' },
+                    { label: 'Current live status', value: comparisonStatus, kind: 'check' },
+                ],
+            },
+            {
+                id: 'diagnostics',
+                title: 'Diagnostics',
+                items: [
+                    { label: 'NaN / Infinity count', value: `${context.diagnostics?.totalNanOrInfinityCount ?? 0}`, kind: 'check' },
+                    { label: 'Clamp events', value: `${context.diagnostics?.clampEventCount ?? 0}`, kind: 'check' },
+                    { label: 'Saturation risk max', value: (context.diagnostics?.saturationRiskMax ?? 0).toFixed(3), kind: 'proxy' },
+                    { label: 'Long-run validity', value: context.diagnostics?.validForLongRun ? 'valid' : 'needs review', kind: 'check' },
+                ],
+                warnings,
+            },
+        ],
+    });
+
+    container.innerHTML = renderObservationDashboardHtml(dashboardState);
 }

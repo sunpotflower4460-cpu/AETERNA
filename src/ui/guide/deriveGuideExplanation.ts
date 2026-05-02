@@ -54,19 +54,35 @@ function asNum(v: number | string | null): number | null {
     return null;
 }
 
+// Keep guide output short enough to fit the panel without overwhelming the user.
+const MAX_EXPLANATION_LINES = 5;
+
 // ── Current Explanation ────────────────────────────────────────────────────────
 
 function buildCurrentExplanation(snapshot: ExplainableObservationSnapshot): string[] {
     const lines: string[] = [];
     const overview = snapshot.overview;
     const nowSummary = snapshot.nowSummary;
+    const recentKinds = new Set(snapshot.recentEvents.map((event) => event.kind));
+
+    if (recentKinds.has('weakPlasticityTrace')) {
+        lines.push('Weak plasticity is currently observe-only. Resistance values are being computed but are not applied to runtime.');
+    }
+
+    if (recentKinds.has('observedRatioMatch')) {
+        lines.push('Observed ratios are close to reference values in this run. This is a comparison result, not a causal proof.');
+    }
+
+    if (recentKinds.has('comparisonSummaryGenerated')) {
+        lines.push('A long-run comparison summary is available. Read differences together with semantic leak, NaN / Infinity, and saturation risk checks.');
+    }
 
     // Prefer Now Summary lines (they are already neutral observation text)
     if (nowSummary && nowSummary.lines && nowSummary.lines.length > 0) {
         for (const line of nowSummary.lines.slice(0, 4)) {
             lines.push(line.text);
         }
-        return lines;
+        return lines.slice(0, MAX_EXPLANATION_LINES);
     }
 
     // Fallback: build from overview metrics
@@ -109,13 +125,13 @@ function buildCurrentExplanation(snapshot: ExplainableObservationSnapshot): stri
             lines.push(`Overall field status: ${overview.overallStatus}.`);
             lines.push('Observation data is present but no notable conditions detected.');
         }
-        return lines;
+        return lines.slice(0, MAX_EXPLANATION_LINES);
     }
 
     // No data at all
     lines.push('Observation data is not yet available.');
     lines.push('Allow the simulation to run for a few seconds, then try again.');
-    return lines;
+    return lines.slice(0, MAX_EXPLANATION_LINES);
 }
 
 // ── What to Look At ────────────────────────────────────────────────────────────
@@ -406,9 +422,9 @@ function buildTryNext(
     if (ratioMatchEvents.length > 0) {
         suggestions.push({
             id: 'try-observed-ratios-panel',
-            label: 'Research → Observed Ratios',
-            reason: 'Observed ratio matches were recorded recently. Open the Research panel to inspect observed vs reference ratio distances (observer-side comparison only).',
-            targetPanel: 'research',
+            label: 'Observation Dashboard → Observed Ratios',
+            reason: 'Observed ratio matches were recorded recently. Open the Observation Dashboard to inspect observed vs reference ratio distances (observer-side comparison only).',
+            targetPanel: 'overview',
             action: 'openPanel',
         });
     }
@@ -420,9 +436,9 @@ function buildTryNext(
     if (comparisonEvents.length > 0) {
         suggestions.push({
             id: 'try-comparison-panel',
-            label: 'Research → Long-Run Comparison',
-            reason: 'A comparison summary was generated recently. Open the Research panel to inspect variant differences (pre-semantic observation only).',
-            targetPanel: 'research',
+            label: 'Observation Dashboard → Long-Run Comparison',
+            reason: 'A comparison summary was generated recently. Open the Observation Dashboard to inspect variant differences without treating the highest value as a winner.',
+            targetPanel: 'overview',
             action: 'openPanel',
         });
     }
@@ -433,7 +449,7 @@ function buildTryNext(
 // ── Glossary selection ─────────────────────────────────────────────────────────
 
 function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): ReturnType<typeof selectGlossaryHints> {
-    const terms: string[] = ['Raw', 'Derived', 'Proxy', 'Presentation-smoothed'];
+    const terms: string[] = ['Raw', 'Measured', 'Derived', 'Proxy', 'Check', 'Presentation-smoothed'];
     const metrics = snapshot.overview?.metrics ?? [];
 
     const retStatus = metricStatus(metrics, 'returnStrength');
@@ -473,7 +489,7 @@ function selectRelevantGlossary(snapshot: ExplainableObservationSnapshot): Retur
     // N6: Observed ratios
     const ratioEvents = snapshot.recentEvents.filter(e => e.kind === 'observedRatioMatch' || e.kind === 'externalConstantsModeChange');
     if (ratioEvents.length > 0) {
-        terms.push('Observed Ratio', 'Reference Ratio', 'Match Strength', 'Emergent Resonance Proxy');
+        terms.push('Observed Ratio', 'Reference Ratio', 'Reference', 'Match Strength', 'Emergent Resonance Proxy');
     }
 
     const leakVal = metricValue(metrics, 'semanticLeak');

@@ -47,6 +47,9 @@
 - **path**: 流路（結果として観測される）
 - **proto-neuron candidate**: 節候補（observer-side）
 - **proto-network candidate**: 流路網候補（observer-side）
+- **reference comparison**: 参照との観測比較
+- **comparison result**: 比較結果
+- **diagnostic**: 診断
 
 ## 避ける言葉
 
@@ -85,6 +88,10 @@
 - **教師から学ぶ**: teacher binding の直接実装を示唆する
 - **言語を理解する**: language meaning の直接実装を示唆する
 - **LLM に聞く**: LLM teacher の直接使用を示唆する
+- **知性が証明された**: intelligence proof claim を示唆する
+- **生命が証明された**: life proof claim を示唆する
+- **神秘の証明**: mystical proof claim を示唆する
+- **癒しの証明**: healing proof claim を示唆する
 
 ## 言い換え例
 
