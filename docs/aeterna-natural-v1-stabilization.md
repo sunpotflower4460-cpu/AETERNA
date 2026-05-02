@@ -231,6 +231,7 @@ geometry / complex field / vortex / membrane / weak plasticity / observed ratios
 |---|---|
 | `src/ui/updateMetricsUI.js` | `_updateNaturalModeHud` 追加 |
 | `index.html` | N-Series Runtime Mode HUD chips 追加 |
+| `docs/aeterna-natural-observation-ux-polish.md` | v1.1 観測 UX polish 方針 |
 | `docs/aeterna-natural-roadmap.md` | v1.0 Stabilization 完了追記 |
 | `docs/current-roadmap.md` | v1.0 Stabilization 完了追記 |
 | `README.md` | v1.0 Stabilization 追記 |

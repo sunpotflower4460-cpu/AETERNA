@@ -83,7 +83,7 @@ export function renderTopHighlightsSummary(
         return 'No notable differences observed.';
     }
 
-    return ['Observation-only spread summary (not a winner board).', ...top
+    return ['Observation-only spread summary (ranking is not implied).', ...top
         .map(h =>
             `${h.metric}: diff=${h.differenceMagnitude.toFixed(3)}`
             + ` (${h.strongestVariantId} vs ${h.weakestVariantId})`,

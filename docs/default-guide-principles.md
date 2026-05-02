@@ -65,6 +65,9 @@ Guide の文章において：
 - 「感じている」「考えている」「生きている」などの断定文を使わない
 - 「activity が高い」「return が遅延している」「flow が続いている」などの観測語を使う
 - 不確かな観測には「〜のように観測されます」「〜候補が見られます」などの表現を使う
+- weak plasticity は medium trace / resistance history proxy として説明し、memory / learning と呼ばない
+- observed ratios は reference comparison として説明し、proof と呼ばない
+- long-run comparison は difference を winner board のように表現しない
 
 ---
 

@@ -42,8 +42,8 @@ export const INTEGRITY_NOTES: readonly string[] = [
     'Proto-network candidates are pre-semantic observations, not knowledge graphs.',
     'External LLM guide is inactive. All explanations are rule-based and local.',
     'Raw / Derived / Proxy / Presentation-smoothed values are distinct. Check valueKind labels.',
-    'Phase is mathematical phase, not emotion or meaning.',
-    'Weak plasticity trace is a small resistance-history proxy, not memory or learned knowledge.',
+    'Phase is mathematical phase, not an affective or semantic signal.',
+    'Weak plasticity trace is a small resistance-history proxy, not stored knowledge.',
     'Reference-ratio proximity is a comparison result only, not a causal proof.',
 ] as const;
 

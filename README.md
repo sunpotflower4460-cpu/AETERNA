@@ -61,6 +61,7 @@ N-series は geometry / complex field / vortex / membrane / weak plasticity / ob
 
 - `docs/aeterna-natural-roadmap.md` — N0〜N7 + v1.0 Stabilization ロードマップ
 - `docs/aeterna-natural-v1-stabilization.md` — v1.0 Stabilization 詳細仕様
+- `docs/aeterna-natural-observation-ux-polish.md` — v1.1 Observation UX Polish
 - `docs/aeterna-natural-integration-review.md` — N0–N7 統合レビュー
 
 ### v1.0 Stabilization (完了)
@@ -75,6 +76,13 @@ N0〜N7 実装後のコード・UI・docs・tests を安定化。
 - observedRatio は runtime feedback に使わない
 - referenceRatios は dynamicCore に import しない
 - No Node bridge, No LLM/API, No semantic claims
+
+### v1.1 Observation UX Polish
+
+- Observation Dashboard を追加し、runtime mode / geometry / vortex / membrane / weak plasticity / observed ratios / comparison / diagnostics を整理
+- Runtime Mode Badge と Value Kind Badge を強化
+- Guide / comparison copy を observation-only に統一
+- mobile でも runtime badges と guide が読みやすい形へ調整
 
 ## Development
 
