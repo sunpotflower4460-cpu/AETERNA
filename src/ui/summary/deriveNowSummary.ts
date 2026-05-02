@@ -390,17 +390,17 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
                 candidates.push({
                     id: 'vortexChargeBalanced',
                     priority: 6,
-                    text: `Vortex candidates are currently balanced in signed charge (Σ=${charge}).`,
+                    text: `Signed total charge check is currently balanced across vortex candidates (Σ=${charge}).`,
                     source: 'CurvatureVortexCouplingState.signedTotalCharge',
-                    valueKind: 'proxy',
+                    valueKind: 'check',
                 });
             } else {
                 candidates.push({
                     id: 'vortexChargeDeviation',
                     priority: 6,
-                    text: `Vortex candidate signed charge deviation is ${dev.toFixed(1)} (Σ=${charge}).`,
+                    text: `Signed total charge check shows deviation ${dev.toFixed(1)} (Σ=${charge}).`,
                     source: 'CurvatureVortexCouplingState.chargeDeviation',
-                    valueKind: 'proxy',
+                    valueKind: 'check',
                 });
             }
 
@@ -444,7 +444,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
             candidates.push({
                 id: 'plasticitySatRisk',
                 priority: 4,
-                text: `Weak plasticity trace accumulation saturation risk is elevated (${satRisk.toFixed(2)}).`,
+                text: `Weak plasticity trace saturation risk is elevated (${satRisk.toFixed(2)}). This remains a medium-history proxy.`,
                 source: 'WeakPlasticityObservationState.plasticitySaturationRisk',
                 valueKind: 'proxy',
             });
@@ -454,7 +454,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
             candidates.push({
                 id: 'plasticityTrace',
                 priority: 6,
-                text: `Weak plasticity traces are accumulating slowly in the medium.${ablationNote}${modeNote}`,
+                text: `Weak plasticity traces are accumulating slowly in the medium.${ablationNote}${modeNote} This is not semantic memory or learned knowledge.`,
                 source: 'WeakPlasticityObservationState.totalAccumulation',
                 valueKind: 'proxy',
             });
@@ -493,7 +493,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
             priority: 7,
             text: `${ratioCount} ratio(s) observed from field dynamics and compared to ${observedRatios.referenceMatches.length / ratioCount || 0} reference value(s) (observer-side only).`,
             source: 'ObservedRatiosState.observedRatios',
-            valueKind: 'proxy',
+            valueKind: 'derived',
         });
 
         if (strongest && strongest.matchStrength >= 0.5) {

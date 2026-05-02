@@ -32,8 +32,8 @@ export interface MetricTableRow {
  * Labels are neutral and observational.
  */
 export const COMPARISON_METRIC_TABLE_ROWS: MetricTableRow[] = [
-    { label: 'Vortex Count avg',            metric: 'averageVortexCount',                decimals: 1 },
-    { label: 'Vortex Lifetime avg (ticks)',  metric: 'averageVortexLifetime',             decimals: 1 },
+    { label: 'Vortex Candidate Count avg',    metric: 'averageVortexCount',                decimals: 1 },
+    { label: 'Average Vortex Lifetime (ticks)', metric: 'averageVortexLifetime',             decimals: 1 },
     { label: 'Phase Coherence avg',          metric: 'averagePhaseCoherence',             decimals: 3 },
     { label: 'Signed Charge |mean|',         metric: 'signedTotalChargeAbsMean',          decimals: 3 },
     { label: 'Curvature–Vortex Corr.',       metric: 'averageCurvatureVortexCorrelation', decimals: 3 },
@@ -41,10 +41,10 @@ export const COMPARISON_METRIC_TABLE_ROWS: MetricTableRow[] = [
     { label: 'Closure Stability avg',        metric: 'averageClosureStability',           decimals: 3 },
     { label: 'Return Strength avg',          metric: 'averageReturnStrength',             decimals: 3 },
     { label: 'Membrane Two-Sidedness avg',   metric: 'averageMembraneTwoSidedness',       decimals: 3 },
-    { label: 'Actuation Return Overlap avg', metric: 'averageActuationReturnOverlap',     decimals: 3 },
+    { label: 'Membrane Overlap avg',         metric: 'averageActuationReturnOverlap',     decimals: 3 },
     { label: 'Plasticity Accum. total',      metric: 'totalPlasticityAccumulation',       decimals: 4 },
     { label: 'Saturation Risk max',          metric: 'plasticitySaturationRiskMax',       decimals: 3 },
-    { label: 'Ratio Match avg',              metric: 'averageObservedRatioMatchStrength', decimals: 3 },
+    { label: 'Observed Ratio Match avg',     metric: 'averageObservedRatioMatchStrength', decimals: 3 },
     { label: 'Resonance Proxy max',          metric: 'maxEmergentResonanceProxy',         decimals: 3 },
     { label: 'RepeatedFlow Cand. mean',      metric: 'repeatedFlowPathCandidateCountMean', decimals: 1 },
     { label: 'ProtoNetwork Cand. mean',      metric: 'protoNetworkCandidateCountMean',    decimals: 1 },

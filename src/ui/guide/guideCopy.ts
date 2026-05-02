@@ -42,6 +42,9 @@ export const INTEGRITY_NOTES: readonly string[] = [
     'Proto-network candidates are pre-semantic observations, not knowledge graphs.',
     'External LLM guide is inactive. All explanations are rule-based and local.',
     'Raw / Derived / Proxy / Presentation-smoothed values are distinct. Check valueKind labels.',
+    'Phase is mathematical phase, not emotion or meaning.',
+    'Weak plasticity trace is a small resistance-history proxy, not memory or learned knowledge.',
+    'Reference-ratio proximity is a comparison result only, not a causal proof.',
 ] as const;
 
 // ── Full glossary ──────────────────────────────────────────────────────────────
@@ -120,6 +123,11 @@ export const FULL_GLOSSARY: readonly GuideGlossaryHint[] = [
         valueKind: 'check',
     },
     {
+        term: 'Measured',
+        shortDefinition: 'Directly observed value read from a current buffer or observer state.',
+        valueKind: 'measured',
+    },
+    {
         term: 'Raw',
         shortDefinition: 'Values read directly from field buffers without transformation.',
         valueKind: 'measured',
@@ -135,9 +143,49 @@ export const FULL_GLOSSARY: readonly GuideGlossaryHint[] = [
         valueKind: 'proxy',
     },
     {
+        term: 'Check',
+        shortDefinition: 'Integrity or consistency check used to catch NaN / Infinity, charge balance drift, or inactive guards.',
+        valueKind: 'check',
+    },
+    {
         term: 'Presentation-smoothed',
         shortDefinition: 'Values that have been temporally smoothed for display legibility. Labelled [S] in the UI. Does not affect underlying field values.',
         valueKind: 'presentation-smoothed',
+    },
+    {
+        term: 'Reference',
+        shortDefinition: 'Comparison-only value used to contextualize observed ratios. It is not a causal ingredient in runtime dynamics.',
+        valueKind: 'check',
+    },
+    {
+        term: 'Vortex Candidate',
+        shortDefinition: 'Observer-side phase-defect candidate derived from complex-field phase winding. It is not a memory object or consciousness marker.',
+        valueKind: 'proxy',
+    },
+    {
+        term: 'Signed Total Charge',
+        shortDefinition: 'Topological check over observed vortex charges. It is used to monitor consistency, not to infer meaning.',
+        valueKind: 'check',
+    },
+    {
+        term: 'Observed Ratio',
+        shortDefinition: 'Derived ratio from current observation states such as amplitude, closure timing, or phase coherence.',
+        valueKind: 'derived',
+    },
+    {
+        term: 'Reference Ratio',
+        shortDefinition: 'Comparison-only ratio drawn from a static reference set. It does not enter core dynamics.',
+        valueKind: 'check',
+    },
+    {
+        term: 'Match Strength',
+        shortDefinition: 'Proxy score describing how close an observed ratio is to a reference ratio within a tolerance band.',
+        valueKind: 'proxy',
+    },
+    {
+        term: 'Emergent Resonance Proxy',
+        shortDefinition: 'Observer-side similarity proxy over top reference matches. It is not proof of meaning, life, consciousness, or healing.',
+        valueKind: 'proxy',
     },
 ] as const;
 

@@ -313,7 +313,14 @@ export function updateNowSummary(nowSummaryState) {
 
     if (container && nowSummaryState.lines) {
         container.innerHTML = nowSummaryState.lines.map(line => {
-            const kind = line.valueKind ? `<span class="now-summary-kind">[${line.valueKind}]</span>` : '';
+            const label = line.valueKind
+                ? line.valueKind === 'presentation-smoothed'
+                    ? 'Presentation-smoothed'
+                    : `${line.valueKind.charAt(0).toUpperCase()}${line.valueKind.slice(1)}`
+                : '';
+            const kind = line.valueKind
+                ? `<span class="now-summary-kind" data-kind="${line.valueKind}" title="${label}">${label}</span>`
+                : '';
             return `<div class="now-summary-line" data-priority="${line.priority}">${_escapeHtml(line.text)}${kind}</div>`;
         }).join('');
     }
