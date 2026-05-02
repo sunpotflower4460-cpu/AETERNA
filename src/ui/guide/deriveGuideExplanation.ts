@@ -54,6 +54,8 @@ function asNum(v: number | string | null): number | null {
     return null;
 }
 
+const MAX_EXPLANATION_LINES = 5;
+
 // ── Current Explanation ────────────────────────────────────────────────────────
 
 function buildCurrentExplanation(snapshot: ExplainableObservationSnapshot): string[] {
@@ -79,7 +81,7 @@ function buildCurrentExplanation(snapshot: ExplainableObservationSnapshot): stri
         for (const line of nowSummary.lines.slice(0, 4)) {
             lines.push(line.text);
         }
-        return lines.slice(0, 5);
+        return lines.slice(0, MAX_EXPLANATION_LINES);
     }
 
     // Fallback: build from overview metrics
@@ -122,13 +124,13 @@ function buildCurrentExplanation(snapshot: ExplainableObservationSnapshot): stri
             lines.push(`Overall field status: ${overview.overallStatus}.`);
             lines.push('Observation data is present but no notable conditions detected.');
         }
-        return lines.slice(0, 5);
+        return lines.slice(0, MAX_EXPLANATION_LINES);
     }
 
     // No data at all
     lines.push('Observation data is not yet available.');
     lines.push('Allow the simulation to run for a few seconds, then try again.');
-    return lines.slice(0, 5);
+    return lines.slice(0, MAX_EXPLANATION_LINES);
 }
 
 // ── What to Look At ────────────────────────────────────────────────────────────

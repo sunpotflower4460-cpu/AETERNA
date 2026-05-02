@@ -313,11 +313,7 @@ export function updateNowSummary(nowSummaryState) {
 
     if (container && nowSummaryState.lines) {
         container.innerHTML = nowSummaryState.lines.map(line => {
-            const label = line.valueKind
-                ? line.valueKind === 'presentation-smoothed'
-                    ? 'Presentation-smoothed'
-                    : `${line.valueKind.charAt(0).toUpperCase()}${line.valueKind.slice(1)}`
-                : '';
+            const label = line.valueKind ? formatValueKindLabel(line.valueKind) : '';
             const kind = line.valueKind
                 ? `<span class="now-summary-kind" data-kind="${line.valueKind}" title="${label}">${label}</span>`
                 : '';
@@ -352,3 +348,4 @@ window.filterEventTimeline  = filterEventTimeline;
 window.updateNowSummary     = updateNowSummary;
 window.updateEventTimeline  = updateEventTimeline;
 window.setExplainSnapshot   = setExplainSnapshot;
+import { formatValueKindLabel } from '../natural/ValueKindBadge.tsx';

@@ -164,3 +164,8 @@ export const NATURAL_VALUE_KIND_ROW_MAP: Record<string, ValueKindRowMeta> = {
 export function getValueKindDefinition(kind: ValueKind): ValueKindDefinition {
     return VALUE_KIND_DEFINITIONS[kind];
 }
+
+export function formatValueKindLabel(kind: ValueKind | string): string {
+    if (kind === 'presentation-smoothed') return 'Presentation-smoothed';
+    return `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+}

@@ -1,4 +1,5 @@
 import type { RuntimeModeBadge } from './RuntimeModeBadge.tsx';
+import { formatValueKindLabel } from './ValueKindBadge.tsx';
 import type { ValueKind } from './ValueKindBadge.tsx';
 import type { NaturalWarningItem } from './NaturalWarningList.tsx';
 
@@ -66,7 +67,7 @@ export function renderObservationDashboardHtml(
             `<div class="obd-row${item.subdued ? ' is-subdued' : ''}">`
             + `<div class="obd-row-label">`
             + `${escapeHtml(item.label)}`
-            + `${item.kind ? `<span class="value-kind-badge" data-kind="${item.kind}" title="${escapeHtml(item.kind)}">${escapeHtml(item.kind === 'presentation-smoothed' ? 'Presentation-smoothed' : item.kind.charAt(0).toUpperCase() + item.kind.slice(1))}</span>` : ''}`
+            + `${item.kind ? `<span class="value-kind-badge" data-kind="${item.kind}" title="${escapeHtml(formatValueKindLabel(item.kind))}">${escapeHtml(formatValueKindLabel(item.kind))}</span>` : ''}`
             + `</div>`
             + `<div class="obd-row-value">${escapeHtml(item.value || '—')}</div>`
             + `</div>`

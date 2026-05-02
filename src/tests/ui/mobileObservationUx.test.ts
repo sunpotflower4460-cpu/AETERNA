@@ -6,8 +6,9 @@ const html = readFileSync(resolve(__dirname, '../../../index.html'), 'utf-8');
 
 describe('mobile observation UX polish', () => {
     it('keeps runtime mode badges available on mobile', () => {
+        expect(html).toContain('@media (max-width:768px)');
         expect(html).toContain('#natural-mode-hud { gap: 4px; max-width: calc(100vw - 28px); }');
-        expect(html).not.toContain('@media (max-width:768px) {\n            #natural-mode-hud { display: none; }');
+        expect(html).not.toContain('#natural-mode-hud { display: none; }');
     });
 
     it('renders the observation dashboard container', () => {

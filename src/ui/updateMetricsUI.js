@@ -147,14 +147,14 @@ export function updateMetricsUI(dyn, engineState) {
         UI['row-area-element-range'],
         UI['val-area-element-range'],
         state.network?.torusGeometry
-            ? `${state.network.torusGeometry.minAreaElement.toFixed(4)} .. ${state.network.torusGeometry.maxAreaElement.toFixed(4)}`
+            ? formatRange(state.network.torusGeometry.minAreaElement, state.network.torusGeometry.maxAreaElement, 4)
             : '—',
         !!state.network?.torusGeometry,
     );
     updateUIRow(
         UI['row-gaussian-range'],
         UI['val-gaussian-range'],
-        curvature ? `${curvature.minGaussianCurvature.toFixed(4)} .. ${curvature.maxGaussianCurvature.toFixed(4)}` : '—',
+        curvature ? formatRange(curvature.minGaussianCurvature, curvature.maxGaussianCurvature, 4) : '—',
         !!curvature && (curvature.positiveCurvatureRegionCount > 0 || curvature.negativeCurvatureRegionCount > 0),
     );
     updateUIRow(
