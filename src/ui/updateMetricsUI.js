@@ -545,6 +545,7 @@ export function updateMetricsUI(dyn, engineState) {
     // U5: Derive and update Overview / Now Summary / Event Timeline (every 30 frames)
     if (_ong_totalFrames % 30 === 0) {
         _updateU5(dyn);
+        _updateNaturalModeHud(dyn);
     }
 }
 
@@ -776,4 +777,63 @@ function _updateSystemStateBadge(overallStatus) {
     const badge = document.getElementById('system-state-badge');
     if (!badge) return;
     badge.textContent = _STATUS_LABELS[overallStatus] ?? overallStatus;
+}
+
+// ── N-Series Runtime Mode HUD (v1.0 Stabilization) ────────────────────────────
+
+/**
+ * Updates the N-Series Runtime Mode HUD chips.
+ * Shows which mode configuration is currently active.
+ * This is an observation display — not a runtime claim.
+ *
+ * @param {object} dyn - current dynamics object from the main loop
+ */
+function _updateNaturalModeHud(dyn) {
+    // Metric mode (N1): read from dyn.naturalMetricMode or fall back to 'flat'
+    const metricMode = dyn.naturalMetricMode || (dyn.metricMode) || 'flat';
+    _setNmChip('nm-metric', `Metric: ${metricMode}`, metricMode === 'curved' ? 'research' : null);
+
+    // Field runtime mode (N2)
+    const fieldMode = dyn.naturalFieldRuntimeMode || dyn.fieldRuntimeMode || 'scalar';
+    const fieldData =
+        fieldMode === 'complexRuntime' ? ['complexRuntime', 'experimental'] :
+        fieldMode === 'complexObserver' ? ['complexObserver', 'research'] :
+        ['scalar', null];
+    _setNmChip('nm-field', `Field: ${fieldData[0]}`, fieldData[1]);
+
+    // Membrane mode (N4)
+    const memMode = dyn.naturalMembraneMode || dyn.membraneMode || 'observerOnly';
+    const memDisplay =
+        memMode === 'weakCoupling' ? 'weak' :
+        memMode === 'observerOnly' ? 'observer' :
+        'off';
+    const memLevel = memMode === 'weakCoupling' ? 'experimental' : null;
+    _setNmChip('nm-membrane', `Membrane: ${memDisplay}`, memLevel);
+
+    // Plasticity mode (N5)
+    const plasticityMode = dyn.naturalPlasticityMode || 'off';
+    const plasticityDisplay =
+        plasticityMode === 'resistanceOnly' ? 'resistance' :
+        plasticityMode === 'observeOnly' ? 'observe' :
+        'off';
+    const plasticityLevel = plasticityMode === 'resistanceOnly' ? 'experimental' : null;
+    _setNmChip('nm-plasticity', `Plasticity: ${plasticityDisplay}`, plasticityLevel);
+
+    // External constants mode (N6)
+    const constsMode = dyn.naturalExternalConstantsMode || 'neutral';
+    _setNmChip('nm-constants', `Constants: ${constsMode}`, constsMode === 'legacy' ? 'legacy' : null);
+
+    // Safety mode
+    const safetyMode = dyn.naturalSafetyMode || 'safe';
+    _setNmChip('nm-safety', `Safety: ${safetyMode}`,
+        safetyMode === 'experimental' ? 'experimental' :
+        safetyMode === 'research' ? 'research' : null);
+}
+
+function _setNmChip(id, text, mode) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    if (mode) el.dataset.mode = mode;
+    else delete el.dataset.mode;
 }

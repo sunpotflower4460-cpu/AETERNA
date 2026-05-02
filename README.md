@@ -55,6 +55,27 @@ AETERNA は「揺らぐべきだから揺らす」のではありません。
 - `docs/reafference-comparison-spec.md` — Reafference Comparison の設計境界（雛形）
 - `docs/body-world-closure-metrics.md` — 閉ループ観測指標（雛形）
 
+## AETERNA-NATURAL N-Series
+
+N-series は geometry / complex field / vortex / membrane / weak plasticity / observed ratios / comparison suite を段階的に実装するフェーズ。
+
+- `docs/aeterna-natural-roadmap.md` — N0〜N7 + v1.0 Stabilization ロードマップ
+- `docs/aeterna-natural-v1-stabilization.md` — v1.0 Stabilization 詳細仕様
+- `docs/aeterna-natural-integration-review.md` — N0–N7 統合レビュー
+
+### v1.0 Stabilization (完了)
+
+N0〜N7 実装後のコード・UI・docs・tests を安定化。
+
+新規追加: `AeternaNaturalRuntimeConfig` / 7 presets / safety gate (validateAeternaNaturalConfig) / `NaturalDiagnosticState` / long-run execution profiles / 5 stabilization tests / Runtime Mode HUD
+
+**安全方針:**
+- default config は安全側 (flat / scalar / observerOnly / plasticity off / neutral / safe)
+- complexRuntime / resistanceOnly / weakCoupling は experimental mode のみ
+- observedRatio は runtime feedback に使わない
+- referenceRatios は dynamicCore に import しない
+- No Node bridge, No LLM/API, No semantic claims
+
 ## Development
 
 ```bash
