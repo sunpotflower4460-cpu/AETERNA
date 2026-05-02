@@ -6,6 +6,8 @@
  * This file only manages DOM structure, CSS classes, and display state.
  */
 
+import { formatValueKindLabel } from '../natural/ValueKindBadge.tsx';
+
 // ── State ──────────────────────────────────────────────────────────────────
 
 let _researchPanelOpen = false;
@@ -348,4 +350,3 @@ window.filterEventTimeline  = filterEventTimeline;
 window.updateNowSummary     = updateNowSummary;
 window.updateEventTimeline  = updateEventTimeline;
 window.setExplainSnapshot   = setExplainSnapshot;
-import { formatValueKindLabel } from '../natural/ValueKindBadge.tsx';
