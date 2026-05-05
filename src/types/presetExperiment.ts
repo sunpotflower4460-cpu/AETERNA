@@ -23,10 +23,9 @@ import type { ResearchScenarioId } from './researchScenario.ts';
 // ── PresetExperiment ──────────────────────────────────────────────────────────
 
 /**
- * A concrete, named experiment binding a ResearchScenario to a runtime preset.
- *
- * Each experiment specifies the seed, tick count, and sampling interval
- * needed to reproduce the observation conditions.
+ * A concrete, named experiment referencing a ResearchScenario and a runtime
+ * preset by ID. Each experiment specifies the seed, tick count, and sampling
+ * interval needed to reproduce the observation conditions.
  */
 export interface PresetExperiment {
   /** Unique identifier for this preset experiment */

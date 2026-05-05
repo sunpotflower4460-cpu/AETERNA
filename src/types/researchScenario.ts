@@ -34,9 +34,9 @@ export type ResearchScenarioId =
 /**
  * A reproducible research scenario with explicit observation conditions.
  *
- * Each scenario has a fixed seed, tick count, sampling interval, and set of
- * observation targets. It links to one or more runtime presets and specifies
- * which field layers and panels are most relevant.
+ * Each scenario provides `defaultSeed` as the recommended seed for
+ * reproducibility. Experiments may use this value or a different explicit seed,
+ * but must always record their seed for export.
  *
  * IMPORTANT: expectedObservationKinds lists what to observe — not what will
  * definitely be observed. No emergence is a valid result.
@@ -57,7 +57,7 @@ export interface ResearchScenario {
   /** What the researcher is attempting to measure or observe */
   observationGoal: string;
 
-  /** Default random seed for reproducibility */
+  /** Default random seed — recommended for reproducibility; may be overridden by experiments */
   defaultSeed: number;
 
   /** Default number of ticks to run */

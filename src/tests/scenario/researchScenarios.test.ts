@@ -540,12 +540,14 @@ describe('v1.3 cross-file integrity', () => {
         }
     });
 
-    it('all scenarios seed and experiment seed are consistent (same scenarioId same seed)', () => {
+    it('all experiments use a seed consistent with their scenario defaultSeed', () => {
         for (const s of RESEARCH_SCENARIO_REGISTRY) {
             const exps = getExperimentsForScenario(s.id);
             for (const e of exps) {
-                // Experiments should use the scenario's defaultSeed (or a consistent value)
-                expect(e.seed).toBeGreaterThan(0);
+                // Every experiment for a scenario uses the scenario's defaultSeed
+                // to ensure reproducible cross-experiment comparison within the same scenario.
+                expect(e.seed, `Experiment ${e.id} seed should match scenario ${s.id} defaultSeed`)
+                    .toBe(s.defaultSeed);
             }
         }
     });
