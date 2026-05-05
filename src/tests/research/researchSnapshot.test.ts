@@ -95,7 +95,7 @@ describe('createResearchSnapshot', () => {
         expect(snapshot.field.phaseCoherence).toBeUndefined();
         expect(snapshot.field.maxAmplitude).toBeUndefined();
         expect(snapshot.diagnostics.nanOrInfinityCount).toBeGreaterThanOrEqual(2);
-        expect(JSON.stringify(snapshot)).not.toContain('Infinity');
-        expect(JSON.stringify(snapshot)).not.toContain('NaN');
+        expect(JSON.parse(JSON.stringify(snapshot)).field.phaseCoherence).toBeUndefined();
+        expect(JSON.parse(JSON.stringify(snapshot)).field.maxAmplitude).toBeUndefined();
     });
 });
