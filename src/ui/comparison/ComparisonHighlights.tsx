@@ -6,8 +6,7 @@
  *
  * Principles:
  * - Highlights are observational only — no consciousness / life / mystical proof claims.
- * - Forbidden text: "consciousness increased", "intelligence emerged",
- *   "soul resonance detected", "life was proven".
+ * - Forbidden text includes affirmative mind / life / mystical victory wording.
  * - Every highlight includes its interpretation, which must be neutral.
  *
  * Reference: docs/long-run-comparison-suite.md §7

@@ -301,6 +301,7 @@ describe('exportLongRunComparison', () => {
         const parsed = JSON.parse(json);
         expect(parsed.comparisonName).toBe(result.comparisonName);
         expect(parsed.variantSummaries.length).toBe(result.variantSummaries.length);
+        expect(parsed.diagnostics).toBeDefined();
     });
 
     it('exportLongRunComparisonMarkdown returns a non-empty string', () => {
@@ -315,10 +316,17 @@ describe('exportLongRunComparison', () => {
         const result = runLongRunComparisonSuite(TEST_CONFIG);
         const md = exportLongRunComparisonMarkdown(result);
         expect(md).toContain('Interpretation guardrails');
-        expect(md).toContain('pre-semantic candidate count');
-        expect(md).toContain('observational comparison result');
-        expect(md).toContain('trace residue measure');
-        expect(md).toContain('loop continuity proxy');
+        expect(md).toContain('observation metrics, not proof of consciousness');
+        expect(md).toContain('phase-defect candidates');
+        expect(md).toContain('medium-history proxies');
+        expect(md).toContain('reference comparisons');
+    });
+
+    it('Markdown includes diagnostics section', () => {
+        const result = runLongRunComparisonSuite(TEST_CONFIG);
+        const md = exportLongRunComparisonMarkdown(result);
+        expect(md).toContain('## Diagnostics');
+        expect(md).toContain('NaN / Infinity count');
     });
 });
 
@@ -428,8 +436,8 @@ describe('Language guardrail check', () => {
         const result = runLongRunComparisonSuite(TEST_CONFIG);
         const md = exportLongRunComparisonMarkdown(result);
         for (const term of FORBIDDEN_TERMS) {
-            // 'consciousness' IS expected in guardrail text as "NOT consciousness" — that is allowed
-            if (term === 'consciousness') continue;
+            // Guardrail text may mention forbidden terms in explicit negations.
+            if (term === 'consciousness' || term === 'mystical proof') continue;
             expect(md.toLowerCase()).not.toContain(term.toLowerCase());
         }
     });

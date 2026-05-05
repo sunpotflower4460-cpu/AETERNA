@@ -14,8 +14,12 @@ const sources = [
     read('src/ui/guide/guideCopy.ts'),
     read('src/ui/summary/deriveNowSummary.ts'),
     read('src/ui/comparison/ComparisonHighlights.tsx'),
+    read('src/ui/comparison/LongRunComparisonPanel.tsx'),
     read('src/ui/comparison/VariantSummaryCard.tsx'),
     read('src/ui/natural/ObservationDashboard.tsx'),
+    read('src/research/exportResearchRunMarkdown.ts'),
+    read('src/ui/research/ResearchExportPanel.tsx'),
+    read('src/ui/research/ReproducibilityPanel.tsx'),
 ];
 
 describe('v1.1 observation UX copy guard', () => {
@@ -26,6 +30,9 @@ describe('v1.1 observation UX copy guard', () => {
             'life proved',
             'memory formed',
             'learned meaning',
+            'consciousness proved',
+            'intelligence emerged',
+            'soul resonance',
         ].forEach((term) => {
             expect(joined).not.toContain(term);
         });
@@ -35,6 +42,7 @@ describe('v1.1 observation UX copy guard', () => {
             'proves life',
             'is mystical proof',
             'is healing proof',
+            'healing proof',
         ].forEach((pattern) => {
             expect(joined).not.toContain(pattern);
         });
@@ -45,6 +53,9 @@ describe('v1.1 observation UX copy guard', () => {
         [
             '知性が証明',
             '生命が証明',
+            '知性が生まれた',
+            '意識が証明',
+            '魂の共鳴',
             '神秘の証明',
             '癒しの証明',
             '記憶しました',

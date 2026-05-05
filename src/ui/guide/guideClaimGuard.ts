@@ -54,6 +54,12 @@ const FORBIDDEN_EN: readonly string[] = [
     'intention',
     'learned meaning',
     'memory formed',
+    'consciousness proved',
+    'life proved',
+    'intelligence emerged',
+    'soul resonance',
+    'mystical proof',
+    'healing proof',
     'has consciousness',
     'is conscious',
     'is sentient',
@@ -96,6 +102,12 @@ const FORBIDDEN_JA: readonly string[] = [
     '意図',
     '意味を学習',
     '記憶しました',
+    '意識が証明',
+    '生命が証明',
+    '知性が生まれた',
+    '魂の共鳴',
+    '神秘の証明',
+    '癒しの証明',
 ] as const;
 
 // ── Replacement phrase ─────────────────────────────────────────────────────────
