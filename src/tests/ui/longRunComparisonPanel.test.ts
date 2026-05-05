@@ -25,6 +25,8 @@ import {
     getVariantStatusLines,
     exportResultJson,
     exportResultMarkdown,
+    getComparisonExportWarnings,
+    copyComparisonSummary,
     DEFAULT_PANEL_CONFIG,
 } from '../../ui/comparison/LongRunComparisonPanel.js';
 import {
@@ -171,6 +173,18 @@ describe('Panel export helpers', () => {
         expect(md).not.toBeNull();
         expect(typeof md).toBe('string');
         expect(md!.length).toBeGreaterThan(0);
+    });
+
+    it('getComparisonExportWarnings returns summary export note', () => {
+        const state = createComparisonPanelState(TEST_CONFIG);
+        const completed = runComparisonFromPanel(state);
+        expect(getComparisonExportWarnings(completed).some((line) => line.includes('Summary export only'))).toBe(true);
+    });
+
+    it('copyComparisonSummary returns observational summary text after a run', () => {
+        const state = createComparisonPanelState(TEST_CONFIG);
+        const completed = runComparisonFromPanel(state);
+        expect(copyComparisonSummary(completed)).toContain('comparison=');
     });
 });
 

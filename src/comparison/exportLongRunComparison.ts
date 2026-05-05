@@ -22,6 +22,11 @@ import type {
     LongRunVariantSummary,
     LongRunDifferenceHighlight,
 } from '../types/longRunComparison.ts';
+import {
+    RESEARCH_INTERPRETATION_GUARDRAILS_EN,
+    RESEARCH_INTERPRETATION_GUARDRAILS_JA,
+    sanitizeResearchTextLines,
+} from '../research/researchGuardrails.ts';
 
 // ── JSON export ────────────────────────────────────────────────────────────────
 
@@ -30,7 +35,14 @@ import type {
  * Suitable for writing to a file or sending over a network.
  */
 export function exportLongRunComparisonJson(result: LongRunComparisonResult): string {
-    return JSON.stringify(result, null, 2);
+    const diagnostics = summarizeDiagnostics(result);
+    return JSON.stringify({
+        schemaVersion: 'aeterna-natural.long-run-comparison.v1.2',
+        ...result,
+        diagnostics,
+        interpretationGuardrails: [...RESEARCH_INTERPRETATION_GUARDRAILS_EN],
+        interpretationGuardrailsJa: [...RESEARCH_INTERPRETATION_GUARDRAILS_JA],
+    }, null, 2);
 }
 
 // ── Markdown export ────────────────────────────────────────────────────────────
@@ -59,16 +71,21 @@ function fmt(v: number, decimals = 3): string {
  */
 export function exportLongRunComparisonMarkdown(result: LongRunComparisonResult): string {
     const lines: string[] = [];
+    const diagnostics = summarizeDiagnostics(result);
 
     // Header
     lines.push(`# Long-Run Comparison Suite: ${result.comparisonName}`);
     lines.push('');
     lines.push('> **Interpretation guardrails**');
-    lines.push('> - High vortex count is a pre-semantic candidate count, not an emergence proof.');
-    lines.push('> - High observed ratio match strength is an observational comparison result, not a proof of resonance.');
-    lines.push('> - High plasticity accumulation is a trace residue measure, not semantic storage.');
-    lines.push('> - High closure stability is a loop continuity proxy, not a self-awareness indicator.');
-    lines.push('> - Absence of emergence is a valid observation, not a failure.');
+    for (const line of RESEARCH_INTERPRETATION_GUARDRAILS_EN) {
+        lines.push(`> - ${line}`);
+    }
+    lines.push('> - Strongest / weakest labels are metric-local comparison labels, not winner labels.');
+    lines.push('');
+    lines.push('> **解釈ガード**');
+    for (const line of RESEARCH_INTERPRETATION_GUARDRAILS_JA) {
+        lines.push(`> - ${line}`);
+    }
     lines.push('');
 
     // Metadata
@@ -108,12 +125,19 @@ export function exportLongRunComparisonMarkdown(result: LongRunComparisonResult)
         lines.push('');
         for (const s of variantsWithNotes) {
             lines.push(`### ${s.label}`);
-            for (const note of s.notes) {
+            for (const note of sanitizeResearchTextLines(s.notes)) {
                 lines.push(`- ${note}`);
             }
             lines.push('');
         }
     }
+
+    lines.push('## Diagnostics');
+    lines.push('');
+    lines.push(`- Semantic leak count: ${diagnostics.semanticLeakCount}`);
+    lines.push(`- NaN / Infinity count: ${diagnostics.nanOrInfinityCount}`);
+    lines.push(`- Variants with warnings: ${diagnostics.variantsWithWarnings.length > 0 ? diagnostics.variantsWithWarnings.join(', ') : 'none'}`);
+    lines.push('');
 
     // Footer
     lines.push('---');
@@ -171,7 +195,22 @@ function formatHighlight(h: LongRunDifferenceHighlight): string {
         `- Strongest: \`${h.strongestVariantId}\``,
         `- Weakest: \`${h.weakestVariantId}\``,
         `- Difference magnitude: ${fmt(h.differenceMagnitude)}`,
-        `- ${h.interpretation}`,
+        `- ${sanitizeResearchTextLines([h.interpretation])[0] ?? 'Observation-only comparison.'}`,
+        '- Read strongest / weakest as metric-local comparison labels only.',
         '',
     ].join('\n');
+}
+
+function summarizeDiagnostics(result: LongRunComparisonResult): {
+    semanticLeakCount: number;
+    nanOrInfinityCount: number;
+    variantsWithWarnings: string[];
+} {
+    return {
+        semanticLeakCount: result.variantSummaries.reduce((sum, summary) => sum + summary.semanticLeakCount, 0),
+        nanOrInfinityCount: result.variantSummaries.reduce((sum, summary) => sum + summary.nanOrInfinityCount, 0),
+        variantsWithWarnings: result.variantSummaries
+            .filter((summary) => summary.notes.length > 0 || summary.semanticLeakCount > 0 || summary.nanOrInfinityCount > 0)
+            .map((summary) => summary.label),
+    };
 }

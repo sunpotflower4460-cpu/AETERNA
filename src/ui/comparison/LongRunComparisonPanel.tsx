@@ -153,6 +153,41 @@ export function exportResultMarkdown(state: LongRunComparisonPanelState): string
     return exportLongRunComparisonMarkdown(state.result);
 }
 
+/**
+ * Export-facing warnings for diagnostics / research panels.
+ */
+export function getComparisonExportWarnings(state: LongRunComparisonPanelState): string[] {
+    if (!state.result) return ['Run a comparison to enable export diagnostics.'];
+    const warnings: string[] = [
+        'Summary export only — raw field data is not included.',
+    ];
+    const totalSemanticLeakCount = state.result.variantSummaries
+        .reduce((sum, summary) => sum + summary.semanticLeakCount, 0);
+    const totalNanOrInfinityCount = state.result.variantSummaries
+        .reduce((sum, summary) => sum + summary.nanOrInfinityCount, 0);
+    if (totalSemanticLeakCount > 0) {
+        warnings.push(`Semantic leak warnings: ${totalSemanticLeakCount}`);
+    }
+    if (totalNanOrInfinityCount > 0) {
+        warnings.push(`NaN / Infinity warnings: ${totalNanOrInfinityCount}`);
+    }
+    return warnings;
+}
+
+/**
+ * Copy-ready observational summary text.
+ */
+export function copyComparisonSummary(state: LongRunComparisonPanelState): string | null {
+    if (!state.result) return null;
+    return [
+        `comparison=${state.result.comparisonName}`,
+        `seed=${state.result.seed}`,
+        `scenario=${state.result.scenarioId}`,
+        `ticks=${state.result.ticks}`,
+        `variants=${state.result.variantSummaries.length}`,
+    ].join(' ');
+}
+
 // ── Safety summary ─────────────────────────────────────────────────────────────
 
 /**
