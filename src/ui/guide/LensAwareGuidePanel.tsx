@@ -81,9 +81,9 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
     </div>
   </div>
   <div class="lens-aware-guide-panel__shortcuts">
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
+    <button aria-label="これなに？ — 説明を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
+    <button aria-label="次どこ見る？ — 次の観測先を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
+    <button aria-label="注意点は？ — 注意点を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
   </div>
   <div class="lens-aware-guide-panel__mode-tabs">
     ${modeTabsHtml}

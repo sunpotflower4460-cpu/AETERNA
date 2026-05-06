@@ -41,6 +41,7 @@ const RELATION_KIND_LABELS: Record<string, string> = {
     possible: 'possible',
     related:  'related',
     nearby:   'nearby',
+    // 'temporal' is displayed as 'nearby' — both indicate proximity in time/space without causal claim
     temporal: 'nearby',
 };
 

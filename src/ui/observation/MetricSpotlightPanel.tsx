@@ -109,10 +109,10 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
   <p class="metric-spotlight-panel__description">${_esc(lens.description)}</p>
   <p class="metric-spotlight-panel__disclaimer">ℹ️ ${_esc(lens.disclaimer)}</p>
   <div class="metric-spotlight-panel__guide-actions">
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">どう仮説できる？</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
+    <button aria-label="これなに？ — 説明を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
+    <button aria-label="どう仮説できる？ — 仮説を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">どう仮説できる？</button>
+    <button aria-label="次どこ見る？ — 次の観測先を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
+    <button aria-label="注意点は？ — 注意点を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
   </div>
   ${layerSuggestionsHtml}
 </div>`;
