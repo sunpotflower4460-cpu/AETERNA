@@ -176,6 +176,10 @@ export function renderCellInspectorPanelHTML(props: CellInspectorPanelProps): st
     <span class="cell-inspector-panel__title">${_esc(cellLabel)}</span>
     ${replayBadge}
     ${activeLensInfo}
+    <button class="cell-inspector-panel__ask-guide-btn"
+      onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">
+      Ask Guide
+    </button>
   </div>
   <div class="cell-inspector-panel__region">
     Region: <strong>${_esc(regionLabel)}</strong>

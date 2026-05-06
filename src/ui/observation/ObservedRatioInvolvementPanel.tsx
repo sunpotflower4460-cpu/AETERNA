@@ -99,5 +99,8 @@ export function renderObservedRatioInvolvementPanelHTML(props: ObservedRatioInvo
   <div class="ratio-involvement-panel__items">
     ${itemsHtml}
   </div>
+  <div class="ratio-involvement-panel__guide-actions">
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'What does this ratio mean?',mode:'explain'}}))">What does this ratio mean?</button>
+  </div>
 </div>`;
 }

@@ -112,5 +112,9 @@ ${possibleContributingSignals.map(renderSignalHTML).join('\n')}
     <div class="causal-trace-panel__cautions-title">Cautions</div>
     <ul class="causal-trace-panel__cautions-list">${cautionsHtml}</ul>
   </div>
+  <div class="causal-trace-panel__guide-actions">
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Explain relation',mode:'explain'}}))">Explain relation</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Is this causal?',mode:'caution'}}))">Is this causal?</button>
+  </div>
 </div>`;
 }
