@@ -98,6 +98,10 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
   </div>
   <p class="metric-spotlight-panel__description">${_esc(lens.description)}</p>
   <p class="metric-spotlight-panel__disclaimer">ℹ️ ${_esc(lens.disclaimer)}</p>
+  <div class="metric-spotlight-panel__guide-actions">
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'What is this?',mode:'explain'}}))">What is this?</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">Hypothesize</button>
+  </div>
   ${layerSuggestionsHtml}
 </div>`;
 }

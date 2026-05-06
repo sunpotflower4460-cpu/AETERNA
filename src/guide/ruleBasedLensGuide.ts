@@ -1,6 +1,6 @@
 /**
  * ruleBasedLensGuide.ts
- * v1.8: Causal Trace / Layer Correlation (updated from v1.7)
+ * v1.9: Lens-aware AI Guide (updated from v1.8)
  *
  * Provides simple rule-based guide text for the active Metric Visual Lens,
  * with replay context awareness.
@@ -18,10 +18,12 @@
  * - Guide text MUST NOT claim AETERNA is remembering, thinking, or feeling.
  *
  * Reference: docs/deep-inspector-time-replay.md §11, §16
+ * Reference: docs/lens-aware-ai-guide.md
  */
 
 import type { MetricLensId } from '../ui/lens/metricLensRegistry.ts';
 import type { ReplayModeState } from '../types/timeReplay.ts';
+import type { LensGuideRequest, LensGuideResponse } from './lensGuideTypes.ts';
 
 // ── LensGuideContext ──────────────────────────────────────────────────────────
 
@@ -222,4 +224,209 @@ export function deriveRuleBasedLensGuide(ctx: LensGuideContext): LensGuideResult
     }
 
     return { lines, replayNotice, epistemicNote, causalTraceLines };
+}
+
+// ── answerLensGuideRequest ────────────────────────────────────────────────────
+
+// Lens suggestions keyed by activeLensId
+const LENS_NEXT_SUGGESTIONS: Partial<Record<MetricLensId, MetricLensId[]>> = {
+    vortexConfidence:     ['phaseCoherence', 'fieldPhase', 'topologicalCharge'],
+    phaseCoherence:       ['fieldPhase', 'vortexConfidence', 'fieldAmplitude'],
+    fieldPhase:           ['phaseCoherence', 'vortexConfidence', 'fieldAmplitude'],
+    fieldAmplitude:       ['flowContinuity', 'energyThroughput', 'phaseCoherence'],
+    topologicalCharge:    ['vortexConfidence', 'fieldPhase', 'phaseCoherence'],
+    plasticityTrace:      ['resistanceScale', 'vortexConfidence', 'fieldAmplitude'],
+    resistanceScale:      ['plasticityTrace', 'fieldAmplitude', 'membraneDeformation'],
+    membraneDeformation:  ['membraneTension', 'membranePermeability', 'twoSidedness'],
+    membraneTension:      ['membraneDeformation', 'membranePermeability', 'twoSidedness'],
+    membranePermeability: ['membraneDeformation', 'membraneTension', 'twoSidedness'],
+    observedRatioMatch:   ['vortexConfidence', 'phaseCoherence', 'plasticityTrace'],
+    gaussianCurvature:    ['areaElement', 'innerOuterBias', 'fieldAmplitude'],
+    flowContinuity:       ['energyThroughput', 'fieldAmplitude', 'phaseCoherence'],
+    energyThroughput:     ['flowContinuity', 'fieldAmplitude', 'vortexConfidence'],
+};
+
+const DEFAULT_NEXT_LENSES: MetricLensId[] = [
+    'vortexConfidence', 'phaseCoherence', 'fieldPhase', 'plasticityTrace', 'observedRatioMatch',
+];
+
+function _getNextLenses(activeLensId: string | null | undefined): string[] {
+    if (activeLensId) {
+        const suggestions = LENS_NEXT_SUGGESTIONS[activeLensId as MetricLensId];
+        if (suggestions && suggestions.length > 0) return suggestions;
+    }
+    return DEFAULT_NEXT_LENSES;
+}
+
+/**
+ * Answer a LensGuideRequest using rule-based logic.
+ *
+ * Handles 5 modes: explain, hypothesis, compare, caution, nextObservation.
+ * No LLM is called. No runtime state is modified.
+ *
+ * @param request - LensGuideRequest
+ * @returns LensGuideResponse
+ */
+export function answerLensGuideRequest(request: LensGuideRequest): LensGuideResponse {
+    const { mode, lensContext, guideContext } = request;
+    const activeLensId = lensContext.activeLens?.id ?? null;
+    const lensLabel = lensContext.activeLens?.label ?? 'full cell overview';
+    const lensDisclaimer = lensContext.activeLens?.disclaimer ?? 'Multiple observer-side metrics shown.';
+    const usedContextKinds: string[] = ['lensContext'];
+    if (guideContext) usedContextKinds.push('guideContext');
+
+    const observationFacts: string[] = guideContext?.observationFacts?.length
+        ? guideContext.observationFacts
+        : [lensContext.contextSummary];
+
+    const base = {
+        confidence: 0.7,
+        usedContextKinds,
+        claimGuardPassed: true as const,
+        blockedClaims: [] as string[],
+    };
+
+    switch (mode) {
+        case 'explain': {
+            const lensDesc = LENS_GUIDE_LINES[activeLensId as MetricLensId]?.[0] ?? 'Observer-side metric.';
+            return {
+                ...base,
+                mode,
+                answer: `現在見ているもの: ${lensLabel}. ${lensDesc}`,
+                observationFacts,
+                hypothesisCandidates: [],
+                comparisonNotes: [],
+                cautionNotes: [
+                    'All values are observer-side measurements. High or low values are not evidence for consciousness or intelligence.',
+                    lensDisclaimer,
+                ],
+                suggestedNextLenses: _getNextLenses(activeLensId),
+                suggestedNextPanels: ['Cell Inspector', 'Metric Spotlight'],
+            };
+        }
+
+        case 'hypothesis': {
+            const facts = guideContext?.observationFacts ?? observationFacts;
+            const hypothesisCandidates: string[] = [];
+            if (facts.length > 0) {
+                const f0 = facts[0];
+                hypothesisCandidates.push(
+                    `${f0} — if elevated, phase structure may be temporarily organized in this region. This is a hypothesis candidate, not a conclusion.`,
+                );
+            }
+            if (facts.length > 1) {
+                hypothesisCandidates.push(
+                    `${facts[1]} — co-variation with neighboring metrics may indicate transient local coupling. This is a hypothesis candidate, not a conclusion.`,
+                );
+            }
+            hypothesisCandidates.push(
+                'These are hypothesis candidates only, not conclusions.',
+            );
+            return {
+                ...base,
+                mode,
+                answer: '観測事実から弱い仮説候補を提示します。These are hypothesis candidates only, not conclusions.',
+                observationFacts,
+                hypothesisCandidates,
+                comparisonNotes: [],
+                cautionNotes: [
+                    'Hypotheses are not proof.',
+                    'Causal Trace is not causal proof.',
+                    'Proxy metrics are not direct measurements.',
+                ],
+                suggestedNextLenses: ['vortexConfidence', 'phaseCoherence', 'fieldPhase'],
+                suggestedNextPanels: ['Causal Trace', 'Difference View'],
+            };
+        }
+
+        case 'compare': {
+            const diffSummary = guideContext?.differenceSummary ?? [];
+            const corrSummary = guideContext?.layerCorrelationSummary ?? [];
+            const replaySummary = guideContext?.replaySummary;
+            const comparisonNotes: string[] = [
+                ...diffSummary,
+                ...corrSummary,
+            ];
+            if (replaySummary?.isReplayMode) {
+                comparisonNotes.push(
+                    `Replay mode: tick ${replaySummary.replayTick ?? '?'} vs live tick ${replaySummary.liveTick ?? '?'}.`,
+                );
+            }
+            return {
+                ...base,
+                mode,
+                answer: 'Comparing replay / difference / layer correlation data.',
+                observationFacts,
+                hypothesisCandidates: [],
+                comparisonNotes,
+                cautionNotes: [
+                    'Comparison shows before/after snapshots.',
+                    'Correlation is not causation.',
+                    'Sample size may be small.',
+                ],
+                suggestedNextLenses: [],
+                suggestedNextPanels: ['Difference View', 'Layer Correlation', 'Time Replay'],
+            };
+        }
+
+        case 'caution': {
+            return {
+                ...base,
+                mode,
+                answer: 'このメトリクスについての注意点を示します。',
+                observationFacts,
+                hypothesisCandidates: [],
+                comparisonNotes: [],
+                cautionNotes: [
+                    'This value is an observer-side measurement or proxy.',
+                    'Proxy metrics are NOT direct proof of any phenomenon.',
+                    'Causal Trace shows possible contributing signals, not causal proof.',
+                    'Correlation between metrics is not evidence of causation.',
+                    'No claims about consciousness, life, or intelligence can be made from these observations.',
+                ],
+                suggestedNextLenses: [],
+                suggestedNextPanels: ['Causal Trace', 'Metric Spotlight'],
+            };
+        }
+
+        case 'nextObservation': {
+            const nextLenses = _getNextLenses(activeLensId);
+            const nextPanels: string[] = [];
+            if (guideContext?.causalTraceSummary?.length) nextPanels.push('Causal Trace');
+            if (guideContext?.layerCorrelationSummary?.length) nextPanels.push('Layer Correlation');
+            if (guideContext?.differenceSummary?.length) nextPanels.push('Difference View');
+            if (guideContext?.replaySummary?.isReplayMode) nextPanels.push('Time Replay');
+            if (nextPanels.length === 0) nextPanels.push('Cell Inspector', 'Metric Spotlight', 'Causal Trace');
+            return {
+                ...base,
+                mode,
+                answer: '次に見るとよいもの:',
+                observationFacts,
+                hypothesisCandidates: [],
+                comparisonNotes: [],
+                cautionNotes: [
+                    'These are suggestions only. Observation order does not affect runtime.',
+                ],
+                suggestedNextLenses: nextLenses,
+                suggestedNextPanels: nextPanels,
+            };
+        }
+
+        default: {
+            return {
+                ...base,
+                mode: 'explain' as const,
+                answer: `現在見ているもの: ${lensLabel}.`,
+                observationFacts,
+                hypothesisCandidates: [],
+                comparisonNotes: [],
+                cautionNotes: [
+                    'All values are observer-side measurements.',
+                    lensDisclaimer,
+                ],
+                suggestedNextLenses: _getNextLenses(activeLensId),
+                suggestedNextPanels: ['Cell Inspector', 'Metric Spotlight'],
+            };
+        }
+    }
 }
