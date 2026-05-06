@@ -196,9 +196,11 @@ function _renderEventsTab(
     const items = recentEvents.map((ev) => {
         const text = ev.text ?? `Event ${ev.id}`;
         const kind = ev.kind ? `<span class="inspector-drawer__event-kind">${_esc(ev.kind)}</span>` : '';
+        // Coerce tick to a safe integer; guard against NaN from unexpected runtime values.
+        const safeTick = Number.isFinite(Number(ev.tick)) ? Math.trunc(Number(ev.tick)) : 0;
         return `<div class="inspector-drawer__event" data-event-id="${_esc(ev.id)}"
-    onclick="window.dispatchEvent(new CustomEvent('inspector:eventClick',{detail:{eventId:'${_esc(ev.id)}',tick:${Number(ev.tick)}}}))">
-    <span class="inspector-drawer__event-tick">tick ${_esc(String(ev.tick))}</span>
+    onclick="window.dispatchEvent(new CustomEvent('inspector:eventClick',{detail:{eventId:'${_esc(ev.id)}',tick:${safeTick}}}))">
+    <span class="inspector-drawer__event-tick">tick ${_esc(String(safeTick))}</span>
     ${kind}
     <span class="inspector-drawer__event-text">${_esc(text)}</span>
   </div>`;

@@ -57,7 +57,7 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
     const safetyBadge   = _renderSafetyBadge(safetyMode);
     const modeBadge     = _renderModeBadge(isReplayMode, liveTick, replayTick);
     const replayNote    = isReplayMode
-        ? `<p class="observation-header__replay-note">
+        ? `<p class="observation-header__replay-note" role="alert" aria-live="polite">
     Replay Mode は記録された観測 snapshot を表示しています。runtime 自体が過去に戻ったわけではありません。
   </p>`
         : '';
