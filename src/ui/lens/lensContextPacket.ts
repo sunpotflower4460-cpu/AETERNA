@@ -1,6 +1,6 @@
 /**
  * lensContextPacket.ts
- * v1.6: Super Observation Architecture — Lens Context Packet
+ * v1.8: Causal Trace / Layer Correlation (updated from v1.6)
  *
  * Defines the LensContextPacket type: a structured context bundle
  * produced when a cell and/or metric lens is selected.
@@ -63,6 +63,24 @@ export interface LensContextPacket {
      * Pulled from the lens disclaimer or a generic note.
      */
     epistemicNote: string;
+
+    /** Whether the UI is currently in Replay Mode */
+    isReplayMode?: boolean;
+    /** The tick being replayed (null if live) */
+    replayTick?: number;
+    /** The current live tick */
+    liveTick?: number;
+    /** Whether causal trace is available for this context */
+    causalTraceAvailable?: boolean;
+    /** Whether layer correlation is available for this context */
+    layerCorrelationAvailable?: boolean;
+    /** Whether difference view is available for this context */
+    differenceViewAvailable?: boolean;
+    /** The ticks being compared in difference view */
+    activeDifferenceTicks?: {
+        beforeTick: number;
+        afterTick: number;
+    } | null;
 }
 
 // ── buildLensContextPacket ────────────────────────────────────────────────────
@@ -73,11 +91,21 @@ export interface LensContextPacket {
  * @param cellObservation - Integrated per-cell observation data
  * @param activeLens      - Currently active MetricLens, or null
  * @param tick            - Current simulation tick (optional)
+ * @param extras          - Optional extra v1.8 fields
  */
 export function buildLensContextPacket(
     cellObservation: CellObservation,
     activeLens: MetricLens | null,
     tick?: number,
+    extras?: {
+        isReplayMode?: boolean;
+        replayTick?: number;
+        liveTick?: number;
+        causalTraceAvailable?: boolean;
+        layerCorrelationAvailable?: boolean;
+        differenceViewAvailable?: boolean;
+        activeDifferenceTicks?: { beforeTick: number; afterTick: number } | null;
+    },
 ): LensContextPacket {
     const { cellIndex, geometry } = cellObservation;
 
@@ -108,6 +136,7 @@ export function buildLensContextPacket(
         highlightedMetricValue,
         contextSummary,
         epistemicNote,
+        ...extras,
     };
 }
 

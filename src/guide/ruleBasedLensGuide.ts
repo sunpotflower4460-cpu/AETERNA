@@ -1,6 +1,6 @@
 /**
  * ruleBasedLensGuide.ts
- * v1.7: Deep Inspector / Time Replay — Rule-Based Lens Guide
+ * v1.8: Causal Trace / Layer Correlation (updated from v1.7)
  *
  * Provides simple rule-based guide text for the active Metric Visual Lens,
  * with replay context awareness.
@@ -41,6 +41,12 @@ export interface LensGuideContext {
     liveTick: number;
     /** Whether a snapshot is available for replayTick */
     snapshotAvailable: boolean;
+    /** Whether causal trace result is available */
+    causalTraceAvailable?: boolean;
+    /** CausalTraceResult summary lines (if available) */
+    causalTraceSummary?: string[];
+    /** CausalTraceResult cautions (if available) */
+    causalTraceCautions?: string[];
 }
 
 // ── LensGuideResult ───────────────────────────────────────────────────────────
@@ -60,6 +66,11 @@ export interface LensGuideResult {
      * Epistemic note for the active lens.
      */
     epistemicNote: string;
+    /**
+     * Causal trace guidance lines (null when no trace available).
+     * When present, always includes "not causal proof" language.
+     */
+    causalTraceLines: string[] | null;
 }
 
 // ── Rule maps ─────────────────────────────────────────────────────────────────
@@ -174,7 +185,7 @@ function deriveReplayNotice(ctx: LensGuideContext): string | null {
  * No LLM is called. No runtime state is modified.
  *
  * @param ctx - LensGuideContext
- * @returns   - LensGuideResult with guide lines, replay notice, and epistemic note
+ * @returns   - LensGuideResult with guide lines, replay notice, epistemic note, and causal trace lines
  */
 export function deriveRuleBasedLensGuide(ctx: LensGuideContext): LensGuideResult {
     const lines: string[] = ctx.activeLensId
@@ -191,5 +202,24 @@ export function deriveRuleBasedLensGuide(ctx: LensGuideContext): LensGuideResult
         'All values are observer-side measurements or proxies. ' +
         'High or low values are not evidence for consciousness, emotion, or intelligence in living systems.';
 
-    return { lines, replayNotice, epistemicNote };
+    // Causal trace lines
+    let causalTraceLines: string[] | null = null;
+    if (ctx.causalTraceAvailable && ctx.causalTraceSummary && ctx.causalTraceSummary.length > 0) {
+        causalTraceLines = [
+            'Possible contributing signals have been identified for this cell and tick.',
+            ...ctx.causalTraceSummary,
+            'This is a possible contributing signal, not causal proof.',
+            'Correlation between metrics is not evidence of causation.',
+        ];
+        if (ctx.causalTraceCautions && ctx.causalTraceCautions.length > 0) {
+            causalTraceLines.push(...ctx.causalTraceCautions);
+        }
+    } else if (ctx.causalTraceAvailable) {
+        causalTraceLines = [
+            'Causal trace is available for this context, but no signals were found.',
+            'This is a possible contributing signal, not causal proof.',
+        ];
+    }
+
+    return { lines, replayNotice, epistemicNote, causalTraceLines };
 }
