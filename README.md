@@ -1,6 +1,73 @@
-# AETERNA
+# AETERNA-NATURAL
 
-AETERNA is a repo for growing a primitive-organism-like brain with ongoing baseline activity rather than a stimulus-only reactive device.
+## What this is
+
+Torus field observation lab.
+
+AETERNA-NATURAL implements a physical-geometry field simulation — torus metric, curvature, complex scalar field, vortex candidates, membrane layer, weak plasticity trace, and observed ratios — and lets you observe the resulting dynamics.
+
+## What this is not
+
+**Not a proof of consciousness, life, intelligence, healing, or mystical truth.**
+
+- Vortex candidates are phase-defect candidates, not minds
+- Weak plasticity traces are medium-history proxies, not semantic memory
+- Observed ratio matches are comparisons, not proof
+- No emergence is a valid observation
+
+## Core observation layers
+
+- **Geometry / curvature** — torus metric, Ricci curvature, curvature-vortex correlation
+- **Complex field / phase** — scalar and complex-mode field, phase coherence
+- **Vortex candidates** — topological charge, signed total charge, lifetime
+- **Membrane layer** — two-sidedness, integrity, boundary exchange
+- **Weak plasticity trace** — accumulation, saturation risk (observation only)
+- **Observed ratios** — ratio match strength, resonance proxy (observer-side only)
+- **Long-run comparison** — reproducible preset variant comparison suite
+
+## Quick start
+
+1. Start Safe Observation (safeBaseline preset + quietBaseline scenario)
+2. Run Quiet Baseline (seed=1000, ticks=2000)
+3. Open Overview panel
+4. Confirm semanticLeakCount = 0 and nanOrInfinityCount = 0
+5. Export as Markdown with seed / config / scenario / ticks
+
+## Safety / integrity
+
+All observation values carry a kind label:
+- **Raw** — direct field output, not smoothed
+- **Derived** — computed from raw values
+- **Proxy** — indirect indicator
+- **Check** — integrity invariant (must be 0 or inactive)
+- **Reference** — baseline for comparison only, never fed back into dynamics
+
+## Research scenarios
+
+Public-safe scenarios:
+- `quietBaseline` — Quiet Baseline (resting-state observation)
+- `singlePulseReturn` — Single Pulse Return
+- `repeatedGentlePulse` — Repeated Gentle Pulse
+- `phaseVortexEmergence` — Phase Vortex Emergence
+- `curvatureBiasObservation` — Curvature Bias Observation
+- `observedRatioSurvey` — Observed Ratio Survey
+
+See `docs/public-research-mode.md` for the full scenario and experiment classification.
+
+## Export / reproducibility
+
+Every export includes:
+- `seed` — random seed for the run
+- `config` — runtime preset configuration
+- `scenario` — scenario definition
+- `ticks` — number of simulation steps
+
+Formats: JSON (machine-readable) and Markdown (human-readable).
+
+## Development status
+
+Research prototype — v1.4 Public Research Mode.  
+See `docs/first-release-notes.md` for current status, limitations, and what not to claim.
 
 ## Current source of truth
 
