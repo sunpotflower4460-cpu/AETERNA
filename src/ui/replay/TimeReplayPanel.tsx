@@ -99,8 +99,8 @@ export function renderTimeReplayPanelHTML(props: TimeReplayPanelProps): string {
 
     const snapshotNote = isReplayMode && !snapshotAvailable
         ? `<p class="time-replay-panel__missing-snapshot">
-    No snapshot available for tick ${currentReplayTick}.
-    Use the slider to select a tick with a recorded snapshot.
+    Snapshot unavailable for tick ${currentReplayTick}.
+    スナップショットが記録されていない tick です。スライダーで別の tick を選択してください。
   </p>`
         : '';
 
@@ -115,6 +115,13 @@ export function renderTimeReplayPanelHTML(props: TimeReplayPanelProps): string {
     <span>Range: tick ${minTick}–${maxTick}</span>
   </div>
   ${sliderHtml}
+  <div class="time-replay-panel__return-to-live-bar">
+    <button class="time-replay-panel__return-btn${isReplayMode ? ' time-replay-panel__return-btn--active' : ''}"
+      onclick="window.dispatchEvent(new CustomEvent('replay:returnToLive'))">
+      ↩ Return to Live
+    </button>
+    ${isReplayMode ? '<span class="time-replay-panel__replay-caution">Replay Mode: 記録された観測 snapshot を表示。runtime は過去に戻りません。</span>' : ''}
+  </div>
   ${snapshotNote}
   ${summaryHtml}
 </div>`;

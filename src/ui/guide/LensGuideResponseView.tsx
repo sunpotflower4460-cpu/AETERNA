@@ -31,6 +31,8 @@ export interface LensGuideResponseViewProps {
  * @param props - LensGuideResponseViewProps
  * @returns HTML string
  */
+const ANSWER_COLLAPSE_THRESHOLD = 200;
+
 export function renderLensGuideResponseViewHTML(props: LensGuideResponseViewProps): string {
   const { response, showClaimGuardNote = true } = props;
 
@@ -51,7 +53,15 @@ export function renderLensGuideResponseViewHTML(props: LensGuideResponseViewProp
     claimGuardPassed,
   } = response;
 
-  const answerHtml = `<div class="lens-guide-response-view__answer">
+  const isLong = answer.length > ANSWER_COLLAPSE_THRESHOLD;
+  const answerHtml = isLong
+    ? `<div class="lens-guide-response-view__answer">
+  <details class="lens-guide-response-view__answer-details">
+    <summary class="lens-guide-response-view__answer-summary">${_esc(answer.substring(0, 80))}…</summary>
+    <p class="lens-guide-response-view__answer-text">${_esc(answer)}</p>
+  </details>
+</div>`
+    : `<div class="lens-guide-response-view__answer">
   <p class="lens-guide-response-view__answer-text">${_esc(answer)}</p>
 </div>`;
 

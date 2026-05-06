@@ -87,7 +87,7 @@ export function renderDifferenceViewPanelHTML(props: DifferenceViewPanelProps): 
 
     const largestSummaryHtml = largestChanges.length > 0
         ? `<div class="diff-view-panel__largest">
-  <div class="diff-view-panel__largest-title">Largest Changes (top ${largestChanges.length})</div>
+  <div class="diff-view-panel__largest-title">Largest Observed Changes (top ${largestChanges.length})</div>
   <ul class="diff-view-panel__largest-list">
     ${largestChanges.map((it) => {
         const d = it.delta !== null
@@ -105,6 +105,9 @@ export function renderDifferenceViewPanelHTML(props: DifferenceViewPanelProps): 
     <span class="diff-view-panel__tick-range">${tickRange}</span>
   </div>
   ${largestSummaryHtml}
+  <div class="diff-view-panel__caution-intro">
+    delta の大きさは「改善」ではありません。観測された変化量です。
+  </div>
   <div class="diff-view-panel__table-container">
     <table class="diff-view-panel__table">
       <thead>

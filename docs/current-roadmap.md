@@ -22,6 +22,7 @@
 - AETERNA-NATURAL v1.7 Deep Inspector / Time Replay ✅ 完了 (2026-05-06)
 - AETERNA-NATURAL v1.8 Causal Trace / Layer Correlation ✅ 完了 (2026-05-06)
 - AETERNA-NATURAL v1.9 Lens-aware AI Guide ✅ 完了 (2026-05-07)
+- AETERNA-NATURAL v2.0 Observation UX Final Polish ✅ 完了 (2026-05-06)
 
 ## Phase 1: 持続する生命場の再確認と安定化
 

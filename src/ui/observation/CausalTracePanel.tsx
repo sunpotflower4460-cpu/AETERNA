@@ -35,6 +35,16 @@ function _esc(s: string | number | undefined | null): string {
         .replace(/"/g, '&quot;');
 }
 
+// ── Relation kind label mapping ───────────────────────────────────────────────
+
+const RELATION_KIND_LABELS: Record<string, string> = {
+    possible: 'possible',
+    related:  'related',
+    nearby:   'nearby',
+    // 'temporal' is displayed as 'nearby' — both indicate proximity in time/space without causal claim
+    temporal: 'nearby',
+};
+
 // ── Signal renderer ───────────────────────────────────────────────────────────
 
 function renderSignalHTML(signal: CausalTraceSignal): string {
@@ -47,10 +57,11 @@ function renderSignalHTML(signal: CausalTraceSignal): string {
     const after = signal.valueAfter !== null && signal.valueAfter !== undefined
         ? _esc(signal.valueAfter.toFixed(4))
         : '—';
+    const kindLabel = RELATION_KIND_LABELS[signal.relationKind] ?? signal.relationKind;
 
     return `<li class="causal-trace-panel__signal causal-trace-panel__signal--${_esc(signal.confidence)}">
   <span class="causal-trace-panel__signal-label">${_esc(signal.label)}</span>
-  <span class="causal-trace-panel__signal-kind">[${_esc(signal.relationKind)}]</span>
+  <span class="causal-trace-panel__signal-kind causal-trace-panel__signal-kind--${_esc(signal.relationKind)}">[${_esc(kindLabel)}]</span>
   <span class="causal-trace-panel__signal-values">before: ${before} → after: ${after}${_esc(delta)}</span>
   <span class="causal-trace-panel__signal-confidence">confidence: ${_esc(signal.confidence)}</span>
   <span class="causal-trace-panel__signal-caution">${_esc(signal.caution)}</span>
@@ -105,7 +116,7 @@ ${possibleContributingSignals.map(renderSignalHTML).join('\n')}
   ${disclaimer}
   <div class="causal-trace-panel__summary">${summaryHtml}</div>
   <div class="causal-trace-panel__signals">
-    <div class="causal-trace-panel__signals-title">Possible Contributing Signals</div>
+    <div class="causal-trace-panel__signals-title">Possible Contributing Signals <span class="causal-trace-panel__signals-note">(possible · related · nearby — not causal proof)</span></div>
     ${signalsHtml}
   </div>
   <div class="causal-trace-panel__cautions">
