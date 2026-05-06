@@ -100,7 +100,10 @@ These claims are not supported by the observations and violate the research inte
 
 Planned for future versions (not yet implemented):
 
-- **v1.5**: Enhanced observation dashboard with sparkline history
+- **v1.5**: App Packaging / Deployment Readiness ✅ 完了 (2026-05-06)
+  - ReleaseEnvironmentConfig, validateReleaseSafety, release check script
+  - AppErrorBoundary, FallbackScreen, SafeResetButton
+  - PublicBuildInfo, deployment docs, manual release checklist
 - **v2.0**: Proto-network candidate observation (natural emergence only)
 - **v2.x**: Body-world closure metrics
 - **v3.x**: Reafference comparison and actuation pulse observation

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint 'src/**/*.ts'",
     "test:run": "vitest run",
-    "compare:longrun": "tsx src/comparison/runLongRunComparisonCli.ts"
+    "compare:longrun": "tsx src/comparison/runLongRunComparisonCli.ts",
+    "check:release": "tsx scripts/run-release-checks.ts"
   },
   "dependencies": {
     "three": "^0.170.0"
