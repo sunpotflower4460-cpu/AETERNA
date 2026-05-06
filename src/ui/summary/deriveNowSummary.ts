@@ -454,7 +454,7 @@ export function deriveNowSummary(params: DeriveNowSummaryParams): NowSummaryStat
             candidates.push({
                 id: 'plasticityTrace',
                 priority: 6,
-                text: `Weak plasticity traces are accumulating slowly in the medium.${ablationNote}${modeNote} This is not semantic memory or learned knowledge.`,
+                text: `Weak plasticity traces are accumulating slowly in the medium.${ablationNote}${modeNote} This is not semantic memory or encoded prior knowledge.`,
                 source: 'WeakPlasticityObservationState.totalAccumulation',
                 valueKind: 'proxy',
             });

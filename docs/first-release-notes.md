@@ -104,8 +104,20 @@ Planned for future versions (not yet implemented):
   - ReleaseEnvironmentConfig, validateReleaseSafety, release check script
   - AppErrorBoundary, FallbackScreen, SafeResetButton
   - PublicBuildInfo, deployment docs, manual release checklist
-- **v2.0**: Proto-network candidate observation (natural emergence only)
-- **v2.x**: Body-world closure metrics
+- **v1.6–v2.0**: Super Observation Architecture → Observation UX Final Polish ✅ 完了 (2026-05-06)
+  - Super Observation Architecture (v1.6): CellObservation, MetricLensRegistry (17 lenses)
+  - Deep Inspector / Time Replay (v1.7): TimeReplayBuffer, CellInspectorPanel, ReplaySlider
+  - Causal Trace / Layer Correlation (v1.8): CausalTracePanel, LayerCorrelationPanel, DifferenceViewPanel
+  - Lens-aware AI Guide (v1.9): LensAwareGuidePanel, ruleBasedLensGuide, guardLensGuideResponse
+  - Observation UX Final Polish (v2.0): ObservationWorkspace, ObservationHeader, ObservationMobileTabs
+- **v2.1**: Final QA / Release Audit ✅ 完了 (2026-05-06)
+  - Public mode safety audit (all dangerous flags confirmed off)
+  - Runtime dynamics non-change confirmed
+  - Super Observation flow confirmed end-to-end
+  - Forbidden claim audit across all UI / guide / export / docs
+  - final-release-audit.md created
+  - finalCopyGuard / finalPublicModeSafety / finalSuperObservationFlow / finalReleaseAudit tests added
+- **v2.2**: Public Demo Polish / Landing Copy (next)
 - **v3.x**: Reafference comparison and actuation pulse observation
 
 All future phases will maintain the core principles:
