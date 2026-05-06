@@ -107,3 +107,18 @@ N0〜N7 実装後の安定化・安全化・比較可能化フェーズ。
 v1.0 安定化後の次候補。  
 NaturalDiagnosticState / Runtime Mode HUD / long-run profiles の UI 表示をより詳しく整備する。
 
+## v1.3 Research Scenarios / Preset Experiments
+
+**Status:** ✅ 完了 (2026-05-05)
+
+目的:
+- `ResearchScenario` 型 — seed / ticks / sampleEveryTicks / preset を明示した再現可能な観測シナリオ
+- `RESEARCH_SCENARIO_REGISTRY` — 10 シナリオ (quietBaseline / singlePulseReturn / repeatedGentlePulse / phaseVortexEmergence / curvatureBiasObservation / membraneOverlapObservation / plasticityTraceObservation / neutralVsLegacyConstants / observedRatioSurvey / longRunNaturalComparison)
+- `PresetExperiment` 型 — ResearchScenario × runtime preset の具体的な観測ユニット
+- `PRESET_EXPERIMENT_REGISTRY` — 14 preset experiments (E01–E14)
+- Lookup helpers: `getResearchScenario` / `getPresetExperiment` / `getExperimentsForScenario`
+- Tests: `src/tests/scenario/researchScenarios.test.ts`
+- docs: `docs/research-scenarios-preset-experiments.md`
+
+詳細: docs/research-scenarios-preset-experiments.md
+
