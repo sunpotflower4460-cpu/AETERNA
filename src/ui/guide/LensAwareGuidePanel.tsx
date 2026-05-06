@@ -67,8 +67,9 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
   <div class="lens-aware-guide-panel__header">
     <span class="lens-aware-guide-panel__title">AI Guide</span>
     ${publicModeBadge}
+    ${isPublicMode ? '<span class="lens-aware-guide-panel__guide-type">rule-based guide · external LLM disabled</span>' : ''}
     <small class="lens-aware-guide-panel__guardrail-note">
-      AI Guide は観測補助です。AETERNA 本体ではありません。
+      このガイドは観測結果を読む補助です。AETERNA 本体の発話ではありません。
     </small>
   </div>
   <div class="lens-aware-guide-panel__context">
@@ -78,6 +79,11 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
     <div class="lens-aware-guide-panel__selected-cell">
       Selected cell: ${cellDisplay}
     </div>
+  </div>
+  <div class="lens-aware-guide-panel__shortcuts">
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
   </div>
   <div class="lens-aware-guide-panel__mode-tabs">
     ${modeTabsHtml}

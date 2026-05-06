@@ -49,6 +49,8 @@ export function renderObservedRatioInvolvementPanelHTML(props: ObservedRatioInvo
   <strong>Epistemic note:</strong>
   Ratio involvement is observational only. It does not imply that a cell is
   causally controlling a ratio. Component lists are structural proxies only.
+  <br>
+  <small>参照比率との近接は観測上の比較です。core dynamics の因果成分ではなく、意味・生命・意識・癒しの証明ではありません。</small>
 </div>`;
 
     if (involvements.length === 0) {
@@ -79,6 +81,7 @@ export function renderObservedRatioInvolvementPanelHTML(props: ObservedRatioInvo
   <div class="ratio-involvement-panel__item-header">
     <span class="ratio-involvement-panel__item-id">${_esc(inv.observedRatioId)}</span>
     <span class="ratio-involvement-panel__item-source">${_esc(inv.source)}</span>
+    <span class="ratio-involvement-panel__item-kind" title="参照比率との比較値">[Reference]</span>
     <span class="ratio-involvement-panel__item-value">value: ${_esc(inv.value.toFixed(4))}</span>
   </div>
   <div class="ratio-involvement-panel__item-formula">${numDenText}</div>

@@ -51,7 +51,15 @@ export function renderLensGuideResponseViewHTML(props: LensGuideResponseViewProp
     claimGuardPassed,
   } = response;
 
-  const answerHtml = `<div class="lens-guide-response-view__answer">
+  const isLong = answer.length > 200;
+  const answerHtml = isLong
+    ? `<div class="lens-guide-response-view__answer">
+  <details class="lens-guide-response-view__answer-details">
+    <summary class="lens-guide-response-view__answer-summary">${_esc(answer.substring(0, 80))}…</summary>
+    <p class="lens-guide-response-view__answer-text">${_esc(answer)}</p>
+  </details>
+</div>`
+    : `<div class="lens-guide-response-view__answer">
   <p class="lens-guide-response-view__answer-text">${_esc(answer)}</p>
 </div>`;
 

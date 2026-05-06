@@ -39,13 +39,14 @@ function renderPairRowHTML(pair: LayerCorrelationPair): string {
     const corrStr = pair.correlation !== null && pair.correlation !== undefined
         ? pair.correlation.toFixed(4)
         : '—';
+    const samplesStr = pair.sampleCount < 3 ? '(insufficient samples)' : String(pair.sampleCount);
 
     return `<tr class="layer-correlation-panel__row layer-correlation-panel__row--${_esc(pair.confidence)}">
   <td class="layer-correlation-panel__cell">${_esc(pair.labelA)}</td>
   <td class="layer-correlation-panel__cell">${_esc(pair.labelB)}</td>
   <td class="layer-correlation-panel__cell layer-correlation-panel__cell--corr">${_esc(corrStr)}</td>
   <td class="layer-correlation-panel__cell">${_esc(pair.confidence)}</td>
-  <td class="layer-correlation-panel__cell layer-correlation-panel__cell--samples">${_esc(pair.sampleCount)}</td>
+  <td class="layer-correlation-panel__cell layer-correlation-panel__cell--samples">${_esc(samplesStr)}</td>
 </tr>`;
 }
 
@@ -92,7 +93,7 @@ export function renderLayerCorrelationPanelHTML(props: LayerCorrelationPanelProp
       <th>Metric B</th>
       <th>Pearson r</th>
       <th>Confidence</th>
-      <th>Samples</th>
+      <th>Samples (min 3)</th>
     </tr>
   </thead>
   <tbody>

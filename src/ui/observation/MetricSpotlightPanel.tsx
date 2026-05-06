@@ -83,6 +83,12 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
         ? _formatLensValue(lens, observation)
         : '(no observation)';
 
+    const proxyNoteHtml = lens.valueKind === 'proxy'
+        ? `<span class="metric-spotlight-panel__note">
+  Proxy: 観測補助指標。証明ではありません。
+</span>`
+        : '';
+
     const preferredLayers = LENS_PREFERRED_LAYERS[activeLensId] ?? [];
     const layerSuggestionsHtml = _renderLayerSuggestions(preferredLayers, availableLayerIds ?? new Set());
 
@@ -93,14 +99,20 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
     >${_esc(lens.label)}</span>
     <span class="metric-spotlight-panel__value-kind">[${_esc(lens.valueKind)}]</span>
   </div>
+  <div class="metric-spotlight-panel__context">
+    Lens: <strong>${_esc(lens.label)}</strong> | Kind: <span>[${_esc(lens.valueKind)}]</span>
+  </div>
   <div class="metric-spotlight-panel__value">
     <span class="metric-spotlight-panel__value-number">${_esc(valueStr)}</span>
+    ${proxyNoteHtml}
   </div>
   <p class="metric-spotlight-panel__description">${_esc(lens.description)}</p>
   <p class="metric-spotlight-panel__disclaimer">ℹ️ ${_esc(lens.disclaimer)}</p>
   <div class="metric-spotlight-panel__guide-actions">
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'What is this?',mode:'explain'}}))">What is this?</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">Hypothesize</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">これなに？</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">どう仮説できる？</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこ見る？',mode:'next'}}))">次どこ見る？</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'注意点は？',mode:'caution'}}))">注意点は？</button>
   </div>
   ${layerSuggestionsHtml}
 </div>`;

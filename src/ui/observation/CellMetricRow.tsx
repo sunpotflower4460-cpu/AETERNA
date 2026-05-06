@@ -37,6 +37,10 @@ export interface CellMetricRowData {
     warning?: string;
     /** Whether this row is currently active/selected */
     active?: boolean;
+    /** Optional confidence 0–1 */
+    confidence?: number;
+    /** Optional unit scale description */
+    scale?: string;
 }
 
 // ── formatMetricValue ─────────────────────────────────────────────────────────
@@ -60,10 +64,14 @@ export function formatMetricValue(
 // ── VALUE_KIND_COLORS ─────────────────────────────────────────────────────────
 
 export const VALUE_KIND_COLORS: Record<string, string> = {
-    measured:    '#34d399',
-    derived:     '#60a5fa',
-    proxy:       '#fbbf24',
-    unavailable: '#6b7280',
+    measured:               '#34d399',
+    derived:                '#60a5fa',
+    proxy:                  '#fbbf24',
+    unavailable:            '#6b7280',
+    check:                  '#a78bfa',
+    reference:              '#94a3b8',
+    raw:                    '#e5e7eb',
+    'presentation-smoothed': '#6ee7b7',
 };
 
 // ── renderCellMetricRowHTML ───────────────────────────────────────────────────
@@ -74,18 +82,34 @@ export const VALUE_KIND_COLORS: Record<string, string> = {
  * @param row      - CellMetricRowData
  * @param onClick  - String expression for onclick handler (optional)
  */
+const VALUE_KIND_TOOLTIPS: Record<string, string> = {
+    measured:    '観測バッファから直接読んだ値',
+    derived:     '実測・内部状態から計算された導出値',
+    proxy:       '観測補助指標。直接証明ではありません',
+    unavailable: '未観測',
+};
+
 export function renderCellMetricRowHTML(
     row: CellMetricRowData,
     onClickAttr = '',
 ): string {
     const valueStr = formatMetricValue(row.value, row.unit);
     const kindColor = VALUE_KIND_COLORS[row.valueKind] ?? '#6b7280';
+    const kindTooltip = VALUE_KIND_TOOLTIPS[row.valueKind] ?? '';
     const activeClass = row.active ? ' cell-metric-row--active' : '';
     const unavailableClass = row.valueKind === 'unavailable' ? ' cell-metric-row--unavailable' : '';
     const clickAttr = onClickAttr ? ` onclick="${onClickAttr}"` : '';
 
     const warningHtml = row.warning
         ? `<span class="cell-metric-row__warning" title="${_esc(row.warning)}">⚠ ${_esc(row.warning)}</span>`
+        : '';
+
+    const confidenceHtml = row.confidence !== undefined
+        ? `<span class="cell-metric-row__confidence">conf: ${row.confidence.toFixed(2)}</span>`
+        : '';
+
+    const lensShortcutHtml = row.lensId
+        ? `<span class="cell-metric-row__lens-shortcut" title="View in lens">→ Lens</span>`
         : '';
 
     return `<div
@@ -98,7 +122,9 @@ export function renderCellMetricRowHTML(
 >
   <span class="cell-metric-row__label">${_esc(row.label)}</span>
   <span class="cell-metric-row__value">${_esc(valueStr)}</span>
-  <span class="cell-metric-row__kind-badge" style="color:${kindColor}">[${_esc(row.valueKind)}]</span>
+  ${confidenceHtml}
+  <span class="cell-metric-row__kind-badge" style="color:${kindColor}" title="${_esc(kindTooltip)}">[${_esc(row.valueKind)}]</span>
+  ${lensShortcutHtml}
   ${warningHtml}
 </div>`;
 }
