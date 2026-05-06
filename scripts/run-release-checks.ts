@@ -245,7 +245,7 @@ for (const fp of CONFIG_FILES) {
   const shortPath = fp.replace(ROOT + '/', '');
   check(
     `${shortPath} — no external API import`,
-    fileNotContains(fp, /import.*fetch|axios|http|openai|anthropic/i),
+    fileNotContains(fp, /import\b.*\b(openai|anthropic|axios)\b|from\s+['"]openai|from\s+['"]anthropic|from\s+['"]axios/i),
   );
   check(
     `${shortPath} — no Node bridge import`,

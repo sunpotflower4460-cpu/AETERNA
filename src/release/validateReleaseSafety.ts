@@ -64,6 +64,7 @@ export function validateReleaseSafety(params: {
   const errors: string[] = [];
   const warnings: string[] = [];
   let valid = true;
+  let normalizationApplied = false;
 
   const channel = releaseConfig.channel;
   const isPublic = channel === 'publicResearch';
@@ -71,7 +72,7 @@ export function validateReleaseSafety(params: {
   const isLocal = channel === 'local';
   const isExperimental = channel === 'experimental';
 
-  // Normalized copies (applied only if needed)
+  // Normalized copies (mutated below when normalization is needed)
   let normReleaseConfig: ReleaseEnvironmentConfig = { ...releaseConfig };
   let normPublicModeConfig: PublicResearchModeConfig = { ...publicModeConfig };
   let normRuntimeConfig: AeternaNaturalRuntimeConfig = { ...naturalRuntimeConfig };
@@ -80,15 +81,16 @@ export function validateReleaseSafety(params: {
   if (releaseConfig.experimentalFeaturesEnabled) {
     if (isPublic) {
       errors.push(
-        'experimentalFeaturesEnabled=true is not allowed in publicResearch channel. '
-        + 'Set experimentalFeaturesEnabled=false.',
+        `experimentalFeaturesEnabled=true is not allowed in publicResearch channel. `
+        + `Set experimentalFeaturesEnabled=false.`,
       );
       normReleaseConfig = { ...normReleaseConfig, experimentalFeaturesEnabled: false };
+      normalizationApplied = true;
       valid = false;
     } else if (isPreview) {
       warnings.push(
-        'experimentalFeaturesEnabled=true in preview channel. '
-        + 'Confirm this is intentional before promoting to publicResearch.',
+        `experimentalFeaturesEnabled=true in preview channel. `
+        + `Confirm this is intentional before promoting to publicResearch.`,
       );
     }
     // local / internalResearch / experimental: allowed
@@ -102,6 +104,7 @@ export function validateReleaseSafety(params: {
         + 'Normalize to complexObserver or scalar.',
       );
       normRuntimeConfig = { ...normRuntimeConfig, fieldRuntimeMode: 'complexObserver' };
+      normalizationApplied = true;
       valid = false;
     } else if (isPreview) {
       warnings.push(
@@ -120,6 +123,7 @@ export function validateReleaseSafety(params: {
     if (level === 'error') {
       errors.push(msg);
       normPublicModeConfig = { ...normPublicModeConfig, allowWeakPlasticityResistanceOnly: false };
+      normalizationApplied = true;
       valid = false;
     } else {
       warnings.push(msg);
@@ -133,6 +137,7 @@ export function validateReleaseSafety(params: {
         + 'Normalize to observeOnly or off.',
       );
       normRuntimeConfig = { ...normRuntimeConfig, weakPlasticityMode: 'observeOnly' };
+      normalizationApplied = true;
       valid = false;
     } else if (isPreview) {
       warnings.push(
@@ -150,6 +155,7 @@ export function validateReleaseSafety(params: {
         + 'Set legacyConstantsAllowed=false.',
       );
       normReleaseConfig = { ...normReleaseConfig, legacyConstantsAllowed: false };
+      normalizationApplied = true;
       valid = false;
     } else if (isPreview) {
       warnings.push(
@@ -166,6 +172,7 @@ export function validateReleaseSafety(params: {
     if (level === 'error') {
       errors.push(msg);
       normPublicModeConfig = { ...normPublicModeConfig, allowLegacyConstants: false };
+      normalizationApplied = true;
       valid = false;
     } else {
       warnings.push(msg);
@@ -180,6 +187,7 @@ export function validateReleaseSafety(params: {
         + 'No external API is implemented in AETERNA-NATURAL.',
       );
       normReleaseConfig = { ...normReleaseConfig, externalApiEnabled: false };
+      normalizationApplied = true;
       valid = false;
     } else {
       warnings.push(
@@ -197,6 +205,7 @@ export function validateReleaseSafety(params: {
         + 'No Node bridge is implemented in AETERNA-NATURAL.',
       );
       normReleaseConfig = { ...normReleaseConfig, nodeBridgeEnabled: false };
+      normalizationApplied = true;
       valid = false;
     } else {
       warnings.push(
@@ -215,6 +224,7 @@ export function validateReleaseSafety(params: {
     if (level === 'error') {
       errors.push(msg);
       normReleaseConfig = { ...normReleaseConfig, requireInterpretationNotes: true };
+      normalizationApplied = true;
       valid = false;
     } else {
       warnings.push(msg);
@@ -230,6 +240,7 @@ export function validateReleaseSafety(params: {
         + "Use 'quietBaseline' as the default in publicResearch channel.",
       );
       normPublicModeConfig = { ...normPublicModeConfig, defaultScenarioId: 'quietBaseline' };
+      normalizationApplied = true;
       valid = false;
     } else if (isPreview || isLocal) {
       warnings.push(
@@ -249,10 +260,7 @@ export function validateReleaseSafety(params: {
   }
 
   // ── Determine if normalization was applied ────────────────────────────────
-  const wasNormalized =
-    JSON.stringify(normReleaseConfig) !== JSON.stringify(releaseConfig) ||
-    JSON.stringify(normPublicModeConfig) !== JSON.stringify(publicModeConfig) ||
-    JSON.stringify(normRuntimeConfig) !== JSON.stringify(naturalRuntimeConfig);
+  const wasNormalized = normalizationApplied;
 
   return {
     valid,
