@@ -239,7 +239,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
         id: 'topologicalCharge',
         label: 'Topological Charge',
         description: 'Phase-winding topological charge at this cell: +1, 0, or −1.',
-        disclaimer: 'Topological index derived from phase winding. Not a semantic or semantic charge.',
+        disclaimer: 'Topological index derived from phase winding. Not a semantic or electrostatic charge.',
         valueKind: 'derived',
         observationPath: 'vortex.topologicalCharge',
         group: 'vortex',

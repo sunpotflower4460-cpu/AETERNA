@@ -160,7 +160,8 @@ describe('deriveCellObservation: geometry', () => {
 
     it('derives neutral for mid-latitude minorAngle (3π/4: cos≈-0.707, sin≈0.707)', () => {
         // At 3π/4 (135°): cos ≈ -0.707, sin ≈ 0.707
-        // Both are in (-0.9, 0.9) → neutral
+        // Both absolute values (0.707) are below the 0.9 threshold,
+        // so neither outerRim/innerRim nor upperRim/lowerRim applies → neutral
         const obs = deriveCellObservation(makeInput({
             torusCell: {
                 i: 0, j: 0, majorAngle: 0, minorAngle: 3 * Math.PI / 4,

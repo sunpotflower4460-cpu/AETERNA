@@ -62,11 +62,11 @@ diagnostics — valueKinds (per group), missingFieldCount, hasUnavailableSource
 
 | ラベル | 条件 |
 |---|---|
-| `outerRim` | cos(v) > 0.5 |
-| `innerRim` | cos(v) < −0.5 |
-| `upperRim` | sin(v) > 0.5 |
-| `lowerRim` | sin(v) < −0.5 |
-| `neutral`  | それ以外 |
+| `outerRim` | cos(v) > 0.9 |
+| `innerRim` | cos(v) < −0.9 |
+| `upperRim` | sin(v) > 0.9 |
+| `lowerRim` | sin(v) < −0.9 |
+| `neutral`  | それ以外（mid-latitude belt） |
 
 ---
 
