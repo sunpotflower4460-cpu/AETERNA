@@ -46,7 +46,7 @@ export function renderGuideStepMarkdown(step: FirstRunGuideStepData): string {
   const lines: string[] = [
     `### Step ${step.stepNumber}: ${step.title}`,
     '',
-    ...step.bodyLines.map(l => l),
+    ...step.bodyLines,
   ];
   if (step.noteLines.length > 0) {
     lines.push('');
