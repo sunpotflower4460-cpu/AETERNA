@@ -73,11 +73,14 @@ function findV19Matches(text: string): string[] {
 
 function sanitizeV19(text: string): string {
   let result = text;
-  const lower = text.toLowerCase();
   for (const term of FORBIDDEN_V19_EN) {
-    const idx = lower.indexOf(term.toLowerCase());
-    if (idx !== -1) {
+    const termLower = term.toLowerCase();
+    let lower = result.toLowerCase();
+    let idx = lower.indexOf(termLower);
+    while (idx !== -1) {
       result = result.slice(0, idx) + GUARD_REPLACEMENT + result.slice(idx + term.length);
+      lower = result.toLowerCase();
+      idx = lower.indexOf(termLower, idx + GUARD_REPLACEMENT.length);
     }
   }
   for (const term of FORBIDDEN_V19_JA) {

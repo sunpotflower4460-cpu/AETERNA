@@ -126,7 +126,7 @@ export function buildLensGuideContext(params: {
 
   // ── Causal trace summary (max 5) ──────────────────────────────────────────
 
-  const causalTraceSummary: string[] = [];
+  let causalTraceSummary: string[] = [];
   if (causalTrace) {
     const lines = causalTrace.summary ?? [];
     causalTraceSummary.push(...lines.slice(0, 4));
@@ -135,7 +135,7 @@ export function buildLensGuideContext(params: {
       causalTraceSummary.push(`Strongest signal: ${top.label} [${top.relationKind}] confidence=${top.confidence}`);
     }
     // Trim to max 5
-    causalTraceSummary.splice(5);
+    causalTraceSummary = causalTraceSummary.slice(0, 5);
   }
 
   // ── Layer correlation summary (max 5) ─────────────────────────────────────
