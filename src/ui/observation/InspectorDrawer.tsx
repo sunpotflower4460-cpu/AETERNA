@@ -200,7 +200,7 @@ function _renderEventsTab(
         const safeTick = Number.isFinite(Number(ev.tick)) ? Math.trunc(Number(ev.tick)) : 0;
         return `<div class="inspector-drawer__event" data-event-id="${_esc(ev.id)}"
     onclick="window.dispatchEvent(new CustomEvent('inspector:eventClick',{detail:{eventId:'${_esc(ev.id)}',tick:${safeTick}}}))">
-    <span class="inspector-drawer__event-tick">tick ${_esc(String(safeTick))}</span>
+    <span class="inspector-drawer__event-tick">tick ${_esc(safeTick)}</span>
     ${kind}
     <span class="inspector-drawer__event-text">${_esc(text)}</span>
   </div>`;

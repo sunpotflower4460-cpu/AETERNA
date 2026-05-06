@@ -63,7 +63,7 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
         : '';
 
     const cellDisplay = selectedCellIndex !== null
-        ? `Cell ${_esc(String(selectedCellIndex))}`
+        ? `Cell ${_esc(selectedCellIndex)}`
         : '(no cell)';
 
     const lensDisplay = activeLensId
@@ -98,14 +98,14 @@ function _renderModeBadge(
     replayTick: number | null,
 ): string {
     if (isReplayMode) {
-        const replayTickDisplay = replayTick !== null ? _esc(String(replayTick)) : '—';
+        const replayTickDisplay = replayTick !== null ? _esc(replayTick) : '—';
         return `<span class="observation-header__mode-badge observation-header__mode-badge--replay">Replay</span>
     <span class="observation-header__tick-info">
-      Replay tick ${replayTickDisplay} / Live tick ${_esc(String(liveTick))}
+      Replay tick ${replayTickDisplay} / Live tick ${_esc(liveTick)}
     </span>`;
     }
     return `<span class="observation-header__mode-badge observation-header__mode-badge--live">Live</span>
-  <span class="observation-header__tick-info">Live tick ${_esc(String(liveTick))}</span>`;
+  <span class="observation-header__tick-info">Live tick ${_esc(liveTick)}</span>`;
 }
 
 function _renderResearchBadge(researchMode: string | undefined): string {

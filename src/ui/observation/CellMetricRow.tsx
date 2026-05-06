@@ -64,13 +64,13 @@ export function formatMetricValue(
 // ── VALUE_KIND_COLORS ─────────────────────────────────────────────────────────
 
 export const VALUE_KIND_COLORS: Record<string, string> = {
-    measured:                '#34d399',
-    derived:                 '#60a5fa',
-    proxy:                   '#fbbf24',
-    unavailable:             '#6b7280',
-    check:                   '#a78bfa',
-    reference:               '#94a3b8',
-    raw:                     '#e5e7eb',
+    measured:              '#34d399',
+    derived:               '#60a5fa',
+    proxy:                 '#fbbf24',
+    unavailable:           '#6b7280',
+    check:                 '#a78bfa',
+    reference:             '#94a3b8',
+    raw:                   '#e5e7eb',
     'presentation-smoothed': '#6ee7b7',
 };
 
