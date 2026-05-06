@@ -151,6 +151,21 @@ N0〜N7 実装後のコード・UI・docs・tests を安定化。
 - Guide / comparison copy を observation-only に統一
 - mobile でも runtime badges と guide が読みやすい形へ調整
 
+## v1.5 App Packaging / Deployment Readiness
+
+AETERNA-NATURAL v1.5 adds deployment readiness infrastructure:
+
+- **Release Environment Config** (`src/config/releaseEnvironmentConfig.ts`) — channel-based deployment config with safe public defaults
+- **Release Safety Validator** (`src/release/validateReleaseSafety.ts`) — cross-validates configs before deployment
+- **Release Check Script** (`scripts/run-release-checks.ts`) — static pre-deploy checks
+- **App Error Boundary** (`src/ui/system/AppErrorBoundary.tsx`) — graceful error handling
+- **Fallback Screen** (`src/ui/system/FallbackScreen.tsx`) — safe fallback when load fails
+- **Safe Reset Button** (`src/ui/system/SafeResetButton.tsx`) — returns to safeBaseline
+- **Public Build Info** (`src/ui/public/PublicBuildInfo.tsx`) — shows channel / mode / version
+- **Deployment docs** (`docs/deployment-readiness.md`, `docs/manual-release-checklist.md`, `docs/performance-smoke-check.md`)
+
+No runtime dynamics were changed. No experimental features were added.
+
 ## Development
 
 ```bash
@@ -159,4 +174,15 @@ npm run dev
 npm run build
 npm run lint
 npm run test:run
+npm run check:release
 ```
+
+## Release Checks
+
+Before deploying, run:
+
+```bash
+npm run check:release
+```
+
+See `docs/deployment-readiness.md` for the full deployment guide and `docs/manual-release-checklist.md` for the manual QA checklist.
