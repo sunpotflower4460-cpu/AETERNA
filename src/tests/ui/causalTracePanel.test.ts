@@ -59,14 +59,14 @@ function makeResult(overrides: Partial<CausalTraceResult> = {}): CausalTraceResu
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('CausalTracePanel: disclaimer', () => {
-    it('renders "not causal proof" disclaimer', () => {
+    it('renders "因果証明ではありません" disclaimer (Japanese-first, v2.4)', () => {
         const html = renderCausalTracePanelHTML({ result: makeResult() });
-        expect(html.toLowerCase()).toContain('not causal proof');
+        expect(html).toContain('因果証明ではありません');
     });
 
     it('renders disclaimer even when result is null', () => {
         const html = renderCausalTracePanelHTML({ result: null });
-        expect(html.toLowerCase()).toContain('not causal proof');
+        expect(html).toContain('因果証明ではありません');
     });
 });
 
@@ -108,11 +108,11 @@ describe('CausalTracePanel: signals', () => {
         expect(html).toContain('Phase Coherence Change');
     });
 
-    it('shows "no signals" message when possibleContributingSignals is empty', () => {
+    it('shows "関連候補シグナルはありませんでした" message when possibleContributingSignals is empty', () => {
         const html = renderCausalTracePanelHTML({
             result: makeResult({ possibleContributingSignals: [] }),
         });
-        expect(html.toLowerCase()).toContain('no possible contributing signals');
+        expect(html).toContain('関連候補シグナルはありませんでした');
     });
 
     it('shows signal confidence badge', () => {

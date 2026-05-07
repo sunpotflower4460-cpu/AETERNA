@@ -84,31 +84,31 @@ const mockDiff: ObservationDifferenceState = {
 // ── CausalTracePanel ──────────────────────────────────────────────────────────
 
 describe('CausalTracePanel: null result', () => {
-    it('shows disclaimer "Not causal proof"', () => {
+    it('shows Japanese disclaimer "因果証明ではありません" (v2.4)', () => {
         const html = renderCausalTracePanelHTML({ result: null });
-        expect(html).toContain('Not causal proof');
+        expect(html).toContain('因果証明ではありません');
     });
 
-    it('shows empty message when no result', () => {
+    it('shows Japanese empty message when no result', () => {
         const html = renderCausalTracePanelHTML({ result: null });
-        expect(html).toContain('No causal trace data available');
+        expect(html).toContain('関連候補データがありません');
     });
 });
 
 describe('CausalTracePanel: with result', () => {
-    it('shows "Possible Contributing Signals" heading', () => {
+    it('shows "関連候補シグナル" heading (Japanese-first, v2.4)', () => {
         const html = renderCausalTracePanelHTML({ result: mockResult });
-        expect(html).toContain('Possible Contributing Signals');
+        expect(html).toContain('関連候補シグナル');
     });
 
-    it('disclaimer "not causal proof" is always present', () => {
+    it('disclaimer "因果証明ではありません" is always present (v2.4)', () => {
         const html = renderCausalTracePanelHTML({ result: mockResult });
-        expect(html.toLowerCase()).toContain('not causal proof');
+        expect(html).toContain('因果証明ではありません');
     });
 
-    it('signals note shows "(possible · related · nearby"', () => {
+    it('signals note shows "（関連・近接候補 — 因果証明ではありません）" (v2.4)', () => {
         const html = renderCausalTracePanelHTML({ result: mockResult });
-        expect(html).toContain('possible · related · nearby');
+        expect(html).toContain('関連・近接候補');
     });
 });
 
@@ -126,9 +126,9 @@ describe('CausalTracePanel: no forbidden claims', () => {
 // ── LayerCorrelationPanel ─────────────────────────────────────────────────────
 
 describe('LayerCorrelationPanel: null state', () => {
-    it('shows "Correlation is not causal proof" disclaimer', () => {
+    it('shows Japanese "相関は因果ではありません" disclaimer (v2.4)', () => {
         const html = renderLayerCorrelationPanelHTML({ state: null });
-        expect(html).toContain('Correlation is not causal proof');
+        expect(html).toContain('相関は因果ではありません');
     });
 });
 
@@ -143,9 +143,9 @@ describe('LayerCorrelationPanel: with state', () => {
         expect(html).toContain('(insufficient samples)');
     });
 
-    it('header shows "Samples (min 3)"', () => {
+    it('header shows Japanese "サンプル数（最低3）" (v2.4)', () => {
         const html = renderLayerCorrelationPanelHTML({ state: mockState });
-        expect(html).toContain('Samples (min 3)');
+        expect(html).toContain('サンプル数');
     });
 });
 

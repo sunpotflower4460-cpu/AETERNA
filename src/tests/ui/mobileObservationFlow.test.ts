@@ -51,14 +51,24 @@ describe('ObservationMobileTabs: tab icons', () => {
 });
 
 describe('ObservationMobileTabs: tab labels', () => {
-    it('renders all expected tab labels', () => {
+    it('renders all expected Japanese tab labels', () => {
         const html = renderObservationMobileTabsHTML({ activeTab: 'field' });
-        expect(html).toContain('Field');
-        expect(html).toContain('Inspector');
-        expect(html).toContain('Lens');
-        expect(html).toContain('Replay');
-        expect(html).toContain('Trace');
-        expect(html).toContain('Guide');
+        expect(html).toContain('見る');
+        expect(html).toContain('調べる');
+        expect(html).toContain('レンズ');
+        expect(html).toContain('時間');
+        expect(html).toContain('関連');
+        expect(html).toContain('聞く');
+    });
+
+    it('retains English aria-labels for accessibility', () => {
+        const html = renderObservationMobileTabsHTML({ activeTab: 'field' });
+        expect(html).toContain('aria-label="Field"');
+        expect(html).toContain('aria-label="Inspector"');
+        expect(html).toContain('aria-label="Lens"');
+        expect(html).toContain('aria-label="Replay"');
+        expect(html).toContain('aria-label="Trace"');
+        expect(html).toContain('aria-label="Guide"');
     });
 });
 

@@ -156,7 +156,7 @@ describe('CellInspectorPanel', () => {
             selectedMetricId: null,
             onMetricClick: () => {},
         });
-        expect(html).toContain('Select a cell');
+        expect(html).toContain('トーラス上のセルをタップして観測します');
     });
 
     it('renders cell info when observation is provided', () => {
@@ -252,7 +252,7 @@ describe('MetricSpotlightPanel', () => {
             observation: obs,
             availableLayerIds: new Set(), // no layers available
         });
-        expect(html).toContain('layer unavailable');
+        expect(html).toContain('レイヤー未利用');
     });
 
     it('getPreferredLayersForLens returns array', () => {

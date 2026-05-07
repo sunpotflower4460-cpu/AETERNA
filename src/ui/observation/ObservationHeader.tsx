@@ -1,8 +1,10 @@
 /**
  * ObservationHeader.tsx
- * v2.0: AETERNA-NATURAL Observation UX Final Polish — Observation Header
+ * v2.4: AETERNA-NATURAL Japanese-First UI — Observation Header
  *
  * Renders the top header bar for the observation workspace.
+ * Labels are Japanese-first (v2.4). English badge class names are retained
+ * for CSS / test compatibility.
  *
  * Design principles:
  * - Pure HTML string rendering — no React JSX.
@@ -58,17 +60,17 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
     const modeBadge     = _renderModeBadge(isReplayMode, liveTick, replayTick);
     const replayNote    = isReplayMode
         ? `<p class="observation-header__replay-note" role="alert" aria-live="polite">
-    Replay Mode は記録された観測 snapshot を表示しています。runtime 自体が過去に戻ったわけではありません。
+    再生モードは記録された観測スナップショットを表示しています。runtime 自体が過去に戻ったわけではありません。
   </p>`
         : '';
 
     const cellDisplay = selectedCellIndex !== null
-        ? `Cell ${_esc(selectedCellIndex)}`
-        : '(no cell)';
+        ? `セル ${_esc(selectedCellIndex)}`
+        : '（未選択）';
 
     const lensDisplay = activeLensId
         ? _esc(activeLensId)
-        : '(no lens)';
+        : '（なし）';
 
     return `<div class="observation-header">
   <div class="observation-header__top">
@@ -77,10 +79,10 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
     ${safetyBadge}
     ${modeBadge}
     <span class="observation-header__cell-display">
-      Cell: <strong>${cellDisplay}</strong>
+      セル: <strong>${cellDisplay}</strong>
     </span>
     <span class="observation-header__lens-display">
-      Lens: <strong>${lensDisplay}</strong>
+      レンズ: <strong>${lensDisplay}</strong>
     </span>
     <small class="observation-header__guide-note">
       このガイドは観測結果を読む補助です。AETERNA 本体の発話ではありません。
@@ -99,25 +101,25 @@ function _renderModeBadge(
 ): string {
     if (isReplayMode) {
         const replayTickDisplay = replayTick !== null ? _esc(replayTick) : '—';
-        return `<span class="observation-header__mode-badge observation-header__mode-badge--replay">Replay</span>
+        return `<span class="observation-header__mode-badge observation-header__mode-badge--replay">再生</span>
     <span class="observation-header__tick-info">
-      Replay tick ${replayTickDisplay} / Live tick ${_esc(liveTick)}
+      再生 tick ${replayTickDisplay} / ライブ tick ${_esc(liveTick)}
     </span>`;
     }
-    return `<span class="observation-header__mode-badge observation-header__mode-badge--live">Live</span>
-  <span class="observation-header__tick-info">Live tick ${_esc(liveTick)}</span>`;
+    return `<span class="observation-header__mode-badge observation-header__mode-badge--live">ライブ</span>
+  <span class="observation-header__tick-info">ライブ tick ${_esc(liveTick)}</span>`;
 }
 
 function _renderResearchBadge(researchMode: string | undefined): string {
     if (!researchMode || researchMode === 'publicResearch') return '';
-    const label = researchMode === 'experimental' ? 'Experimental' : 'Research';
+    const label = researchMode === 'experimental' ? '実験モード' : '研究モード';
     const mod   = researchMode === 'experimental' ? 'experimental' : 'research';
     return `<span class="observation-header__research-badge observation-header__research-badge--${_esc(mod)}">${label}</span>`;
 }
 
 function _renderSafetyBadge(safetyMode: string | undefined): string {
     if (!safetyMode || safetyMode === 'safe') return '';
-    const label = safetyMode === 'experimental' ? 'Experimental Safety' : 'Research Safety';
+    const label = safetyMode === 'experimental' ? '実験的安全モード' : '研究安全モード';
     const mod   = safetyMode === 'experimental' ? 'experimental' : 'research';
     return `<span class="observation-header__safety-badge observation-header__safety-badge--${_esc(mod)}">${label}</span>`;
 }

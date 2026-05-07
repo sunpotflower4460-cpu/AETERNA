@@ -222,7 +222,7 @@ export function renderObservationWorkspaceHTML(props: ObservationWorkspaceProps)
   </div>
   ${mobileTabsHtml}
   <div class="observation-nav-hint" aria-label="Navigation hint">
-    Tap a cell → Inspector → Metric → Lens → Replay → Trace → Guide
+    セルをタップ → セル観測 → 観測値 → レンズ → 時間 → 関連候補 → 観測ガイド
   </div>
 </div>`;
 }

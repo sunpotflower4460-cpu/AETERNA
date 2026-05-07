@@ -68,7 +68,7 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
 
     if (!activeLensId) {
         return `<div class="metric-spotlight-panel metric-spotlight-panel--empty">
-  <p class="metric-spotlight-panel__empty-msg">Click a metric row in the Cell Inspector to activate a lens.</p>
+  <p class="metric-spotlight-panel__empty-msg">セル観測のメトリック行をクリックしてレンズを起動します。</p>
 </div>`;
     }
 
@@ -85,7 +85,7 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
 
     const proxyNoteHtml = lens.valueKind === 'proxy'
         ? `<span class="metric-spotlight-panel__note">
-  Proxy: 観測補助指標。証明ではありません。
+  補助指標: 観測補助指標。証明ではありません。
 </span>`
         : '';
 
@@ -94,13 +94,15 @@ export function renderMetricSpotlightPanelHTML(props: MetricSpotlightPanelProps)
 
     return `<div class="metric-spotlight-panel">
   <div class="metric-spotlight-panel__header">
+    <span class="metric-spotlight-panel__panel-title">観測レンズ</span>
     <span class="metric-spotlight-panel__lens-label"
           style="color:${_esc(lens.colorHex)}"
-    >${_esc(lens.label)}</span>
+    >${_esc(lens.labelJp)}</span>
+    <span class="metric-spotlight-panel__lens-label-en">${_esc(lens.label)}</span>
     <span class="metric-spotlight-panel__value-kind">[${_esc(lens.valueKind)}]</span>
   </div>
   <div class="metric-spotlight-panel__context">
-    Lens: <strong>${_esc(lens.label)}</strong> | Kind: <span>[${_esc(lens.valueKind)}]</span>
+    レンズ: <strong>${_esc(lens.labelJp)}</strong> | 種別: <span>[${_esc(lens.valueKind)}]</span>
   </div>
   <div class="metric-spotlight-panel__value">
     <span class="metric-spotlight-panel__value-number">${_esc(valueStr)}</span>
@@ -137,26 +139,26 @@ function _renderLayerSuggestions(
 ): string {
     if (preferredLayers.length === 0) {
         return `<div class="metric-spotlight-panel__layers">
-  <span class="metric-spotlight-panel__layers-label">Recommended layers:</span>
-  <span class="metric-spotlight-panel__layer-none">None specified</span>
+  <span class="metric-spotlight-panel__layers-label">推奨レイヤー:</span>
+  <span class="metric-spotlight-panel__layer-none">なし</span>
 </div>`;
     }
 
     const items = preferredLayers.map((layerId) => {
         const available = availableLayerIds.has(layerId);
         if (!available) {
-            return `<span class="metric-spotlight-panel__layer metric-spotlight-panel__layer--unavailable">${_esc(layerId)} (layer unavailable)</span>`;
+            return `<span class="metric-spotlight-panel__layer metric-spotlight-panel__layer--unavailable">${_esc(layerId)}（レイヤー未利用）</span>`;
         }
         return `<button
   class="metric-spotlight-panel__layer-btn"
   data-layer-id="${_esc(layerId)}"
   onclick="window.dispatchEvent(new CustomEvent('spotlight:showLayer',{detail:{layerId:'${_esc(layerId)}'}}))">
-  Show ${_esc(layerId)}
+  ${_esc(layerId)} を表示
 </button>`;
     }).join('');
 
     return `<div class="metric-spotlight-panel__layers">
-  <span class="metric-spotlight-panel__layers-label">Recommended layers:</span>
+  <span class="metric-spotlight-panel__layers-label">推奨レイヤー:</span>
   ${items}
 </div>`;
 }

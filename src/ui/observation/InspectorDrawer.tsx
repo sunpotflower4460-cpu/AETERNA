@@ -93,20 +93,21 @@ export function renderInspectorDrawerHTML(props: InspectorDrawerProps): string {
 // ── Private helpers ───────────────────────────────────────────────────────────
 
 function _renderTabBar(activeTab: InspectorDrawerProps['activeTab']): string {
-    const tabs: Array<{ id: InspectorDrawerProps['activeTab']; label: string }> = [
-        { id: 'cell',     label: 'Cell' },
-        { id: 'metric',   label: 'Metric' },
-        { id: 'events',   label: 'Events' },
-        { id: 'warnings', label: 'Warnings' },
+    const tabs: Array<{ id: InspectorDrawerProps['activeTab']; label: string; labelEn: string }> = [
+        { id: 'cell',     label: 'セル',   labelEn: 'Cell' },
+        { id: 'metric',   label: '観測値', labelEn: 'Metric' },
+        { id: 'events',   label: '履歴',   labelEn: 'Events' },
+        { id: 'warnings', label: '警告',   labelEn: 'Warnings' },
     ];
 
-    const tabItems = tabs.map(({ id, label }) => {
+    const tabItems = tabs.map(({ id, label, labelEn }) => {
         const isActive = id === activeTab;
         const activeClass = isActive ? ' inspector-drawer__tab--active' : '';
         return `<button
     class="inspector-drawer__tab${activeClass}"
     role="tab"
     aria-selected="${isActive}"
+    aria-label="${_esc(labelEn)}"
     data-tab="${_esc(id)}"
     onclick="window.dispatchEvent(new CustomEvent('inspector:tabChange',{detail:{tab:'${_esc(id)}'}}))">
     ${_esc(label)}
@@ -139,7 +140,7 @@ function _renderCellTab(
 ): string {
     if (!observation) {
         return `<div class="inspector-drawer__empty">
-  <p>No cell selected. Tap a cell on the torus to inspect it.</p>
+  <p>セルが選択されていません。トーラス上のセルをタップして観測します。</p>
 </div>`;
     }
 
@@ -160,7 +161,7 @@ function _renderMetricTab(
 ): string {
     if (!observation) {
         return `<div class="inspector-drawer__empty">
-  <p>No observation available. Select a cell first.</p>
+  <p>観測データがありません。まずセルを選択してください。</p>
 </div>`;
     }
 
@@ -177,7 +178,7 @@ function _renderMetricTab(
     }).join('');
 
     const activeLensInfo = activeLensId
-        ? `<div class="inspector-drawer__active-lens">Active lens: <strong>${_esc(activeLensId)}</strong></div>`
+        ? `<div class="inspector-drawer__active-lens">レンズ: <strong>${_esc(activeLensId)}</strong></div>`
         : '';
 
     return `<div class="inspector-drawer__metric-tab">
@@ -190,7 +191,7 @@ function _renderEventsTab(
     recentEvents: Array<{ id: string; tick: number; kind?: string; text?: string }>,
 ): string {
     if (recentEvents.length === 0) {
-        return `<div class="inspector-drawer__empty"><p>No recent events.</p></div>`;
+        return `<div class="inspector-drawer__empty"><p>最近の履歴はありません。</p></div>`;
     }
 
     const items = recentEvents.map((ev) => {
@@ -216,8 +217,8 @@ function _renderWarningsTab(
 ): string {
     if (warnings.length === 0) {
         return `<div class="inspector-drawer__empty">
-  <span class="inspector-drawer__severity-badge inspector-drawer__severity-badge--info">Info</span>
-  <p>No warnings.</p>
+  <span class="inspector-drawer__severity-badge inspector-drawer__severity-badge--info">情報</span>
+  <p>警告はありません。</p>
 </div>`;
     }
 

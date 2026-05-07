@@ -21,6 +21,7 @@ import type { CellObservation } from '../../types/cellObservation.ts';
 import type { MetricLensId } from '../lens/metricLensRegistry.ts';
 import { findLensForMetric } from '../lens/metricLensRegistry.ts';
 import { formatMetricValue, renderCellMetricRowHTML, type CellMetricRowData } from './CellMetricRow.tsx';
+import { JP_METRICS } from '../../i18n/jpTerminology.ts';
 
 // ── CellInspectorPanelProps ───────────────────────────────────────────────────
 
@@ -58,9 +59,10 @@ export function buildCellMetricRows(obs: CellObservation): CellMetricRowData[] {
         groupKind: CellObservation['diagnostics']['valueKinds'][keyof CellObservation['diagnostics']['valueKinds']],
     ): void {
         const lensId = findLensForMetric(metricId)?.id ?? null;
+        const labelJp = (JP_METRICS as Record<string, string>)[metricId] ?? label;
         rows.push({
             metricId,
-            label,
+            label: labelJp,
             value,
             unit,
             valueKind: value === undefined || value === null ? 'unavailable' : groupKind,
@@ -118,7 +120,7 @@ export function renderCellInspectorPanelHTML(props: CellInspectorPanelProps): st
 
     if (!observation) {
         return `<div class="cell-inspector-panel cell-inspector-panel--empty">
-  <p class="cell-inspector-panel__empty-msg">Select a cell on the torus to inspect it.</p>
+  <p class="cell-inspector-panel__empty-msg">トーラス上のセルをタップして観測します。</p>
 </div>`;
     }
 
@@ -161,28 +163,28 @@ export function renderCellInspectorPanelHTML(props: CellInspectorPanelProps): st
   <span class="cell-inspector-panel__event-text">${_esc(text)}</span>
 </div>`;
         }).join('')
-        : '<span class="cell-inspector-panel__no-events">No recent events for this cell.</span>';
+        : '<span class="cell-inspector-panel__no-events">このセルの最近の履歴はありません。</span>';
 
     const missingNote = diagnostics.hasUnavailableSource
-        ? `<p class="cell-inspector-panel__missing-note">Some observer data unavailable (${diagnostics.missingFieldCount} fields not observed).</p>`
+        ? `<p class="cell-inspector-panel__missing-note">一部の観測データが未取得です（${diagnostics.missingFieldCount} フィールド未観測）。</p>`
         : '';
 
     const activeLensInfo = activeLensId
-        ? `<span class="cell-inspector-panel__active-lens">Active lens: ${_esc(activeLensId)}</span>`
+        ? `<span class="cell-inspector-panel__active-lens">レンズ: ${_esc(activeLensId)}</span>`
         : '';
 
     return `<div class="cell-inspector-panel">
   <div class="cell-inspector-panel__header">
-    <span class="cell-inspector-panel__title">${_esc(cellLabel)}</span>
+    <span class="cell-inspector-panel__title">セル観測 — ${_esc(cellLabel)}</span>
     ${replayBadge}
     ${activeLensInfo}
     <button class="cell-inspector-panel__ask-guide-btn"
       onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これなに？',mode:'explain'}}))">
-      Ask Guide
+      これなに？
     </button>
   </div>
   <div class="cell-inspector-panel__region">
-    Region: <strong>${_esc(regionLabel)}</strong>
+    領域: <strong>${_esc(regionLabel)}</strong>
     &nbsp;|&nbsp;
     u=${_esc(formatMetricValue(geometry.majorAngle, 'rad'))}
     &nbsp;
@@ -193,7 +195,7 @@ export function renderCellInspectorPanelHTML(props: CellInspectorPanelProps): st
     ${rowsHtml}
   </div>
   <div class="cell-inspector-panel__events-section">
-    <div class="cell-inspector-panel__events-title">Recent Events</div>
+    <div class="cell-inspector-panel__events-title">最近の履歴</div>
     ${eventsHtml}
   </div>
 </div>`;
