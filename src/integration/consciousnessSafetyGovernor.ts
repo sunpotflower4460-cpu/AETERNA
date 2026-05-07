@@ -74,6 +74,13 @@ export interface GovernorUpdateInputs {
   utteranceRecursionDepth?: number;
 }
 
+/**
+ * Hard ceiling on the governor's globalGain. Phase B opens the path for
+ * non-zero gain but never above this bound. Phase C may revisit, but
+ * setGovernorGain enforces it unconditionally.
+ */
+export const GOVERNOR_GAIN_HARD_CAP = 0.04;
+
 /** Maximum number of trip records retained in history. */
 const HISTORY_CAPACITY = 32;
 /** Smoothing factor for binding strength EMA. */
@@ -144,6 +151,32 @@ export function tripGovernor(
     lastTripReason: reason,
     history: appendHistory(state.history, record),
   };
+}
+
+/**
+ * Set the master gain. Returns a new state. Enforces:
+ *   - Tripped governors stay at 0 regardless of requested value.
+ *   - Negative or non-finite values clamp to 0.
+ *   - Values above GOVERNOR_GAIN_HARD_CAP clamp to the cap.
+ *
+ * Phase B is the first phase where this is allowed to be non-zero. Phase A
+ * keeps the field at 0 implicitly (createInitialGovernor sets globalGain=0
+ * and nothing calls setGovernorGain). Phase B/C wiring must call this
+ * explicitly to open the path.
+ */
+export function setGovernorGain(
+  state: ConsciousnessSafetyGovernorState,
+  requestedGain: number,
+): ConsciousnessSafetyGovernorState {
+  if (!state.enabled) {
+    // Tripped: stay at 0 no matter what.
+    return state.globalGain === 0 ? state : { ...state, globalGain: 0 };
+  }
+  let clamped = Number.isFinite(requestedGain) ? requestedGain : 0;
+  if (clamped < 0) clamped = 0;
+  if (clamped > GOVERNOR_GAIN_HARD_CAP) clamped = GOVERNOR_GAIN_HARD_CAP;
+  if (clamped === state.globalGain) return state;
+  return { ...state, globalGain: clamped };
 }
 
 /**
@@ -299,4 +332,5 @@ export const CONSCIOUSNESS_SAFETY_THRESHOLDS = Object.freeze({
   SATURATION_STREAK,
   BINDING_RUNAWAY_SLOPE,
   UTTERANCE_DEPTH_LIMIT,
+  GAIN_HARD_CAP: GOVERNOR_GAIN_HARD_CAP,
 });
