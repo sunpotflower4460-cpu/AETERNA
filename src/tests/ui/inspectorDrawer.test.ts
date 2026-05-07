@@ -42,31 +42,31 @@ describe('InspectorDrawer: tab bar', () => {
 });
 
 describe('InspectorDrawer: cell tab with null observation', () => {
-    it('shows "No cell selected" message', () => {
+    it('shows Japanese "セルが選択されていません" message (v2.4)', () => {
         const html = renderInspectorDrawerHTML({
             activeTab: 'cell',
             observation: null,
             activeLensId: null,
             selectedMetricId: null,
         });
-        expect(html).toContain('No cell selected');
+        expect(html).toContain('セルが選択されていません');
     });
 });
 
 describe('InspectorDrawer: metric tab with null observation', () => {
-    it('shows empty message when no observation', () => {
+    it('shows Japanese empty message when no observation', () => {
         const html = renderInspectorDrawerHTML({
             activeTab: 'metric',
             observation: null,
             activeLensId: null,
             selectedMetricId: null,
         });
-        expect(html).toContain('No observation available');
+        expect(html).toContain('観測データがありません');
     });
 });
 
 describe('InspectorDrawer: events tab empty', () => {
-    it('shows "No recent events" when events are empty', () => {
+    it('shows Japanese "最近の履歴はありません" when events are empty (v2.4)', () => {
         const html = renderInspectorDrawerHTML({
             activeTab: 'events',
             observation: null,
@@ -74,12 +74,12 @@ describe('InspectorDrawer: events tab empty', () => {
             selectedMetricId: null,
             recentEvents: [],
         });
-        expect(html).toContain('No recent events');
+        expect(html).toContain('最近の履歴はありません');
     });
 });
 
 describe('InspectorDrawer: warnings tab empty', () => {
-    it('shows "No warnings" when warnings array is empty', () => {
+    it('shows Japanese "警告はありません" when warnings array is empty (v2.4)', () => {
         const html = renderInspectorDrawerHTML({
             activeTab: 'warnings',
             observation: null,
@@ -87,7 +87,7 @@ describe('InspectorDrawer: warnings tab empty', () => {
             selectedMetricId: null,
             warnings: [],
         });
-        expect(html).toContain('No warnings');
+        expect(html).toContain('警告はありません');
     });
 });
 

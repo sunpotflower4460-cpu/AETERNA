@@ -80,16 +80,16 @@ export function renderCausalTracePanelHTML(props: CausalTracePanelProps): string
     const { result, compact = false } = props;
 
     const disclaimer = `<div class="causal-trace-panel__disclaimer">
-  <strong>⚠ Not causal proof.</strong>
-  Signals shown are possible contributing signals only.
-  Correlation between metrics is not evidence of causation.
-  No consciousness, life, or intelligence claims are made.
+  <strong>⚠ 因果証明ではありません。</strong>
+  ここに表示されるシグナルは「関連候補」です。
+  指標間の相関は因果の証拠ではありません。
+  意識・生命・知性の証明ではありません。
 </div>`;
 
     if (!result) {
         return `<div class="causal-trace-panel causal-trace-panel--empty">
   ${disclaimer}
-  <p class="causal-trace-panel__empty-msg">No causal trace data available.</p>
+  <p class="causal-trace-panel__empty-msg">関連候補データがありません。</p>
 </div>`;
     }
 
@@ -103,29 +103,30 @@ export function renderCausalTracePanelHTML(props: CausalTracePanelProps): string
         ? `<ul class="causal-trace-panel__signals-list">
 ${possibleContributingSignals.map(renderSignalHTML).join('\n')}
 </ul>`
-        : '<p class="causal-trace-panel__no-signals">No possible contributing signals found for this tick and cell.</p>';
+        : '<p class="causal-trace-panel__no-signals">このtick・セルに対する関連候補シグナルはありませんでした。</p>';
 
     const compactClass = compact ? ' causal-trace-panel--compact' : '';
 
     return `<div class="causal-trace-panel${compactClass}">
   <div class="causal-trace-panel__header">
-    <span class="causal-trace-panel__title">Causal Trace</span>
+    <span class="causal-trace-panel__title">関連候補</span>
+    <span class="causal-trace-panel__title-en">(Causal Trace)</span>
     <span class="causal-trace-panel__tick">tick ${_esc(currentTick)}</span>
-    <span class="causal-trace-panel__confidence">confidence: ${_esc(confidence)}</span>
+    <span class="causal-trace-panel__confidence">信頼度: ${_esc(confidence)}</span>
   </div>
   ${disclaimer}
   <div class="causal-trace-panel__summary">${summaryHtml}</div>
   <div class="causal-trace-panel__signals">
-    <div class="causal-trace-panel__signals-title">Possible Contributing Signals <span class="causal-trace-panel__signals-note">(possible · related · nearby — not causal proof)</span></div>
+    <div class="causal-trace-panel__signals-title">関連候補シグナル <span class="causal-trace-panel__signals-note">（関連・近接候補 — 因果証明ではありません）</span></div>
     ${signalsHtml}
   </div>
   <div class="causal-trace-panel__cautions">
-    <div class="causal-trace-panel__cautions-title">Cautions</div>
+    <div class="causal-trace-panel__cautions-title">注意点</div>
     <ul class="causal-trace-panel__cautions-list">${cautionsHtml}</ul>
   </div>
   <div class="causal-trace-panel__guide-actions">
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Explain relation',mode:'explain'}}))">Explain relation</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Is this causal?',mode:'caution'}}))">Is this causal?</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Explain relation',mode:'explain'}}))">関連を説明して</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'Is this causal?',mode:'caution'}}))">これは因果？</button>
   </div>
 </div>`;
 }

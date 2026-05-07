@@ -46,10 +46,20 @@ describe('renderLensAwareGuidePanelHTML', () => {
       response: makeResponse(),
     });
     expect(html).toContain('vortexConfidence');
-    expect(html).toContain('cell 5');
+    expect(html).toContain('セル 5');
   });
 
-  it('shows AI Guide header', () => {
+  it('shows 観測ガイド header (Japanese-first, v2.4)', () => {
+    const html = renderLensAwareGuidePanelHTML({
+      activeLensId: null,
+      selectedCellIndex: null,
+      activeMode: 'explain',
+      response: null,
+    });
+    expect(html).toContain('観測ガイド');
+  });
+
+  it('retains English "(AI Guide)" reference', () => {
     const html = renderLensAwareGuidePanelHTML({
       activeLensId: null,
       selectedCellIndex: null,
@@ -66,8 +76,8 @@ describe('renderLensAwareGuidePanelHTML', () => {
       activeMode: 'explain',
       response: null,
     });
-    expect(html).toContain('AI Guide は観測補助です');
-    expect(html).toContain('AETERNA 本体ではありません');
+    expect(html).toContain('観測結果を読む補助');
+    expect(html).toContain('AETERNA 本体の発話ではありません');
   });
 
   it('renders mode tabs', () => {
@@ -112,23 +122,23 @@ describe('renderLensAwareGuidePanelHTML', () => {
     expect(html).toContain('Guide is ready. Ask a question above.');
   });
 
-  it('shows "no lens active" when activeLensId is null', () => {
+  it('shows Japanese "レンズ未選択" when activeLensId is null (v2.4)', () => {
     const html = renderLensAwareGuidePanelHTML({
       activeLensId: null,
       selectedCellIndex: null,
       activeMode: 'explain',
       response: null,
     });
-    expect(html).toContain('no lens active');
+    expect(html).toContain('レンズ未選択');
   });
 
-  it('shows "no cell selected" when selectedCellIndex is null', () => {
+  it('shows Japanese "セル未選択" when selectedCellIndex is null (v2.4)', () => {
     const html = renderLensAwareGuidePanelHTML({
       activeLensId: null,
       selectedCellIndex: null,
       activeMode: 'explain',
       response: null,
     });
-    expect(html).toContain('no cell selected');
+    expect(html).toContain('セル未選択');
   });
 });

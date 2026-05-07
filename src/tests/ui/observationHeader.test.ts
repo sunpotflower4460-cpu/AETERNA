@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { renderObservationHeaderHTML } from '../../ui/observation/ObservationHeader.js';
 
 describe('ObservationHeader: live mode', () => {
-    it('shows Live badge', () => {
+    it('shows ライブ badge', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 50,
             replayTick: null,
@@ -16,10 +16,10 @@ describe('ObservationHeader: live mode', () => {
             activeLensId: null,
         });
         expect(html).toContain('observation-header__mode-badge--live');
-        expect(html).toContain('>Live<');
+        expect(html).toContain('>ライブ<');
     });
 
-    it('does NOT show Replay badge in live mode', () => {
+    it('does NOT show 再生 badge in live mode', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 50,
             replayTick: null,
@@ -32,7 +32,7 @@ describe('ObservationHeader: live mode', () => {
 });
 
 describe('ObservationHeader: replay mode', () => {
-    it('shows Replay badge', () => {
+    it('shows 再生 badge', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 100,
             replayTick: 42,
@@ -41,7 +41,7 @@ describe('ObservationHeader: replay mode', () => {
             activeLensId: null,
         });
         expect(html).toContain('observation-header__mode-badge--replay');
-        expect(html).toContain('>Replay<');
+        expect(html).toContain('>再生<');
     });
 
     it('shows replay tick value', () => {
@@ -68,7 +68,7 @@ describe('ObservationHeader: replay mode', () => {
 });
 
 describe('ObservationHeader: cell display', () => {
-    it('shows cell index when selected', () => {
+    it('shows セル index when selected', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 0,
             replayTick: null,
@@ -76,10 +76,10 @@ describe('ObservationHeader: cell display', () => {
             selectedCellIndex: 7,
             activeLensId: null,
         });
-        expect(html).toContain('Cell 7');
+        expect(html).toContain('セル 7');
     });
 
-    it('shows (no cell) when no cell is selected', () => {
+    it('shows （未選択） when no cell is selected', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 0,
             replayTick: null,
@@ -87,7 +87,7 @@ describe('ObservationHeader: cell display', () => {
             selectedCellIndex: null,
             activeLensId: null,
         });
-        expect(html).toContain('(no cell)');
+        expect(html).toContain('（未選択）');
     });
 });
 
@@ -105,7 +105,7 @@ describe('ObservationHeader: lens display', () => {
 });
 
 describe('ObservationHeader: safety mode', () => {
-    it('shows Experimental Safety badge for experimental safety mode', () => {
+    it('shows 実験的安全モード badge for experimental safety mode', () => {
         const html = renderObservationHeaderHTML({
             liveTick: 0,
             replayTick: null,
@@ -114,7 +114,7 @@ describe('ObservationHeader: safety mode', () => {
             activeLensId: null,
             safetyMode: 'experimental',
         });
-        expect(html).toContain('Experimental Safety');
+        expect(html).toContain('実験的安全モード');
     });
 });
 

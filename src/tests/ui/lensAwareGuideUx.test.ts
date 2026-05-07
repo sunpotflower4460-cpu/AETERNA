@@ -41,14 +41,14 @@ const claimGuardFailedResponse: LensGuideResponse = {
 // ── LensAwareGuidePanel ───────────────────────────────────────────────────────
 
 describe('LensAwareGuidePanel: null activeLensId', () => {
-    it('shows "no lens active" when activeLensId is null', () => {
+    it('shows Japanese "レンズ未選択" when activeLensId is null (v2.4)', () => {
         const html = renderLensAwareGuidePanelHTML({
             activeLensId: null,
             selectedCellIndex: null,
             activeMode: 'explain',
             response: null,
         });
-        expect(html).toContain('no lens active');
+        expect(html).toContain('レンズ未選択');
     });
 });
 
@@ -77,7 +77,7 @@ describe('LensAwareGuidePanel: guardrail note', () => {
 });
 
 describe('LensAwareGuidePanel: public mode', () => {
-    it('shows "rule-based guide" and "external LLM disabled" in public mode', () => {
+    it('shows Japanese "ルールベース" and "外部LLM無効" in public mode (v2.4)', () => {
         const html = renderLensAwareGuidePanelHTML({
             activeLensId: null,
             selectedCellIndex: null,
@@ -85,8 +85,8 @@ describe('LensAwareGuidePanel: public mode', () => {
             response: null,
             isPublicMode: true,
         });
-        expect(html).toContain('rule-based guide');
-        expect(html).toContain('external LLM disabled');
+        expect(html).toContain('ルールベース');
+        expect(html).toContain('外部LLM無効');
     });
 });
 

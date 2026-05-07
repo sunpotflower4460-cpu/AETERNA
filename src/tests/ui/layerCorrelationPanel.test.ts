@@ -43,14 +43,14 @@ function makeState(overrides: Partial<LayerCorrelationState> = {}): LayerCorrela
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('LayerCorrelationPanel: disclaimer', () => {
-    it('shows "correlation is not causal proof"', () => {
+    it('shows "相関は因果ではありません" disclaimer (Japanese-first, v2.4)', () => {
         const html = renderLayerCorrelationPanelHTML({ state: makeState() });
-        expect(html.toLowerCase()).toContain('correlation is not causal proof');
+        expect(html).toContain('相関は因果ではありません');
     });
 
     it('shows disclaimer even when state is null', () => {
         const html = renderLayerCorrelationPanelHTML({ state: null });
-        expect(html.toLowerCase()).toContain('correlation is not causal proof');
+        expect(html).toContain('相関は因果ではありません');
     });
 });
 
@@ -96,7 +96,7 @@ describe('LayerCorrelationPanel: insufficient data', () => {
         const html = renderLayerCorrelationPanelHTML({
             state: makeState({ sufficientData: false, snapshotCount: 1 }),
         });
-        expect(html.toLowerCase()).toContain('insufficient');
+        expect(html).toContain('データが不足');
     });
 });
 

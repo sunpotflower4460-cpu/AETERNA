@@ -62,16 +62,16 @@ export function renderLayerCorrelationPanelHTML(props: LayerCorrelationPanelProp
     const { state } = props;
 
     const disclaimer = `<div class="layer-correlation-panel__disclaimer">
-  <strong>⚠ Correlation is not causal proof.</strong>
-  Statistical correlations between layers show patterns only.
-  They do not imply that one metric causes another.
-  No consciousness, life, or intelligence claims are made.
+  <strong>⚠ 相関は因果ではありません。</strong>
+  層間の統計的相関はパターンを示すものです。
+  一方の指標がもう一方を引き起こすことを示すものではありません。
+  意識・生命・知性の証明ではありません。
 </div>`;
 
     if (!state) {
         return `<div class="layer-correlation-panel layer-correlation-panel--empty">
   ${disclaimer}
-  <p class="layer-correlation-panel__empty-msg">No layer correlation data available.</p>
+  <p class="layer-correlation-panel__empty-msg">層の相関データがありません。</p>
 </div>`;
     }
 
@@ -82,29 +82,30 @@ export function renderLayerCorrelationPanelHTML(props: LayerCorrelationPanelProp
         : `Window: ${_esc(timeWindowTicks)} ticks, ${_esc(snapshotCount)} snapshots`;
 
     const insufficientNote = !sufficientData
-        ? `<div class="layer-correlation-panel__insufficient">Insufficient data for correlation (need ≥ 3 snapshots).</div>`
+        ? `<div class="layer-correlation-panel__insufficient">相関計算に必要なデータが不足しています（スナップショット 3 件以上必要）。</div>`
         : '';
 
     const pairsHtml = pairs.length > 0
         ? `<table class="layer-correlation-panel__table">
   <thead>
     <tr>
-      <th>Metric A</th>
-      <th>Metric B</th>
+      <th>指標 A</th>
+      <th>指標 B</th>
       <th>Pearson r</th>
-      <th>Confidence</th>
-      <th>Samples (min 3)</th>
+      <th>信頼度</th>
+      <th>サンプル数（最低3）</th>
     </tr>
   </thead>
   <tbody>
     ${pairs.map(renderPairRowHTML).join('\n')}
   </tbody>
 </table>`
-        : '<p class="layer-correlation-panel__no-pairs">No correlation pairs configured.</p>';
+        : '<p class="layer-correlation-panel__no-pairs">相関ペアが設定されていません。</p>';
 
     return `<div class="layer-correlation-panel">
   <div class="layer-correlation-panel__header">
-    <span class="layer-correlation-panel__title">Layer Correlation</span>
+    <span class="layer-correlation-panel__title">層の相関</span>
+    <span class="layer-correlation-panel__title-en">(Layer Correlation)</span>
     <span class="layer-correlation-panel__window">${windowInfo}</span>
   </div>
   ${disclaimer}

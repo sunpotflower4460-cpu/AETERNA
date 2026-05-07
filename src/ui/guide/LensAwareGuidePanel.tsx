@@ -43,11 +43,11 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
 
   const activeLensDisplay = activeLensId
     ? `<span class="lens-aware-guide-panel__lens-id">${_esc(activeLensId)}</span>`
-    : `<span class="lens-aware-guide-panel__lens-none">no lens active</span>`;
+    : `<span class="lens-aware-guide-panel__lens-none">レンズ未選択</span>`;
 
   const cellDisplay = selectedCellIndex !== null
-    ? `<span class="lens-aware-guide-panel__cell-index">cell ${_esc(String(selectedCellIndex))}</span>`
-    : `<span class="lens-aware-guide-panel__cell-none">no cell selected</span>`;
+    ? `<span class="lens-aware-guide-panel__cell-index">セル ${_esc(String(selectedCellIndex))}</span>`
+    : `<span class="lens-aware-guide-panel__cell-none">セル未選択</span>`;
 
   const publicModeBadge = isPublicMode
     ? `<span class="lens-aware-guide-panel__public-badge">Public Mode</span>`
@@ -66,19 +66,20 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
 
   return `<div class="lens-aware-guide-panel">
   <div class="lens-aware-guide-panel__header">
-    <span class="lens-aware-guide-panel__title">AI Guide</span>
+    <span class="lens-aware-guide-panel__title">観測ガイド</span>
+    <span class="lens-aware-guide-panel__title-en">(AI Guide)</span>
     ${publicModeBadge}
-    ${isPublicMode ? '<span class="lens-aware-guide-panel__guide-type">rule-based guide · external LLM disabled</span>' : ''}
+    ${isPublicMode ? '<span class="lens-aware-guide-panel__guide-type">ルールベース · 外部LLM無効</span>' : ''}
     <small class="lens-aware-guide-panel__guardrail-note">
-      このガイドは観測結果を読む補助です（AI Guide は観測補助です）。AETERNA 本体ではありません。
+      このガイドは観測結果を読む補助です。AETERNA 本体の発話ではありません。
     </small>
   </div>
   <div class="lens-aware-guide-panel__context">
     <div class="lens-aware-guide-panel__active-lens">
-      Active lens: ${activeLensDisplay}
+      レンズ: ${activeLensDisplay}
     </div>
     <div class="lens-aware-guide-panel__selected-cell">
-      Selected cell: ${cellDisplay}
+      選択セル: ${cellDisplay}
     </div>
   </div>
   <div class="lens-aware-guide-panel__shortcuts">

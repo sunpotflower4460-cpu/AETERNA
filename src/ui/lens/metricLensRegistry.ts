@@ -60,8 +60,11 @@ export interface MetricLens {
     /** Canonical identifier */
     id: MetricLensId;
 
-    /** Human-readable display label */
+    /** Human-readable display label (English) */
     label: string;
+
+    /** Japanese display label — primary display in Japanese-first UI */
+    labelJp: string;
 
     /**
      * Short description of what observable quantity this lens visualises.
@@ -121,6 +124,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     gaussianCurvature: {
         id: 'gaussianCurvature',
         label: 'Gaussian Curvature',
+        labelJp: 'ガウス曲率レンズ',
         description: 'cos(v) / (r × (R + r·cos(v))). Positive on outer rim, negative on inner rim.',
         disclaimer: 'Purely geometric quantity. Does not represent activity, consciousness, or energy.',
         valueKind: 'measured',
@@ -134,6 +138,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     areaElement: {
         id: 'areaElement',
         label: 'Area Element',
+        labelJp: '面積要素レンズ',
         description: 'r × (R + r·cos(v)). The local surface area per grid cell. Larger on outer rim.',
         disclaimer: 'Geometric metric only. Not a flow or energy value.',
         valueKind: 'measured',
@@ -147,6 +152,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     innerOuterBias: {
         id: 'innerOuterBias',
         label: 'Inner–Outer Bias',
+        labelJp: '内外バイアスレンズ',
         description: 'cos(v). +1 = outer rim, −1 = inner rim. Captures torus ring position.',
         disclaimer: 'Geometric position measure. Not a semantic or saliency indicator.',
         valueKind: 'measured',
@@ -160,6 +166,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     fieldAmplitude: {
         id: 'fieldAmplitude',
         label: 'Field Amplitude',
+        labelJp: '場の振幅レンズ',
         description: 'Amplitude of the complex scalar field at this cell.',
         disclaimer: 'Raw field value. Not "activity level" in a biological or conscious sense.',
         valueKind: 'measured',
@@ -173,6 +180,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     fieldPhase: {
         id: 'fieldPhase',
         label: 'Field Phase',
+        labelJp: '位相レンズ',
         description: 'Phase angle of the complex scalar field at this cell, in radians [−π, π].',
         disclaimer: 'Phase angle. No semantic or temporal meaning assigned.',
         valueKind: 'measured',
@@ -186,6 +194,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     phaseCoherence: {
         id: 'phaseCoherence',
         label: 'Local Phase Coherence',
+        labelJp: '局所位相コヒーレンスレンズ',
         description: 'Mean cosine similarity of this cell\'s phase to its 4 periodic neighbours. Range: 0–1.',
         disclaimer: 'Derived coherence proxy. High coherence is not consciousness or synchrony.',
         valueKind: 'derived',
@@ -199,6 +208,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     flowContinuity: {
         id: 'flowContinuity',
         label: 'Local Flow Continuity',
+        labelJp: '局所流れ連続性レンズ',
         description: 'Proxy for local amplitude gradient smoothness. High = gradual amplitude change.',
         disclaimer: 'Derived proxy. Not biological or conscious flow.',
         valueKind: 'derived',
@@ -212,6 +222,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     energyThroughput: {
         id: 'energyThroughput',
         label: 'Local Energy Throughput',
+        labelJp: '局所エネルギー通量レンズ',
         description: 'Amplitude × flow continuity proxy. Larger where amplitude is high and flow is smooth.',
         disclaimer: 'Derived proxy. Not biological or conscious energy.',
         valueKind: 'derived',
@@ -225,6 +236,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     vortexConfidence: {
         id: 'vortexConfidence',
         label: 'Vortex Candidate Confidence',
+        labelJp: '渦候補レンズ',
         description: 'Observer-side confidence that a phase-defect candidate is located at or near this cell.',
         disclaimer: 'Observer-side proxy. Not a guaranteed vortex. Not a consciousness centre.',
         valueKind: 'proxy',
@@ -238,6 +250,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     topologicalCharge: {
         id: 'topologicalCharge',
         label: 'Topological Charge',
+        labelJp: 'トポロジカル電荷レンズ',
         description: 'Phase-winding topological charge at this cell: +1, 0, or −1.',
         disclaimer: 'Topological index derived from phase winding. Not a semantic or electrostatic charge.',
         valueKind: 'derived',
@@ -251,6 +264,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     membraneDeformation: {
         id: 'membraneDeformation',
         label: 'Membrane Deformation',
+        labelJp: '膜変形レンズ',
         description: 'Local membrane deformation at this cell. Range: 0–1.',
         disclaimer: 'Observer-side state value. Not biological membrane deformation.',
         valueKind: 'measured',
@@ -264,6 +278,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     membraneTension: {
         id: 'membraneTension',
         label: 'Membrane Tension',
+        labelJp: '膜張力レンズ',
         description: 'Local membrane tension at this cell. Range: 0–1.',
         disclaimer: 'Observer-side state value. Not physical tension.',
         valueKind: 'measured',
@@ -277,6 +292,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     membranePermeability: {
         id: 'membranePermeability',
         label: 'Membrane Permeability',
+        labelJp: '膜透過性レンズ',
         description: 'Local membrane permeability at this cell. Range: 0–1.',
         disclaimer: 'Observer-side state value. Not biological permeability.',
         valueKind: 'measured',
@@ -290,6 +306,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     twoSidedness: {
         id: 'twoSidedness',
         label: 'Two-Sidedness',
+        labelJp: '二面性レンズ',
         description: 'Membrane two-sidedness at this cell: overlap between actuation and return imprints.',
         disclaimer: 'Derived metric. Not a biological membrane property claim.',
         valueKind: 'measured',
@@ -303,6 +320,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     plasticityTrace: {
         id: 'plasticityTrace',
         label: 'Plasticity Trace',
+        labelJp: '媒質履歴レンズ',
         description: 'Total accumulated weak plasticity trace at this cell (all channels summed).',
         disclaimer: 'Observer-side trace accumulation. Not learning, memory, or synaptic weight.',
         valueKind: 'derived',
@@ -316,6 +334,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     resistanceScale: {
         id: 'resistanceScale',
         label: 'Resistance Scale',
+        labelJp: '抵抗スケールレンズ',
         description: 'Multiplicative resistance scale factor at this cell. 1.0 = neutral.',
         disclaimer: 'Derived scale factor. Not a physical resistance or memory weight.',
         valueKind: 'derived',
@@ -329,6 +348,7 @@ const LENSES: Record<MetricLensId, MetricLens> = {
     observedRatioMatch: {
         id: 'observedRatioMatch',
         label: 'Observed Ratio Match',
+        labelJp: '観測比率レンズ',
         description: 'Strongest reference ratio match strength for this observation context. Range: 0–1.',
         disclaimer: 'Similarity proxy only. High matchStrength is NOT proof of resonance, life, or consciousness.',
         valueKind: 'proxy',
@@ -342,6 +362,9 @@ const LENSES: Record<MetricLensId, MetricLens> = {
 };
 
 // ── Registry API ──────────────────────────────────────────────────────────────
+
+/** All defined lens IDs, in registration order. */
+export const ALL_LENS_IDS: MetricLensId[] = Object.keys(LENSES) as MetricLensId[];
 
 /** Return all defined lenses. */
 export function getAllLenses(): MetricLens[] {
