@@ -85,5 +85,5 @@ export function isStepCompleted(state: OnboardingProgressState, stepId: Observat
 }
 
 export function getCompletionFraction(state: OnboardingProgressState): number {
-  return state.completedStepIds.length / 10;
+  return state.completedStepIds.length / STEP_ORDER.length;
 }

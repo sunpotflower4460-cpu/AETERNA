@@ -58,13 +58,4 @@ export function renderObservationRoutePanelHTML(props: ObservationRoutePanelProp
 </div>`;
 }
 
-// _esc is defined here for consistency with the headless-panel pattern,
-// even though HTML escaping is delegated to imported renderers.
-function _esc(s: string | number | undefined | null): string {
-  if (s === undefined || s === null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+
