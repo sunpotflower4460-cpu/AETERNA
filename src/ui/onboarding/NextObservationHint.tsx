@@ -20,10 +20,12 @@ export function renderNextObservationHintHTML(props: NextObservationHintProps): 
     ? ` data-panel="${_esc(hint.targetPanel)}"`
     : '';
 
+  const actionLabel = _esc(hint.actionLabelJa);
+
   return `<div class="next-observation-hint"${panelAttr} role="complementary" aria-label="次のステップのヒント">
   <h4 class="next-observation-hint__title">${_esc(hint.titleJa)}</h4>
   <p class="next-observation-hint__desc">${_esc(hint.descriptionJa)}</p>
-  <button class="next-observation-hint__action" type="button" data-hint-action="${_esc(hint.actionLabelJa)}"${panelAttr}>${_esc(hint.actionLabelJa)}</button>
+  <button class="next-observation-hint__action" type="button" data-hint-action="${actionLabel}"${panelAttr}>${actionLabel}</button>
 </div>`;
 }
 
