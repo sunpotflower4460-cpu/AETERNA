@@ -13,7 +13,8 @@ describe('renderLensGuideQuestionInputHTML', () => {
     const html = renderLensGuideQuestionInputHTML({ currentMode: 'explain' });
     expect(html).toContain('これなに？');
     expect(html).toContain('どう仮説できる？');
-    expect(html).toContain('次どこ見る？');
+    expect(html).toContain('次どこを見る？');
+    expect(html).toContain('これは証明になる？');
   });
 
   it('shows placeholder in input', () => {
@@ -44,7 +45,7 @@ describe('renderLensGuideQuestionInputHTML', () => {
     expect(html).toContain("mode:'hypothesis'");
   });
 
-  it('shortcut button for 次どこ見る dispatches nextObservation mode', () => {
+  it('shortcut button for 次どこを見る dispatches nextObservation mode', () => {
     const html = renderLensGuideQuestionInputHTML({ currentMode: 'explain' });
     expect(html).toContain("mode:'nextObservation'");
   });

@@ -1,6 +1,8 @@
 # Public Research Mode
 
-AETERNA-NATURAL v1.4 — Public Research Mode specification and defaults.
+AETERNA-NATURAL v2.2 — Public Research Mode specification and defaults.
+
+_v2.2 update: Added beginner/observation/advanced scenario grouping and recommended demo flow. See `docs/public-demo-polish.md` for full v2.2 notes._
 
 ---
 

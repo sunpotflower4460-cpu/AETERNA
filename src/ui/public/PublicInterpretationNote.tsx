@@ -1,22 +1,30 @@
 /**
  * PublicInterpretationNote.tsx
- * AETERNA-NATURAL v1.4 — Always-Visible Interpretation Note
+ * AETERNA-NATURAL v2.2 — Always-Visible Interpretation Note
  *
  * Headless TypeScript model for the interpretation note displayed to all users.
  * No JSX / no DOM rendering — caller is responsible for rendering.
  *
- * Key points always shown:
- * - Vortex candidates are phase-defect candidates, not minds
- * - Weak plasticity traces are medium-history proxies, not semantic memory
- * - Observed ratio matches are comparisons, not proof
- * - No emergence is a valid observation
+ * Shortened and clarified for first-time users (v2.2 polish).
  *
  * Principles:
  * - This note is never optional. It is always shown.
  * - No consciousness / life / intelligence / mystical proof claims.
  *
- * Reference: docs/public-research-mode.md §6
+ * Reference: docs/public-research-mode.md §6, docs/public-demo-polish.md §8
  */
+
+// ── Short note (primary display) ───────────────────────────────────────────────
+
+export const PUBLIC_INTERPRETATION_NOTE_SHORT_EN =
+  'Observation note: ' +
+  'This is a research prototype for observing field changes. ' +
+  'Vortex candidates, membrane traces, and ratio matches are not proof of consciousness, life, or mystical truth.';
+
+export const PUBLIC_INTERPRETATION_NOTE_SHORT_JA =
+  '観測メモ: ' +
+  'このアプリは、場の変化を観測する研究プロトタイプです。' +
+  '渦候補・膜痕跡・比率近接は、意識・生命・神秘的真理の証拠にはなりません。';
 
 // ── Note line definitions ──────────────────────────────────────────────────────
 
@@ -57,6 +65,16 @@ export const INTERPRETATION_NOTE_LINES: InterpretationNoteLine[] = [
 // ── Render helpers ─────────────────────────────────────────────────────────────
 
 /**
+ * Returns the short interpretation note as plain-text lines (primary display).
+ */
+export function renderInterpretationNoteShortText(): string[] {
+  return [
+    PUBLIC_INTERPRETATION_NOTE_SHORT_EN,
+    PUBLIC_INTERPRETATION_NOTE_SHORT_JA,
+  ];
+}
+
+/**
  * Returns the interpretation note as plain-text lines.
  */
 export function renderInterpretationNoteText(): string[] {
@@ -72,7 +90,9 @@ export function renderInterpretationNoteText(): string[] {
  */
 export function renderInterpretationNoteMarkdown(): string {
   const lines = [
-    '> **Interpretation note** (always applicable)',
+    '> **Observation note** (always applicable)',
+    '>',
+    `> ${PUBLIC_INTERPRETATION_NOTE_SHORT_EN}`,
     '>',
     ...INTERPRETATION_NOTE_LINES.map(line => `> - ${line.text}`),
   ];
