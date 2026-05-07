@@ -1,6 +1,6 @@
 /**
  * LensGuideQuestionInput.tsx
- * v1.9: Lens-aware AI Guide
+ * v2.2: Public Demo Polish — updated shortcut copy for first-time users
  *
  * Renders the question input area for the Lens-aware AI Guide.
  * Includes shortcut buttons and dispatches CustomEvents on ask.
@@ -10,8 +10,9 @@
  * - No LLM / API calls.
  * - All output is XSS-safe via _esc().
  * - Events dispatched via window.dispatchEvent + CustomEvent.
+ * - "これは証明になる？" shortcut always includes a caution response.
  *
- * Reference: docs/lens-aware-ai-guide.md §8
+ * Reference: docs/lens-aware-ai-guide.md §8, docs/public-demo-polish.md §7
  */
 
 import type { LensGuideMode } from '../../config/lensGuideConfig.ts';
@@ -27,9 +28,11 @@ export interface LensGuideQuestionInputProps {
 // ── Shortcut buttons ──────────────────────────────────────────────────────────
 
 const SHORTCUT_BUTTONS: Array<{ label: string; question: string; mode: LensGuideMode }> = [
-  { label: 'これなに？',       question: 'これなに？',       mode: 'explain' },
-  { label: 'どう仮説できる？', question: 'どう仮説できる？', mode: 'hypothesis' },
-  { label: '次どこ見る？',     question: '次どこ見る？',     mode: 'nextObservation' },
+  { label: 'これなに？',         question: 'これなに？',         mode: 'explain' },
+  { label: '何が起きてる？',     question: '何が起きてる？',     mode: 'explain' },
+  { label: 'どう仮説できる？',   question: 'どう仮説できる？',   mode: 'hypothesis' },
+  { label: '次どこを見る？',     question: '次どこを見る？',     mode: 'nextObservation' },
+  { label: 'これは証明になる？', question: 'これは証明になる？', mode: 'caution' },
 ];
 
 // ── renderLensGuideQuestionInputHTML ──────────────────────────────────────────

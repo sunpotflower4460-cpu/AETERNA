@@ -1,6 +1,23 @@
 # First Release Notes
 
-AETERNA-NATURAL v1.4 — First Release Polish
+AETERNA-NATURAL v2.2 — Public Demo Polish
+
+_Previous: v1.4 First Release Polish. See below for v2.2 additions._
+
+---
+
+## v2.2 Public Demo Polish (2026-05-07)
+
+- **Landing copy** — Hero section, what this is/not, updated action buttons
+- **First-run guide** — Rewritten as 5-step first-user guide (tap a cell, replay, ask guide)
+- **RecommendedDemoFlow** — New 9-step recommended first-demo path
+- **Observation Guide shortcuts** — Added これなに？/ 何が起きてる？/ どう仮説できる？/ 次どこを見る？/ これは証明になる？
+- **Scenario display** — Beginner / Observation / Advanced grouping with one-line descriptions
+- **README** — Public demo-oriented rewrite
+- **Docs** — `docs/public-demo-polish.md`, `docs/first-demo-checklist.md`
+- **Tests** — 6 new public demo test files
+
+No runtime dynamics were changed. No new LLM/API calls. No Node bridge. No fake visual/event/result.
 
 ---
 

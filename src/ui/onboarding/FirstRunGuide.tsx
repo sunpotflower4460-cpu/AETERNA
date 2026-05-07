@@ -1,24 +1,25 @@
 /**
  * FirstRunGuide.tsx
- * AETERNA-NATURAL v1.4 — First Run Guide Modal
+ * AETERNA-NATURAL v2.2 — First Run Guide Modal
  *
  * Headless TypeScript model for the first-run guide.
  * No JSX / no DOM rendering — caller is responsible for rendering.
  * Follows the same headless-panel pattern as LongRunComparisonPanel.tsx.
  *
- * Steps:
- *   1. What AETERNA-NATURAL is
- *   2. First place to look (Overview)
- *   3. First scenario to try (Quiet Baseline or Single Pulse Return)
- *   4. How to read observation values (Raw / Derived / Proxy / Check / Reference)
- *   5. Export (JSON / Markdown, seed / config / scenario / ticks)
+ * Steps (v2.2 — first-user-friendly, 5 steps):
+ *   1. What this is (observation device)
+ *   2. First look — the field
+ *   3. Tap a cell — Cell Inspector
+ *   4. Replay — time snapshots
+ *   5. Ask the Guide
  *
  * Principles:
  * - No consciousness / life / intelligence / mystical proof claims.
  * - Observations are observations — not proofs.
  * - Absence of emergence is a valid and expected result.
+ * - Presented as an observation device, not a proof engine.
  *
- * Reference: docs/public-research-mode.md §1
+ * Reference: docs/public-research-mode.md §1, docs/public-demo-polish.md §4
  */
 
 import type { FirstRunGuideStepData } from './FirstRunGuideStep.js';
@@ -37,117 +38,129 @@ export interface FirstRunGuideState {
 export const FIRST_RUN_GUIDE_STEPS: FirstRunGuideStepData[] = [
   {
     stepNumber: 1,
-    title: 'What AETERNA-NATURAL is',
+    title: 'What is this?',
     bodyLines: [
+      'AETERNA-NATURAL は、トーラス場で起きる変化を観測する研究装置です。',
       'AETERNA-NATURAL is a torus field observation lab.',
       '',
-      'It implements a physical-geometry field simulation — torus metric, complex scalar field,',
-      'vortex candidates, membrane layer, weak plasticity trace, and observed ratios — and',
-      'lets you observe the resulting dynamics.',
+      'You can observe:',
+      '  • Field flow and phase',
+      '  • Vortex candidates (phase-defect candidates)',
+      '  • Membrane traces',
+      '  • Weak plasticity traces (medium-history proxies)',
+      '  • Ratio comparisons',
+      '  • Time-based changes',
       '',
-      'It is NOT:',
-      '  - A proof of consciousness',
-      '  - A proof of life or intelligence',
-      '  - A healing or mystical system',
-      '  - A mind or aware entity',
+      'It starts in Safe Observation mode — the quietest, safest configuration.',
       '',
-      'Vortex candidates are phase-defect candidates in the field.',
-      'Weak plasticity traces are medium-history proxies.',
-      'Observed ratios are comparisons, not proof.',
-      'No emergence is a valid observation.',
+      'What this is NOT:',
+      '  ✗ Not a proof of consciousness',
+      '  ✗ Not a proof of life or intelligence',
+      '  ✗ Not a healing or mystical system',
+      '  ✗ Not a chatbot or AI personality',
     ],
     noteLines: [
-      'All observation labels carry a kind tag: Raw / Derived / Proxy / Check / Reference.',
+      'Observations are observations — not proof.',
+      'No emergence is a valid observation result.',
     ],
   },
   {
     stepNumber: 2,
-    title: 'First place to look: Overview',
+    title: 'First look — the field',
     bodyLines: [
-      'Open the Overview panel first.',
+      'まずは場全体を見てください。',
+      'Start by looking at the field.',
       '',
-      'It shows the key observational metrics in one place:',
-      '  - Flow Continuity — is field flow uninterrupted?',
-      '  - Energy Throughput — how much energy moves through the field?',
-      '  - Closure Stability — how stable is the closed-loop geometry?',
-      '  - Return Strength — how strongly do signals return after leaving?',
-      '  - Extinction Risk — how close is the field to collapse?',
-      '  - Semantic Leak — must always be 0 (integrity check)',
-      '  - NaN / Infinity — must always be 0 (numeric integrity check)',
+      'The dots, colors, and layers you see are actual observed values,',
+      'translated into a visual form.',
       '',
-      'Read the Overview before exploring other panels.',
+      '  • Colors show field values (flow, phase, curvature…)',
+      '  • Brighter areas show higher activity',
+      '  • Low activity is a normal and valid observation',
+      '',
+      'Recommended first run:',
+      '  Scenario: Quiet Baseline',
+      '  Preset: safeBaseline',
+      '  Seed: 1000  |  Ticks: 2000',
+      '',
+      'Press [Start Safe Observation] to begin.',
     ],
     noteLines: [
-      'All metrics are observational. High values do not mean "better" without context.',
+      'High values do not mean "better." Low activity is a valid baseline result.',
     ],
   },
   {
     stepNumber: 3,
-    title: 'First scenario to try',
+    title: 'Tap a cell — Cell Inspector',
     bodyLines: [
-      'Start with one of these two public-safe scenarios:',
+      '気になる場所をタップすると Cell Inspector が開きます。',
+      'Tap any cell in the field to open the Cell Inspector.',
       '',
-      '  Quiet Baseline (quietBaseline)',
-      '    Observe resting-state field dynamics with no perturbation.',
-      '    Low activity is a valid result.',
+      'The inspector shows all observed values for that cell:',
+      '  • Flow, phase, curvature',
+      '  • Vortex candidate score',
+      '  • Membrane trace',
+      '  • Weak plasticity trace',
+      '  • Observed ratio',
       '',
-      '  Single Pulse Return (singlePulseReturn)',
-      '    Apply a single gentle perturbation and observe how the field responds.',
-      '    Whether the field returns to baseline or diverges is the observation.',
+      'Each value has a kind tag:',
+      '  Raw       — direct field output',
+      '  Derived   — computed from raw values',
+      '  Proxy     — indirect indicator',
+      '  Check     — integrity invariant (must be 0)',
+      '  Reference — baseline for comparison only',
       '',
-      'Recommended preset: safeBaseline',
-      'Recommended seed:   1000',
-      'Recommended ticks:  2000',
+      'Tap a metric to open the matching Visual Lens for that value.',
     ],
     noteLines: [
-      'You can use the Export action to save the exact seed / config / scenario / ticks',
-      'for reproducibility.',
+      'Tap a metric row to switch to the Visual Lens for that measurement.',
     ],
   },
   {
     stepNumber: 4,
-    title: 'How to read observation values',
+    title: 'Replay — time snapshots',
     bodyLines: [
-      'Every observation value has a kind tag:',
+      'Replay は記録された観測 snapshot を表示します。',
+      'Replay shows recorded observation snapshots.',
       '',
-      '  Raw       — direct output from the simulation field, not smoothed',
-      '  Derived   — computed from raw values (e.g. averages, ratios)',
-      '  Proxy     — indirect indicator, one step removed from direct measurement',
-      '  Check     — integrity or safety invariant (must be 0 or inactive)',
-      '  Reference — stored baseline value for comparison only',
+      'You can:',
+      '  • Scrub through recorded ticks',
+      '  • See how values changed over time',
+      '  • Compare earlier and later states',
       '',
-      'These distinctions matter:',
-      '  - A high Proxy value does not confirm the underlying phenomenon.',
-      '  - A Check value that is non-zero requires attention, not interpretation.',
-      '  - Reference values are never fed back into runtime dynamics.',
+      'Important:',
+      '  Replay shows stored snapshots — the runtime itself does not go back in time.',
+      '  What you see is the recorded history of observations.',
     ],
     noteLines: [
-      'Raw / Derived / Proxy / Check / Reference — the label tells you what kind of',
-      'evidence you are looking at.',
+      'Replay is observation playback, not time travel in the simulation.',
     ],
   },
   {
     stepNumber: 5,
-    title: 'Export / Reproducibility',
+    title: 'Ask the Guide',
     bodyLines: [
-      'Use Export to save your observation for later reference or sharing.',
+      '観測レンズを見ながら「これなに？」「どう仮説できる？」と聞けます。',
+      'While viewing a lens, you can ask the Observation Guide questions.',
       '',
-      'Export formats:',
-      '  JSON      — full machine-readable record',
-      '  Markdown  — human-readable summary with observation context',
+      'Shortcut questions:',
+      '  これなに？         — What is this?',
+      '  何が起きてる？     — What is happening?',
+      '  どう仮説できる？   — How can I form a hypothesis?',
+      '  次どこを見る？     — Where should I look next?',
+      '  これは証明になる？ — Is this proof?',
       '',
-      'Every export includes:',
-      '  seed      — the random seed used for this run',
-      '  config    — the runtime preset configuration',
-      '  scenario  — the scenario definition',
-      '  ticks     — number of simulation steps',
+      'The Guide is an observation-auxiliary tool.',
+      'It is not AETERNA itself speaking.',
+      'It has no LLM or external API calls.',
       '',
-      'You can use these values to reproduce the exact same observation later.',
-      'Reproducibility is a core principle of AETERNA-NATURAL research.',
+      'For "これは証明になる？" — the answer will always include a caution:',
+      '  "これは証明ではありません。',
+      '   現在の観測値から見える候補・関係・proxy を整理することはできます。"',
     ],
     noteLines: [
-      'Exported files include full observation context but not raw field data.',
-      'Raw field data is observation-only and not stored by default.',
+      'The Guide is observation-auxiliary — not AETERNA itself speaking.',
+      'No LLM / API calls. All responses are rule-based.',
     ],
   },
 ];

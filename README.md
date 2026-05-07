@@ -1,10 +1,33 @@
 # AETERNA-NATURAL
 
-## What this is
+**Torus Field Observation Lab**
 
-Torus field observation lab.
+Observe how patterns, traces, phase changes, and candidate structures appear in a torus-based field.
 
-AETERNA-NATURAL implements a physical-geometry field simulation — torus metric, curvature, complex scalar field, vortex candidates, membrane layer, weak plasticity trace, and observed ratios — and lets you observe the resulting dynamics.
+---
+
+## Overview
+
+AETERNA-NATURAL is a torus-field observation lab.
+It lets you observe flow, phase, vortex candidates, membrane traces, weak plasticity traces, ratio comparisons, and time-based changes in a torus-based field.
+It does not claim to prove consciousness, life, intelligence, healing, or mystical truth.
+
+---
+
+## What you can observe
+
+- **Field flow** — continuity, energy throughput, return strength
+- **Geometry / curvature** — torus metric, Ricci curvature, curvature-vortex correlation
+- **Complex phase** — scalar and complex-mode field, phase coherence
+- **Vortex candidates** — topological charge, signed total charge, lifetime
+- **Membrane traces** — two-sidedness, integrity, boundary exchange
+- **Weak plasticity traces** — accumulation, saturation risk (observation only)
+- **Observed ratios** — ratio match strength, resonance proxy (observer-side only)
+- **Replay snapshots** — recorded tick-by-tick observation history
+- **Causal trace candidates** — indirect signal relationship candidates
+- **Layer correlations** — cross-layer observational relationships
+
+---
 
 ## What this is not
 
@@ -14,24 +37,95 @@ AETERNA-NATURAL implements a physical-geometry field simulation — torus metric
 - Weak plasticity traces are medium-history proxies, not semantic memory
 - Observed ratio matches are comparisons, not proof
 - No emergence is a valid observation
+- Not a chatbot or AI personality
 
-## Core observation layers
+---
 
-- **Geometry / curvature** — torus metric, Ricci curvature, curvature-vortex correlation
-- **Complex field / phase** — scalar and complex-mode field, phase coherence
-- **Vortex candidates** — topological charge, signed total charge, lifetime
-- **Membrane layer** — two-sidedness, integrity, boundary exchange
-- **Weak plasticity trace** — accumulation, saturation risk (observation only)
-- **Observed ratios** — ratio match strength, resonance proxy (observer-side only)
-- **Long-run comparison** — reproducible preset variant comparison suite
+## Quick Start
 
-## Quick start
+1. **Start Safe Observation** — safeBaseline preset, quietBaseline scenario
+2. **Run Quiet Baseline** — seed=1000, ticks=2000
+3. **Tap a cell** — open Cell Inspector
+4. **Open a Visual Lens** — select a metric to visualize
+5. **Ask the Guide** — "これなに？" or "どう仮説できる？"
+6. **Export Markdown** — reproducible record with seed / config / scenario / ticks
 
-1. Start Safe Observation (safeBaseline preset + quietBaseline scenario)
-2. Run Quiet Baseline (seed=1000, ticks=2000)
-3. Open Overview panel
-4. Confirm semanticLeakCount = 0 and nanOrInfinityCount = 0
-5. Export as Markdown with seed / config / scenario / ticks
+---
+
+## Public Research Mode
+
+Public Research Mode is the default for first-time users. It provides the safest, most conservative configuration.
+
+Defaults:
+- Preset: `safeBaseline`
+- Scenario: `quietBaseline`
+- Experimental modes: disabled
+- Advanced panels: hidden
+- Export: enabled
+
+See `docs/public-research-mode.md` for the full specification.
+
+---
+
+## Super Observation System
+
+The Super Observation System provides:
+
+- **Cell Inspector** — all metrics for a selected cell
+- **Visual Lens** — field-wide visualization of any metric
+- **Replay Panel** — recorded snapshot playback
+- **Causal Trace Panel** — indirect signal relationship candidates
+- **Layer Correlation Panel** — cross-layer observational data
+- **Observation Guide** — rule-based question-and-answer helper (no LLM)
+
+---
+
+## Reproducibility
+
+Every observation export includes:
+- `seed` — the random seed for this run
+- `config` — the runtime preset configuration
+- `scenario` — the scenario definition
+- `ticks` — number of simulation steps
+
+Formats: JSON (machine-readable), Markdown (human-readable).
+
+---
+
+## Guardrails
+
+The following claims are permanently prohibited in all copy, UI, docs, and exports:
+
+- Identity-alive claims: (the system) "is alive", "feels", "wants"
+- "[X] proved" claims: consciousness / life / intelligence
+- soul / healing guarantee / mystical truth claim
+- Parts = awareness claims: vortex=mind, plasticity=memory, ratio=truth
+
+---
+
+## Public Research Scenarios
+
+**Beginner**
+- `quietBaseline` — Observe the resting-state field with minimal external input
+- `singlePulseReturn` — Apply a single gentle pulse and observe the field response
+
+**Observation**
+- `phaseVortexEmergence` — Observe how phase changes and vortex candidates appear
+- `curvatureBiasObservation` — Observe how curvature bias affects field geometry
+- `observedRatioSurvey` — Compare observed ratios against reference values (not proof)
+
+**Advanced**
+- `plasticityTraceObservation` — Observe weak plasticity trace accumulation
+- `longRunNaturalComparison` — Compare natural-mode field behaviour over extended runs
+
+---
+
+## Status
+
+Research prototype — v2.2 Public Demo Polish.
+See `docs/first-release-notes.md` for current status, limitations, and what not to claim.
+
+---
 
 ## Safety / integrity
 
@@ -42,129 +136,7 @@ All observation values carry a kind label:
 - **Check** — integrity invariant (must be 0 or inactive)
 - **Reference** — baseline for comparison only, never fed back into dynamics
 
-## Research scenarios
-
-Public-safe scenarios:
-- `quietBaseline` — Quiet Baseline (resting-state observation)
-- `singlePulseReturn` — Single Pulse Return
-- `repeatedGentlePulse` — Repeated Gentle Pulse
-- `phaseVortexEmergence` — Phase Vortex Emergence
-- `curvatureBiasObservation` — Curvature Bias Observation
-- `observedRatioSurvey` — Observed Ratio Survey
-
-See `docs/public-research-mode.md` for the full scenario and experiment classification.
-
-## Export / reproducibility
-
-Every export includes:
-- `seed` — random seed for the run
-- `config` — runtime preset configuration
-- `scenario` — scenario definition
-- `ticks` — number of simulation steps
-
-Formats: JSON (machine-readable) and Markdown (human-readable).
-
-## Development status
-
-Research prototype — v1.4 Public Research Mode.  
-See `docs/first-release-notes.md` for current status, limitations, and what not to claim.
-
-## Current source of truth
-
-- Active code: `src/`
-- Preserved prototypes and displaced notes: `archive/`
-- Core development principles: `docs/aeterna-core-principles.md`
-- Current roadmap: `docs/current-roadmap.md`
-- N-series roadmap: `docs/aeterna-natural-roadmap.md`
-- Geometry / dynamics audit baseline: `docs/geometry-dynamics-audit.md`
-- Agent rules for small safe changes: `docs/agent-guardrails.md`
-- Current structure map: `docs/system-map.md`
-
-## UI / UX
-
-AETERNA's visualization is not decorative.  
-It must translate actual field activity, trace, return, closure, local excitability, and observed candidates into human-readable visual form.  
-Fake energy, fake fluctuation, and fake life-like motion are prohibited.  
-Raw, derived, proxy, and presentation-smoothed values should remain distinguishable.
-
-AETERNA の可視化は装飾ではありません。  
-実際の場の活動、痕跡、戻り、閉ループ、局所励起、観測候補を、人間が理解できる形へ翻訳するものです。  
-存在しないエネルギー、嘘の揺らぎ、生命っぽく見せるだけの動きは禁止します。  
-Raw / Derived / Proxy / Presentation-smoothed は区別します。
-
-- `docs/scientific-ui-ux-principles.md` — Scientific UI/UX 原則（U0）
-- `docs/visualization-integrity-principles.md` — 可視化の整合性原則
-- `docs/ui-information-architecture.md` — UI 3層アーキテクチャ
-- `docs/torus-visualization-requirements.md` — トーラス表示要件
-- `docs/default-guide-principles.md` — Default Guide 方針（API なしでも動く）
-- `docs/ui-ux-roadmap.md` — U0〜U8 ロードマップ
-
-## Body-World Closure（W-Series）
-
-AETERNA は内側だけで完結する生命場ではなく、世界と閉じた循環を持つ生命場を目指す。
-ただし意味形成はしない。proto-neuron は最初から置かず、トーラス生命場の流れから自然に観測される節候補として扱う。
-
-## Natural Emergence（S-Series）
-
-AETERNA は「揺らぐべきだから揺らす」のではありません。
-流れ、抵抗、散逸、遅延、境界交換、局所結合、閾値、痕跡、再入力を持つ場を作り、その結果として揺らぎ・安定・崩壊・再発・節・流路・proto-neuron / proto-network 候補が自然に観測されるかを見ます。
-
-実装対象は現象ではなく、現象が生じうる条件です。
-
-- `docs/natural-emergence-principles.md` — Natural Emergence の中核原則（S0）
-- `docs/world-loop-dynamic-viability.md` — Dynamic Viability の定義（S0）
-- `docs/proto-network-natural-observation.md` — Proto-Network Natural Observation（S0）
-- `docs/implementation-language-guardrails.md` — 実装言語の禁止事項（S0）
-- `docs/body-world-closure-principles.md` — Body-World Closure の設計原則
-- `docs/emergent-proto-neuron-principles.md` — 自然発生する proto-neuron の原則
-- `docs/world-medium-spec.md` — World Medium の設計境界（雛形）
-- `docs/actuation-pulse-spec.md` — Actuation Pulse の設計境界（雛形）
-- `docs/reafference-comparison-spec.md` — Reafference Comparison の設計境界（雛形）
-- `docs/body-world-closure-metrics.md` — 閉ループ観測指標（雛形）
-
-## AETERNA-NATURAL N-Series
-
-N-series は geometry / complex field / vortex / membrane / weak plasticity / observed ratios / comparison suite を段階的に実装するフェーズ。
-
-- `docs/aeterna-natural-roadmap.md` — N0〜N7 + v1.0 Stabilization ロードマップ
-- `docs/aeterna-natural-v1-stabilization.md` — v1.0 Stabilization 詳細仕様
-- `docs/aeterna-natural-observation-ux-polish.md` — v1.1 Observation UX Polish
-- `docs/aeterna-natural-integration-review.md` — N0–N7 統合レビュー
-
-### v1.0 Stabilization (完了)
-
-N0〜N7 実装後のコード・UI・docs・tests を安定化。
-
-新規追加: `AeternaNaturalRuntimeConfig` / 7 presets / safety gate (validateAeternaNaturalConfig) / `NaturalDiagnosticState` / long-run execution profiles / 5 stabilization tests / Runtime Mode HUD
-
-**安全方針:**
-- default config は安全側 (flat / scalar / observerOnly / plasticity off / neutral / safe)
-- complexRuntime / resistanceOnly / weakCoupling は experimental mode のみ
-- observedRatio は runtime feedback に使わない
-- referenceRatios は dynamicCore に import しない
-- No Node bridge, No LLM/API, No semantic claims
-
-### v1.1 Observation UX Polish
-
-- Observation Dashboard を追加し、runtime mode / geometry / vortex / membrane / weak plasticity / observed ratios / comparison / diagnostics を整理
-- Runtime Mode Badge と Value Kind Badge を強化
-- Guide / comparison copy を observation-only に統一
-- mobile でも runtime badges と guide が読みやすい形へ調整
-
-## v1.5 App Packaging / Deployment Readiness
-
-AETERNA-NATURAL v1.5 adds deployment readiness infrastructure:
-
-- **Release Environment Config** (`src/config/releaseEnvironmentConfig.ts`) — channel-based deployment config with safe public defaults
-- **Release Safety Validator** (`src/release/validateReleaseSafety.ts`) — cross-validates configs before deployment
-- **Release Check Script** (`scripts/run-release-checks.ts`) — static pre-deploy checks
-- **App Error Boundary** (`src/ui/system/AppErrorBoundary.tsx`) — graceful error handling
-- **Fallback Screen** (`src/ui/system/FallbackScreen.tsx`) — safe fallback when load fails
-- **Safe Reset Button** (`src/ui/system/SafeResetButton.tsx`) — returns to safeBaseline
-- **Public Build Info** (`src/ui/public/PublicBuildInfo.tsx`) — shows channel / mode / version
-- **Deployment docs** (`docs/deployment-readiness.md`, `docs/manual-release-checklist.md`, `docs/performance-smoke-check.md`)
-
-No runtime dynamics were changed. No experimental features were added.
+---
 
 ## Development
 
@@ -177,6 +149,8 @@ npm run test:run
 npm run check:release
 ```
 
+---
+
 ## Release Checks
 
 Before deploying, run:
@@ -186,3 +160,31 @@ npm run check:release
 ```
 
 See `docs/deployment-readiness.md` for the full deployment guide and `docs/manual-release-checklist.md` for the manual QA checklist.
+
+---
+
+## Docs
+
+- `docs/public-research-mode.md` — Public Research Mode specification
+- `docs/public-demo-polish.md` — v2.2 Public Demo Polish notes
+- `docs/first-demo-checklist.md` — First demo QA checklist
+- `docs/lens-aware-ai-guide.md` — Lens-aware AI Guide
+- `docs/super-observation-architecture.md` — Super Observation Architecture
+- `docs/deployment-readiness.md` — Deployment readiness guide
+- `docs/agent-guardrails.md` — Agent rules for safe changes
+- `docs/current-roadmap.md` — Current roadmap
+- `docs/implementation-language-guardrails.md` — Forbidden claim list
+
+---
+
+## UI / UX
+
+AETERNA's visualization is not decorative.
+It translates actual field activity, trace, return, closure, local excitability, and observed candidates into human-readable visual form.
+Fake energy, fake fluctuation, and fake life-like motion are prohibited.
+Raw, derived, proxy, and presentation-smoothed values remain distinguishable.
+
+AETERNA の可視化は装飾ではありません。
+実際の場の活動、痕跡、戻り、閉ループ、局所励起、観測候補を、人間が理解できる形へ翻訳するものです。
+存在しないエネルギー、嘘の揺らぎ、生命っぽく見せるだけの動きは禁止します。
+Raw / Derived / Proxy / Presentation-smoothed は区別します。

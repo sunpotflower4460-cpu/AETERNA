@@ -101,24 +101,24 @@ describe('LensAwareGuidePanel: question shortcuts', () => {
         expect(html).toContain('これなに？');
     });
 
-    it('contains 次どこ見る？ shortcut', () => {
+    it('contains 次どこを見る？ shortcut', () => {
         const html = renderLensAwareGuidePanelHTML({
             activeLensId: null,
             selectedCellIndex: null,
             activeMode: 'explain',
             response: null,
         });
-        expect(html).toContain('次どこ見る？');
+        expect(html).toContain('次どこを見る？');
     });
 
-    it('contains 注意点は？ shortcut', () => {
+    it('contains これは証明になる？ shortcut', () => {
         const html = renderLensAwareGuidePanelHTML({
             activeLensId: null,
             selectedCellIndex: null,
             activeMode: 'explain',
             response: null,
         });
-        expect(html).toContain('注意点は？');
+        expect(html).toContain('これは証明になる？');
     });
 });
 
