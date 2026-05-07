@@ -21,6 +21,12 @@ import type { SelfWorldModelPacket } from '../types/selfWorldModel.ts';
  *
  * Contains weak delta values to be applied to organism core biases.
  * All deltas are small and clamped to prevent runaway.
+ *
+ * Phase C extension (optional fields)
+ *   These are populated by ReentryModulator (src/integration/reentryModulator.ts)
+ *   via mergeReentryIntoBeautifulLoop in src/integration/applyReentry.ts. They
+ *   default to 0 when absent so existing call sites that only set the original
+ *   five deltas continue to behave exactly as before.
  */
 export interface BeautifulLoopModulation {
   /** Weak bias to novelty/surprise sensitivity (used in prediction) */
@@ -37,6 +43,18 @@ export interface BeautifulLoopModulation {
 
   /** Weak adjustment to touch openness */
   touchOpennessDelta: number;
+
+  /** Phase C: curiosity bias delta (-0.04..0.04). Populated by ReentryModulator. */
+  curiosityBiasDelta?: number;
+
+  /** Phase C: internal-utterance feedback bias (-0.03..0.03). Populated by ReentryModulator. */
+  internalUtteranceBiasDelta?: number;
+
+  /** Phase C: binding-coherence bias (-0.03..0.03). Populated by ReentryModulator. */
+  bindingCoherenceDelta?: number;
+
+  /** Phase C: hierarchical-error-reduction bias (-0.03..0.03). Populated by ReentryModulator. */
+  hierarchicalErrorBiasDelta?: number;
 }
 
 /**
@@ -304,12 +322,33 @@ export function smoothModulation(
   const alpha = clampFinite(smoothingFactor, 0, 1);
   const beta = 1.0 - alpha;
 
+  const blendOptional = (
+    a: number | undefined,
+    b: number | undefined,
+  ): number | undefined => {
+    if (a === undefined && b === undefined) return undefined;
+    return (a ?? 0) * alpha + (b ?? 0) * beta;
+  };
+
   return {
     noveltyBiasDelta: current.noveltyBiasDelta * alpha + previous.noveltyBiasDelta * beta,
     withdrawBiasDelta: current.withdrawBiasDelta * alpha + previous.withdrawBiasDelta * beta,
     rewritePressureDelta: current.rewritePressureDelta * alpha + previous.rewritePressureDelta * beta,
     restorationBiasDelta: current.restorationBiasDelta * alpha + previous.restorationBiasDelta * beta,
     touchOpennessDelta: current.touchOpennessDelta * alpha + previous.touchOpennessDelta * beta,
+    curiosityBiasDelta: blendOptional(current.curiosityBiasDelta, previous.curiosityBiasDelta),
+    internalUtteranceBiasDelta: blendOptional(
+      current.internalUtteranceBiasDelta,
+      previous.internalUtteranceBiasDelta,
+    ),
+    bindingCoherenceDelta: blendOptional(
+      current.bindingCoherenceDelta,
+      previous.bindingCoherenceDelta,
+    ),
+    hierarchicalErrorBiasDelta: blendOptional(
+      current.hierarchicalErrorBiasDelta,
+      previous.hierarchicalErrorBiasDelta,
+    ),
   };
 }
 
@@ -318,13 +357,43 @@ export function smoothModulation(
  *
  * This is a safety check to ensure modulation stays within acceptable bounds.
  */
+/**
+ * Per-channel hard caps for the Phase C reentry deltas. These MUST match
+ * REENTRY_LIMITS in src/integration/reentryModulator.ts so the choke-point
+ * remains tight regardless of which side computed the delta.
+ */
+const REENTRY_DELTA_CLAMPS = Object.freeze({
+  curiosity: 0.04,
+  internalUtterance: 0.03,
+  bindingCoherence: 0.03,
+  hierarchicalError: 0.03,
+});
+
 export function clampModulation(modulation: BeautifulLoopModulation): BeautifulLoopModulation {
+  const clampOptional = (
+    value: number | undefined,
+    limit: number,
+  ): number | undefined => (value === undefined ? undefined : clampFinite(value, -limit, limit));
+
   return {
     noveltyBiasDelta: clampFinite(modulation.noveltyBiasDelta, -0.08, 0.08),
     withdrawBiasDelta: clampFinite(modulation.withdrawBiasDelta, -0.05, 0.10),
     rewritePressureDelta: clampFinite(modulation.rewritePressureDelta, -0.02, 0.05),
     restorationBiasDelta: clampFinite(modulation.restorationBiasDelta, -0.03, 0.08),
     touchOpennessDelta: clampFinite(modulation.touchOpennessDelta, -0.05, 0.08),
+    curiosityBiasDelta: clampOptional(modulation.curiosityBiasDelta, REENTRY_DELTA_CLAMPS.curiosity),
+    internalUtteranceBiasDelta: clampOptional(
+      modulation.internalUtteranceBiasDelta,
+      REENTRY_DELTA_CLAMPS.internalUtterance,
+    ),
+    bindingCoherenceDelta: clampOptional(
+      modulation.bindingCoherenceDelta,
+      REENTRY_DELTA_CLAMPS.bindingCoherence,
+    ),
+    hierarchicalErrorBiasDelta: clampOptional(
+      modulation.hierarchicalErrorBiasDelta,
+      REENTRY_DELTA_CLAMPS.hierarchicalError,
+    ),
   };
 }
 

@@ -48,6 +48,18 @@ export interface LivingState {
 
   // Optional: overload memory
   overloadMemory: number;
+
+  // Phase C: EMA of internal-utterance bias delta arriving via Reentry.
+  // Range 0..1. Drifts toward 0 when no reentry signal is present.
+  internalNarrativeTrace: number;
+
+  // Phase C: EMA of |curiosity bias delta| arriving via Reentry.
+  // Range 0..1. Captures sustained intrinsic-exploration pressure.
+  curiosityResidue: number;
+
+  // Phase C: EMA of binding-coherence bias delta arriving via Reentry.
+  // Range 0..1. Captures sustained integration tendency.
+  bindingMemory: number;
 }
 
 /**
@@ -67,6 +79,9 @@ export function createInitialLivingState(): LivingState {
     lastMajorPerturbationAt: 0,        // no perturbation yet
     stabilityMemory: 0.5,              // neutral stability
     overloadMemory: 0.0,               // no overload memory
+    internalNarrativeTrace: 0.0,       // Phase C: no reentry yet
+    curiosityResidue: 0.0,             // Phase C: no reentry yet
+    bindingMemory: 0.0,                // Phase C: no reentry yet
   };
 }
 
@@ -112,6 +127,11 @@ export function updateLivingState(
     blModulation?: {
       touchOpennessDelta?: number;
       noveltyBiasDelta?: number;
+      // Phase C reentry deltas (optional; defaults treated as 0).
+      curiosityBiasDelta?: number;
+      internalUtteranceBiasDelta?: number;
+      bindingCoherenceDelta?: number;
+      hierarchicalErrorBiasDelta?: number;
     } | null;
   } = {},
 ): void {
@@ -247,6 +267,42 @@ export function updateLivingState(
     0,
     1,
   );
+
+  // 12. Phase C reentry traces. Each is an EMA over the |delta| values
+  //     arriving via blModulation. When reentry is absent (delta = 0 or
+  //     undefined), the EMA drifts toward 0. Smoothing factors are very
+  //     slow because reentry is itself already smoothed inside
+  //     ReentryModulator (tanh + clamp + EMA + governor gain).
+  const reentrySmoothing = 0.02;
+  const curiosityDelta = Math.abs(blModulation?.curiosityBiasDelta ?? 0);
+  // Reentry curiosity delta caps at 0.04, so divide by that to land in 0..1.
+  const curiosityNormalized = clamp(curiosityDelta / 0.04, 0, 1);
+  livingState.curiosityResidue = clamp(
+    livingState.curiosityResidue * (1 - reentrySmoothing) +
+      curiosityNormalized * reentrySmoothing,
+    0,
+    1,
+  );
+
+  const utteranceDelta = Math.abs(blModulation?.internalUtteranceBiasDelta ?? 0);
+  const utteranceNormalized = clamp(utteranceDelta / 0.03, 0, 1);
+  livingState.internalNarrativeTrace = clamp(
+    livingState.internalNarrativeTrace * (1 - reentrySmoothing) +
+      utteranceNormalized * reentrySmoothing,
+    0,
+    1,
+  );
+
+  // bindingMemory tracks signed coherence drift, but normalised through
+  // a sigmoid-ish midpoint so 0 delta lands at 0.5 — neutral memory.
+  const bindingDelta = blModulation?.bindingCoherenceDelta ?? 0;
+  const bindingNormalized = clamp(0.5 + bindingDelta / 0.06, 0, 1);
+  livingState.bindingMemory = clamp(
+    livingState.bindingMemory * (1 - reentrySmoothing) +
+      bindingNormalized * reentrySmoothing,
+    0,
+    1,
+  );
 }
 
 /**
@@ -265,6 +321,9 @@ export function getLivingStateDebug(livingState: LivingState): Record<string, nu
     lastMajorPerturbationAt: livingState.lastMajorPerturbationAt,
     stabilityMemory: livingState.stabilityMemory,
     overloadMemory: livingState.overloadMemory,
+    internalNarrativeTrace: livingState.internalNarrativeTrace,
+    curiosityResidue: livingState.curiosityResidue,
+    bindingMemory: livingState.bindingMemory,
   };
 }
 
