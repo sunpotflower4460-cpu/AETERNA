@@ -15,7 +15,7 @@ AETERNA-NATURAL v2.3 Deployment Final Runbook を実施しました。
 
 - **Public mode safety**: ✅ 全 safety フラグ確認済み
 - **Build**: ✅ passes (vite dynamic import note, non-blocking)
-- **Lint**: ⚠️ 3 pre-existing errors (v2.1 以前から既知、未変更)
+- **Lint**: ⚠️ 3 pre-existing errors (known since v2.1, unchanged)
 - **Tests**: ✅ 708 tests pass (1 was the runbook-report-exists check, resolved by creating this file)
 - **Release check**: ✅ 61 checks pass
 - **Copy guard**: ✅ No forbidden claims in user-facing copy
