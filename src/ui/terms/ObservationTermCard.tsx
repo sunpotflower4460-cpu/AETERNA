@@ -26,6 +26,7 @@
 import type { ObservationTermDefinition } from '../../i18n/observationTermsJa.ts';
 import type { ObservationDisplayModeConfig } from '../../config/observationDisplayModeConfig.ts';
 import { getValueKindJaLabel, getValueKindTooltip } from '../../i18n/valueKindLabelsJa.ts';
+import { esc as _esc } from './htmlEsc.ts';
 
 // ── renderObservationTermCardHTML ─────────────────────────────────────────────
 
@@ -125,13 +126,4 @@ export function renderObservationTermCardHTML(props: ObservationTermCardProps): 
 </div>`;
 }
 
-// ── _esc ──────────────────────────────────────────────────────────────────────
 
-function _esc(s: string | number | undefined | null): string {
-    if (s === undefined || s === null) return '';
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}

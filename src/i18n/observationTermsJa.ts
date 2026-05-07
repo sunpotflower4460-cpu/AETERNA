@@ -10,7 +10,7 @@
  *   - Short and long Japanese descriptions
  *   - What it shows (whatItShowsJa)
  *   - What it is NOT (whatItIsNotJa)
- *   - Value kind (Raw / Measured / Derived / Proxy / Check / Reference / Presentation-smoothed)
+ *   - Value kind (ValueKind from valueKindLabelsJa)
  *   - Caution note (cautionJa)
  *   - Visibility per mode (beginner / researcher / developer)
  *
@@ -19,6 +19,8 @@
  * - fake visual / fake result は追加しない.
  * - Runtime dynamics 未変更.
  */
+
+import type { ValueKind } from './valueKindLabelsJa.ts';
 
 // ── Type ──────────────────────────────────────────────────────────────────────
 
@@ -34,7 +36,7 @@ export interface ObservationTermDefinition {
     highValueHintJa?: string;
     lowValueHintJa?: string;
     nextToLookJa?: string;
-    valueKind?: 'Raw' | 'Measured' | 'Derived' | 'Proxy' | 'Check' | 'Reference' | 'Presentation-smoothed';
+    valueKind?: ValueKind;
     cautionJa: string;
     beginnerVisible: boolean;
     researcherVisible: boolean;

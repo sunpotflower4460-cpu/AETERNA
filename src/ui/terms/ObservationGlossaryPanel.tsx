@@ -26,6 +26,8 @@ import {
 import type { ObservationDisplayModeConfig } from '../../config/observationDisplayModeConfig.ts';
 import { isTermVisibleInMode } from '../../config/observationDisplayModeConfig.ts';
 import { renderObservationTermCardHTML } from './ObservationTermCard.tsx';
+import { UI_MODES_JA } from '../../i18n/uiLabelsJa.ts';
+import { esc as _esc } from './htmlEsc.ts';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -94,22 +96,5 @@ export function renderObservationGlossaryPanelHTML(
 // ── _modeLabel ─────────────────────────────────────────────────────────────────
 
 function _modeLabel(mode: string): string {
-    switch (mode) {
-        case 'beginner':   return 'はじめて見る';
-        case 'standard':   return '通常観測';
-        case 'researcher': return '研究者モード';
-        case 'developer':  return '開発者モード';
-        default:           return mode;
-    }
-}
-
-// ── _esc ──────────────────────────────────────────────────────────────────────
-
-function _esc(s: string | number | undefined | null): string {
-    if (s === undefined || s === null) return '';
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return (UI_MODES_JA as Record<string, string>)[mode] ?? mode;
 }
