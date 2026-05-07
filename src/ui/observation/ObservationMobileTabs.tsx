@@ -1,6 +1,6 @@
 /**
  * ObservationMobileTabs.tsx
- * v2.4: AETERNA-NATURAL Japanese-First UI — Mobile Tab Bar
+ * v2.5: AETERNA-NATURAL Japanese-First UI — Mobile Tab Bar
  *
  * Renders a mobile-friendly bottom tab bar for the observation workspace.
  * Tab labels are Japanese-first (v2.4). English IDs / aria-labels are retained
@@ -19,7 +19,7 @@
 
 export interface ObservationMobileTabsProps {
     /** Currently active tab */
-    activeTab: 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
+    activeTab: 'beginner' | 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -31,8 +31,9 @@ const TABS: Array<{
     icon: string;
     note?: string;
 }> = [
-    { id: 'field',     label: '見る',   labelEn: 'Field',     icon: '🌐', note: 'トーラス表示を完全に隠さない' },
-    { id: 'inspector', label: '調べる', labelEn: 'Inspector', icon: '🔍' },
+    { id: 'beginner',  label: 'はじめに', labelEn: 'Home',      icon: '🏠' },
+    { id: 'field',     label: '見る',     labelEn: 'Field',     icon: '🌐', note: 'トーラス表示を完全に隠さない' },
+    { id: 'inspector', label: '調べる',   labelEn: 'Inspector', icon: '🔍' },
     { id: 'lens',      label: 'レンズ', labelEn: 'Lens',      icon: '🔭' },
     { id: 'replay',    label: '時間',   labelEn: 'Replay',    icon: '⏮' },
     { id: 'trace',     label: '関連',   labelEn: 'Trace',     icon: '🔗' },

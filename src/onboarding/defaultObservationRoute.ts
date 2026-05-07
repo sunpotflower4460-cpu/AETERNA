@@ -1,0 +1,103 @@
+/**
+ * defaultObservationRoute.ts
+ * AETERNA-NATURAL v2.5 — Default Observation Route Steps
+ */
+
+import type { ObservationRouteStep } from '../types/observationRoute.js';
+
+export const DEFAULT_OBSERVATION_ROUTE_STEPS: ObservationRouteStep[] = [
+  {
+    id: 'intro',
+    titleJa: 'はじめに — AETERNA-NATURALとは',
+    shortDescriptionJa: 'これはトーラス場の変化を観測する研究装置です。意識・生命・知性を証明するものではありません。',
+    actionLabelJa: '続ける',
+    targetPanel: 'landing',
+    completionCondition: 'manual',
+    beginnerVisible: true,
+    cautionJa: '観測結果は証明ではありません。',
+  },
+  {
+    id: 'startSafeObservation',
+    titleJa: 'Safe Baseline を開始する',
+    shortDescriptionJa: 'まず最も安全な設定で観測を始めます。',
+    actionLabelJa: 'Safe Baseline を始める',
+    targetPanel: 'landing',
+    completionCondition: 'safeObservationStarted',
+    beginnerVisible: true,
+    cautionJa: 'Quiet Baseline プリセット・seed 1000 推奨。',
+  },
+  {
+    id: 'lookAtField',
+    titleJa: '場全体を見る',
+    shortDescriptionJa: 'ドット・色・レイヤーは実際の観測値を視覚化したものです。',
+    actionLabelJa: '場を見る',
+    targetPanel: 'field',
+    completionCondition: 'appStarted',
+    beginnerVisible: true,
+  },
+  {
+    id: 'selectCell',
+    titleJa: '気になるセルを選ぶ',
+    shortDescriptionJa: '場の中で気になる場所をタップします。',
+    actionLabelJa: 'セルをタップ',
+    targetPanel: 'field',
+    completionCondition: 'cellSelected',
+    beginnerVisible: true,
+  },
+  {
+    id: 'inspectCell',
+    titleJa: 'セルの値を読む',
+    shortDescriptionJa: 'Cell Inspector でそのセルの観測値を確認します。',
+    actionLabelJa: '値を確認する',
+    targetPanel: 'inspector',
+    completionCondition: 'metricSelected',
+    beginnerVisible: true,
+  },
+  {
+    id: 'openLens',
+    titleJa: 'レンズで見る',
+    shortDescriptionJa: '気になる観測値を選んでレンズを開きます。',
+    actionLabelJa: 'レンズを開く',
+    targetPanel: 'lens',
+    completionCondition: 'lensOpened',
+    beginnerVisible: true,
+  },
+  {
+    id: 'useReplay',
+    titleJa: 'Replay で時間を戻す',
+    shortDescriptionJa: '記録されたスナップショットで変化を確認します。',
+    actionLabelJa: 'Replay を開く',
+    targetPanel: 'replay',
+    completionCondition: 'replayOpened',
+    beginnerVisible: true,
+    cautionJa: 'Replay は記録再生です。runtime 自体が過去に戻るわけではありません。',
+  },
+  {
+    id: 'checkRelatedSignals',
+    titleJa: '関連候補を見る',
+    shortDescriptionJa: '因果トレース・相関・差分で関連する動きを探します。',
+    actionLabelJa: '関連を見る',
+    targetPanel: 'trace',
+    completionCondition: 'traceOpened',
+    beginnerVisible: false,
+  },
+  {
+    id: 'askGuide',
+    titleJa: '観測ガイドに聞く',
+    shortDescriptionJa: '「これはどう仮説できる？」など観測ガイドに質問します。',
+    actionLabelJa: 'ガイドに聞く',
+    targetPanel: 'guide',
+    completionCondition: 'guideAsked',
+    beginnerVisible: true,
+    cautionJa: 'このガイドは観測補助です。AETERNA 本体の発話ではありません。',
+  },
+  {
+    id: 'exportResult',
+    titleJa: '観測結果を保存する',
+    shortDescriptionJa: 'Markdown または JSON で観測結果をエクスポートします。',
+    actionLabelJa: 'エクスポートを開く',
+    targetPanel: 'export',
+    completionCondition: 'exportOpened',
+    beginnerVisible: false,
+  },
+];

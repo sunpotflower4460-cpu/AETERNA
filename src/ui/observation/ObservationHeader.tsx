@@ -34,6 +34,8 @@ export interface ObservationHeaderProps {
     safetyMode?: string;
     /** Research mode: 'publicResearch' | 'research' | 'experimental' */
     researchMode?: string;
+    /** When true, render a "Safe Baseline に戻す" return button */
+    showSafeBaselineReturn?: boolean;
 }
 
 // ── renderObservationHeaderHTML ───────────────────────────────────────────────
@@ -53,6 +55,7 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
         activeLensId,
         safetyMode,
         researchMode,
+        showSafeBaselineReturn = false,
     } = props;
 
     const researchBadge = _renderResearchBadge(researchMode);
@@ -62,6 +65,10 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
         ? `<p class="observation-header__replay-note" role="alert" aria-live="polite">
     再生モードは記録された観測スナップショットを表示しています。runtime 自体が過去に戻ったわけではありません。
   </p>`
+        : '';
+
+    const safeBaselineBtn = showSafeBaselineReturn
+        ? `<button class="observation-header__safe-baseline-return" type="button" data-action="safe-reset">Safe Baseline に戻す</button>`
         : '';
 
     const cellDisplay = selectedCellIndex !== null
@@ -87,6 +94,7 @@ export function renderObservationHeaderHTML(props: ObservationHeaderProps): stri
     <small class="observation-header__guide-note">
       このガイドは観測結果を読む補助です。AETERNA 本体の発話ではありません。
     </small>
+    ${safeBaselineBtn}
   </div>
   ${replayNote}
 </div>`;

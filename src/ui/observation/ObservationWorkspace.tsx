@@ -77,7 +77,7 @@ export interface ObservationWorkspaceProps {
     warnings?: ObservationWarningItem[];
     nanDetected?: boolean;
     // Mobile tab state
-    activeMobileTab?: 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
+    activeMobileTab?: 'beginner' | 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
     activeInspectorTab?: 'cell' | 'metric' | 'events' | 'warnings';
 }
 

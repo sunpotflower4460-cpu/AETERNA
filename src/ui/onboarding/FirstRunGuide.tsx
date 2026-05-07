@@ -226,3 +226,82 @@ export function renderFullGuideMarkdown(): string {
   }
   return parts.join('\n');
 }
+
+// ── v2.5 additions ─────────────────────────────────────────────────────────────
+
+export interface FirstRunGuideLinkV25 {
+  labelJa: string;
+  targetPanel: string;
+}
+
+export const FIRST_RUN_GUIDE_STEPS_V25: FirstRunGuideStepData[] = [
+  ...FIRST_RUN_GUIDE_STEPS,
+  {
+    stepNumber: 6,
+    title: '観測ルートを使う',
+    bodyLines: [
+      '観測ルートは初回観測の推奨手順です。',
+      '',
+      '「はじめに」タブから観測ルートを開いてください。',
+      '',
+      '観測ルートは証明の手順ではありません。観測を整理するための補助です。',
+    ],
+    noteLines: [
+      '観測ルートはオプションです。自由に観測しても構いません。',
+    ],
+  },
+];
+
+export const FIRST_RUN_GUIDE_LINKS_V25: FirstRunGuideLinkV25[] = [
+  { labelJa: '観測ルートを見る',   targetPanel: 'route' },
+  { labelJa: '用語辞典を開く',     targetPanel: 'glossary' },
+  { labelJa: 'Safe Baseline に戻す', targetPanel: 'landing' },
+];
+
+/**
+ * Render the v2.5 first-run guide as an HTML string.
+ * No JSX — pure template literal rendering.
+ */
+export function renderFirstRunGuideV25HTML(state: FirstRunGuideState): string {
+  const currentStep = FIRST_RUN_GUIDE_STEPS_V25[state.currentStep - 1];
+  if (!currentStep || state.dismissed) return '';
+
+  const bodyHtml = currentStep.bodyLines
+    .map(line => line === '' ? '<br>' : `<p class="first-run-guide__body-line">${_esc(line)}</p>`)
+    .join('\n  ');
+
+  const noteHtml = currentStep.noteLines.length > 0
+    ? `<div class="first-run-guide__notes">${currentStep.noteLines.map(n => `<p class="first-run-guide__note" role="note">${_esc(n)}</p>`).join('\n')}</div>`
+    : '';
+
+  const linksHtml = FIRST_RUN_GUIDE_LINKS_V25
+    .map(l => `<a class="first-run-guide__link" data-panel="${_esc(l.targetPanel)}" href="#${_esc(l.targetPanel)}" role="button">${_esc(l.labelJa)}</a>`)
+    .join('\n  ');
+
+  return `<div class="first-run-guide" role="dialog" aria-label="はじめにガイド">
+  <div class="first-run-guide__header">
+    <span class="first-run-guide__step-label">ステップ ${_esc(state.currentStep)} / ${_esc(state.totalSteps)}</span>
+    <h2 class="first-run-guide__title">${_esc(currentStep.title)}</h2>
+  </div>
+  <div class="first-run-guide__body">
+  ${bodyHtml}
+  </div>
+  ${noteHtml}
+  <div class="first-run-guide__links">
+  ${linksHtml}
+  </div>
+  <div class="first-run-guide__actions">
+    <button class="first-run-guide__next" type="button" data-action="guide-next">次へ</button>
+    <button class="first-run-guide__dismiss" type="button" data-action="guide-dismiss">閉じる</button>
+  </div>
+</div>`;
+}
+
+function _esc(s: string | number | undefined | null): string {
+  if (s === undefined || s === null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
