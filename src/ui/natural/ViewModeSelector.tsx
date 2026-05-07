@@ -121,7 +121,7 @@ export function renderViewModeSelectorHTML(props: ViewModeSelectorProps): string
     const activeDefinition = VIEW_MODE_DEFINITIONS.find((m) => m.id === activeMode);
     const featureListHtml = activeDefinition
         ? `<div class="view-mode-selector__features">
-    <span class="view-mode-selector__features-label">この モードで表示されるもの:</span>
+    <span class="view-mode-selector__features-label">このモードで表示されるもの:</span>
     <ul class="view-mode-selector__feature-list">
       ${activeDefinition.features.map((f) => `<li>${_esc(f)}</li>`).join('\n      ')}
     </ul>
