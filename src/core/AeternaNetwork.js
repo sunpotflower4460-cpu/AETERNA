@@ -66,6 +66,31 @@ import { createComplexFieldState } from './complexField.ts';
 import { updateComplexField } from './updateComplexField.ts';
 import { deriveVortexCandidates } from '../observer/deriveVortexCandidates.ts';
 import { defaultComplexFieldConfig } from '../types/complexField.ts';
+// Phase D: Consciousness Integration Pipeline
+import { assembleGlobalIntegrationField } from '../integration/globalIntegrationField.ts';
+import {
+    createZeroPhenomenalBindingMetric,
+    derivePhenomenalBindingMetric,
+} from '../integration/phenomenalBindingMetric.ts';
+import {
+    createInitialPredictorState,
+    runHierarchicalPredictor,
+} from '../perception/hierarchicalPredictor.ts';
+import {
+    createInitialReentryState,
+    deriveReentryDeltas,
+    zeroDeltas as zeroReentryDeltas,
+} from '../integration/reentryModulator.ts';
+import {
+    createInitialGovernor,
+    updateGovernor,
+} from '../integration/consciousnessSafetyGovernor.ts';
+import {
+    createInitialCuriosityState,
+    deriveIntrinsicCuriositySeed,
+} from '../organism/intrinsicCuriosityDriver.ts';
+import { mergeReentryIntoBeautifulLoop } from '../integration/applyReentry.ts';
+import { createZeroInternalUtteranceMeta } from '../signal/internalUtteranceLoop.ts';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
@@ -95,6 +120,8 @@ export class AeternaNetwork {
         this.initializeTouchBackactionState();
         this.initializeHomeostaticState();
         this.initializeBeautifulLoopState();
+        // Phase D: integration pipeline state (gate closed by default).
+        this.initializeConsciousnessIntegrationState();
         this.initializeTemporaryWorkBuffers();
         this.initializeEngines();
 
@@ -339,6 +366,131 @@ export class AeternaNetwork {
 
     initializeHomeostaticState() {
         this.homeostaticState = createInitialHomeostaticState();
+    }
+
+    initializeConsciousnessIntegrationState() {
+        // Phase D: integration pipeline state. The gate is closed by default
+        // (governor.globalGain = 0), so the pipeline runs every tick but
+        // produces zero reentry effect on existing dynamics. To open the gate
+        // an operator must call setGovernorGain(this.consciousnessGovernor, ≤0.04)
+        // explicitly. While the gate is closed, Phase A invariants are preserved.
+        this.consciousnessGovernor = createInitialGovernor();
+        this.predictorState = createInitialPredictorState();
+        this.curiosityState = createInitialCuriosityState();
+        this.reentryState = createInitialReentryState();
+        this.lastBindingMetric = createZeroPhenomenalBindingMetric(0);
+        this.lastHpError = null;
+        this.lastInternalUtteranceMeta = createZeroInternalUtteranceMeta(0);
+        this.lastReentryDeltas = zeroReentryDeltas();
+        this.lastReentryDiagnostics = {
+            saturationRatio: 0,
+            totalSignedMagnitude: 0,
+            gateOpen: false,
+        };
+        this.lastIntrinsicCuriosityOutput = null;
+        this.lastIntegrationField = null;
+        this.lastGovernorTrip = null;
+        this.governorTripCount = 0;
+        // Hybrid predictor mode: 'observe' is the theory-neutral default.
+        // 'activeInference' is opt-in (an operator may flip it for research).
+        this.consciousnessIntegrationConfig = {
+            predictorMode: 'observe',
+        };
+    }
+
+    /**
+     * Phase D: per-tick consciousness integration pipeline.
+     * Runs read-only when governor.globalGain = 0 (default). Always returns
+     * a ReentryDeltas bundle (zeros if the gate is closed) for the caller
+     * to merge into BeautifulLoopModulation.
+     *
+     * Trip records are surfaced via this.lastGovernorTrip so operators can
+     * inspect why the gate closed. governorTripCount counts cumulative trips.
+     */
+    runConsciousnessIntegration({
+        interoceptionPacket,
+        selfWorldModelPacket,
+        arousalAwarenessState,
+        bodyWorldClosureState,
+        bodySurfaceState,
+        sensoryReturnPackets,
+    } = {}) {
+        const tickId = this.simTime;
+        const timestamp = this.simTime;
+
+        // 1. Assemble GlobalIntegrationField (frozen read-only snapshot).
+        const field = assembleGlobalIntegrationField({
+            tickId,
+            timestamp,
+            bodySurface: bodySurfaceState ?? null,
+            bodyWorldClosure: bodyWorldClosureState ?? null,
+            sensoryReturns: sensoryReturnPackets ?? null,
+            interoception: interoceptionPacket ?? null,
+            selfWorld: selfWorldModelPacket ?? null,
+            // signal runtime is invoked outside the network; if the bridge
+            // populates this.lastSignalRuntimeResult we pass it. Otherwise
+            // null is fine.
+            signal: this.lastSignalRuntimeResult ?? null,
+            living: this.livingState ?? null,
+            arousal: arousalAwarenessState ?? null,
+        });
+
+        // 2. Phenomenal binding metric.
+        const bindingMetric = derivePhenomenalBindingMetric(field);
+
+        // 3. Hierarchical predictor.
+        const predictorOut = runHierarchicalPredictor(
+            field,
+            this.predictorState,
+            { mode: this.consciousnessIntegrationConfig.predictorMode },
+        );
+        this.predictorState = predictorOut.state;
+
+        // 4. Intrinsic curiosity (governor-gated).
+        const curiosityOut = deriveIntrinsicCuriositySeed(
+            this.curiosityState,
+            predictorOut.error,
+            this.consciousnessGovernor,
+        );
+        this.curiosityState = curiosityOut.state;
+
+        // 5. Reentry modulator (the single audited choke-point).
+        const reentryOut = deriveReentryDeltas(this.reentryState, {
+            field,
+            binding: bindingMetric,
+            hpError: predictorOut.error,
+            inferenceSuggestion: predictorOut.inferenceSuggestion,
+            governor: this.consciousnessGovernor,
+        });
+        this.reentryState = reentryOut.state;
+
+        // 6. Update governor.
+        const energyValue = this.energyFlowState && Number.isFinite(this.energyFlowState.energyReserve)
+            ? this.energyFlowState.energyReserve
+            : 1.0;
+        const govResult = updateGovernor(this.consciousnessGovernor, {
+            tickId,
+            timestamp,
+            energy: energyValue,
+            selfCoherence: field.features.selfCoherence,
+            bindingStrength: bindingMetric.bindingStrength,
+            saturationRatio: reentryOut.diagnostics.saturationRatio,
+        });
+        this.consciousnessGovernor = govResult.state;
+        if (govResult.trip) {
+            this.lastGovernorTrip = govResult.trip;
+            this.governorTripCount += 1;
+        }
+
+        // Store outputs for inspection / metrics.
+        this.lastBindingMetric = bindingMetric;
+        this.lastHpError = predictorOut.error;
+        this.lastReentryDeltas = reentryOut.deltas;
+        this.lastReentryDiagnostics = reentryOut.diagnostics;
+        this.lastIntrinsicCuriosityOutput = curiosityOut;
+        this.lastIntegrationField = field;
+
+        return reentryOut.deltas;
     }
 
     initializeBeautifulLoopState() {
@@ -1041,8 +1193,25 @@ export class AeternaNetwork {
         );
         // Apply smoothing to prevent sudden jumps
         const smoothedModulation = smoothModulation(rawModulation, this.lastModulation, this.blModulationConfig.smoothingFactor);
-        // Clamp to safety bounds
-        this.currentModulation = clampModulation(smoothedModulation);
+        // Clamp to safety bounds (L3 only, before reentry merge).
+        const blClampedModulation = clampModulation(smoothedModulation);
+
+        // Phase D: Run consciousness integration pipeline using the freshly
+        // computed packets. The pipeline is observer-only when the governor
+        // gate is closed (default). Reentry deltas are merged into the
+        // modulation bundle and the result is re-clamped so no channel can
+        // exceed its hard cap regardless of which side computed the delta.
+        const reentryDeltas = this.runConsciousnessIntegration({
+            interoceptionPacket,
+            selfWorldModelPacket,
+            arousalAwarenessState,
+            bodyWorldClosureState: this.lastBodyWorldClosureState,
+            bodySurfaceState: this.lastBodySurfaceState,
+            sensoryReturnPackets: this.lastSensoryReturnPackets,
+        });
+        this.currentModulation = clampModulation(
+            mergeReentryIntoBeautifulLoop(blClampedModulation, reentryDeltas),
+        );
         this.lastModulation = this.currentModulation;
 
         // Store for next frame

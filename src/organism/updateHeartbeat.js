@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { HEART_CLOCK_HZ, PULSE_STRENGTH } from '../constants/aeternaConstants.js';
 import { updateLivingState, getLivingStateInfluence } from './livingState.ts';
 import { updateHomeostaticState, getHomeostaticInfluence } from './survivalState.ts';
+import { extractReentryFromBeautifulLoop, buildLivingStateReentryInput } from '../integration/applyReentry.ts';
 
 export function updateHeartbeat() {
     const nowMs = performance.now();
@@ -16,11 +17,20 @@ export function updateHeartbeat() {
             (network.touchOnset ? Math.max(...Array.from(network.touchOnset)) : 0) * 0.6 +
             (network.touchNovelty ? Math.max(...Array.from(network.touchNovelty)) : 0) * 0.4;
 
-        // BL-L3: Pass current modulation if available
-        const blModulation = network.currentModulation ? {
-            touchOpennessDelta: network.currentModulation.touchOpennessDelta,
-            noveltyBiasDelta: network.currentModulation.noveltyBiasDelta,
-        } : null;
+        // BL-L3: Pass current modulation if available.
+        // Phase D: also forward the four reentry deltas (curiosity, internal
+        // utterance, binding coherence, hierarchical error). Reentry deltas
+        // default to 0 when the governor's gate is closed, so this expansion
+        // does not change the heartbeat's behavior in the default state.
+        const blModulation = network.currentModulation
+            ? buildLivingStateReentryInput(
+                extractReentryFromBeautifulLoop(network.currentModulation),
+                {
+                    touchOpennessDelta: network.currentModulation.touchOpennessDelta,
+                    noveltyBiasDelta: network.currentModulation.noveltyBiasDelta,
+                },
+            )
+            : null;
 
         updateLivingState(network.livingState, network, {
             arousal: network.currGenFiring ?? 0,
