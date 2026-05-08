@@ -4,6 +4,9 @@ import type {
   ExternalDriveFieldState,
   ExternalDriveFieldZeroStepReport,
   ExternalDriveFieldZeroStepResult,
+  PeriodicExternalDriveConfig,
+  PeriodicExternalDriveStepReport,
+  PeriodicExternalDriveStepResult,
   SteadyExternalDriveConfig,
   SteadyExternalDriveStepReport,
   SteadyExternalDriveStepResult,
@@ -283,6 +286,103 @@ export function updateSupplyCutoffDrive(
     driveEnergyAfterCutoff,
     driveEnergyDeltaDuringCutoff,
     cutoffVerifiedNoSpecialOutcomeRule: ledger.status === 'closed' && driveEnergyDeltaDuringCutoff === 0,
+    ledger,
+    warnings,
+  };
+
+  return { state: nextState, report };
+}
+
+/**
+ * updatePeriodicExternalDrive
+ *
+ * v3.5 periodic drive step.
+ *
+ * This accepts a mathematically explicit periodic input waveform into the
+ * external drive field only. It does not couple into SpatialWorldMedium or
+ * AETERNA internal buffers. It is a waveform comparison instrument, not a
+ * life-like rhythm, heartbeat, or pulse mechanism.
+ */
+export function updatePeriodicExternalDrive(
+  state: ExternalDriveFieldState,
+  configInput: PeriodicExternalDriveConfig,
+): PeriodicExternalDriveStepResult {
+  const normalizedBase = normalizeConfig(configInput);
+  const periodTicks = Math.max(1, Math.floor(finiteNonNegative(configInput.periodTicks, 1)));
+  const phaseOffsetTicks = Number.isFinite(configInput.phaseOffsetTicks)
+    ? configInput.phaseOffsetTicks ?? 0
+    : 0;
+  const config = {
+    ...normalizedBase,
+    baseDrivePerCell: finiteNonNegative(configInput.baseDrivePerCell, 0),
+    amplitudeDrivePerCell: finiteNonNegative(configInput.amplitudeDrivePerCell, 0),
+    periodTicks,
+    phaseOffsetTicks,
+  };
+
+  if (state.width !== config.width || state.height !== config.height) {
+    throw new Error('PeriodicExternalDrive config size must match state size.');
+  }
+
+  const size = state.width * state.height;
+  const previousDriveField = state.driveField;
+  const nextDriveField = new Float64Array(size);
+  const nextRejectedDriveField = new Float64Array(state.rejectedDriveField);
+
+  const driveEnergyBeforePeriodicInput = total(previousDriveField);
+  const waveformPhase01 = (((state.tick + phaseOffsetTicks) % periodTicks) + periodTicks) % periodTicks / periodTicks;
+  const sine01 = 0.5 + 0.5 * Math.sin(2 * Math.PI * waveformPhase01);
+  const waveformValuePerCell = (config.baseDrivePerCell + config.amplitudeDrivePerCell * sine01) * config.dt;
+
+  let acceptedDriveEnergy = 0;
+  for (let i = 0; i < size; i++) {
+    nextDriveField[i] = previousDriveField[i] + waveformValuePerCell;
+    acceptedDriveEnergy += waveformValuePerCell;
+  }
+
+  const driveEnergyAfterPeriodicInput = total(nextDriveField);
+  const driveEnergyDeltaDuringPeriodicInput = driveEnergyAfterPeriodicInput - driveEnergyBeforePeriodicInput;
+
+  const ledger = deriveEnergyLedger({
+    timestamp: state.tick + 1,
+    source: 'periodic-external-drive',
+    tolerance: config.tolerance,
+    inputEnergy: acceptedDriveEnergy,
+    internalEnergyBefore: driveEnergyBeforePeriodicInput,
+    internalEnergyAfter: driveEnergyAfterPeriodicInput,
+    dissipatedEnergy: 0,
+    actuationOutputEnergy: 0,
+    residueConvertedEnergy: 0,
+    clampLossOrOverflow: 0,
+    measuredOutflowEnergy: 0,
+  });
+
+  const warnings = [...ledger.warnings];
+  if (config.boundaryMode !== 'torus') {
+    warnings.push('Only torus boundary mode is currently supported.');
+  }
+
+  const nextState: ExternalDriveFieldState = {
+    width: state.width,
+    height: state.height,
+    boundaryMode: state.boundaryMode,
+    driveField: nextDriveField,
+    rejectedDriveField: nextRejectedDriveField,
+    tick: state.tick + 1,
+  };
+
+  const report: PeriodicExternalDriveStepReport = {
+    tick: nextState.tick,
+    inputEnergy: acceptedDriveEnergy,
+    attemptedDriveEnergy: acceptedDriveEnergy,
+    rejectedDriveEnergy: 0,
+    acceptedDriveEnergy,
+    waveformPhase01,
+    waveformValuePerCell,
+    driveEnergyBeforePeriodicInput,
+    driveEnergyAfterPeriodicInput,
+    driveEnergyDeltaDuringPeriodicInput,
+    transferOutputEnergy: 0,
     ledger,
     warnings,
   };
