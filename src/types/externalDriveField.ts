@@ -70,3 +70,28 @@ export interface SupplyCutoffStepResult {
   state: ExternalDriveFieldState;
   report: SupplyCutoffStepReport;
 }
+
+export interface PeriodicExternalDriveConfig extends ExternalDriveFieldConfig {
+  /** Non-negative baseline drive per field cell per step. */
+  baseDrivePerCell: number;
+  /** Non-negative sinusoidal amplitude per field cell per step. */
+  amplitudeDrivePerCell: number;
+  /** Period in ticks. Values below 1 are normalized to 1. */
+  periodTicks: number;
+  /** Optional phase offset in ticks. */
+  phaseOffsetTicks?: number;
+}
+
+export interface PeriodicExternalDriveStepReport extends SteadyExternalDriveStepReport {
+  waveformPhase01: number;
+  waveformValuePerCell: number;
+  driveEnergyBeforePeriodicInput: number;
+  driveEnergyAfterPeriodicInput: number;
+  driveEnergyDeltaDuringPeriodicInput: number;
+  transferOutputEnergy: number;
+}
+
+export interface PeriodicExternalDriveStepResult {
+  state: ExternalDriveFieldState;
+  report: PeriodicExternalDriveStepReport;
+}
