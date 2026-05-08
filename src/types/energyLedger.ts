@@ -41,6 +41,9 @@ export interface EnergyLedgerInput {
   actuationOutputEnergy?: number;
   residueConvertedEnergy?: number;
 
+  /** Optional named boundary-side transfer that is not actuation/output. */
+  boundaryExchangeEnergy?: number;
+
   /** Optional known loss terms. These are accounted, not silently discarded. */
   clampLossOrOverflow?: number;
   measuredOutflowEnergy?: number;
@@ -59,6 +62,7 @@ export interface EnergyLedgerState {
   dissipatedEnergy: number | null;
   actuationOutputEnergy: number | null;
   residueConvertedEnergy: number | null;
+  boundaryExchangeEnergy: number | null;
   clampLossOrOverflow: number | null;
   measuredOutflowEnergy: number | null;
 

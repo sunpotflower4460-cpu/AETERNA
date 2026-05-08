@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   createSpatialWorldMedium,
   sumSpatialWorldMediumStorage,
@@ -57,6 +58,26 @@ describe('spatial world medium', () => {
     expect(report.ledger.conservationResidual).toBeCloseTo(0, 12);
   });
 
+  it('accounts membrane exchange as boundary exchange rather than actuation output', () => {
+    const state = createSpatialWorldMedium(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      [10, 0, 0, 0],
+    );
+
+    const result = updateSpatialWorldMedium(state, {
+      ...baseConfig,
+      localDissipationCoefficient: 0,
+      residueConversionCoefficient: 0,
+      outflowCoefficient: 0,
+      membraneExchangeCoefficient: 0.1,
+    });
+
+    expect(result.report.membraneExchangeEnergy).toBeCloseTo(1, 12);
+    expect(result.report.ledger.actuationOutputEnergy).toBe(0);
+    expect(result.report.ledger.boundaryExchangeEnergy).toBeCloseTo(1, 12);
+    expect(result.report.ledger.status).toBe('closed');
+  });
+
   it('local exchange redistributes medium without changing total when destinations are inactive', () => {
     const state = createSpatialWorldMedium(
       { width: 2, height: 2, boundaryMode: 'torus' },
@@ -76,6 +97,29 @@ describe('spatial world medium', () => {
     expect(result.report.mediumEnergyAfter).toBeCloseTo(result.report.mediumEnergyBefore, 12);
     expect(result.report.ledger.status).toBe('closed');
     expect(Array.from(result.state.mediumStorageField)).not.toEqual(Array.from(state.mediumStorageField));
+  });
+
+  it('computes local exchange from the same before snapshot for all same-tick deltas', () => {
+    const state = createSpatialWorldMedium(
+      { width: 3, height: 1, boundaryMode: 'torus' },
+      [9, 0, 0],
+    );
+
+    const result = updateSpatialWorldMedium(state, {
+      width: 3,
+      height: 1,
+      boundaryMode: 'torus',
+      localExchangeCoefficient: 0.1,
+      localDissipationCoefficient: 0,
+      residueConversionCoefficient: 0,
+      outflowCoefficient: 0,
+      membraneExchangeCoefficient: 0,
+      dt: 1,
+      tolerance: 1e-9,
+    });
+
+    expect(Array.from(result.state.mediumStorageField)).toEqual([7.2, 0.9, 0.9]);
+    expect(result.report.mediumEnergyAfter).toBeCloseTo(result.report.mediumEnergyBefore, 12);
   });
 
   it('does not add external drive in v3.1', () => {
@@ -122,5 +166,14 @@ describe('spatial world medium', () => {
     expect(text).not.toContain('heartbeat');
     expect(text).not.toContain('rhythm');
     expect(text).not.toContain('Energy is flowing through AETERNA');
+  });
+
+  it('keeps source free of life-metaphor guardrail terms', () => {
+    const source = readFileSync('src/world/spatialWorldMedium.ts', 'utf8');
+    const forbidden = ['vital', 'breath', 'heartbeat', 'pulse', 'metabolic', 'lifeDrive', '呼吸', '鼓動', '生命', '心拍'];
+
+    for (const term of forbidden) {
+      expect(source.toLowerCase()).not.toContain(term.toLowerCase());
+    }
   });
 });

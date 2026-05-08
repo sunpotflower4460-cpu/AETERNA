@@ -60,6 +60,10 @@ v3.1 begins the replacement direction by adding a standalone field-based world m
 
 These are spatial fields with the same dimensions.
 
+The destination fields are cumulative diagnostic destination fields. When storage is transferred into `mediumDissipationField`, `mediumResidueField`, `mediumOutflowField`, or `membraneExchangeField`, that value is retained in the destination field across steps unless a later explicit rule removes it.
+
+This is intentional. The destination fields are not temporary visual effects and are not automatically cleared each tick.
+
 ## Local rules
 
 The current standalone medium supports:
@@ -70,6 +74,14 @@ The current standalone medium supports:
 - outflow into `mediumOutflowField`
 - membrane-side exchange into `membraneExchangeField`
 - EnergyLedger / ConservationResidual report per step
+
+## Same-tick exchange atomicity
+
+Local exchange is computed from the same pre-step storage snapshot.
+
+The implementation first accumulates all local exchange deltas into a separate delta field, then applies those deltas to produce the after-exchange storage field.
+
+This avoids order-dependent behavior where an earlier cell update in the same tick changes what a later cell reads.
 
 ## What it deliberately does not add
 
@@ -101,7 +113,7 @@ If all destination coefficients are zero, zero input alone must not force decrea
 
 ## Membrane exchange in v3.1
 
-`membraneExchangeField` is only a named destination field in this phase.
+`membraneExchangeField` is only a named boundary-side destination field in this phase.
 
 It does not inject into AETERNA's internal buffer and does not modify runtime dynamics.
 
@@ -110,6 +122,10 @@ This preserves the rule:
 ```text
 No center-buffer injection.
 ```
+
+In the EnergyLedger, membrane exchange is reported as `boundaryExchangeEnergy` rather than `actuationOutputEnergy`.
+
+This keeps boundary-side accounting separate from modeled action/output accounting.
 
 ## Conservation check
 
@@ -129,8 +145,19 @@ Each update returns a report with:
 
 The ledger should close when all decreases are accounted as named destinations.
 
-## Next phase
+The v3.1 report keeps `membraneExchangeEnergy` as a domain-specific report field, while the shared EnergyLedger receives the same quantity as `boundaryExchangeEnergy`.
 
-v3.2 should add `ExternalDriveField = 0` structure.
+## Next phase correction
 
-That means the external drive field can exist structurally, but it must supply zero energy at first. The purpose is to prove the new structure does not break conservation before any drive is turned on.
+The original next phase was v3.2 ExternalDriveField = 0 and that has now been implemented.
+
+Before moving from isolated ExternalDriveField storage into medium transfer, the next transfer work should follow the same safe pattern:
+
+```text
+v3.6 transferCoefficient = 0
+v3.7 transferCoefficient > 0
+```
+
+v3.6 should create the transfer structure and pair-ledger without moving energy.
+
+v3.7 should enable non-zero transfer only after the zero-transfer structure closes cleanly.
