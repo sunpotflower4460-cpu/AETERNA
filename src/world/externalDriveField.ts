@@ -4,6 +4,9 @@ import type {
   ExternalDriveFieldState,
   ExternalDriveFieldZeroStepReport,
   ExternalDriveFieldZeroStepResult,
+  SteadyExternalDriveConfig,
+  SteadyExternalDriveStepReport,
+  SteadyExternalDriveStepResult,
 } from '../types/externalDriveField.ts';
 
 function finiteNonNegative(value: number, fallback: number): number {
@@ -126,6 +129,92 @@ export function updateExternalDriveFieldZero(
     ledger,
     warnings,
   };
+
+  return { state: nextState, report };
+}
+
+/**
+ * updateSteadyExternalDrive
+ *
+ * v3.3 steady drive step.
+ *
+ * This accepts a constant non-negative drive amount into the external drive
+ * field only. It does not couple into SpatialWorldMedium or AETERNA internal
+ * buffers yet. There is no pulse, rhythm, periodic modulation, or life-like
+ * effect. The accepted input is accounted by the EnergyLedger as accumulation
+ * inside the drive field.
+ */
+export function updateSteadyExternalDrive(
+  state: ExternalDriveFieldState,
+  configInput: SteadyExternalDriveConfig,
+): SteadyExternalDriveStepResult {
+  const config = {
+    ...normalizeConfig(configInput),
+    steadyDrivePerCell: finiteNonNegative(configInput.steadyDrivePerCell, 0),
+  };
+
+  if (state.width !== config.width || state.height !== config.height) {
+    throw new Error('SteadyExternalDrive config size must match state size.');
+  }
+
+  const size = state.width * state.height;
+  const previousDriveField = state.driveField;
+  const nextDriveField = new Float64Array(size);
+  const nextRejectedDriveField = new Float64Array(state.rejectedDriveField);
+
+  const previousDriveEnergy = total(previousDriveField);
+  let acceptedDriveEnergy = 0;
+
+  for (let i = 0; i < size; i++) {
+    const accepted = config.steadyDrivePerCell * config.dt;
+    nextDriveField[i] = previousDriveField[i] + accepted;
+    acceptedDriveEnergy += accepted;
+  }
+
+  const nextDriveEnergy = total(nextDriveField);
+  const internalAccumulationDelta = nextDriveEnergy - previousDriveEnergy;
+
+  const ledger = deriveEnergyLedger({
+    timestamp: state.tick + 1,
+    source: 'steady-external-drive',
+    tolerance: config.tolerance,
+    inputEnergy: acceptedDriveEnergy,
+    internalEnergyBefore: previousDriveEnergy,
+    internalEnergyAfter: nextDriveEnergy,
+    dissipatedEnergy: 0,
+    actuationOutputEnergy: 0,
+    residueConvertedEnergy: 0,
+    clampLossOrOverflow: 0,
+    measuredOutflowEnergy: 0,
+  });
+
+  const warnings = [...ledger.warnings];
+  if (config.boundaryMode !== 'torus') {
+    warnings.push('Only torus boundary mode is currently supported.');
+  }
+
+  const nextState: ExternalDriveFieldState = {
+    width: state.width,
+    height: state.height,
+    boundaryMode: state.boundaryMode,
+    driveField: nextDriveField,
+    rejectedDriveField: nextRejectedDriveField,
+    tick: state.tick + 1,
+  };
+
+  const report: SteadyExternalDriveStepReport = {
+    tick: nextState.tick,
+    inputEnergy: acceptedDriveEnergy,
+    attemptedDriveEnergy: acceptedDriveEnergy,
+    rejectedDriveEnergy: 0,
+    acceptedDriveEnergy,
+    ledger,
+    warnings,
+  };
+
+  // Keep the explicit local variable visible for audits and avoid accidental
+  // result-coded interpretation of the ledger input.
+  void internalAccumulationDelta;
 
   return { state: nextState, report };
 }
