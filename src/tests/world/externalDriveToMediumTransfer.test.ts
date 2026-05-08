@@ -9,6 +9,7 @@ import {
 } from '../../world/spatialWorldMedium.ts';
 import {
   deriveTransferPairLedger,
+  updateExternalDriveToMediumTransferPositive,
   updateExternalDriveToMediumTransferZero,
 } from '../../world/externalDriveToMediumTransfer.ts';
 import type { ExternalDriveToMediumTransferConfig } from '../../types/externalDriveToMediumTransfer.ts';
@@ -131,12 +132,122 @@ describe('external drive to medium zero transfer', () => {
     expect(result.report.pairLedger.status).toBe('closed');
   });
 
-  it('does not include life metaphor or energy-flow proof terms in source', () => {
+  it('does not include life metaphor or energy-flow proof terms in zero-transfer source', () => {
     const source = readFileSync('src/world/externalDriveToMediumTransfer.ts', 'utf8');
     const forbidden = ['vital', 'breath', 'heartbeat', 'pulse', 'metabolic', 'lifeDrive', '呼吸', '鼓動', '生命', '心拍'];
 
     for (const term of forbidden) {
       expect(source.toLowerCase()).not.toContain(term.toLowerCase());
     }
+  });
+});
+
+describe('external drive to medium positive transfer', () => {
+  it('moves a bounded amount from ExternalDriveField to SpatialWorldMedium with a closed pair ledger', () => {
+    const externalDriveState = updateSteadyExternalDrive(
+      createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' }),
+      {
+        width: 2,
+        height: 2,
+        boundaryMode: 'torus',
+        steadyDrivePerCell: 1,
+        dt: 1,
+        tolerance: 1e-9,
+      },
+    ).state;
+    const spatialWorldMediumState = createSpatialWorldMedium(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      [0, 0, 0, 0],
+    );
+
+    const result = updateExternalDriveToMediumTransferPositive(
+      externalDriveState,
+      spatialWorldMediumState,
+      {
+        ...baseTransferConfig,
+        transferCoefficient: 0.25,
+      },
+    );
+
+    expect(result.report.transferRate).toBe(0.25);
+    expect(result.report.transferEnergy).toBe(1);
+    expect(result.report.externalDriveEnergyBefore).toBe(4);
+    expect(result.report.externalDriveEnergyAfter).toBe(3);
+    expect(result.report.mediumEnergyBefore).toBe(0);
+    expect(result.report.mediumEnergyAfter).toBe(1);
+    expect(result.report.externalDriveEnergyDelta).toBe(-1);
+    expect(result.report.mediumEnergyDelta).toBe(1);
+    expect(result.report.pairLedger.sourceOutEnergy).toBe(1);
+    expect(result.report.pairLedger.destinationInputEnergy).toBe(1);
+    expect(result.report.pairLedger.status).toBe('closed');
+    expect(Array.from(result.externalDriveState.driveField)).toEqual([0.75, 0.75, 0.75, 0.75]);
+    expect(Array.from(result.spatialWorldMediumState.mediumStorageField)).toEqual([0.25, 0.25, 0.25, 0.25]);
+  });
+
+  it('uses the same atomic transfer amount on source and destination cells', () => {
+    const externalDriveState = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    externalDriveState.driveField.set([2, 1, 0, 3]);
+    const spatialWorldMediumState = createSpatialWorldMedium(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      [10, 10, 10, 10],
+    );
+
+    const result = updateExternalDriveToMediumTransferPositive(
+      externalDriveState,
+      spatialWorldMediumState,
+      {
+        ...baseTransferConfig,
+        transferCoefficient: 0.5,
+      },
+    );
+
+    expect(Array.from(result.externalDriveState.driveField)).toEqual([1, 0.5, 0, 1.5]);
+    expect(Array.from(result.spatialWorldMediumState.mediumStorageField)).toEqual([11, 10.5, 10, 11.5]);
+    expect(result.report.transferEnergy).toBe(3);
+    expect(result.report.destinationInputEnergy).toBe(3);
+    expect(result.report.pairLedger.matched).toBe(true);
+  });
+
+  it('caps transfer rate at one so it never moves more than available source storage', () => {
+    const externalDriveState = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    externalDriveState.driveField.set([2, 1, 0, 3]);
+    const spatialWorldMediumState = createSpatialWorldMedium(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      [0, 0, 0, 0],
+    );
+
+    const result = updateExternalDriveToMediumTransferPositive(
+      externalDriveState,
+      spatialWorldMediumState,
+      {
+        ...baseTransferConfig,
+        transferCoefficient: 5,
+      },
+    );
+
+    expect(result.report.transferRate).toBe(1);
+    expect(Array.from(result.externalDriveState.driveField)).toEqual([0, 0, 0, 0]);
+    expect(Array.from(result.spatialWorldMediumState.mediumStorageField)).toEqual([2, 1, 0, 3]);
+    expect(result.report.transferEnergy).toBe(6);
+    expect(result.report.pairLedger.status).toBe('closed');
+  });
+
+  it('does not couple positive transfer into AETERNA runtime buffers or center buffers', () => {
+    const externalDriveState = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    externalDriveState.driveField.set([1, 1, 1, 1]);
+    const spatialWorldMediumState = createSpatialWorldMedium({ width: 2, height: 2, boundaryMode: 'torus' });
+
+    const result = updateExternalDriveToMediumTransferPositive(
+      externalDriveState,
+      spatialWorldMediumState,
+      {
+        ...baseTransferConfig,
+        transferCoefficient: 0.25,
+      },
+    );
+
+    expect(result.report.transferEnergy).toBe(1);
+    expect(result.report.warnings.join('\n')).not.toContain('internal buffer');
+    expect(result.report.warnings.join('\n')).not.toContain('center-buffer');
   });
 });
