@@ -15,9 +15,18 @@ function normalize(value: number | undefined): number | null {
   return isFiniteNumber(value) ? value : null;
 }
 
-function nonNegative(value: number | null): number | null {
-  if (value === null) return null;
-  return Math.max(0, value);
+function normalizeNonNegativeTerm(
+  value: number | undefined,
+  id: string,
+  warnings: string[],
+): number | null {
+  const normalized = normalize(value);
+  if (normalized === null) return null;
+  if (normalized < 0) {
+    warnings.push(`${id} was negative and was not silently clamped into the ledger.`);
+    return null;
+  }
+  return normalized;
 }
 
 function makeTerm(
@@ -71,10 +80,11 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
   const tolerance = Math.max(DEFAULT_TOLERANCE, Math.abs(input.tolerance ?? DEFAULT_TOLERANCE));
   const timestamp = input.timestamp ?? Date.now();
   const source = input.source ?? 'observer-diagnostic';
+  const warnings: string[] = [];
 
-  const inputEnergy = nonNegative(normalize(input.inputEnergy));
-  const internalEnergyBefore = nonNegative(normalize(input.internalEnergyBefore));
-  const internalEnergyAfter = nonNegative(normalize(input.internalEnergyAfter));
+  const inputEnergy = normalizeNonNegativeTerm(input.inputEnergy, 'inputEnergy', warnings);
+  const internalEnergyBefore = normalizeNonNegativeTerm(input.internalEnergyBefore, 'internalEnergyBefore', warnings);
+  const internalEnergyAfter = normalizeNonNegativeTerm(input.internalEnergyAfter, 'internalEnergyAfter', warnings);
 
   const derivedDelta = internalEnergyBefore !== null && internalEnergyAfter !== null
     ? internalEnergyAfter - internalEnergyBefore
@@ -83,11 +93,11 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
     ? derivedDelta
     : normalize(input.internalAccumulationDelta);
 
-  const dissipatedEnergy = nonNegative(normalize(input.dissipatedEnergy));
-  const actuationOutputEnergy = nonNegative(normalize(input.actuationOutputEnergy));
-  const residueConvertedEnergy = nonNegative(normalize(input.residueConvertedEnergy));
-  const clampLossOrOverflow = nonNegative(normalize(input.clampLossOrOverflow));
-  const measuredOutflowEnergy = nonNegative(normalize(input.measuredOutflowEnergy));
+  const dissipatedEnergy = normalizeNonNegativeTerm(input.dissipatedEnergy, 'dissipatedEnergy', warnings);
+  const actuationOutputEnergy = normalizeNonNegativeTerm(input.actuationOutputEnergy, 'actuationOutputEnergy', warnings);
+  const residueConvertedEnergy = normalizeNonNegativeTerm(input.residueConvertedEnergy, 'residueConvertedEnergy', warnings);
+  const clampLossOrOverflow = normalizeNonNegativeTerm(input.clampLossOrOverflow, 'clampLossOrOverflow', warnings);
+  const measuredOutflowEnergy = normalizeNonNegativeTerm(input.measuredOutflowEnergy, 'measuredOutflowEnergy', warnings);
 
   const requiredTerms = {
     inputEnergy,
@@ -137,7 +147,6 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
     makeTerm('conservationResidual', 'Conservation residual', conservationResidual, true, 'Check-kind residual; zero or near-zero means the supplied ledger terms close.'),
   ];
 
-  const warnings: string[] = [];
   if (missingTermIds.length > 0) {
     warnings.push('Energy flow is not yet verified. Required ledger terms are missing.');
   }
