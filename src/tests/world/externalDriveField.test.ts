@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   createExternalDriveField,
   updateExternalDriveFieldZero,
+  updatePeriodicExternalDrive,
   updateSteadyExternalDrive,
   updateSupplyCutoffDrive,
 } from '../../world/externalDriveField.ts';
 import type {
   ExternalDriveFieldConfig,
+  PeriodicExternalDriveConfig,
   SteadyExternalDriveConfig,
 } from '../../types/externalDriveField.ts';
 
@@ -21,6 +23,13 @@ const baseConfig: ExternalDriveFieldConfig = {
 const steadyConfig: SteadyExternalDriveConfig = {
   ...baseConfig,
   steadyDrivePerCell: 0.25,
+};
+
+const periodicConfig: PeriodicExternalDriveConfig = {
+  ...baseConfig,
+  baseDrivePerCell: 0.1,
+  amplitudeDrivePerCell: 0.2,
+  periodTicks: 4,
 };
 
 describe('external drive field zero', () => {
@@ -167,5 +176,68 @@ describe('supply cutoff drive', () => {
     expect(text).not.toContain('breath');
     expect(text).not.toContain('heartbeat');
     expect(text).not.toContain('Energy is flowing through AETERNA');
+  });
+});
+
+describe('periodic external drive', () => {
+  it('accepts an explicit sinusoidal waveform into the external drive field only', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updatePeriodicExternalDrive(state, periodicConfig);
+
+    expect(result.report.waveformPhase01).toBe(0);
+    expect(result.report.waveformValuePerCell).toBeCloseTo(0.2, 12);
+    expect(result.report.acceptedDriveEnergy).toBeCloseTo(0.8, 12);
+    expect(result.report.inputEnergy).toBeCloseTo(0.8, 12);
+    expect(result.report.transferOutputEnergy).toBe(0);
+    expect(Array.from(result.state.driveField)).toEqual([0.2, 0.2, 0.2, 0.2]);
+    expect(result.report.ledger.status).toBe('closed');
+    expect(result.report.ledger.conservationResidual).toBeCloseTo(0, 12);
+  });
+
+  it('changes accepted input according to waveform phase while preserving ledger accounting', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const first = updatePeriodicExternalDrive(state, periodicConfig);
+    const second = updatePeriodicExternalDrive(first.state, periodicConfig);
+    const third = updatePeriodicExternalDrive(second.state, periodicConfig);
+
+    expect(first.report.waveformValuePerCell).toBeCloseTo(0.2, 12);
+    expect(second.report.waveformValuePerCell).toBeCloseTo(0.3, 12);
+    expect(third.report.waveformValuePerCell).toBeCloseTo(0.2, 12);
+    expect(second.report.acceptedDriveEnergy).toBeCloseTo(1.2, 12);
+    expect(third.report.ledger.status).toBe('closed');
+  });
+
+  it('does not couple periodic input into SpatialWorldMedium, runtime buffers, or transfer output', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updatePeriodicExternalDrive(state, periodicConfig);
+
+    expect(result.report.transferOutputEnergy).toBe(0);
+    expect(result.report.rejectedDriveEnergy).toBe(0);
+    expect(result.report.driveEnergyDeltaDuringPeriodicInput).toBeCloseTo(result.report.acceptedDriveEnergy, 12);
+  });
+
+  it('does not present the waveform as breath, heartbeat, life rhythm, or verified energy flow through AETERNA', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updatePeriodicExternalDrive(state, periodicConfig);
+    const text = JSON.stringify(result.report);
+
+    expect(text).not.toContain('breath');
+    expect(text).not.toContain('heartbeat');
+    expect(text).not.toContain('life');
+    expect(text).not.toContain('Energy is flowing through AETERNA');
+  });
+
+  it('normalizes negative waveform parameters to zero rather than creating negative input', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updatePeriodicExternalDrive(state, {
+      ...periodicConfig,
+      baseDrivePerCell: -1,
+      amplitudeDrivePerCell: -1,
+    });
+
+    expect(result.report.acceptedDriveEnergy).toBe(0);
+    expect(result.report.inputEnergy).toBe(0);
+    expect(Array.from(result.state.driveField)).toEqual([0, 0, 0, 0]);
+    expect(result.report.ledger.status).toBe('closed');
   });
 });
