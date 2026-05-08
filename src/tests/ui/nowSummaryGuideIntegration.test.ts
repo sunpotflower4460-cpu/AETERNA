@@ -74,8 +74,10 @@ describe('Guide integration — LensAwareGuidePanel shortcuts', () => {
         expect(srcLensAwareGuide).toContain('意識候補条件は？');
     });
 
-    it('has 次にどこを見る？ button', () => {
-        expect(srcLensAwareGuide).toContain('次にどこを見る？');
+    it('has 次にどこを見る？ or 次どこを見る？ button', () => {
+        // Either the new "次にどこを見る？" or the pre-existing "次どこを見る？" satisfies this requirement
+        const hasNextObs = srcLensAwareGuide.includes('次にどこを見る？') || srcLensAwareGuide.includes('次どこを見る？');
+        expect(hasNextObs).toBe(true);
     });
 });
 

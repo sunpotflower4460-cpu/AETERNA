@@ -434,7 +434,9 @@ function _deriveConditionStatus(defined: boolean, value: number | undefined, thr
     if (!defined || value === undefined) return 'insufficient';
     const passes = invert ? value < threshold : value >= threshold;
     if (passes) return 'observed';
-    // 'weak': within 50% of threshold (half-strength signal still worth noting)
+    // 'weak': within 50% of threshold (half-strength signal, still worth noting).
+    // For invert=true (lower-is-better), "weak" means value is within 150% of threshold —
+    // i.e., slightly above the threshold, not yet clearly absent.
     if (invert ? value < threshold * 1.5 : value >= threshold * 0.5) return 'weak';
     return 'notObserved';
 }

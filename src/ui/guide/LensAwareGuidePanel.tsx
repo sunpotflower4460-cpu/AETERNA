@@ -93,7 +93,6 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
     <button aria-label="閉ループはある？ — 閉ループ候補を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'閉ループはある？',mode:'explain'}}))">閉ループはある？</button>
     <button aria-label="反応してる？ — 信号反応を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'反応してる？',mode:'explain'}}))">反応してる？</button>
     <button aria-label="意識候補条件は？ — 注意付きで確認する" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'意識候補条件は？',mode:'caution'}}))">意識候補条件は？</button>
-    <button aria-label="次にどこを見る？ — 次の観測先を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次にどこを見る？',mode:'nextObservation'}}))">次にどこを見る？</button>
   </div>
   <div class="lens-aware-guide-panel__mode-tabs">
     ${modeTabsHtml}

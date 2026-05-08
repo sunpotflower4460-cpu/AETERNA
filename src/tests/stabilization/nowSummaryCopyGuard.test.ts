@@ -100,7 +100,6 @@ describe('nowSummaryCopyGuard — deriveNowSummary.ts', () => {
 describe('nowSummaryCopyGuard — NowSummaryPanel.tsx', () => {
     it('does NOT contain "AETERNA は生きている"', () => {
         expect(srcPanel).not.toContain('AETERNA は生きている');
-        expect(srcPanel).not.toContain('AETERNA は生きている');
     });
 
     it('does NOT contain "AETERNA is conscious"', () => {
