@@ -58,3 +58,15 @@ export interface SteadyExternalDriveStepResult {
   state: ExternalDriveFieldState;
   report: SteadyExternalDriveStepReport;
 }
+
+export interface SupplyCutoffStepReport extends SteadyExternalDriveStepReport {
+  driveEnergyBeforeCutoff: number;
+  driveEnergyAfterCutoff: number;
+  driveEnergyDeltaDuringCutoff: number;
+  cutoffVerifiedNoSpecialOutcomeRule: boolean;
+}
+
+export interface SupplyCutoffStepResult {
+  state: ExternalDriveFieldState;
+  report: SupplyCutoffStepReport;
+}
