@@ -25,6 +25,18 @@
 - AETERNA-NATURAL v2.0 Observation UX Final Polish ✅ 完了 (2026-05-06)
 - AETERNA-NATURAL v2.1 Final QA / Release Audit ✅ 完了 (2026-05-06)
 - AETERNA-NATURAL v2.2 Public Demo Polish / Landing Copy ✅ 完了 (2026-05-07)
+- AETERNA-NATURAL v2.6.5 Current State Audit / Core Boundary Freeze ✅ 完了 (2026-05-07)
+
+## Planned Observation Maturity Phases
+
+- v2.4 Japanese-first UI / Terminology — planned (not yet implemented)
+- v2.5 First-time Onboarding / Observation Route — planned (not yet implemented)
+- v2.6 Lens Explanations / Glossary Enhancement — planned (not yet implemented)
+- v2.6.5 Current State Audit / Core Boundary Freeze — ✅ complete (2026-05-07)
+- v2.7 Now Summary Panel — next
+- v2.8 Vital Stem Mode — planned
+- v2.9 Signal Handshake Observatory — planned
+- v3.0 Consciousness-Candidate Protocol Suite — planned
 
 ## Phase 1: 持続する生命場の再確認と安定化
 
