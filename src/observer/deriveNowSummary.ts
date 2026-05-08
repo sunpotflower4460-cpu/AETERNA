@@ -434,6 +434,7 @@ function _deriveConditionStatus(defined: boolean, value: number | undefined, thr
     if (!defined || value === undefined) return 'insufficient';
     const passes = invert ? value < threshold : value >= threshold;
     if (passes) return 'observed';
+    // 'weak': within 50% of threshold (half-strength signal still worth noting)
     if (invert ? value < threshold * 1.5 : value >= threshold * 0.5) return 'weak';
     return 'notObserved';
 }
@@ -441,6 +442,12 @@ function _deriveConditionStatus(defined: boolean, value: number | undefined, thr
 function _statusFromBool(val: boolean | undefined): ConsciousnessCandidateConditionStatus {
     if (val === undefined) return 'insufficient';
     return val ? 'observed' : 'notObserved';
+}
+
+/** Formats a boolean sensor flag as Japanese text for display in reasonJa fields. */
+function _boolJa(val: boolean | undefined): string {
+    if (val === undefined) return '?';
+    return val ? 'あり' : 'なし';
 }
 
 function _deriveConsciousnessConditions(inp: DeriveNowSummaryInput): ConsciousnessCandidateCondition[] {
@@ -523,7 +530,7 @@ function _deriveConsciousnessConditions(inp: DeriveNowSummaryInput): Consciousne
             id: 'signalDialogue',
             labelJa: '信号対話性',
             status: _statusFromBool(inp.touchActive || inp.soundActive || inp.lightActive || inp.motionActive),
-            reasonJa: `タッチ:${inp.touchActive ?? '?'} 音:${inp.soundActive ?? '?'} 光:${inp.lightActive ?? '?'} 動き:${inp.motionActive ?? '?'}`,
+            reasonJa: `タッチ:${_boolJa(inp.touchActive)} 音:${_boolJa(inp.soundActive)} 光:${_boolJa(inp.lightActive)} 動き:${_boolJa(inp.motionActive)}`,
             sourceMetricIds: ['touchActive', 'soundActive', 'lightActive', 'motionActive'],
             cautionJa: caution,
         },

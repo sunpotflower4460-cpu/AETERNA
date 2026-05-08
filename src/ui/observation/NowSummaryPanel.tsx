@@ -37,6 +37,7 @@ export interface NowSummaryPanelV27Props {
 export function renderNowSummaryPanelV27HTML(props: NowSummaryPanelV27Props): string {
     const { state, displayMode = 'beginner' } = props;
 
+    // timestamp is a number (epoch ms), safe to interpolate directly without _esc()
     const safeBaselineButton = `<button
   class="now-summary-panel-v27__safe-baseline-btn"
   onclick="window.dispatchEvent(new CustomEvent('nowSummary:safeBaselineCompare',{detail:{timestamp:${state.timestamp}}}))">
