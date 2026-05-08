@@ -125,6 +125,7 @@ export function updateExternalDriveToMediumTransferZero(
     mediumResidueField: new Float64Array(spatialWorldMediumState.mediumResidueField),
     mediumOutflowField: new Float64Array(spatialWorldMediumState.mediumOutflowField),
     membraneExchangeField: new Float64Array(spatialWorldMediumState.membraneExchangeField),
+    membraneExchangeReleasedField: new Float64Array(spatialWorldMediumState.membraneExchangeReleasedField),
     tick: spatialWorldMediumState.tick + 1,
   };
 
@@ -215,6 +216,7 @@ export function updateExternalDriveToMediumTransferPositive(
     mediumResidueField: new Float64Array(spatialWorldMediumState.mediumResidueField),
     mediumOutflowField: new Float64Array(spatialWorldMediumState.mediumOutflowField),
     membraneExchangeField: new Float64Array(spatialWorldMediumState.membraneExchangeField),
+    membraneExchangeReleasedField: new Float64Array(spatialWorldMediumState.membraneExchangeReleasedField),
     tick: spatialWorldMediumState.tick + 1,
   };
 
