@@ -1,6 +1,8 @@
 import type { ExternalDriveFieldState } from '../types/externalDriveField.ts';
 import type {
   ExternalDriveToMediumTransferConfig,
+  ExternalDriveToMediumTransferPositiveReport,
+  ExternalDriveToMediumTransferPositiveResult,
   ExternalDriveToMediumTransferZeroReport,
   ExternalDriveToMediumTransferZeroResult,
   TransferPairLedgerState,
@@ -145,6 +147,98 @@ export function updateExternalDriveToMediumTransferZero(
     externalDriveEnergyAfter,
     mediumEnergyBefore,
     mediumEnergyAfter,
+    pairLedger,
+    warnings,
+  };
+
+  return {
+    externalDriveState: nextExternalDriveState,
+    spatialWorldMediumState: nextSpatialWorldMediumState,
+    report,
+  };
+}
+
+/**
+ * updateExternalDriveToMediumTransferPositive
+ *
+ * v3.7 transferCoefficient > 0.
+ *
+ * This is the first phase that moves stored drive from ExternalDriveField into
+ * SpatialWorldMedium. The same per-cell transfer amount is used atomically on
+ * both sides: it is subtracted from the source cell and added to the matching
+ * destination cell. The pair ledger verifies source out equals destination
+ * input. It does not couple into AETERNA internal buffers.
+ */
+export function updateExternalDriveToMediumTransferPositive(
+  externalDriveState: ExternalDriveFieldState,
+  spatialWorldMediumState: SpatialWorldMediumState,
+  configInput: ExternalDriveToMediumTransferConfig,
+): ExternalDriveToMediumTransferPositiveResult {
+  const config = normalizeConfig(configInput);
+  ensureCompatibleStateShapes(externalDriveState, spatialWorldMediumState, config);
+
+  if (config.cellMapping !== 'same-index') {
+    throw new Error('Only same-index transfer mapping is currently supported.');
+  }
+
+  const size = config.width * config.height;
+  const transferRate = Math.min(1, config.transferCoefficient * config.dt);
+
+  const sourceBefore = externalDriveState.driveField;
+  const destinationBefore = spatialWorldMediumState.mediumStorageField;
+  const nextDriveField = new Float64Array(sourceBefore);
+  const nextMediumStorageField = new Float64Array(destinationBefore);
+
+  const externalDriveEnergyBefore = total(sourceBefore);
+  const mediumEnergyBefore = total(destinationBefore);
+
+  let transferEnergy = 0;
+  for (let i = 0; i < size; i++) {
+    const available = finiteNonNegative(sourceBefore[i], 0);
+    const transferAmount = Math.min(available, available * transferRate);
+    nextDriveField[i] -= transferAmount;
+    nextMediumStorageField[i] += transferAmount;
+    transferEnergy += transferAmount;
+  }
+
+  const nextExternalDriveState: ExternalDriveFieldState = {
+    ...externalDriveState,
+    driveField: nextDriveField,
+    rejectedDriveField: new Float64Array(externalDriveState.rejectedDriveField),
+    tick: externalDriveState.tick + 1,
+  };
+
+  const nextSpatialWorldMediumState: SpatialWorldMediumState = {
+    ...spatialWorldMediumState,
+    mediumStorageField: nextMediumStorageField,
+    mediumDissipationField: new Float64Array(spatialWorldMediumState.mediumDissipationField),
+    mediumResidueField: new Float64Array(spatialWorldMediumState.mediumResidueField),
+    mediumOutflowField: new Float64Array(spatialWorldMediumState.mediumOutflowField),
+    membraneExchangeField: new Float64Array(spatialWorldMediumState.membraneExchangeField),
+    tick: spatialWorldMediumState.tick + 1,
+  };
+
+  const externalDriveEnergyAfter = total(nextExternalDriveState.driveField);
+  const mediumEnergyAfter = total(nextSpatialWorldMediumState.mediumStorageField);
+  const sourceOutEnergy = externalDriveEnergyBefore - externalDriveEnergyAfter;
+  const destinationInputEnergy = mediumEnergyAfter - mediumEnergyBefore;
+  const pairLedger = deriveTransferPairLedger(sourceOutEnergy, destinationInputEnergy, config.tolerance);
+  const warnings = [...pairLedger.warnings];
+
+  const report: ExternalDriveToMediumTransferPositiveReport = {
+    tick: Math.max(nextExternalDriveState.tick, nextSpatialWorldMediumState.tick),
+    acceptedTransferCoefficient: config.transferCoefficient,
+    attemptedTransferCoefficient: config.transferCoefficient,
+    rejectedTransferCoefficient: 0,
+    transferRate,
+    transferEnergy,
+    destinationInputEnergy,
+    externalDriveEnergyBefore,
+    externalDriveEnergyAfter,
+    externalDriveEnergyDelta: externalDriveEnergyAfter - externalDriveEnergyBefore,
+    mediumEnergyBefore,
+    mediumEnergyAfter,
+    mediumEnergyDelta: mediumEnergyAfter - mediumEnergyBefore,
     pairLedger,
     warnings,
   };
