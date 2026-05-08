@@ -44,6 +44,33 @@ export interface TransferObservation {
   warnings: string[];
 }
 
+export interface ObservationTimelineFrame {
+  tick: number;
+  externalDriveTotal: number;
+  mediumStorageTotal: number;
+  dissipationTotal: number;
+  residueTotal: number;
+  outflowTotal: number;
+  membraneExchangeTotal: number;
+  transferEnergy: number;
+  pairResidual: number;
+  pairLedgerStatus: ObservationStatus;
+  metricKind: 'derived';
+}
+
+export interface ObservationTimelineSummary {
+  frameCount: number;
+  firstTick: number | null;
+  lastTick: number | null;
+  totalTransferred: number;
+  maxPairResidual: number;
+  openFrameCount: number;
+  closedFrameCount: number;
+  warningFrameCount: number;
+  latestStatus: ObservationStatus;
+  metricKind: 'derived';
+}
+
 export interface ObservationReport {
   title: string;
   mode: 'observation-only';
@@ -51,6 +78,8 @@ export interface ObservationReport {
   status: ObservationStatus;
   snapshots: FieldSnapshot[];
   transferObservation?: TransferObservation;
+  timelineFrames?: ObservationTimelineFrame[];
+  timelineSummary?: ObservationTimelineSummary;
   warnings: string[];
   notes: string[];
 }
