@@ -50,6 +50,7 @@ export function createSpatialWorldMedium(
     mediumResidueField: new Float64Array(size),
     mediumOutflowField: new Float64Array(size),
     membraneExchangeField: new Float64Array(size),
+    membraneExchangeReleasedField: new Float64Array(size),
     tick: 0,
   };
 }
@@ -204,6 +205,7 @@ export function updateSpatialWorldMedium(
     mediumResidueField: nextResidue,
     mediumOutflowField: nextOutflow,
     membraneExchangeField: nextMembraneExchange,
+    membraneExchangeReleasedField: new Float64Array(state.membraneExchangeReleasedField),
     tick: state.tick + 1,
   };
 

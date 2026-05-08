@@ -29,8 +29,11 @@ export interface SpatialWorldMediumState {
   mediumResidueField: Float64Array;
   mediumOutflowField: Float64Array;
 
-  /** Boundary-side transfer record. It is a named destination, not center-buffer injection. */
+  /** Boundary-side cumulative inflow record. Tracks how much has entered the membrane. Not a center-buffer injection. */
   membraneExchangeField: Float64Array;
+  /** Boundary-side cumulative outflow record. Tracks how much has been released from the membrane to internal storage.
+   * Drainable amount per cell = max(0, membraneExchangeField[i] - membraneExchangeReleasedField[i]). */
+  membraneExchangeReleasedField: Float64Array;
 
   tick: number;
 }
