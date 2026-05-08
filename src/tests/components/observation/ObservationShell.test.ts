@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { observeFieldSnapshots } from '../../../observer/fieldSnapshotObserver.ts';
 import { renderObservationShell, resolveObservationLayout } from '../../../components/observation/ObservationShell.ts';
-import type { ObservationReport } from '../../../types/observation.ts';
+import type { ObservationReport, TransferObservation } from '../../../types/observation.ts';
+
+function makeTransferObservation(): TransferObservation {
+  return {
+    sourceName: 'ExternalDriveField',
+    destinationName: 'SpatialWorldMedium',
+    sourceOutEnergy: 1,
+    destinationInputEnergy: 1,
+    transferEnergy: 1,
+    residual: 0,
+    signedResidual: 0,
+    pairLedgerStatus: 'closed',
+    matched: true,
+    mapping: 'same-index',
+    metricKind: 'ledger',
+    summaryLine: 'Transfer matched: sourceOut=1.000000 destinationInput=1.000000 residual=0.000000',
+    warnings: [],
+  };
+}
 
 function makeReport(): ObservationReport {
   return {
@@ -13,6 +31,7 @@ function makeReport(): ObservationReport {
       { fieldName: 'ExternalDriveField', field: [1, 1, 0, 0] },
       { fieldName: 'SpatialWorldMedium', field: [0, 2, 0, 0] },
     ]),
+    transferObservation: makeTransferObservation(),
     warnings: [],
     notes: ['Observation only — no runtime mutation'],
   };
@@ -25,23 +44,29 @@ describe('observation shell', () => {
     expect(resolveObservationLayout({ width: 1440 })).toBe('desktop');
   });
 
-  it('renders mobile tabs for small screens', () => {
+  it('renders mobile tabs and transfer cards for small screens', () => {
     const result = renderObservationShell(makeReport(), { width: 390 });
 
     expect(result.layout).toBe('mobile');
     expect(result.html).toContain('obs-mobile');
     expect(result.html).toContain('data-tab="current"');
-    expect(result.html).toContain('data-tab="audit"');
+    expect(result.html).toContain('data-panel="flow"');
+    expect(result.html).toContain('data-panel="ledger"');
+    expect(result.html).toContain('Transfer Pair Ledger');
+    expect(result.html).toContain('↓ 1.000');
     expect(result.html).toContain('Observation only');
   });
 
-  it('renders desktop dashboard for wide screens', () => {
+  it('renders desktop dashboard with transfer ledger and flow panels for wide screens', () => {
     const result = renderObservationShell(makeReport(), { width: 1440 });
 
     expect(result.layout).toBe('desktop');
     expect(result.html).toContain('obs-desktop');
     expect(result.html).toContain('obs-dashboard-grid');
     expect(result.html).toContain('Raw Inspector');
+    expect(result.html).toContain('Transfer Pair Ledger');
+    expect(result.html).toContain('Source Out');
+    expect(result.html).toContain('Destination Input');
     expect(result.html).toContain('Observation only — no runtime mutation');
   });
 
@@ -52,6 +77,8 @@ describe('observation shell', () => {
 
     expect(mobile.html).toContain('ExternalDriveField');
     expect(desktop.html).toContain('ExternalDriveField');
+    expect(mobile.html).toContain('Transfer matched');
+    expect(desktop.html).toContain('Transfer matched');
     expect(mobile.sections).toEqual(desktop.sections);
   });
 
