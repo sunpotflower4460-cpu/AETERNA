@@ -33,6 +33,8 @@ input = internal accumulation
 
 If required terms are missing, the ledger is `insufficient`. Missing values are not treated as zero.
 
+Negative energy-like destination terms are also not silently clamped into the ledger. They are treated as invalid/missing diagnostic inputs and must produce warnings. This avoids a second-order clamp-loss problem inside the ledger itself.
+
 ## Files
 
 - `src/types/energyLedger.ts`
@@ -69,7 +71,7 @@ If required terms are missing, the ledger is `insufficient`. Missing values are 
 - `closed`: all required terms are present and residual is within tolerance.
 - `nearClosed`: all required terms are present and residual is small but outside tolerance.
 - `open`: all required terms are present but residual is large.
-- `insufficient`: required terms are missing or residual cannot be calculated.
+- `insufficient`: required terms are missing, invalid, or residual cannot be calculated.
 
 ## Runtime snapshot adapter
 
@@ -100,6 +102,53 @@ Is energy really flowing through AETERNA?
 
 unless the required terms are present and the ledger closes.
 
+## Required visibility step
+
+The ledger must not remain an unused helper.
+
+Before replacing existing dynamics or adding external drive, runtime or scenario observation should surface the ledger status so the current system can visibly report:
+
+- `insufficient`: required accounting terms are still missing.
+- `open`: terms are present but the ledger does not close.
+- `closed`: supplied terms close within tolerance.
+
+This visibility should be added as observer-side reporting only. It must not modify the runtime dynamics.
+
+Recommended display copy when status is not `closed`:
+
+```text
+Energy flow is not yet verified. Current values are diagnostic/proxy readings.
+```
+
+The UI must avoid implying that visible motion equals verified energy flow.
+
+## Mixed-period warning
+
+During the transition period, existing result-coded dynamics may still visually move while the ledger reports `insufficient` or `open`.
+
+That is not a contradiction. It means AETERNA is still displaying or simulating dynamics that have not yet been proven as ledgered modeled flow.
+
+The UI should keep these separated:
+
+- visual activity / proxy dynamics
+- ledger status
+- verified modeled flow
+
+## Principle drift control
+
+The project now has strong principle documents. They must not become detached from code.
+
+Future audits should periodically list code paths that violate or bypass the Energy Realness principles, especially:
+
+- baseline-seeking scalar world medium
+- clock-driven sine drift
+- direct damping without named destination
+- direct residue decay without named destination
+- clamp loss without overflow accounting
+- living/proxy modifiers that alter substrate behavior without ledgered energy support
+
+This list should guide replacement priority after ledger visibility exists.
+
 ## Important guardrails
 
 - This is observer-side only.
@@ -108,6 +157,7 @@ unless the required terms are present and the ledger closes.
 - It does not add an ExternalDriveField.
 - It does not add periodic drive or pulse drive.
 - It does not silently convert missing terms to zero.
+- It does not silently clamp negative ledger terms into zero-valued accounting.
 - It does not present energy flow as verified unless the supplied ledger closes.
 - It does not infer physical flow terms from proxy labels.
 
@@ -126,14 +176,19 @@ This estimate is a diagnostic proxy. It is not a complete physical energy model.
 
 ## Next phase
 
-v3.0 should introduce a Local Conservation Substrate only after v2.9 diagnostic accounting is visible enough to reveal what is currently missing.
+The next safest implementation step is not another drive source.
+
+First, wire ledger visibility into observer/scenario/Now Summary reporting so current dynamics can reveal how often the ledger is `insufficient`, `open`, or `closed`.
+
+Only after that should v3.0 Local Conservation Substrate or later spatial medium work continue to replace result-coded dynamics with local exchange/storage/dissipation fields.
 
 The expected order remains:
 
 1. Energy Ledger / ConservationResidual Check
-2. Local Conservation Substrate
-3. Spatial World Medium
-4. ExternalDriveField = 0 structure
-5. Steady ExternalDrive
-6. Supply Cutoff Test
-7. PeriodicDrive Spectral Comparison
+2. Ledger visibility in observer/scenario/Now Summary reporting
+3. Local Conservation Substrate
+4. Spatial World Medium
+5. ExternalDriveField = 0 structure
+6. Steady ExternalDrive
+7. Supply Cutoff Test
+8. PeriodicDrive Spectral Comparison
