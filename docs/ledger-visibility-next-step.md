@@ -12,6 +12,18 @@ The ledger must not remain an unused helper.
 
 Before adding external drive or replacing large dynamics, AETERNA should make current ledger status visible in observer/scenario/Now Summary reporting.
 
+## v2.9.2 implementation status
+
+v2.9.2 adds the first visibility layer:
+
+- `src/types/energyLedgerVisibility.ts`
+- `src/observer/deriveEnergyLedgerVisibility.ts`
+- `src/tests/observer/deriveEnergyLedgerVisibility.test.ts`
+
+This is still observer-side only.
+
+It does not modify runtime dynamics and does not add an external drive.
+
 ## Why this matters
 
 v2.8 and v2.9 created the right tools:
@@ -24,7 +36,7 @@ v2.8 and v2.9 created the right tools:
 
 But the existing runtime still contains transitional/result-coded dynamics, such as scalar world-medium proxies, baseline-seeking behavior, direct damping, residue decay, and clock-driven drift.
 
-Therefore, the next visibility step should show that the current system is likely `insufficient` or `open`, rather than pretending that visible motion means verified modeled flow.
+Therefore, the visibility layer should show that the current system may be `insufficient` or `open`, rather than pretending that visible motion means verified modeled flow.
 
 ## Required display distinction
 
@@ -67,6 +79,35 @@ Not allowed:
 - add Spatial World Medium
 - claim energy flow is verified because visuals are moving
 
+## What v2.9.2 derives
+
+`deriveEnergyLedgerVisibility` converts an `EnergyLedgerState` into a conservative visible line:
+
+- `status`
+- `conservationResidual`
+- `missingTermCount`
+- `verifiedModeledFlow`
+- `warningCount`
+- `NowSummaryLine` with `valueKind: 'check'`
+
+`deriveEnergyLedgerVisibility` only uses verified ledger state. It does not infer physical flow from visual activity.
+
+`summarizeEnergyLedgerVisibility` counts ledger states across frames:
+
+- insufficient frames
+- open frames
+- near-closed frames
+- closed frames
+- verified modeled-flow frames
+- max/average conservation residual
+- max missing term count
+
+If any frame is insufficient/open/nearClosed, the recommended display remains:
+
+```text
+Energy flow is not yet verified. Current values are diagnostic/proxy readings.
+```
+
 ## Negative term handling
 
 Negative energy-like terms should not be silently clamped to zero inside the ledger.
@@ -75,19 +116,31 @@ They should be treated as invalid/missing diagnostic inputs and produce warnings
 
 This prevents the ledger from creating its own silent clamp loss.
 
+## Remaining integration work
+
+v2.9.2 creates the visibility derivation and tests, but it still avoids invasive runtime wiring.
+
+Future follow-up can attach this to:
+
+- scenario metrics fields
+- scenario summary counts
+- Now Summary panel display
+- Observation Workspace display
+
+That follow-up should still be observer-side only.
+
 ## Next recommended PR
 
-A focused next PR should be:
+After v2.9.2, the next focused PR should be:
 
 ```text
-v2.9.2 Ledger Visibility in Scenario / Now Summary
+v2.9.3 Ledger Visibility in Scenario Metrics
 ```
 
 Expected additions:
 
 - scenario metrics fields for ledger status / residual / missing term count
 - summary counts for insufficient/open/closed ledger frames
-- optional Now Summary section or line with valueKind `check`
 - tests ensuring visible activity does not imply verified energy flow
 
-Only after this visibility layer exists should v3.0+ replacement work proceed further.
+Only after this visibility layer is actually surfaced in scenario/Now Summary should v3.0+ replacement work continue.
