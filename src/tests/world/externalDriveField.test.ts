@@ -3,6 +3,7 @@ import {
   createExternalDriveField,
   updateExternalDriveFieldZero,
   updateSteadyExternalDrive,
+  updateSupplyCutoffDrive,
 } from '../../world/externalDriveField.ts';
 import type {
   ExternalDriveFieldConfig,
@@ -120,5 +121,51 @@ describe('steady external drive', () => {
     expect(result.report.inputEnergy).toBe(0);
     expect(Array.from(result.state.driveField)).toEqual([0, 0, 0, 0]);
     expect(result.report.ledger.status).toBe('closed');
+  });
+});
+
+describe('supply cutoff drive', () => {
+  it('stops accepted input without applying a special decay outcome rule', () => {
+    const initial = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const charged = updateSteadyExternalDrive(initial, steadyConfig);
+    const cutoff = updateSupplyCutoffDrive(charged.state, baseConfig);
+
+    expect(cutoff.report.inputEnergy).toBe(0);
+    expect(cutoff.report.acceptedDriveEnergy).toBe(0);
+    expect(cutoff.report.driveEnergyBeforeCutoff).toBe(1);
+    expect(cutoff.report.driveEnergyAfterCutoff).toBe(1);
+    expect(cutoff.report.driveEnergyDeltaDuringCutoff).toBe(0);
+    expect(Array.from(cutoff.state.driveField)).toEqual([0.25, 0.25, 0.25, 0.25]);
+    expect(cutoff.report.ledger.status).toBe('closed');
+    expect(cutoff.report.cutoffVerifiedNoSpecialOutcomeRule).toBe(true);
+  });
+
+  it('keeps stored drive across multiple cutoff steps when no destination exists', () => {
+    const initial = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const charged = updateSteadyExternalDrive(initial, steadyConfig);
+    const firstCutoff = updateSupplyCutoffDrive(charged.state, baseConfig);
+    const secondCutoff = updateSupplyCutoffDrive(firstCutoff.state, baseConfig);
+
+    expect(secondCutoff.report.driveEnergyBeforeCutoff).toBe(1);
+    expect(secondCutoff.report.driveEnergyAfterCutoff).toBe(1);
+    expect(secondCutoff.report.driveEnergyDeltaDuringCutoff).toBe(0);
+    expect(secondCutoff.report.ledger.status).toBe('closed');
+  });
+
+  it('does not encode if supply is zero then decay', () => {
+    const initial = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const charged = updateSteadyExternalDrive(initial, steadyConfig);
+    const cutoff = updateSupplyCutoffDrive(charged.state, baseConfig);
+    const text = JSON.stringify(cutoff.report);
+
+    expect(cutoff.report.inputEnergy).toBe(0);
+    expect(cutoff.report.driveEnergyAfterCutoff).toBe(cutoff.report.driveEnergyBeforeCutoff);
+    expect(text).not.toContain('decay');
+    expect(text).not.toContain('pulse');
+    expect(text).not.toContain('periodic');
+    expect(text).not.toContain('rhythm');
+    expect(text).not.toContain('breath');
+    expect(text).not.toContain('heartbeat');
+    expect(text).not.toContain('Energy is flowing through AETERNA');
   });
 });

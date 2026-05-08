@@ -7,6 +7,8 @@ import type {
   SteadyExternalDriveConfig,
   SteadyExternalDriveStepReport,
   SteadyExternalDriveStepResult,
+  SupplyCutoffStepReport,
+  SupplyCutoffStepResult,
 } from '../types/externalDriveField.ts';
 
 function finiteNonNegative(value: number, fallback: number): number {
@@ -215,6 +217,75 @@ export function updateSteadyExternalDrive(
   // Keep the explicit local variable visible for audits and avoid accidental
   // result-coded interpretation of the ledger input.
   void internalAccumulationDelta;
+
+  return { state: nextState, report };
+}
+
+/**
+ * updateSupplyCutoffDrive
+ *
+ * v3.4 supply cutoff test.
+ *
+ * This stops accepted drive without applying a special decay outcome rule.
+ * Existing driveField storage is carried forward unchanged because no transfer,
+ * dissipation, or outflow destination is defined in this phase. If stored drive
+ * remains, that is a valid observation rather than a failure.
+ */
+export function updateSupplyCutoffDrive(
+  state: ExternalDriveFieldState,
+  configInput: ExternalDriveFieldConfig,
+): SupplyCutoffStepResult {
+  const config = normalizeConfig(configInput);
+  if (state.width !== config.width || state.height !== config.height) {
+    throw new Error('SupplyCutoffDrive config size must match state size.');
+  }
+
+  const driveEnergyBeforeCutoff = total(state.driveField);
+  const nextDriveField = new Float64Array(state.driveField);
+  const driveEnergyAfterCutoff = total(nextDriveField);
+  const driveEnergyDeltaDuringCutoff = driveEnergyAfterCutoff - driveEnergyBeforeCutoff;
+
+  const ledger = deriveEnergyLedger({
+    timestamp: state.tick + 1,
+    source: 'supply-cutoff-drive',
+    tolerance: config.tolerance,
+    inputEnergy: 0,
+    internalEnergyBefore: driveEnergyBeforeCutoff,
+    internalEnergyAfter: driveEnergyAfterCutoff,
+    dissipatedEnergy: 0,
+    actuationOutputEnergy: 0,
+    residueConvertedEnergy: 0,
+    clampLossOrOverflow: 0,
+    measuredOutflowEnergy: 0,
+  });
+
+  const warnings = [...ledger.warnings];
+  if (config.boundaryMode !== 'torus') {
+    warnings.push('Only torus boundary mode is currently supported.');
+  }
+
+  const nextState: ExternalDriveFieldState = {
+    width: state.width,
+    height: state.height,
+    boundaryMode: state.boundaryMode,
+    driveField: nextDriveField,
+    rejectedDriveField: new Float64Array(state.rejectedDriveField),
+    tick: state.tick + 1,
+  };
+
+  const report: SupplyCutoffStepReport = {
+    tick: nextState.tick,
+    inputEnergy: 0,
+    attemptedDriveEnergy: 0,
+    rejectedDriveEnergy: 0,
+    acceptedDriveEnergy: 0,
+    driveEnergyBeforeCutoff,
+    driveEnergyAfterCutoff,
+    driveEnergyDeltaDuringCutoff,
+    cutoffVerifiedNoSpecialOutcomeRule: ledger.status === 'closed' && driveEnergyDeltaDuringCutoff === 0,
+    ledger,
+    warnings,
+  };
 
   return { state: nextState, report };
 }
