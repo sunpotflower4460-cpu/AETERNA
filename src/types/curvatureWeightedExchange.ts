@@ -16,13 +16,25 @@ export interface CurvatureWeightedExchangeConfig {
     height: number;
     boundaryMode: CurvatureWeightedExchangeBoundaryMode;
     /**
-     * Sensitivity blend.
+     * Sensitivity blend (variance only).
      * - 0: weights are uniformly 1 (no curvature effect).
-     * - 1: weights fully reflect normalized curvature variation (mean still 1).
+     * - 1: weights fully reflect normalized curvature variation.
      * - between 0 and 1: linearly blend toward uniform.
-     * v4.1 default is 1.
+     * Mean across all edges remains 1 regardless of this value (the formula
+     * `1 + s*(rawNorm - 1)` has zero-mean offset).
      */
     curvatureSensitivityCoefficient: number;
+    /**
+     * v4.2 (drive step) global gain.
+     *
+     * Applied as a uniform multiplier AFTER the sensitivity blend. When set to
+     * a value other than 1, the mean(weight) constraint is released and
+     * mean = globalGainCoefficient. v4.1 default is 1 (mean=1 preserved).
+     *
+     * Stability: callers still cap each edge rate to 0.25, so a globalGain
+     * value greater than (0.25 / exchangeRate) clamps per-edge.
+     */
+    globalGainCoefficient?: number;
 }
 
 export interface CurvatureWeightFields {

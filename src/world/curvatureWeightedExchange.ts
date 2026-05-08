@@ -34,21 +34,26 @@ function finiteNonNegative(value: number, fallback: number): number {
     return Number.isFinite(value) ? Math.max(0, value) : fallback;
 }
 
-function uniformWeights(width: number, height: number): CurvatureWeightFields {
+function uniformWeights(
+    width: number,
+    height: number,
+    globalGain = 1,
+): CurvatureWeightFields {
     const size = width * height;
     const right = new Float64Array(size);
     const down = new Float64Array(size);
-    right.fill(1);
-    down.fill(1);
+    right.fill(globalGain);
+    down.fill(globalGain);
+    const isUniform = globalGain === 1;
     return {
         width,
         height,
         rightEdgeWeight: right,
         downEdgeWeight: down,
-        meanWeight: 1,
-        minWeight: 1,
-        maxWeight: 1,
-        isUniform: true,
+        meanWeight: globalGain,
+        minWeight: globalGain,
+        maxWeight: globalGain,
+        isUniform,
     };
 }
 
@@ -70,16 +75,20 @@ export function deriveCurvatureWeights(
     const width = Math.max(1, Math.floor(config.width));
     const height = Math.max(1, Math.floor(config.height));
     const sensitivity = finiteNonNegative(config.curvatureSensitivityCoefficient, 0);
+    const globalGain =
+        config.globalGainCoefficient === undefined
+            ? 1
+            : finiteNonNegative(config.globalGainCoefficient, 1);
     const size = width * height;
 
     if (!torusGeometry || sensitivity <= 0) {
-        return uniformWeights(width, height);
+        return uniformWeights(width, height, globalGain);
     }
 
     const segments = torusGeometry.config.segments;
     if (segments * segments !== size) {
         // Grid does not match torus segments; fall back to uniform weights.
-        return uniformWeights(width, height);
+        return uniformWeights(width, height, globalGain);
     }
 
     const cellAt = (x: number, y: number) => {
@@ -109,22 +118,23 @@ export function deriveCurvatureWeights(
     const totalEdges = 2 * size;
     const meanRaw = sumRaw / totalEdges;
     if (!Number.isFinite(meanRaw) || meanRaw <= 0) {
-        return uniformWeights(width, height);
+        return uniformWeights(width, height, globalGain);
     }
     const inverseMean = 1 / meanRaw;
 
     let minW = Number.POSITIVE_INFINITY;
     let maxW = Number.NEGATIVE_INFINITY;
     let sumOut = 0;
-    let allOnes = true;
+    let allOnes = globalGain === 1;
     const epsilon = 1e-15;
 
     for (let i = 0; i < size; i++) {
-        // weight = 1 + sensitivity * (rawNorm - 1) — preserves mean=1 because mean(rawNorm-1)=0.
+        // Step 1: variance blend `1 + sensitivity * (rawNorm - 1)` (mean stays 1).
+        // Step 2: globalGain multiplier (when != 1, mean shifts to globalGain).
         const rNorm = right[i] * inverseMean;
         const dNorm = down[i] * inverseMean;
-        const rW = 1 + sensitivity * (rNorm - 1);
-        const dW = 1 + sensitivity * (dNorm - 1);
+        const rW = (1 + sensitivity * (rNorm - 1)) * globalGain;
+        const dW = (1 + sensitivity * (dNorm - 1)) * globalGain;
         right[i] = rW;
         down[i] = dW;
         sumOut += rW + dW;
