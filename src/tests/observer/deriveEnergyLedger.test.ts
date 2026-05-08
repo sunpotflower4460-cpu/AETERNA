@@ -88,6 +88,22 @@ describe('deriveEnergyLedger', () => {
     expect(ledger.accountedEnergy).toBe(10);
   });
 
+  it('does not silently clamp negative ledger terms to zero', () => {
+    const ledger = deriveEnergyLedger({
+      inputEnergy: 10,
+      internalAccumulationDelta: 4,
+      dissipatedEnergy: -1,
+      actuationOutputEnergy: 1,
+      residueConvertedEnergy: 3,
+      clampLossOrOverflow: 0,
+    });
+
+    expect(ledger.status).toBe('insufficient');
+    expect(ledger.dissipatedEnergy).toBeNull();
+    expect(ledger.missingTermIds).toContain('dissipatedEnergy');
+    expect(ledger.warnings.join('\n')).toContain('dissipatedEnergy was negative');
+  });
+
   it('does not make life or consciousness claims in diagnostic notes', () => {
     const ledger = deriveEnergyLedger({
       inputEnergy: 0,
