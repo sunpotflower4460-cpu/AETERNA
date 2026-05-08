@@ -1,4 +1,5 @@
 import { renderFlowArrowCard } from './FlowArrowCard.ts';
+import { renderTimelinePanel } from './TimelinePanel.ts';
 import { renderTransferLedgerPanel } from './TransferLedgerPanel.ts';
 import type {
   ObservationLayoutMode,
@@ -74,6 +75,9 @@ function renderMobile(report: ObservationReport): string {
         <section class="obs-panel" data-panel="ledger">
           ${renderTransferLedgerPanel(report.transferObservation, 'mobile')}
         </section>
+        <section class="obs-panel" data-panel="history">
+          ${renderTimelinePanel(report.timelineFrames, report.timelineSummary, 'mobile')}
+        </section>
         <section class="obs-panel" data-panel="audit">
           <h3>Audit</h3>
           <p>${report.warnings.length === 0 ? 'No anomalies detected.' : escapeHtml(report.warnings.join(' / '))}</p>
@@ -103,6 +107,9 @@ function renderDesktop(report: ObservationReport): string {
         </section>
         <section class="obs-panel obs-panel-flow">
           ${renderFlowArrowCard(report.transferObservation)}
+        </section>
+        <section class="obs-panel obs-panel-timeline">
+          ${renderTimelinePanel(report.timelineFrames, report.timelineSummary, 'desktop')}
         </section>
         <section class="obs-panel obs-panel-audit">
           <h3>Audit</h3>
