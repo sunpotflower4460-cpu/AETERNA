@@ -88,6 +88,24 @@ describe('deriveEnergyLedger', () => {
     expect(ledger.accountedEnergy).toBe(10);
   });
 
+  it('accounts optional boundary exchange without mislabeling it as actuation output', () => {
+    const ledger = deriveEnergyLedger({
+      inputEnergy: 10,
+      internalAccumulationDelta: 4,
+      dissipatedEnergy: 2,
+      actuationOutputEnergy: 0,
+      residueConvertedEnergy: 1,
+      boundaryExchangeEnergy: 3,
+      clampLossOrOverflow: 0,
+    });
+
+    expect(ledger.status).toBe('closed');
+    expect(ledger.actuationOutputEnergy).toBe(0);
+    expect(ledger.boundaryExchangeEnergy).toBe(3);
+    expect(ledger.accountedEnergy).toBe(10);
+    expect(ledger.terms.find((term) => term.id === 'boundaryExchangeEnergy')?.requiredForClosure).toBe(false);
+  });
+
   it('does not silently clamp negative ledger terms to zero', () => {
     const ledger = deriveEnergyLedger({
       inputEnergy: 10,
