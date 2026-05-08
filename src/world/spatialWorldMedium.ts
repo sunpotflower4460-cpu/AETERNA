@@ -94,7 +94,8 @@ export function updateSpatialWorldMedium(
 
   const size = state.width * state.height;
   const before = state.mediumStorageField;
-  const afterExchange = new Float64Array(before);
+  const exchangeDelta = new Float64Array(size);
+  const afterExchange = new Float64Array(size);
   let localExchangeMagnitude = 0;
 
   const exchangeRate = Math.min(0.25, config.localExchangeCoefficient * config.dt);
@@ -106,16 +107,20 @@ export function updateSpatialWorldMedium(
         const down = indexOf(state.width, state.height, x, y + 1);
 
         const rightDelta = (before[i] - before[right]) * exchangeRate;
-        afterExchange[i] -= rightDelta;
-        afterExchange[right] += rightDelta;
+        exchangeDelta[i] -= rightDelta;
+        exchangeDelta[right] += rightDelta;
         localExchangeMagnitude += Math.abs(rightDelta);
 
         const downDelta = (before[i] - before[down]) * exchangeRate;
-        afterExchange[i] -= downDelta;
-        afterExchange[down] += downDelta;
+        exchangeDelta[i] -= downDelta;
+        exchangeDelta[down] += downDelta;
         localExchangeMagnitude += Math.abs(downDelta);
       }
     }
+  }
+
+  for (let i = 0; i < size; i++) {
+    afterExchange[i] = before[i] + exchangeDelta[i];
   }
 
   const nextStorage = new Float64Array(size);
@@ -178,8 +183,9 @@ export function updateSpatialWorldMedium(
     internalEnergyBefore: mediumEnergyBefore,
     internalEnergyAfter: mediumEnergyAfter,
     dissipatedEnergy,
-    actuationOutputEnergy: membraneExchangeEnergy,
+    actuationOutputEnergy: 0,
     residueConvertedEnergy,
+    boundaryExchangeEnergy: membraneExchangeEnergy,
     clampLossOrOverflow,
     measuredOutflowEnergy,
   });
