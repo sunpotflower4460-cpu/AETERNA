@@ -1,3 +1,5 @@
+import { renderFlowArrowCard } from './FlowArrowCard.ts';
+import { renderTransferLedgerPanel } from './TransferLedgerPanel.ts';
 import type {
   ObservationLayoutMode,
   ObservationReport,
@@ -66,6 +68,12 @@ function renderMobile(report: ObservationReport): string {
           <h3>Current Snapshot</h3>
           ${renderSnapshotCards(report)}
         </section>
+        <section class="obs-panel" data-panel="flow">
+          ${renderFlowArrowCard(report.transferObservation)}
+        </section>
+        <section class="obs-panel" data-panel="ledger">
+          ${renderTransferLedgerPanel(report.transferObservation, 'mobile')}
+        </section>
         <section class="obs-panel" data-panel="audit">
           <h3>Audit</h3>
           <p>${report.warnings.length === 0 ? 'No anomalies detected.' : escapeHtml(report.warnings.join(' / '))}</p>
@@ -91,8 +99,10 @@ function renderDesktop(report: ObservationReport): string {
           <div class="obs-card-grid">${renderSnapshotCards(report)}</div>
         </section>
         <section class="obs-panel obs-panel-ledger">
-          <h3>Transfer Ledger</h3>
-          <p>Transfer observation panels are added in the next phase.</p>
+          ${renderTransferLedgerPanel(report.transferObservation, 'desktop')}
+        </section>
+        <section class="obs-panel obs-panel-flow">
+          ${renderFlowArrowCard(report.transferObservation)}
         </section>
         <section class="obs-panel obs-panel-audit">
           <h3>Audit</h3>

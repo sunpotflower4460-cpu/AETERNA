@@ -28,12 +28,29 @@ export interface FieldSnapshot {
   metricKind: 'measured';
 }
 
+export interface TransferObservation {
+  sourceName: 'ExternalDriveField';
+  destinationName: 'SpatialWorldMedium';
+  sourceOutEnergy: number;
+  destinationInputEnergy: number;
+  transferEnergy: number;
+  residual: number;
+  signedResidual: number;
+  pairLedgerStatus: ObservationStatus;
+  matched: boolean;
+  mapping: 'same-index';
+  metricKind: 'ledger';
+  summaryLine: string;
+  warnings: string[];
+}
+
 export interface ObservationReport {
   title: string;
   mode: 'observation-only';
   layout: ObservationLayoutMode;
   status: ObservationStatus;
   snapshots: FieldSnapshot[];
+  transferObservation?: TransferObservation;
   warnings: string[];
   notes: string[];
 }
