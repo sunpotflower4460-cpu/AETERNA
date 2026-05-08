@@ -1,4 +1,5 @@
 import type { EnergyLedgerState } from './energyLedger.ts';
+import type { CurvatureWeightFields } from './curvatureWeightedExchange.ts';
 
 export type SpatialWorldMediumBoundaryMode = 'torus';
 
@@ -16,6 +17,17 @@ export interface SpatialWorldMediumConfig {
 
   dt: number;
   tolerance?: number;
+
+  /**
+   * v4.1 optional curvature-weighted exchange weights.
+   *
+   * If absent or grid sizes mismatch, the local exchange step uses uniform
+   * weights (bit-identical to pre-v4.1 behavior). If present, the per-edge
+   * weights modulate the exchange rate. Weights MUST be symmetric per edge
+   * (same value at both endpoints) to keep antisymmetric delta accounting
+   * leak-free. Use `deriveCurvatureWeights` to produce a valid set.
+   */
+  curvatureWeights?: CurvatureWeightFields | null;
 }
 
 export interface SpatialWorldMediumState {

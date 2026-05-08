@@ -112,6 +112,12 @@ export function updateLocalConservationSubstrate(
   let exchangeMagnitude = 0;
 
   const exchangeRate = Math.min(0.25, config.localExchangeCoefficient * config.dt);
+  const weights =
+    config.curvatureWeights &&
+    config.curvatureWeights.width === state.width &&
+    config.curvatureWeights.height === state.height
+      ? config.curvatureWeights
+      : null;
 
   if (exchangeRate > 0) {
     for (let y = 0; y < state.height; y++) {
@@ -120,12 +126,17 @@ export function updateLocalConservationSubstrate(
         const right = indexOf(state.width, state.height, x + 1, y);
         const down = indexOf(state.width, state.height, x, y + 1);
 
-        const rightDelta = (before[i] - before[right]) * exchangeRate;
+        const wRight = weights ? weights.rightEdgeWeight[i] : 1;
+        const wDown = weights ? weights.downEdgeWeight[i] : 1;
+        const rightRate = Math.min(0.25, exchangeRate * wRight);
+        const downRate = Math.min(0.25, exchangeRate * wDown);
+
+        const rightDelta = (before[i] - before[right]) * rightRate;
         afterExchange[i] -= rightDelta;
         afterExchange[right] += rightDelta;
         exchangeMagnitude += Math.abs(rightDelta);
 
-        const downDelta = (before[i] - before[down]) * exchangeRate;
+        const downDelta = (before[i] - before[down]) * downRate;
         afterExchange[i] -= downDelta;
         afterExchange[down] += downDelta;
         exchangeMagnitude += Math.abs(downDelta);

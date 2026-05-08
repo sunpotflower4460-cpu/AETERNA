@@ -1,4 +1,5 @@
 import type { EnergyLedgerState } from './energyLedger.ts';
+import type { CurvatureWeightFields } from './curvatureWeightedExchange.ts';
 
 export type LocalConservationBoundaryMode = 'torus';
 
@@ -12,6 +13,13 @@ export interface LocalConservationSubstrateConfig {
   outflowCoefficient: number;
   dt: number;
   tolerance?: number;
+
+  /**
+   * v4.1 optional curvature-weighted exchange weights. Same semantics as
+   * SpatialWorldMediumConfig.curvatureWeights. Absent or grid mismatched →
+   * uniform weights (bit-identical to pre-v4.1 behavior).
+   */
+  curvatureWeights?: CurvatureWeightFields | null;
 }
 
 export interface LocalConservationSubstrateState {
