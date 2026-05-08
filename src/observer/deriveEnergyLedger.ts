@@ -74,7 +74,8 @@ function deriveConfidence(status: EnergyLedgerState['status'], missingTermIds: s
  * verified. It only checks whether the provided accounting terms close:
  *
  * input = internal accumulation + dissipation + actuation output
- *       + residue conversion + clamp/overflow loss + measured outflow ± tolerance
+ *       + residue conversion + boundary exchange
+ *       + clamp/overflow loss + measured outflow ± tolerance
  */
 export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState {
   const tolerance = Math.max(DEFAULT_TOLERANCE, Math.abs(input.tolerance ?? DEFAULT_TOLERANCE));
@@ -96,6 +97,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
   const dissipatedEnergy = normalizeNonNegativeTerm(input.dissipatedEnergy, 'dissipatedEnergy', warnings);
   const actuationOutputEnergy = normalizeNonNegativeTerm(input.actuationOutputEnergy, 'actuationOutputEnergy', warnings);
   const residueConvertedEnergy = normalizeNonNegativeTerm(input.residueConvertedEnergy, 'residueConvertedEnergy', warnings);
+  const boundaryExchangeEnergy = normalizeNonNegativeTerm(input.boundaryExchangeEnergy, 'boundaryExchangeEnergy', warnings);
   const clampLossOrOverflow = normalizeNonNegativeTerm(input.clampLossOrOverflow, 'clampLossOrOverflow', warnings);
   const measuredOutflowEnergy = normalizeNonNegativeTerm(input.measuredOutflowEnergy, 'measuredOutflowEnergy', warnings);
 
@@ -111,6 +113,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
     .filter(([, value]) => value === null)
     .map(([key]) => key);
 
+  const optionalBoundaryExchange = boundaryExchangeEnergy ?? 0;
   const optionalClampLoss = clampLossOrOverflow ?? 0;
   const optionalOutflow = measuredOutflowEnergy ?? 0;
 
@@ -119,6 +122,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
       (dissipatedEnergy as number) +
       (actuationOutputEnergy as number) +
       (residueConvertedEnergy as number) +
+      optionalBoundaryExchange +
       optionalClampLoss +
       optionalOutflow
     : null;
@@ -142,6 +146,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
     makeTerm('dissipatedEnergy', 'Dissipated energy', dissipatedEnergy, true, 'Energy transferred into a named dissipation destination.'),
     makeTerm('actuationOutputEnergy', 'Actuation output energy', actuationOutputEnergy, true, 'Energy leaving as modeled action/output.'),
     makeTerm('residueConvertedEnergy', 'Residue converted energy', residueConvertedEnergy, true, 'Energy converted into residue/storage-like traces.'),
+    makeTerm('boundaryExchangeEnergy', 'Boundary exchange energy', boundaryExchangeEnergy, false, 'Optional named boundary-side exchange that is not modeled action/output.'),
     makeTerm('clampLossOrOverflow', 'Clamp loss or overflow', clampLossOrOverflow, false, 'Optional accounted overflow; must not be silently discarded.'),
     makeTerm('measuredOutflowEnergy', 'Measured outflow energy', measuredOutflowEnergy, false, 'Optional measured outflow not covered by other terms.'),
     makeTerm('conservationResidual', 'Conservation residual', conservationResidual, true, 'Check-kind residual; zero or near-zero means the supplied ledger terms close.'),
@@ -178,6 +183,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
     dissipatedEnergy,
     actuationOutputEnergy,
     residueConvertedEnergy,
+    boundaryExchangeEnergy,
     clampLossOrOverflow,
     measuredOutflowEnergy,
     accountedEnergy,
