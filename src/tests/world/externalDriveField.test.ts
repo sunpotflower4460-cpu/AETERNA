@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   createExternalDriveField,
   updateExternalDriveFieldZero,
+  updateSteadyExternalDrive,
 } from '../../world/externalDriveField.ts';
-import type { ExternalDriveFieldConfig } from '../../types/externalDriveField.ts';
+import type {
+  ExternalDriveFieldConfig,
+  SteadyExternalDriveConfig,
+} from '../../types/externalDriveField.ts';
 
 const baseConfig: ExternalDriveFieldConfig = {
   width: 2,
@@ -11,6 +15,11 @@ const baseConfig: ExternalDriveFieldConfig = {
   boundaryMode: 'torus',
   dt: 1,
   tolerance: 1e-9,
+};
+
+const steadyConfig: SteadyExternalDriveConfig = {
+  ...baseConfig,
+  steadyDrivePerCell: 0.25,
 };
 
 describe('external drive field zero', () => {
@@ -61,5 +70,55 @@ describe('external drive field zero', () => {
     expect(text).not.toContain('breath');
     expect(text).not.toContain('heartbeat');
     expect(text).not.toContain('Energy is flowing through AETERNA');
+  });
+});
+
+describe('steady external drive', () => {
+  it('accepts a constant non-negative drive into the external drive field only', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updateSteadyExternalDrive(state, steadyConfig);
+
+    expect(result.report.acceptedDriveEnergy).toBe(1);
+    expect(result.report.inputEnergy).toBe(1);
+    expect(result.report.rejectedDriveEnergy).toBe(0);
+    expect(Array.from(result.state.driveField)).toEqual([0.25, 0.25, 0.25, 0.25]);
+    expect(result.report.ledger.status).toBe('closed');
+    expect(result.report.ledger.conservationResidual).toBeCloseTo(0, 12);
+  });
+
+  it('accumulates steady drive across steps without coupling into runtime or medium', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const first = updateSteadyExternalDrive(state, steadyConfig);
+    const second = updateSteadyExternalDrive(first.state, steadyConfig);
+
+    expect(Array.from(second.state.driveField)).toEqual([0.5, 0.5, 0.5, 0.5]);
+    expect(second.report.acceptedDriveEnergy).toBe(1);
+    expect(second.report.ledger.status).toBe('closed');
+  });
+
+  it('does not add pulse, periodic modulation, breath, heartbeat, or energy-flow proof claims', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updateSteadyExternalDrive(state, steadyConfig);
+    const text = JSON.stringify(result.report);
+
+    expect(text).not.toContain('pulse');
+    expect(text).not.toContain('periodic');
+    expect(text).not.toContain('rhythm');
+    expect(text).not.toContain('breath');
+    expect(text).not.toContain('heartbeat');
+    expect(text).not.toContain('Energy is flowing through AETERNA');
+  });
+
+  it('treats negative steady drive as zero rather than accepted supply', () => {
+    const state = createExternalDriveField({ width: 2, height: 2, boundaryMode: 'torus' });
+    const result = updateSteadyExternalDrive(state, {
+      ...steadyConfig,
+      steadyDrivePerCell: -1,
+    });
+
+    expect(result.report.acceptedDriveEnergy).toBe(0);
+    expect(result.report.inputEnergy).toBe(0);
+    expect(Array.from(result.state.driveField)).toEqual([0, 0, 0, 0]);
+    expect(result.report.ledger.status).toBe('closed');
   });
 });
