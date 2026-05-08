@@ -38,3 +38,23 @@ export interface ExternalDriveFieldZeroStepResult {
   state: ExternalDriveFieldState;
   report: ExternalDriveFieldZeroStepReport;
 }
+
+export interface SteadyExternalDriveConfig extends ExternalDriveFieldConfig {
+  /** Constant non-negative drive per field cell per step. No pulse/periodic modulation. */
+  steadyDrivePerCell: number;
+}
+
+export interface SteadyExternalDriveStepReport {
+  tick: number;
+  inputEnergy: number;
+  attemptedDriveEnergy: number;
+  rejectedDriveEnergy: number;
+  acceptedDriveEnergy: number;
+  ledger: EnergyLedgerState;
+  warnings: string[];
+}
+
+export interface SteadyExternalDriveStepResult {
+  state: ExternalDriveFieldState;
+  report: SteadyExternalDriveStepReport;
+}
