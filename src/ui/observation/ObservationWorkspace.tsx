@@ -28,6 +28,7 @@ import type { ObservedRatioInvolvement } from '../../observation/buildObservedRa
 import type { LensGuideResponse } from '../../guide/lensGuideTypes.ts';
 import type { LensGuideMode } from '../../config/lensGuideConfig.ts';
 import type { FieldLayerId } from '../render/fieldLayerRegistry.ts';
+import type { NowSummaryPanelState } from '../../types/nowSummary.ts';
 
 import { renderObservationHeaderHTML } from './ObservationHeader.tsx';
 import { renderInspectorDrawerHTML } from './InspectorDrawer.tsx';
@@ -44,6 +45,7 @@ import { renderLayerCorrelationPanelHTML } from './LayerCorrelationPanel.tsx';
 import { renderDifferenceViewPanelHTML } from './DifferenceViewPanel.tsx';
 import { renderObservedRatioInvolvementPanelHTML } from './ObservedRatioInvolvementPanel.tsx';
 import { renderLensAwareGuidePanelHTML } from '../guide/LensAwareGuidePanel.tsx';
+import { renderNowSummaryPanelV27HTML } from './NowSummaryPanel.tsx';
 
 // ── ObservationWorkspaceProps ─────────────────────────────────────────────────
 
@@ -76,8 +78,11 @@ export interface ObservationWorkspaceProps {
     // Warnings
     warnings?: ObservationWarningItem[];
     nanDetected?: boolean;
+    // Now Summary Panel v2.7
+    nowSummaryState?: NowSummaryPanelState;
+    nowSummaryDisplayMode?: 'beginner' | 'researcher' | 'developer';
     // Mobile tab state
-    activeMobileTab?: 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
+    activeMobileTab?: 'now' | 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
     activeInspectorTab?: 'cell' | 'metric' | 'events' | 'warnings';
 }
 
@@ -111,6 +116,8 @@ export function renderObservationWorkspaceHTML(props: ObservationWorkspaceProps)
         recentEvents = [],
         warnings = [],
         nanDetected = false,
+        nowSummaryState,
+        nowSummaryDisplayMode = 'beginner',
         activeMobileTab = 'field',
         activeInspectorTab = 'cell',
     } = props;
@@ -185,6 +192,11 @@ export function renderObservationWorkspaceHTML(props: ObservationWorkspaceProps)
         ? renderObservedRatioInvolvementPanelHTML({ involvements: ratioInvolvements })
         : '';
 
+    // ── Now Summary Panel v2.7 ────────────────────────────────────────────────
+    const nowSummaryPanelHtml = nowSummaryState
+        ? renderNowSummaryPanelV27HTML({ state: nowSummaryState, displayMode: nowSummaryDisplayMode })
+        : '';
+
     // ── Guide panel ───────────────────────────────────────────────────────────
     const guidePanelHtml = renderLensAwareGuidePanelHTML({
         activeLensId,
@@ -207,6 +219,7 @@ export function renderObservationWorkspaceHTML(props: ObservationWorkspaceProps)
       <!-- Main torus field view is rendered by the field renderer into this container -->
     </div>
     <div class="observation-content__panels">
+      ${nowSummaryPanelHtml}
       ${inspectorDrawerHtml}
       ${metricSpotlightHtml}
       ${timeReplayHtml}

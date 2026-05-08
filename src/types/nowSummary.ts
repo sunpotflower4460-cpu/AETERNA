@@ -90,3 +90,66 @@ export interface NowSummaryState {
      */
     confidence: number;
 }
+
+// ── v2.7 Now Summary Panel Types ─────────────────────────────────────────────
+
+export type NowSummarySeverity =
+  | 'calm'
+  | 'active'
+  | 'strained'
+  | 'recovering'
+  | 'unstable'
+  | 'unknown';
+
+export type NowSummaryConfidence =
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'insufficient';
+
+export type ConsciousnessCandidateConditionStatus =
+  | 'observed'
+  | 'weak'
+  | 'notObserved'
+  | 'insufficient';
+
+export interface ConsciousnessCandidateCondition {
+  id: string;
+  labelJa: string;
+  status: ConsciousnessCandidateConditionStatus;
+  reasonJa: string;
+  sourceMetricIds: string[];
+  cautionJa: string;
+}
+
+export interface NowSummarySection {
+  id:
+    | 'torusLifeField'
+    | 'vitalStem'
+    | 'bodyWorldLoop'
+    | 'history'
+    | 'emergenceCandidates'
+    | 'risks'
+    | 'signalExchange'
+    | 'consciousnessCandidateConditions';
+  titleJa: string;
+  oneLineJa: string;
+  detailsJa: string[];
+  severity: NowSummarySeverity;
+  confidence: NowSummaryConfidence;
+  sourceMetricIds: string[];
+  cautionsJa: string[];
+}
+
+/** v2.7 panel state (complex, multi-section). Distinct from the legacy NowSummaryState (lines-based). */
+export interface NowSummaryPanelState {
+  timestamp: number;
+  overallOneLineJa: string;
+  beginnerSummaryJa: string;
+  researcherSummaryJa: string;
+  sections: NowSummarySection[];
+  strongestObservedChanges: string[];
+  suggestedNextObservations: string[];
+  claimGuardJa: string;
+  confidence: NowSummaryConfidence;
+}

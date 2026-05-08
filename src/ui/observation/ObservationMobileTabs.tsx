@@ -19,7 +19,7 @@
 
 export interface ObservationMobileTabsProps {
     /** Currently active tab */
-    activeTab: 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
+    activeTab: 'now' | 'field' | 'inspector' | 'lens' | 'replay' | 'trace' | 'guide';
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -31,6 +31,7 @@ const TABS: Array<{
     icon: string;
     note?: string;
 }> = [
+    { id: 'now',       label: '今',     labelEn: 'Now',       icon: '📋' },
     { id: 'field',     label: '見る',   labelEn: 'Field',     icon: '🌐', note: 'トーラス表示を完全に隠さない' },
     { id: 'inspector', label: '調べる', labelEn: 'Inspector', icon: '🔍' },
     { id: 'lens',      label: 'レンズ', labelEn: 'Lens',      icon: '🔭' },
