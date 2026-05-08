@@ -37,7 +37,9 @@ If required terms are missing, the ledger is `insufficient`. Missing values are 
 
 - `src/types/energyLedger.ts`
 - `src/observer/deriveEnergyLedger.ts`
+- `src/observer/deriveEnergyLedgerFromRuntimeSnapshot.ts`
 - `src/tests/observer/deriveEnergyLedger.test.ts`
+- `src/tests/observer/deriveEnergyLedgerFromRuntimeSnapshot.test.ts`
 
 ## EnergyLedgerState
 
@@ -69,6 +71,35 @@ If required terms are missing, the ledger is `insufficient`. Missing values are 
 - `open`: all required terms are present but residual is large.
 - `insufficient`: required terms are missing or residual cannot be calculated.
 
+## Runtime snapshot adapter
+
+`deriveEnergyLedgerFromRuntimeSnapshot` lightly connects the ledger to observable runtime buffers without changing runtime behavior.
+
+It can estimate internal storage before/after from previous/current buffers using:
+
+- squared magnitude
+- absolute magnitude
+
+This adapter deliberately does not infer missing input, dissipation, actuation, or residue conversion terms from scalar proxy state.
+
+If those terms are not explicitly supplied, the ledger remains `insufficient`. This is intentional.
+
+The adapter exists to answer:
+
+```text
+What can we currently account for?
+What is still missing?
+Where does the ledger fail to close?
+```
+
+It does not answer:
+
+```text
+Is energy really flowing through AETERNA?
+```
+
+unless the required terms are present and the ledger closes.
+
 ## Important guardrails
 
 - This is observer-side only.
@@ -78,6 +109,7 @@ If required terms are missing, the ledger is `insufficient`. Missing values are 
 - It does not add periodic drive or pulse drive.
 - It does not silently convert missing terms to zero.
 - It does not present energy flow as verified unless the supplied ledger closes.
+- It does not infer physical flow terms from proxy labels.
 
 ## Buffer energy estimate
 
