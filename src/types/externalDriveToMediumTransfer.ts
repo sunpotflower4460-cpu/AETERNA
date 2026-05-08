@@ -48,3 +48,16 @@ export interface ExternalDriveToMediumTransferZeroResult {
   spatialWorldMediumState: SpatialWorldMediumState;
   report: ExternalDriveToMediumTransferZeroReport;
 }
+
+export interface ExternalDriveToMediumTransferPositiveReport extends ExternalDriveToMediumTransferZeroReport {
+  transferRate: number;
+  destinationInputEnergy: number;
+  externalDriveEnergyDelta: number;
+  mediumEnergyDelta: number;
+}
+
+export interface ExternalDriveToMediumTransferPositiveResult {
+  externalDriveState: ExternalDriveFieldState;
+  spatialWorldMediumState: SpatialWorldMediumState;
+  report: ExternalDriveToMediumTransferPositiveReport;
+}
