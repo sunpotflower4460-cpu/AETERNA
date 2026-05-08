@@ -51,6 +51,24 @@
 - **comparison result**: 比較結果
 - **diagnostic**: 診断
 
+### エネルギー実在性・保存則を表す言葉
+
+- **ExternalDriveField**: 外部駆動場
+- **ExternalDriveInput**: 外部駆動入力
+- **WorldMediumField**: 空間を持つ外側媒質場
+- **MembraneExchange**: 膜交換
+- **LocalFlux**: 局所流束
+- **EnergyLedger**: エネルギー収支台帳
+- **ConservationResidual**: 保存則残差
+- **DissipationField**: 散逸場
+- **ResidueField**: 残留場
+- **StorageField**: 蓄積場
+- **OutflowField**: 流出場
+- **local conservation**: 局所保存
+- **local exchange**: 局所交換
+- **storage**: 蓄積
+- **dissipation destination**: 散逸先
+
 ## 避ける言葉
 
 以下の言葉は、命令型・演出型・意味付与型の設計を示唆するため、避ける。
@@ -93,6 +111,18 @@
 - **神秘の証明**: mystical proof claim を示唆する
 - **癒しの証明**: healing proof claim を示唆する
 
+### エネルギー系で避ける生命比喩名
+
+- **VitalPulse**: 生命拍を直接実装している印象を与える
+- **BreathWave**: 呼吸の模倣を示唆する
+- **metabolicCharge**: 代謝を直接持つように見える
+- **heartbeatSource**: 心拍源の模倣を示唆する
+- **lifeDrive**: 生命衝動を直接実装する印象を与える
+- **makeBreathingTorus**: 呼吸するように見せる実装を示唆する
+- **life-like baseline oscillator**: 生命的な基底振動を直接作る示唆
+- **rhythm coherence booster**: リズム性を望ましい結果として増幅する示唆
+- **desired stability pull**: 安定を結果として引き寄せる示唆
+
 ## 言い換え例
 
 | 避ける表現 | 推奨される表現 |
@@ -108,6 +138,54 @@
 | 意識があると主張する | 閉ループ生命場の成立条件を観測する（意識の証明はしない） |
 | 教師から学ぶ | 反復・痕跡・弱い可塑性により流路が少し変化するかを見る |
 | LLM で意味を与える | pre-semantic な観測候補として扱う（意味は与えない） |
+| 減衰するようにする | 局所散逸先を実装し、結果として減衰するか観測する |
+| リズムを作る | 外部駆動・局所交換・境界条件から周期が出るか観測する |
+| 外部エネルギーホースを付ける | ExternalDriveField と MembraneExchange の局所経路を定義する |
+| 活動が止まるようにする | 供給ゼロ時に保存則と散逸の結果として活動が減るか確認する |
+| 生命拍を入れる | PeriodicDrive を、保存則・入出力波形比較の対象として導入する |
+
+## Energy Realness 追記（2026-05-08）
+
+AETERNA の energy / medium / life-field 系では、出力にそれらしい挙動が現れたことを real と扱わない。
+
+ある挙動が real に近いと扱えるのは、その挙動が望ましい結果として直接コード化されておらず、局所的な保存則・交換・蓄積・散逸・境界条件から導出された場合だけである。
+
+### 固定原則
+
+- 結果を書くな。条件を書け。
+- 減衰を書くな。散逸先を書け。
+- 持続を書くな。供給と散逸の収支から持続するか観測せよ。
+- リズムを書くな。外部駆動・媒質・膜・内部場の変換から周期が出るか観測せよ。
+- 飽和を書くな。容量・流入・散逸不足の結果として飽和するか観測せよ。
+- 何も起きないことも valid observation とする。
+
+### 保存則の最低条件
+
+```text
+input = internal accumulation + dissipation + actuation output + residue conversion ± tolerance
+```
+
+この関係が閉じない場合、UI や docs では energy flow ではなく derived / proxy / presentation-smoothed / diagnostic として扱う。
+
+### 禁止される実装方向
+
+- global activity decay rate によって全体の活動を望ましい形に落とす
+- baseline target に smoothDecay で戻すことを real medium と呼ぶ
+- Date.now 由来の sine drift を自然な揺らぎとして扱う
+- clamp で消えた超過分を記録しない
+- residue decay の消失先を持たない
+- 中心 buffer へ externalEnergy を直接加算する
+- Pulse / Rhythm / Breath のような生命比喩入力を先に追加する
+
+### 推奨される実装方向
+
+- EnergyLedger を導入する
+- conservationResidual を Check-kind metric として観測する
+- WorldMedium を将来的に scalar から spatial field へ移行する
+- MembraneExchange を局所セル交換として定義する
+- Loss / overflow / clamp excess を named field に記録する
+- external drive はまず 0 で構造だけ作る
+- Flow → Pulse → PeriodicDrive の順で一つずつ検証する
 
 ## S1 Audit 追記（2026-04-27）
 
@@ -142,8 +220,8 @@ S1 Flow/Resistance/Dissipation Audit により、以下の実装パターンが�
 - `observeCandidate` — 候補観測
 - `deriveProtoNeuronCandidates` — proto-neuron 候補導出（observer-side）
 - `deriveBodySurfaceState` — body surface 状態導出
-- `updateWorldMedium` — world medium 更新（自然減衰含む）
-- `deriveSensoryReturn` — sensory return 導出（変化駆動）
+- `updateWorldMedium` — world medium 更新（transitional scalar proxy; not a conserved energy medium）
+- `deriveSensoryReturn` — sensory return 導出（変化駆動・derived/proxy）
 - `deriveReafferenceComparison` — reafference 比較導出
 
 ## コード例
@@ -194,6 +272,14 @@ if (quiet) {
 
 // 揺らぎ注入（S1 追記）
 const drift = Math.random() * amplitude;  // 演出的ランダム
+
+// Energy Realness 違反: 結果を直接書く
+if (externalSupply === 0) {
+  activity *= 0.99; // supply cutoff result is encoded directly
+}
+
+// Energy Realness 違反: 中心 buffer 直接注入
+currentBuffer[i] += externalEnergy;
 ```
 
 ### ✅ 推奨されるコード
@@ -264,6 +350,13 @@ function observeProtoNeuronCandidates(state, history) {
 
   return candidates;  // observer-side, does not modify runtime dynamics
 }
+
+// Energy Realness: loss goes somewhere named
+function transferWithLedger(input, storageBefore, localDissipation, actuationOut, residueConversion) {
+  const storageAfter = storageBefore + input - localDissipation - actuationOut - residueConversion;
+  const residual = Math.abs(input - ((storageAfter - storageBefore) + localDissipation + actuationOut + residueConversion));
+  return { storageAfter, conservationResidual: residual };
+}
 ```
 
 ## コメント・変数名のガイドライン
@@ -276,6 +369,9 @@ function observeProtoNeuronCandidates(state, history) {
 // Add consciousness
 // Create neurons
 // Give it meaning
+// Make it breathe
+// Add heartbeat
+// Force decay when supply stops
 ```
 
 ### ✅ 推奨されるコメント
@@ -286,6 +382,8 @@ function observeProtoNeuronCandidates(state, history) {
 // Derive proto-neuron candidates (observer-side, no semantic meaning)
 // Assess dynamic viability conditions
 // Measure flow continuity
+// Account for local exchange and dissipation
+// Report conservation residual as Check-kind diagnostic
 ```
 
 ### ❌ 避けるべき変数名
@@ -296,6 +394,9 @@ const stabilizeNow = true;
 const hasConsciousness = false;
 const neuronLabel = "visual";
 const meaningAssigned = false;
+const vitalPulse = 0.5;
+const breathWave = 0.4;
+const lifeDrive = 0.8;
 ```
 
 ### ✅ 推奨される変数名
@@ -306,6 +407,9 @@ const dissipationRate = 0.1;
 const protoNeuronCandidate = { confidence: 0.5 };  // proxy, observer-side
 const dynamicViability = assessViability(state);
 const observedFluctuation = measureFluctuation(state);
+const externalDriveField = new Float32Array(size);
+const localFlux = 0.02;
+const conservationResidual = 0.0001;
 ```
 
 ## ドキュメント・UI 表示のガイドライン
@@ -317,6 +421,9 @@ const observedFluctuation = measureFluctuation(state);
 - "AETERNA is alive"
 - "AETERNA understands meaning"
 - "AETERNA created a neuron"
+- "AETERNA is breathing"
+- "AETERNA has a heartbeat"
+- "Energy is flowing" when conservationResidual is unknown or high
 
 ### ✅ 推奨される表示
 
@@ -325,6 +432,8 @@ const observedFluctuation = measureFluctuation(state);
 - "Dynamic viability: flow continuity 0.8 (proxy)"
 - "Closed-loop scenario: closure stability 0.7 (not consciousness proof)"
 - "Body-World Closure: loop gain 0.9 (research metric)"
+- "Energy flow is not yet verified. Current values are diagnostic/proxy readings."
+- "Conservation residual: Check-kind diagnostic"
 
 ## 関連文書
 
@@ -332,6 +441,8 @@ const observedFluctuation = measureFluctuation(state);
 - `docs/world-loop-dynamic-viability.md` — Dynamic Viability の定義
 - `docs/proto-network-natural-observation.md` — Proto-Network Natural Observation
 - `docs/emergent-proto-neuron-principles.md` — Proto-Neuron の観測原則
+- `docs/energy-realness-principles.md` — Energy Realness 原則
+- `docs/energy-reality-audit.md` — Energy Reality Audit
 - `docs/agent-guardrails.md` — Agent の実装ガイドライン
 
 ## S3 Minimal Natural Feedback 追記（2026-04-27）
