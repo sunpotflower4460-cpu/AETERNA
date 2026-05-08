@@ -75,6 +75,42 @@ function makePlasticityState(segments = SEGMENTS) {
     return { cells, mode: 'observeOnly' as const, ablationEnabled: false };
 }
 
+function makeSpatialWorldMedium(segments = SEGMENTS) {
+    const total = segments * segments;
+    const fill = (factor: number) => {
+        const arr = new Float64Array(total);
+        for (let i = 0; i < total; i++) arr[i] = factor + i * 0.001;
+        return arr;
+    };
+    return {
+        width: segments,
+        height: segments,
+        mediumStorageField: fill(0.4),
+        mediumDissipationField: fill(0.05),
+        mediumResidueField: fill(0.02),
+        mediumOutflowField: fill(0.01),
+        membraneExchangeField: fill(0.08),
+        membraneExchangeReleasedField: fill(0.03),
+    };
+}
+
+function makeLocalConservationSubstrate(segments = SEGMENTS) {
+    const total = segments * segments;
+    const fill = (factor: number) => {
+        const arr = new Float64Array(total);
+        for (let i = 0; i < total; i++) arr[i] = factor + i * 0.001;
+        return arr;
+    };
+    return {
+        width: segments,
+        height: segments,
+        storageField: fill(0.2),
+        dissipationField: fill(0.04),
+        residueField: fill(0.015),
+        outflowField: fill(0.005),
+    };
+}
+
 function makeInput(overrides: Partial<CellObservationInput> = {}): CellObservationInput {
     return {
         timestamp: 1000,
@@ -99,6 +135,8 @@ function makeInput(overrides: Partial<CellObservationInput> = {}): CellObservati
         observedRatiosState: null,
         recentEvents: [],
         regionId: 'u1-v1',
+        spatialWorldMedium: makeSpatialWorldMedium(),
+        localConservationSubstrate: makeLocalConservationSubstrate(),
         ...overrides,
     };
 }
@@ -368,6 +406,82 @@ describe('deriveCellObservation: events', () => {
     });
 });
 
+// ── Tests: deriveCellObservation — conservation (v4.0) ─────────────────────────
+
+describe('deriveCellObservation: conservation', () => {
+    it('populates conservation values per cell from spatial medium and substrate', () => {
+        const obs = deriveCellObservation(makeInput());
+        // cellIndex = 5; baseline + index * 0.001 = baseline + 0.005
+        expect(obs.conservation.mediumStorage).toBeCloseTo(0.405, 9);
+        expect(obs.conservation.mediumDissipation).toBeCloseTo(0.055, 9);
+        expect(obs.conservation.mediumResidue).toBeCloseTo(0.025, 9);
+        expect(obs.conservation.mediumOutflow).toBeCloseTo(0.015, 9);
+        expect(obs.conservation.membraneInflow).toBeCloseTo(0.085, 9);
+        expect(obs.conservation.membraneReleased).toBeCloseTo(0.035, 9);
+        expect(obs.conservation.substrateStorage).toBeCloseTo(0.205, 9);
+        expect(obs.conservation.substrateDissipation).toBeCloseTo(0.045, 9);
+        expect(obs.conservation.substrateResidue).toBeCloseTo(0.020, 9);
+        expect(obs.conservation.substrateOutflow).toBeCloseTo(0.010, 9);
+        expect(obs.diagnostics.valueKinds.conservation).toBe('measured');
+    });
+
+    it('marks conservation as unavailable when both sources are missing', () => {
+        const obs = deriveCellObservation(
+            makeInput({ spatialWorldMedium: null, localConservationSubstrate: null }),
+        );
+        expect(obs.conservation.mediumStorage).toBeUndefined();
+        expect(obs.conservation.substrateStorage).toBeUndefined();
+        expect(obs.diagnostics.valueKinds.conservation).toBe('unavailable');
+    });
+
+    it('falls back gracefully when spatial sizes do not match segments', () => {
+        const total = SEGMENTS * SEGMENTS;
+        const wrong = {
+            width: SEGMENTS + 1,
+            height: SEGMENTS + 1,
+            mediumStorageField: new Float64Array(total + 5),
+            mediumDissipationField: new Float64Array(total + 5),
+            mediumResidueField: new Float64Array(total + 5),
+            mediumOutflowField: new Float64Array(total + 5),
+            membraneExchangeField: new Float64Array(total + 5),
+            membraneExchangeReleasedField: new Float64Array(total + 5),
+        };
+        const obs = deriveCellObservation(makeInput({ spatialWorldMedium: wrong }));
+        expect(obs.conservation.mediumStorage).toBeUndefined();
+        // substrate is still available, so kind is measured (not unavailable)
+        expect(obs.conservation.substrateStorage).toBeDefined();
+    });
+
+    it('exposes raw cumulative sinks (no derived ratios) — sources stay measured', () => {
+        const obs = deriveCellObservation(makeInput());
+        // membraneInflow >= membraneReleased always (cumulative inflow vs cumulative release)
+        expect((obs.conservation.membraneInflow ?? 0)).toBeGreaterThanOrEqual(
+            obs.conservation.membraneReleased ?? 0,
+        );
+    });
+
+    it('does not invent values for NaN entries — undefined preserved', () => {
+        const total = SEGMENTS * SEGMENTS;
+        const corrupt = {
+            width: SEGMENTS,
+            height: SEGMENTS,
+            mediumStorageField: (() => {
+                const arr = new Float64Array(total);
+                arr[5] = Number.NaN;
+                return arr;
+            })(),
+            mediumDissipationField: new Float64Array(total),
+            mediumResidueField: new Float64Array(total),
+            mediumOutflowField: new Float64Array(total),
+            membraneExchangeField: new Float64Array(total),
+            membraneExchangeReleasedField: new Float64Array(total),
+        };
+        const obs = deriveCellObservation(makeInput({ spatialWorldMedium: corrupt }));
+        expect(obs.conservation.mediumStorage).toBeUndefined();
+        expect(obs.conservation.mediumDissipation).toBe(0);
+    });
+});
+
 // ── Tests: deriveCellObservation — diagnostics ────────────────────────────────
 
 describe('deriveCellObservation: diagnostics', () => {
@@ -381,6 +495,7 @@ describe('deriveCellObservation: diagnostics', () => {
         expect(vk.plasticity).toBeDefined();
         expect(vk.ratios).toBeDefined();
         expect(vk.events).toBeDefined();
+        expect(vk.conservation).toBeDefined();
     });
 
     it('hasUnavailableSource is false when all sources provided', () => {

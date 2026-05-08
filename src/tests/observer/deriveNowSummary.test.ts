@@ -5,7 +5,7 @@
  * Verifies:
  * - Empty input produces a valid NowSummaryPanelState
  * - undefined values are NOT treated as 0
- * - All 8 sections are present
+ * - All 9 sections are present (v4.0 adds conservationChain)
  * - Each section has proper cautionsJa
  * - claimGuardJa is present
  * - No affirmative consciousness/life claims
@@ -26,6 +26,7 @@ const EXPECTED_SECTION_IDS = [
     'risks',
     'signalExchange',
     'consciousnessCandidateConditions',
+    'conservationChain',
 ] as const;
 
 describe('deriveNowSummaryPanel', () => {
@@ -37,12 +38,12 @@ describe('deriveNowSummaryPanel', () => {
         expect(result.beginnerSummaryJa).toBeTruthy();
         expect(result.researcherSummaryJa).toBeTruthy();
         expect(result.claimGuardJa).toBeTruthy();
-        expect(result.sections).toHaveLength(8);
+        expect(result.sections).toHaveLength(9);
         expect(result.suggestedNextObservations).toBeInstanceOf(Array);
         expect(result.suggestedNextObservations.length).toBeGreaterThan(0);
     });
 
-    it('has all 8 required section IDs', () => {
+    it('has all 9 required section IDs', () => {
         const result = deriveNowSummaryPanel({ timestamp: 0 });
         const ids = result.sections.map((s) => s.id);
         for (const expectedId of EXPECTED_SECTION_IDS) {
@@ -91,6 +92,67 @@ describe('deriveNowSummaryPanel', () => {
         const risksSection = result.sections.find((s) => s.id === 'risks')!;
         expect(risksSection.severity).toBe('unstable');
         expect(risksSection.oneLineJa).toContain('NaN');
+    });
+
+    it('conservation chain reports insufficient when no ledger statuses provided', () => {
+        const result = deriveNowSummaryPanel({ timestamp: 0 });
+        const section = result.sections.find((s) => s.id === 'conservationChain')!;
+        expect(section).toBeDefined();
+        expect(section.confidence).toBe('insufficient');
+        expect(section.severity).toBe('unknown');
+    });
+
+    it('conservation chain reports calm when all ledgers are closed', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            externalToMediumLedgerStatus: 'closed',
+            membraneToInternalLedgerStatus: 'closed',
+            internalSubstrateLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChain')!;
+        expect(section.severity).toBe('calm');
+        expect(section.oneLineJa).toContain('閉じています');
+    });
+
+    it('conservation chain reports unstable and emits "Energy flow is not yet verified" when any ledger is open', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            externalToMediumLedgerStatus: 'closed',
+            membraneToInternalLedgerStatus: 'open',
+            internalSubstrateLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChain')!;
+        expect(section.severity).toBe('unstable');
+        expect(section.oneLineJa).toContain('Energy flow is not yet verified');
+        expect(section.cautionsJa.some((c) => c.includes('診断/プロキシ'))).toBe(true);
+        expect(result.overallOneLineJa).toContain('保存則チェーン');
+        expect(result.strongestObservedChanges).toContain('保存則チェーン開');
+    });
+
+    it('conservation chain emits insufficient warning when any ledger is insufficient', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            externalToMediumLedgerStatus: 'closed',
+            membraneToInternalLedgerStatus: 'insufficient',
+            internalSubstrateLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChain')!;
+        expect(section.severity).toBe('unknown');
+        expect(section.oneLineJa).toContain('insufficient');
+    });
+
+    it('conservation chain details list per-link statuses in Japanese', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            externalToMediumLedgerStatus: 'closed',
+            membraneToInternalLedgerStatus: 'nearClosed',
+            internalSubstrateLedgerStatus: 'open',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChain')!;
+        const joined = section.detailsJa.join('|');
+        expect(joined).toContain('External→Medium: 閉');
+        expect(joined).toContain('Medium→Internal: 近接閉');
+        expect(joined).toContain('Internal closure: 開');
     });
 
     it('each section has at least one cautionJa', () => {

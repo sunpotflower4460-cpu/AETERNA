@@ -131,7 +131,8 @@ export interface NowSummarySection {
     | 'emergenceCandidates'
     | 'risks'
     | 'signalExchange'
-    | 'consciousnessCandidateConditions';
+    | 'consciousnessCandidateConditions'
+    | 'conservationChain';
   titleJa: string;
   oneLineJa: string;
   detailsJa: string[];
@@ -140,6 +141,16 @@ export interface NowSummarySection {
   sourceMetricIds: string[];
   cautionsJa: string[];
 }
+
+/**
+ * Status of a single pair-ledger or stage-ledger in the conservation chain.
+ * Mirrors the EnergyLedger / pair-ledger status taxonomy.
+ */
+export type ConservationChainLedgerStatus =
+  | 'closed'
+  | 'nearClosed'
+  | 'open'
+  | 'insufficient';
 
 /** v2.7 panel state (complex, multi-section). Distinct from the legacy NowSummaryState (lines-based). */
 export interface NowSummaryPanelState {

@@ -238,6 +238,31 @@ export interface CellObservation {
         lastEventTick?: number;
     };
 
+    // ── Conservation (v4.0) ───────────────────────────────────────────────────
+
+    conservation: {
+        /** Per-cell medium storage (raw value from spatial world medium). */
+        mediumStorage?: number;
+        /** Per-cell cumulative medium dissipation sink. */
+        mediumDissipation?: number;
+        /** Per-cell cumulative medium residue sink. */
+        mediumResidue?: number;
+        /** Per-cell cumulative medium outflow sink. */
+        mediumOutflow?: number;
+        /** Per-cell cumulative inflow that has entered the membrane. */
+        membraneInflow?: number;
+        /** Per-cell cumulative outflow released from the membrane to internal storage. */
+        membraneReleased?: number;
+        /** Per-cell internal substrate storage. */
+        substrateStorage?: number;
+        /** Per-cell cumulative substrate dissipation sink. */
+        substrateDissipation?: number;
+        /** Per-cell cumulative substrate residue sink. */
+        substrateResidue?: number;
+        /** Per-cell cumulative substrate outflow sink. */
+        substrateOutflow?: number;
+    };
+
     // ── Diagnostics ───────────────────────────────────────────────────────────
 
     diagnostics: {
@@ -246,7 +271,7 @@ export interface CellObservation {
          * 'measured' | 'derived' | 'proxy' | 'unavailable'
          */
         valueKinds: Record<
-            'geometry' | 'field' | 'vortex' | 'membrane' | 'plasticity' | 'ratios' | 'events',
+            'geometry' | 'field' | 'vortex' | 'membrane' | 'plasticity' | 'ratios' | 'events' | 'conservation',
             'measured' | 'derived' | 'proxy' | 'unavailable'
         >;
         /** Number of missing (undefined) fields across all groups */
@@ -358,4 +383,32 @@ export interface CellObservationInput {
 
     /** Cell's regionId string (e.g. "u2-v3") for event source matching */
     regionId?: string;
+
+    /**
+     * Spatial world medium snapshot (v3.1+).
+     * If width × height does not match segments², these fields are treated as unavailable.
+     */
+    spatialWorldMedium?: {
+        width: number;
+        height: number;
+        mediumStorageField: ArrayLike<number>;
+        mediumDissipationField: ArrayLike<number>;
+        mediumResidueField: ArrayLike<number>;
+        mediumOutflowField: ArrayLike<number>;
+        membraneExchangeField: ArrayLike<number>;
+        membraneExchangeReleasedField: ArrayLike<number>;
+    } | null;
+
+    /**
+     * Local conservation substrate snapshot (v3.0+).
+     * If width × height does not match segments², these fields are treated as unavailable.
+     */
+    localConservationSubstrate?: {
+        width: number;
+        height: number;
+        storageField: ArrayLike<number>;
+        dissipationField: ArrayLike<number>;
+        residueField: ArrayLike<number>;
+        outflowField: ArrayLike<number>;
+    } | null;
 }

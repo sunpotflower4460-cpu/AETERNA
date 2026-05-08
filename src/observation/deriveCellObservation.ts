@@ -179,6 +179,8 @@ export function deriveCellObservation(input: CellObservationInput): CellObservat
         observedRatiosState,
         recentEvents,
         regionId,
+        spatialWorldMedium,
+        localConservationSubstrate,
     } = input;
 
     let missingFieldCount = 0;
@@ -378,6 +380,71 @@ export function deriveCellObservation(input: CellObservationInput): CellObservat
         missingFieldCount += 2;
     }
 
+    // ── Conservation (v4.0) ──────────────────────────────────────────────────
+
+    let conservation: CellObservation['conservation'] = {};
+    let conservationKind: CellObservation['diagnostics']['valueKinds']['conservation'] = 'unavailable';
+
+    const expectedSize = segments * segments;
+
+    if (spatialWorldMedium) {
+        const mediumSize = spatialWorldMedium.width * spatialWorldMedium.height;
+        if (mediumSize === expectedSize && cellIndex >= 0 && cellIndex < expectedSize) {
+            conservation = {
+                ...conservation,
+                mediumStorage: Number.isFinite(spatialWorldMedium.mediumStorageField[cellIndex])
+                    ? spatialWorldMedium.mediumStorageField[cellIndex]
+                    : undefined,
+                mediumDissipation: Number.isFinite(spatialWorldMedium.mediumDissipationField[cellIndex])
+                    ? spatialWorldMedium.mediumDissipationField[cellIndex]
+                    : undefined,
+                mediumResidue: Number.isFinite(spatialWorldMedium.mediumResidueField[cellIndex])
+                    ? spatialWorldMedium.mediumResidueField[cellIndex]
+                    : undefined,
+                mediumOutflow: Number.isFinite(spatialWorldMedium.mediumOutflowField[cellIndex])
+                    ? spatialWorldMedium.mediumOutflowField[cellIndex]
+                    : undefined,
+                membraneInflow: Number.isFinite(spatialWorldMedium.membraneExchangeField[cellIndex])
+                    ? spatialWorldMedium.membraneExchangeField[cellIndex]
+                    : undefined,
+                membraneReleased: Number.isFinite(spatialWorldMedium.membraneExchangeReleasedField[cellIndex])
+                    ? spatialWorldMedium.membraneExchangeReleasedField[cellIndex]
+                    : undefined,
+            };
+            conservationKind = 'measured';
+        } else {
+            missingFieldCount += 6;
+        }
+    } else {
+        missingFieldCount += 6;
+    }
+
+    if (localConservationSubstrate) {
+        const substrateSize = localConservationSubstrate.width * localConservationSubstrate.height;
+        if (substrateSize === expectedSize && cellIndex >= 0 && cellIndex < expectedSize) {
+            conservation = {
+                ...conservation,
+                substrateStorage: Number.isFinite(localConservationSubstrate.storageField[cellIndex])
+                    ? localConservationSubstrate.storageField[cellIndex]
+                    : undefined,
+                substrateDissipation: Number.isFinite(localConservationSubstrate.dissipationField[cellIndex])
+                    ? localConservationSubstrate.dissipationField[cellIndex]
+                    : undefined,
+                substrateResidue: Number.isFinite(localConservationSubstrate.residueField[cellIndex])
+                    ? localConservationSubstrate.residueField[cellIndex]
+                    : undefined,
+                substrateOutflow: Number.isFinite(localConservationSubstrate.outflowField[cellIndex])
+                    ? localConservationSubstrate.outflowField[cellIndex]
+                    : undefined,
+            };
+            if (conservationKind === 'unavailable') conservationKind = 'measured';
+        } else {
+            missingFieldCount += 4;
+        }
+    } else {
+        missingFieldCount += 4;
+    }
+
     // ── Diagnostics ──────────────────────────────────────────────────────────
 
     const hasUnavailableSource =
@@ -388,7 +455,9 @@ export function deriveCellObservation(input: CellObservationInput): CellObservat
         !membraneState ||
         !weakPlasticityState ||
         !observedRatiosState ||
-        !recentEvents;
+        !recentEvents ||
+        !spatialWorldMedium ||
+        !localConservationSubstrate;
 
     return {
         timestamp,
@@ -402,6 +471,7 @@ export function deriveCellObservation(input: CellObservationInput): CellObservat
         plasticity,
         ratios,
         events,
+        conservation,
         diagnostics: {
             valueKinds: {
                 geometry: geometryKind,
@@ -411,6 +481,7 @@ export function deriveCellObservation(input: CellObservationInput): CellObservat
                 plasticity: plasticityKind,
                 ratios: ratiosKind,
                 events: eventsKind,
+                conservation: conservationKind,
             },
             missingFieldCount,
             hasUnavailableSource,

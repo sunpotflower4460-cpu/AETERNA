@@ -21,6 +21,7 @@ import type {
     NowSummaryConfidence,
     ConsciousnessCandidateCondition,
     ConsciousnessCandidateConditionStatus,
+    ConservationChainLedgerStatus,
 } from '../types/nowSummary.ts';
 
 // ── DeriveNowSummaryInput ─────────────────────────────────────────────────────
@@ -80,6 +81,13 @@ export interface DeriveNowSummaryInput {
     motionActive?: boolean;
     recentInputKind?: string | null;
     recentActionPulse?: number;
+    // H. 保存則チェーン (v4.0)
+    /** Status of the External→Medium pair ledger this tick. */
+    externalToMediumLedgerStatus?: ConservationChainLedgerStatus;
+    /** Status of the Membrane→Internal substrate pair ledger this tick. */
+    membraneToInternalLedgerStatus?: ConservationChainLedgerStatus;
+    /** Status of the internal substrate's own per-tick energy ledger. */
+    internalSubstrateLedgerStatus?: ConservationChainLedgerStatus;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -428,6 +436,79 @@ function _deriveSignalExchange(inp: DeriveNowSummaryInput): NowSummarySection {
     };
 }
 
+// ── Conservation chain (v4.0) ─────────────────────────────────────────────────
+
+function _formatLedgerStatusJa(status: ConservationChainLedgerStatus | undefined): string {
+    switch (status) {
+        case 'closed': return '閉';
+        case 'nearClosed': return '近接閉';
+        case 'open': return '開';
+        case 'insufficient': return '不足';
+        default: return '未提供';
+    }
+}
+
+function _deriveConservationChain(inp: DeriveNowSummaryInput): NowSummarySection {
+    const statuses = [
+        inp.externalToMediumLedgerStatus,
+        inp.membraneToInternalLedgerStatus,
+        inp.internalSubstrateLedgerStatus,
+    ];
+    const confidence = _confidenceFromDefined(statuses);
+
+    const anyOpen = statuses.some((s) => s === 'open');
+    const anyInsufficient = statuses.some((s) => s === 'insufficient');
+    const anyNearClosed = statuses.some((s) => s === 'nearClosed');
+    const allClosed = statuses.every((s) => s === 'closed');
+    const allDefined = statuses.every((s) => s !== undefined);
+
+    let severity: NowSummarySeverity = 'unknown';
+    let oneLineJa = '保存則チェーンの観測値が提供されていません。';
+
+    if (allDefined) {
+        if (allClosed) {
+            severity = 'calm';
+            oneLineJa = '保存則チェーンの全段が閉じています。';
+        } else if (anyOpen) {
+            severity = 'unstable';
+            oneLineJa = 'Energy flow is not yet verified. Some ledgers are open.';
+        } else if (anyInsufficient) {
+            severity = 'unknown';
+            oneLineJa = 'Energy flow is not yet verified. Some ledger terms are insufficient.';
+        } else if (anyNearClosed) {
+            severity = 'recovering';
+            oneLineJa = '保存則チェーンは近接閉の段があります。';
+        }
+    }
+
+    const detailsJa: string[] = [];
+    detailsJa.push(`External→Medium: ${_formatLedgerStatusJa(inp.externalToMediumLedgerStatus)}`);
+    detailsJa.push(`Medium→Internal: ${_formatLedgerStatusJa(inp.membraneToInternalLedgerStatus)}`);
+    detailsJa.push(`Internal closure: ${_formatLedgerStatusJa(inp.internalSubstrateLedgerStatus)}`);
+
+    const cautionsJa: string[] = [
+        '保存則チェックは数値的整合性の観測であり、生命・意識・知性の証拠ではありません。',
+    ];
+    if (anyOpen || anyInsufficient) {
+        cautionsJa.push('表示中の値は診断/プロキシ読みであり、検証済みエネルギーフローとして扱わないでください。');
+    }
+
+    return {
+        id: 'conservationChain',
+        titleJa: '保存則チェーン',
+        oneLineJa,
+        detailsJa,
+        severity,
+        confidence,
+        sourceMetricIds: [
+            'externalToMediumLedgerStatus',
+            'membraneToInternalLedgerStatus',
+            'internalSubstrateLedgerStatus',
+        ],
+        cautionsJa,
+    };
+}
+
 // ── Consciousness candidate conditions derivation ─────────────────────────────
 
 function _deriveConditionStatus(defined: boolean, value: number | undefined, threshold: number, invert = false): ConsciousnessCandidateConditionStatus {
@@ -614,6 +695,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
     const emergenceCandidatesSection = _deriveEmergenceCandidates(input);
     const risksSection = _deriveRisks(input);
     const signalExchangeSection = _deriveSignalExchange(input);
+    const conservationChainSection = _deriveConservationChain(input);
     const conditions = _deriveConsciousnessConditions(input);
     const consciousnessSection = _deriveConsciousnessCandidateConditionsSection(input, conditions);
 
@@ -625,6 +707,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
         emergenceCandidatesSection,
         risksSection,
         signalExchangeSection,
+        conservationChainSection,
         consciousnessSection,
     ];
 
@@ -634,6 +717,8 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
     let overallOneLineJa = 'AETERNAの観測パネルを表示しています。';
     if (risksSection.severity === 'unstable') {
         overallOneLineJa = '⚠ 数値異常が検出されています。Safe Baselineと比較してください。';
+    } else if (conservationChainSection.severity === 'unstable') {
+        overallOneLineJa = '⚠ 保存則チェーンに開いた段があります。Energy flow is not yet verified.';
     } else if (overallConfidence === 'insufficient') {
         overallOneLineJa = '観測値が不足しています。各センサーの状態を確認してください。';
     } else if (torusSection.severity === 'active' && vitalStemSection.severity === 'calm') {
@@ -665,6 +750,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
     if (vitalStemSection.severity === 'strained') strongestObservedChanges.push('生命幹過負荷');
     if (emergenceCandidatesSection.severity === 'active') strongestObservedChanges.push('創発候補出現');
     if (bodyWorldLoopSection.severity === 'strained') strongestObservedChanges.push('閉ループミスマッチ');
+    if (conservationChainSection.severity === 'unstable') strongestObservedChanges.push('保存則チェーン開');
 
     return {
         timestamp: input.timestamp,
