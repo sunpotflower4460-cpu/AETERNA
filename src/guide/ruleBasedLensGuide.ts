@@ -269,6 +269,7 @@ function _getNextLenses(activeLensId: string | null | undefined): string[] {
  */
 export function answerLensGuideRequest(request: LensGuideRequest): LensGuideResponse {
     const { mode, lensContext, guideContext } = request;
+    const userQuestion = request.userQuestion ?? '';
     const activeLensId = lensContext.activeLens?.id ?? null;
     const lensLabel = lensContext.activeLens?.label ?? 'full cell overview';
     const lensDisclaimer = lensContext.activeLens?.disclaimer ?? 'Multiple observer-side metrics shown.';
@@ -285,6 +286,76 @@ export function answerLensGuideRequest(request: LensGuideRequest): LensGuideResp
         claimGuardPassed: true as const,
         blockedClaims: [] as string[],
     };
+
+    // ── Question-based routing (before mode-based routing) ────────────────────
+    if (userQuestion.includes('生命幹')) {
+        return {
+            ...base,
+            mode: mode === 'caution' ? 'caution' : 'explain',
+            answer: '生命幹は持続・反応・回復・状態依存性などの観測指標です。エネルギー、安定性、過負荷、疲労、モード状態などを含みます。生命幹の観測値が高い場合も、生命の証明にはなりません。',
+            observationFacts,
+            hypothesisCandidates: [],
+            comparisonNotes: [],
+            cautionNotes: [
+                '生命幹サマリーは生命の証明ではありません。持続・反応・回復・状態依存性の観測です。',
+                'All values are observer-side measurements.',
+            ],
+            suggestedNextLenses: _getNextLenses(activeLensId),
+            suggestedNextPanels: ['今起きていること', 'Cell Inspector'],
+        };
+    }
+
+    if (userQuestion.includes('閉ループ')) {
+        return {
+            ...base,
+            mode: mode === 'caution' ? 'caution' : 'explain',
+            answer: '身体-世界ループは閉ループ候補の観測です。ループゲイン・戻り強度・戻りミスマッチ・閉ループ安定性などの指標から観測されます。閉ループの観測は因果証明ではありません。',
+            observationFacts,
+            hypothesisCandidates: [],
+            comparisonNotes: [],
+            cautionNotes: [
+                '閉ループ候補の観測です。因果証明ではありません。',
+                'Correlation between metrics is not evidence of causation.',
+            ],
+            suggestedNextLenses: ['twoSidedness', 'membraneDeformation', ...(_getNextLenses(activeLensId))].slice(0, 5),
+            suggestedNextPanels: ['今起きていること', 'Causal Trace'],
+        };
+    }
+
+    if (userQuestion.includes('意識候補')) {
+        return {
+            ...base,
+            mode: 'caution',
+            answer: '意識候補条件は、意識が宿るかもしれない前提条件の一部を観測可能な指標として整理したものです。持続性・境界性・状態依存応答・履歴依存性・閉ループ性・自己維持傾向・予測誤差応答・自発性・統合性・信号対話性の10条件を観測します。これは意識の証明ではありません。',
+            observationFacts,
+            hypothesisCandidates: [],
+            comparisonNotes: [],
+            cautionNotes: [
+                'これは意識の証明ではありません。意識が宿るかもしれない前提条件の一部を観測可能な指標として整理したものです。',
+                'No claims about consciousness, life, or intelligence can be made from these observations.',
+                'Proxy metrics are NOT direct proof of any phenomenon.',
+            ],
+            suggestedNextLenses: [],
+            suggestedNextPanels: ['今起きていること', 'Metric Spotlight'],
+        };
+    }
+
+    if (userQuestion.includes('今何が起きてる') || userQuestion.includes('今起きてる')) {
+        return {
+            ...base,
+            mode: 'explain',
+            answer: '「今起きていること」パネルを参照してください。トーラス生命場・生命幹・身体-世界ループ・履歴と痕跡・創発候補・リスク・信号のやり取り・意識候補条件の8セクションで現在の観測状況を整理しています。',
+            observationFacts,
+            hypothesisCandidates: [],
+            comparisonNotes: [],
+            cautionNotes: [
+                'All values are observer-side measurements.',
+                'このパネルはAETERNAの発話ではありません。観測装置による条件観測です。',
+            ],
+            suggestedNextLenses: _getNextLenses(activeLensId),
+            suggestedNextPanels: ['今起きていること', 'Cell Inspector', 'Metric Spotlight'],
+        };
+    }
 
     switch (mode) {
         case 'explain': {

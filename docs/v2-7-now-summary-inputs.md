@@ -1,7 +1,11 @@
 # v2.7 Now Summary Inputs
 
-**Version**: v2.6.5 → v2.7 準備
-**Date**: 2026-05-07
+> **✅ 完了 (2026-05-08)** — v2.7 今起きていること要約パネル / Now Summary Panel の実装が完了しました。
+> 実装: `src/observer/deriveNowSummary.ts`, `src/ui/observation/NowSummaryPanel.tsx`, 他。
+> 詳細: `docs/now-summary-panel.md` を参照。
+
+**Version**: v2.6.5 → v2.7 完了
+**Date**: 2026-05-07 / 完了: 2026-05-08
 **Purpose**: Define the metrics that v2.7 "今起きていること要約パネル" (Now Summary Panel) should read
 
 ---

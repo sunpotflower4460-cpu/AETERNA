@@ -88,6 +88,11 @@ export function renderLensAwareGuidePanelHTML(props: LensAwareGuidePanelProps): 
     <button aria-label="どう仮説できる？ — 仮説を考える" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'どう仮説できる？',mode:'hypothesis'}}))">どう仮説できる？</button>
     <button aria-label="次どこを見る？ — 次の観測先を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'次どこを見る？',mode:'nextObservation'}}))">次どこを見る？</button>
     <button aria-label="これは証明になる？ — 注意点を確認する" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'これは証明になる？',mode:'caution'}}))">これは証明になる？</button>
+    <button aria-label="今何が起きてる？ — 現在の状況を詳しく聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'今何が起きてる？',mode:'explain'}}))">今何が起きてる？</button>
+    <button aria-label="生命幹は安定してる？ — 生命幹状態を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'生命幹は安定してる？',mode:'explain'}}))">生命幹は安定してる？</button>
+    <button aria-label="閉ループはある？ — 閉ループ候補を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'閉ループはある？',mode:'explain'}}))">閉ループはある？</button>
+    <button aria-label="反応してる？ — 信号反応を聞く" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'反応してる？',mode:'explain'}}))">反応してる？</button>
+    <button aria-label="意識候補条件は？ — 注意付きで確認する" onclick="window.dispatchEvent(new CustomEvent('guide:ask',{detail:{question:'意識候補条件は？',mode:'caution'}}))">意識候補条件は？</button>
   </div>
   <div class="lens-aware-guide-panel__mode-tabs">
     ${modeTabsHtml}

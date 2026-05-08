@@ -26,6 +26,7 @@
 - AETERNA-NATURAL v2.1 Final QA / Release Audit ✅ 完了 (2026-05-06)
 - AETERNA-NATURAL v2.2 Public Demo Polish / Landing Copy ✅ 完了 (2026-05-07)
 - AETERNA-NATURAL v2.6.5 Current State Audit / Core Boundary Freeze ✅ 完了 (2026-05-07)
+- AETERNA-NATURAL v2.7 今起きていること要約パネル / Now Summary Panel ✅ 完了 (2026-05-08)
 
 ## Planned Observation Maturity Phases
 

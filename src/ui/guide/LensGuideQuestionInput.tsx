@@ -33,6 +33,9 @@ const SHORTCUT_BUTTONS: Array<{ label: string; question: string; mode: LensGuide
   { label: 'どう仮説できる？',   question: 'どう仮説できる？',   mode: 'hypothesis' },
   { label: '次どこを見る？',     question: '次どこを見る？',     mode: 'nextObservation' },
   { label: 'これは証明になる？', question: 'これは証明になる？', mode: 'caution' },
+  { label: '生命幹は安定してる？', question: '生命幹は安定してる？', mode: 'explain' },
+  { label: '閉ループはある？',     question: '閉ループはある？',     mode: 'explain' },
+  { label: '意識候補条件は？',     question: '意識候補条件は？',     mode: 'caution' },
 ];
 
 // ── renderLensGuideQuestionInputHTML ──────────────────────────────────────────

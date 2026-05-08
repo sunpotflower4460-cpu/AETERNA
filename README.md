@@ -98,6 +98,7 @@ The Super Observation System provides:
 - **Causal Trace Panel** — indirect signal relationship candidates
 - **Layer Correlation Panel** — cross-layer observational data
 - **Observation Guide** — rule-based question-and-answer helper (no LLM)
+- **Now Summary Panel** — v2.7: 8-section observer-side summary panel (Japanese-first, no LLM)
 
 ---
 
@@ -143,8 +144,9 @@ The following claims are permanently prohibited in all copy, UI, docs, and expor
 
 ## Status
 
-Research prototype — v2.2 Public Demo Polish.
+Research prototype — v2.7 Now Summary Panel.
 See `docs/first-release-notes.md` for current status, limitations, and what not to claim.
+See `docs/now-summary-panel.md` for v2.7 Now Summary Panel specification.
 
 ---
 
