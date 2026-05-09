@@ -100,6 +100,39 @@ export interface FlowAttributionReport {
   metricKind: 'derived';
 }
 
+export type ObservationAnomalySeverity = 'info' | 'warning' | 'critical';
+
+export type ObservationAnomalyKind =
+  | 'pairLedgerOpen'
+  | 'pairResidualTooHigh'
+  | 'unknownChange'
+  | 'zeroTransferMoved'
+  | 'destinationInputMismatch'
+  | 'negativeTotal'
+  | 'missingTimeline'
+  | 'upstreamWarning';
+
+export interface ObservationAnomaly {
+  id: string;
+  tick: number | null;
+  severity: ObservationAnomalySeverity;
+  kind: ObservationAnomalyKind;
+  message: string;
+  suspectedCause: string;
+  relatedFields: string[];
+  metricKind: 'derived';
+}
+
+export interface ObservationAnomalyReport {
+  anomalies: ObservationAnomaly[];
+  infoCount: number;
+  warningCount: number;
+  criticalCount: number;
+  maxSeverity: ObservationAnomalySeverity | 'none';
+  summaryLine: string;
+  metricKind: 'derived';
+}
+
 export interface ObservationReport {
   title: string;
   mode: 'observation-only';
@@ -110,6 +143,7 @@ export interface ObservationReport {
   timelineFrames?: ObservationTimelineFrame[];
   timelineSummary?: ObservationTimelineSummary;
   flowAttribution?: FlowAttributionReport;
+  anomalyReport?: ObservationAnomalyReport;
   warnings: string[];
   notes: string[];
 }
