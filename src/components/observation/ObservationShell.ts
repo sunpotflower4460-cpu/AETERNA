@@ -1,4 +1,5 @@
 import { renderFlowArrowCard } from './FlowArrowCard.ts';
+import { renderFlowAttributionPanel } from './FlowAttributionPanel.ts';
 import { renderTimelinePanel } from './TimelinePanel.ts';
 import { renderTransferLedgerPanel } from './TransferLedgerPanel.ts';
 import type {
@@ -71,6 +72,7 @@ function renderMobile(report: ObservationReport): string {
         </section>
         <section class="obs-panel" data-panel="flow">
           ${renderFlowArrowCard(report.transferObservation)}
+          ${renderFlowAttributionPanel(report.flowAttribution, 'mobile')}
         </section>
         <section class="obs-panel" data-panel="ledger">
           ${renderTransferLedgerPanel(report.transferObservation, 'mobile')}
@@ -107,6 +109,7 @@ function renderDesktop(report: ObservationReport): string {
         </section>
         <section class="obs-panel obs-panel-flow">
           ${renderFlowArrowCard(report.transferObservation)}
+          ${renderFlowAttributionPanel(report.flowAttribution, 'desktop')}
         </section>
         <section class="obs-panel obs-panel-timeline">
           ${renderTimelinePanel(report.timelineFrames, report.timelineSummary, 'desktop')}

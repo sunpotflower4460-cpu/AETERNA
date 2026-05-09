@@ -71,6 +71,35 @@ export interface ObservationTimelineSummary {
   metricKind: 'derived';
 }
 
+export type FlowAttributionKind =
+  | 'transfer'
+  | 'dissipation'
+  | 'residue'
+  | 'outflow'
+  | 'boundaryExchange'
+  | 'storageCarry'
+  | 'unknownChange';
+
+export interface FlowAttributionItem {
+  tick: number;
+  fieldName: string;
+  kind: FlowAttributionKind;
+  direction: 'increase' | 'decrease' | 'unchanged';
+  amount: number;
+  reason: string;
+  confidence: 'high' | 'medium' | 'low';
+  metricKind: 'derived';
+}
+
+export interface FlowAttributionReport {
+  tick: number;
+  items: FlowAttributionItem[];
+  unknownChangeCount: number;
+  summaryLine: string;
+  warnings: string[];
+  metricKind: 'derived';
+}
+
 export interface ObservationReport {
   title: string;
   mode: 'observation-only';
@@ -80,6 +109,7 @@ export interface ObservationReport {
   transferObservation?: TransferObservation;
   timelineFrames?: ObservationTimelineFrame[];
   timelineSummary?: ObservationTimelineSummary;
+  flowAttribution?: FlowAttributionReport;
   warnings: string[];
   notes: string[];
 }
