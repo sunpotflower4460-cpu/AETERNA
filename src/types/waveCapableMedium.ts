@@ -73,3 +73,14 @@ export interface WaveCapableMediumNoopStepResult {
   state: WaveCapableMediumState;
   report: WaveCapableMediumNoopStepReport;
 }
+
+export interface WaveAccelerationPreview {
+  realAccelerationField: Float64Array;
+  imagAccelerationField: Float64Array;
+  maxAccelerationMagnitude: number;
+  accelerationEnergyProxy: number;
+  finiteCellCount: number;
+  nonFiniteCellCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
