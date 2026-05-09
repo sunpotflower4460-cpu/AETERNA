@@ -1,6 +1,7 @@
 import { deriveEnergyLedger } from '../observer/deriveEnergyLedger.ts';
 import type {
   WaveCapableMediumConfig,
+  WaveCapableMediumNoopStepResult,
   WaveCapableMediumState,
   WaveEnergyLedgerCheck,
   WaveEnergySnapshot,
@@ -31,6 +32,19 @@ function normalizeConfig(config: WaveCapableMediumConfig): WaveCapableMediumConf
     dt: finiteNonNegative(config.dt, 1),
     tolerance: finiteNonNegative(config.tolerance, 1e-6),
   };
+}
+
+function cloneField(field: Float64Array): Float64Array {
+  return new Float64Array(field);
+}
+
+function countChangedSamples(before: Float64Array, after: Float64Array): number {
+  const count = Math.min(before.length, after.length);
+  let changed = before.length === after.length ? 0 : Math.abs(before.length - after.length);
+  for (let i = 0; i < count; i++) {
+    if (before[i] !== after[i]) changed += 1;
+  }
+  return changed;
 }
 
 export function createWaveCapableMediumState(
@@ -69,6 +83,22 @@ export function createWaveCapableMediumState(
   };
 }
 
+export function cloneWaveCapableMediumState(state: WaveCapableMediumState): WaveCapableMediumState {
+  return {
+    width: state.width,
+    height: state.height,
+    boundaryMode: state.boundaryMode,
+    mediumRealField: cloneField(state.mediumRealField),
+    mediumImagField: cloneField(state.mediumImagField),
+    mediumRealVelocityField: cloneField(state.mediumRealVelocityField),
+    mediumImagVelocityField: cloneField(state.mediumImagVelocityField),
+    waveEnergyDissipationField: cloneField(state.waveEnergyDissipationField),
+    waveEnergyResidueField: cloneField(state.waveEnergyResidueField),
+    waveEnergyOutflowField: cloneField(state.waveEnergyOutflowField),
+    tick: state.tick,
+  };
+}
+
 export function deriveWaveEnergySnapshot(
   state: WaveCapableMediumState,
   configInput: WaveCapableMediumConfig,
@@ -78,7 +108,6 @@ export function deriveWaveEnergySnapshot(
     throw new Error('WaveCapableMedium config size must match state size.');
   }
 
-  const size = state.width * state.height;
   let kineticEnergy = 0;
   let elasticEnergy = 0;
   let finiteCellCount = 0;
@@ -170,5 +199,49 @@ export function deriveWaveEnergyLedgerCheck(input: {
     clampLossOrOverflow,
     ledger,
     metricKind: 'derived',
+  };
+}
+
+export function updateWaveCapableMediumNoop(
+  state: WaveCapableMediumState,
+  configInput: WaveCapableMediumConfig,
+): WaveCapableMediumNoopStepResult {
+  const config = normalizeConfig(configInput);
+  const energyBefore = deriveWaveEnergySnapshot(state, config);
+  const nextState = cloneWaveCapableMediumState(state);
+  nextState.tick = state.tick + 1;
+  const energyAfter = deriveWaveEnergySnapshot(nextState, config);
+
+  const changedFieldCount =
+    countChangedSamples(state.mediumRealField, nextState.mediumRealField) +
+    countChangedSamples(state.mediumImagField, nextState.mediumImagField) +
+    countChangedSamples(state.mediumRealVelocityField, nextState.mediumRealVelocityField) +
+    countChangedSamples(state.mediumImagVelocityField, nextState.mediumImagVelocityField) +
+    countChangedSamples(state.waveEnergyDissipationField, nextState.waveEnergyDissipationField) +
+    countChangedSamples(state.waveEnergyResidueField, nextState.waveEnergyResidueField) +
+    countChangedSamples(state.waveEnergyOutflowField, nextState.waveEnergyOutflowField);
+
+  const energyCheck = deriveWaveEnergyLedgerCheck({
+    energyBefore,
+    energyAfter,
+    tolerance: config.tolerance,
+  });
+
+  const warnings = [...energyCheck.ledger.warnings];
+  if (config.boundaryMode !== 'torus') {
+    warnings.push('Only torus boundary mode is currently supported.');
+  }
+
+  return {
+    state: nextState,
+    report: {
+      tick: nextState.tick,
+      energyBefore,
+      energyAfter,
+      energyCheck,
+      changedFieldCount,
+      warnings,
+      metricKind: 'derived',
+    },
   };
 }
