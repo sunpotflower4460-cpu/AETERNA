@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cloneWaveCapableMediumState,
   createWaveCapableMediumState,
+  deriveWaveAccelerationPreview,
   deriveWaveEnergyLedgerCheck,
   deriveWaveEnergySnapshot,
   updateWaveCapableMediumNoop,
@@ -228,6 +229,78 @@ describe('wave capable medium math foundation', () => {
 
     expect(state.tick).toBe(beforeTick);
     expect(Array.from(state.mediumRealField)).toEqual(beforeField);
+  });
+
+  it('acceleration preview is zero for a uniform finite field with zero velocity', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      { mediumRealField: [1, 1, 1, 1] },
+    );
+
+    const preview = deriveWaveAccelerationPreview(state, baseConfig);
+
+    expect(Array.from(preview.realAccelerationField)).toEqual([0, 0, 0, 0]);
+    expect(Array.from(preview.imagAccelerationField)).toEqual([0, 0, 0, 0]);
+    expect(preview.maxAccelerationMagnitude).toBe(0);
+    expect(preview.accelerationEnergyProxy).toBe(0);
+    expect(preview.finiteCellCount).toBe(4);
+    expect(preview.nonFiniteCellCount).toBe(0);
+    expect(preview.metricKind).toBe('derived');
+  });
+
+  it('acceleration preview reads local neighbor differences without mutating state', () => {
+    const state = createWaveCapableMediumState(
+      { width: 3, height: 1, boundaryMode: 'torus' },
+      { mediumRealField: [1, 0, 0] },
+    );
+    const before = Array.from(state.mediumRealField);
+
+    const preview = deriveWaveAccelerationPreview(state, {
+      ...baseConfig,
+      width: 3,
+      height: 1,
+      localElasticCoupling: 1,
+    });
+
+    expect(Array.from(preview.realAccelerationField)).toEqual([-4, 2, 2]);
+    expect(Array.from(preview.imagAccelerationField)).toEqual([0, 0, 0]);
+    expect(preview.maxAccelerationMagnitude).toBe(4);
+    expect(preview.accelerationEnergyProxy).toBe(12);
+    expect(Array.from(state.mediumRealField)).toEqual(before);
+  });
+
+  it('acceleration preview respects localElasticCoupling and localWaveDamping', () => {
+    const state = createWaveCapableMediumState(
+      { width: 3, height: 1, boundaryMode: 'torus' },
+      {
+        mediumRealField: [1, 0, 0],
+        mediumRealVelocityField: [2, 0, 0],
+      },
+    );
+
+    const preview = deriveWaveAccelerationPreview(state, {
+      ...baseConfig,
+      width: 3,
+      height: 1,
+      localElasticCoupling: 0.5,
+      localWaveDamping: 0.25,
+    });
+
+    expect(Array.from(preview.realAccelerationField)).toEqual([-2.5, 1, 1]);
+    expect(Array.from(preview.imagAccelerationField)).toEqual([0, 0, 0]);
+  });
+
+  it('acceleration preview treats non-finite cells as zero and reports warnings', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      { mediumRealField: [Number.NaN, 0, 0, 0] },
+    );
+
+    const preview = deriveWaveAccelerationPreview(state, baseConfig);
+
+    expect(preview.nonFiniteCellCount).toBe(1);
+    expect(preview.finiteCellCount).toBe(3);
+    expect(preview.warnings.join('\n')).toContain('non-finite wave cell');
   });
 
   it('does not include result-coded coherence identifiers in wave source files', () => {
