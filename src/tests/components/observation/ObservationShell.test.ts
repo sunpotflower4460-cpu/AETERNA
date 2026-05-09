@@ -90,7 +90,7 @@ describe('observation shell', () => {
     expect(resolveObservationLayout({ width: 1440 })).toBe('desktop');
   });
 
-  it('renders mobile tabs, transfer cards, timeline cards, attribution, and audit for small screens', () => {
+  it('renders mobile tabs, transfer cards, timeline cards, attribution, audit, and summary export for small screens', () => {
     const result = renderObservationShell(makeReport(), { width: 390 });
 
     expect(result.layout).toBe('mobile');
@@ -104,19 +104,24 @@ describe('observation shell', () => {
     expect(result.html).toContain('Observation Timeline');
     expect(result.html).toContain('Flow Attribution');
     expect(result.html).toContain('Audit');
+    expect(result.html).toContain('Raw Inspector / Export');
+    expect(result.html).toContain('data-format="summaryText"');
+    expect(result.html).toContain('aeterna-observation-layer-summary.txt');
     expect(result.html).toContain('No anomalies detected');
     expect(result.html).toContain('tick 2');
     expect(result.html).toContain('↓ 1.000');
     expect(result.html).toContain('Observation only');
   });
 
-  it('renders desktop dashboard with transfer ledger, flow, timeline, attribution, and audit panels for wide screens', () => {
+  it('renders desktop dashboard with transfer ledger, flow, timeline, attribution, audit, and JSON raw inspector', () => {
     const result = renderObservationShell(makeReport(), { width: 1440 });
 
     expect(result.layout).toBe('desktop');
     expect(result.html).toContain('obs-desktop');
     expect(result.html).toContain('obs-dashboard-grid');
-    expect(result.html).toContain('Raw Inspector');
+    expect(result.html).toContain('Raw Inspector / Export');
+    expect(result.html).toContain('data-format="json"');
+    expect(result.html).toContain('aeterna-observation-layer.json');
     expect(result.html).toContain('Transfer Pair Ledger');
     expect(result.html).toContain('Source Out');
     expect(result.html).toContain('Destination Input');
@@ -142,6 +147,8 @@ describe('observation shell', () => {
     expect(desktop.html).toContain('Flow Attribution');
     expect(mobile.html).toContain('Audit');
     expect(desktop.html).toContain('Audit');
+    expect(mobile.html).toContain('Raw Inspector / Export');
+    expect(desktop.html).toContain('Raw Inspector / Export');
     expect(mobile.sections).toEqual(desktop.sections);
   });
 

@@ -1,6 +1,7 @@
 import { renderAnomalyPanel } from './AnomalyPanel.ts';
 import { renderFlowArrowCard } from './FlowArrowCard.ts';
 import { renderFlowAttributionPanel } from './FlowAttributionPanel.ts';
+import { renderRawInspector } from './RawInspector.ts';
 import { renderTimelinePanel } from './TimelinePanel.ts';
 import { renderTransferLedgerPanel } from './TransferLedgerPanel.ts';
 import type {
@@ -83,6 +84,7 @@ function renderMobile(report: ObservationReport): string {
         </section>
         <section class="obs-panel" data-panel="audit">
           ${renderAnomalyPanel(report.anomalyReport, 'mobile')}
+          ${renderRawInspector(report, 'summaryText', 'mobile')}
         </section>
       </main>
     </section>
@@ -118,8 +120,7 @@ function renderDesktop(report: ObservationReport): string {
           ${renderAnomalyPanel(report.anomalyReport, 'desktop')}
         </section>
         <section class="obs-panel obs-panel-raw">
-          <h3>Raw Inspector</h3>
-          <pre>${escapeHtml(JSON.stringify(report, null, 2))}</pre>
+          ${renderRawInspector(report, 'json', 'desktop')}
         </section>
       </main>
     </section>
