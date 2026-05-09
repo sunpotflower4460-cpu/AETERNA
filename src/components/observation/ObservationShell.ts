@@ -1,3 +1,4 @@
+import { renderAnomalyPanel } from './AnomalyPanel.ts';
 import { renderFlowArrowCard } from './FlowArrowCard.ts';
 import { renderFlowAttributionPanel } from './FlowAttributionPanel.ts';
 import { renderTimelinePanel } from './TimelinePanel.ts';
@@ -81,8 +82,7 @@ function renderMobile(report: ObservationReport): string {
           ${renderTimelinePanel(report.timelineFrames, report.timelineSummary, 'mobile')}
         </section>
         <section class="obs-panel" data-panel="audit">
-          <h3>Audit</h3>
-          <p>${report.warnings.length === 0 ? 'No anomalies detected.' : escapeHtml(report.warnings.join(' / '))}</p>
+          ${renderAnomalyPanel(report.anomalyReport, 'mobile')}
         </section>
       </main>
     </section>
@@ -115,8 +115,7 @@ function renderDesktop(report: ObservationReport): string {
           ${renderTimelinePanel(report.timelineFrames, report.timelineSummary, 'desktop')}
         </section>
         <section class="obs-panel obs-panel-audit">
-          <h3>Audit</h3>
-          <p>${report.warnings.length === 0 ? 'No anomalies detected.' : escapeHtml(report.warnings.join(' / '))}</p>
+          ${renderAnomalyPanel(report.anomalyReport, 'desktop')}
         </section>
         <section class="obs-panel obs-panel-raw">
           <h3>Raw Inspector</h3>
