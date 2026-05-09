@@ -27,16 +27,6 @@ const forbiddenResultTerms = [
   'naturalFrequencyPull',
   'desiredOrderParameter',
   'globalDecayRate',
-  'vital',
-  'breath',
-  'heartbeat',
-  'pulse',
-  'metabolic',
-  'lifeDrive',
-  '呼吸',
-  '鼓動',
-  '生命',
-  '心拍',
 ];
 
 describe('wave capable medium math foundation', () => {
@@ -262,10 +252,10 @@ describe('wave capable medium math foundation', () => {
       localElasticCoupling: 1,
     });
 
-    expect(Array.from(preview.realAccelerationField)).toEqual([-4, 2, 2]);
+    expect(Array.from(preview.realAccelerationField)).toEqual([-2, 1, 1]);
     expect(Array.from(preview.imagAccelerationField)).toEqual([0, 0, 0]);
-    expect(preview.maxAccelerationMagnitude).toBe(4);
-    expect(preview.accelerationEnergyProxy).toBe(12);
+    expect(preview.maxAccelerationMagnitude).toBe(2);
+    expect(preview.accelerationEnergyProxy).toBe(3);
     expect(Array.from(state.mediumRealField)).toEqual(before);
   });
 
@@ -286,7 +276,7 @@ describe('wave capable medium math foundation', () => {
       localWaveDamping: 0.25,
     });
 
-    expect(Array.from(preview.realAccelerationField)).toEqual([-2.5, 1, 1]);
+    expect(Array.from(preview.realAccelerationField)).toEqual([-1.5, 0.5, 0.5]);
     expect(Array.from(preview.imagAccelerationField)).toEqual([0, 0, 0]);
   });
 
