@@ -58,3 +58,18 @@ export interface WaveEnergyLedgerCheck {
   ledger: EnergyLedgerState;
   metricKind: 'derived';
 }
+
+export interface WaveCapableMediumNoopStepReport {
+  tick: number;
+  energyBefore: WaveEnergySnapshot;
+  energyAfter: WaveEnergySnapshot;
+  energyCheck: WaveEnergyLedgerCheck;
+  changedFieldCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
+
+export interface WaveCapableMediumNoopStepResult {
+  state: WaveCapableMediumState;
+  report: WaveCapableMediumNoopStepReport;
+}
