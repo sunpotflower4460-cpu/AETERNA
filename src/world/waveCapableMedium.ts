@@ -1,5 +1,6 @@
 import { deriveEnergyLedger } from '../observer/deriveEnergyLedger.ts';
 import type {
+  WaveAccelerationPreview,
   WaveCapableMediumConfig,
   WaveCapableMediumNoopStepResult,
   WaveCapableMediumState,
@@ -243,5 +244,87 @@ export function updateWaveCapableMediumNoop(
       warnings,
       metricKind: 'derived',
     },
+  };
+}
+
+export function deriveWaveAccelerationPreview(
+  state: WaveCapableMediumState,
+  configInput: WaveCapableMediumConfig,
+): WaveAccelerationPreview {
+  const config = normalizeConfig(configInput);
+  if (state.width !== config.width || state.height !== config.height) {
+    throw new Error('WaveCapableMedium config size must match state size.');
+  }
+
+  const size = state.width * state.height;
+  const realAccelerationField = new Float64Array(size);
+  const imagAccelerationField = new Float64Array(size);
+  const warnings: string[] = [];
+  let maxAccelerationMagnitude = 0;
+  let accelerationEnergyProxy = 0;
+  let finiteCellCount = 0;
+  let nonFiniteCellCount = 0;
+
+  for (let y = 0; y < state.height; y++) {
+    for (let x = 0; x < state.width; x++) {
+      const i = indexOf(state.width, state.height, x, y);
+      const realHereRaw = state.mediumRealField[i];
+      const imagHereRaw = state.mediumImagField[i];
+      const realVelocityRaw = state.mediumRealVelocityField[i];
+      const imagVelocityRaw = state.mediumImagVelocityField[i];
+      const cellFinite =
+        Number.isFinite(realHereRaw) &&
+        Number.isFinite(imagHereRaw) &&
+        Number.isFinite(realVelocityRaw) &&
+        Number.isFinite(imagVelocityRaw);
+
+      if (cellFinite) finiteCellCount += 1;
+      else nonFiniteCellCount += 1;
+
+      const realHere = finiteSample(realHereRaw);
+      const imagHere = finiteSample(imagHereRaw);
+      const neighbors = [
+        indexOf(state.width, state.height, x + 1, y),
+        indexOf(state.width, state.height, x - 1, y),
+        indexOf(state.width, state.height, x, y + 1),
+        indexOf(state.width, state.height, x, y - 1),
+      ];
+
+      let realNeighborDeltaSum = 0;
+      let imagNeighborDeltaSum = 0;
+      for (const neighbor of neighbors) {
+        realNeighborDeltaSum += finiteSample(state.mediumRealField[neighbor]) - realHere;
+        imagNeighborDeltaSum += finiteSample(state.mediumImagField[neighbor]) - imagHere;
+      }
+
+      const realAcceleration =
+        config.localElasticCoupling * realNeighborDeltaSum -
+        config.localWaveDamping * finiteSample(realVelocityRaw);
+      const imagAcceleration =
+        config.localElasticCoupling * imagNeighborDeltaSum -
+        config.localWaveDamping * finiteSample(imagVelocityRaw);
+
+      realAccelerationField[i] = realAcceleration;
+      imagAccelerationField[i] = imagAcceleration;
+
+      const magnitude = Math.sqrt(realAcceleration * realAcceleration + imagAcceleration * imagAcceleration);
+      maxAccelerationMagnitude = Math.max(maxAccelerationMagnitude, magnitude);
+      accelerationEnergyProxy += 0.5 * (realAcceleration * realAcceleration + imagAcceleration * imagAcceleration);
+    }
+  }
+
+  if (nonFiniteCellCount > 0) {
+    warnings.push(`${nonFiniteCellCount} non-finite wave cell(s) were treated as zero for acceleration preview.`);
+  }
+
+  return {
+    realAccelerationField,
+    imagAccelerationField,
+    maxAccelerationMagnitude,
+    accelerationEnergyProxy,
+    finiteCellCount,
+    nonFiniteCellCount,
+    warnings,
+    metricKind: 'derived',
   };
 }
