@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   createWaveCapableMediumState,
@@ -16,6 +17,24 @@ const baseConfig: WaveCapableMediumConfig = {
   dt: 1,
   tolerance: 1e-9,
 };
+
+const forbiddenResultTerms = [
+  'coherenceTarget',
+  'phaseLockingRate',
+  'naturalFrequencyPull',
+  'desiredOrderParameter',
+  'globalDecayRate',
+  'vital',
+  'breath',
+  'heartbeat',
+  'pulse',
+  'metabolic',
+  'lifeDrive',
+  '呼吸',
+  '鼓動',
+  '生命',
+  '心拍',
+];
 
 describe('wave capable medium math foundation', () => {
   it('creates zero wave fields and named destination fields', () => {
@@ -131,28 +150,22 @@ describe('wave capable medium math foundation', () => {
     expect(check.ledger.conservationResidual).toBe(0);
   });
 
-  it('does not include result-coded coherence identifiers in source-facing strings', () => {
+  it('does not include result-coded coherence identifiers in wave source files', () => {
+    const source = [
+      readFileSync('src/types/waveCapableMedium.ts', 'utf8'),
+      readFileSync('src/world/waveCapableMedium.ts', 'utf8'),
+    ].join('\n');
+
+    for (const term of forbiddenResultTerms) {
+      expect(source.toLowerCase()).not.toContain(term.toLowerCase());
+    }
+  });
+
+  it('does not include result-coded coherence identifiers in source-facing state strings', () => {
     const state = createWaveCapableMediumState({ width: 2, height: 2, boundaryMode: 'torus' });
     const text = JSON.stringify(state);
-    const forbidden = [
-      'coherenceTarget',
-      'phaseLockingRate',
-      'naturalFrequencyPull',
-      'desiredOrderParameter',
-      'globalDecayRate',
-      'vital',
-      'breath',
-      'heartbeat',
-      'pulse',
-      'metabolic',
-      'lifeDrive',
-      '呼吸',
-      '鼓動',
-      '生命',
-      '心拍',
-    ];
 
-    for (const term of forbidden) {
+    for (const term of forbiddenResultTerms) {
       expect(text.toLowerCase()).not.toContain(term.toLowerCase());
     }
   });
