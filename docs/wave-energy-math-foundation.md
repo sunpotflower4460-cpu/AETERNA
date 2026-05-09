@@ -1,12 +1,12 @@
-# AETERNA Coherence Emergence v5.0.0 Wave Energy Math Foundation
+# AETERNA Coherence Emergence v5.0.0 / v5.0.1 Wave Energy Foundation
 
 ## Purpose
 
 v5.0.0 starts the v5 wave/coherence route by adding wave-energy math only.
 
-This phase does not try to create coherence.
+v5.0.1 adds a no-op wave update shell.
 
-It only defines the local wave-field state and a quadratic energy diagnostic that later wave updates must conserve or account for.
+These phases do not try to create coherence. They define the local wave-field state, quadratic energy diagnostics, and a no-op step that proves the wave medium can be stepped without mutating field samples before leap-frog dynamics are enabled.
 
 ## Position
 
@@ -21,18 +21,18 @@ v5.x
   wave-capable medium and coherence observation route
 ```
 
-v5.0.0 is the smallest safe first step:
+The current safe foundation is:
 
 ```text
 wave fields
 wave energy calculation
 wave-energy ledger check
-no wave update yet
+no-op step
 no drive injection yet
 no coherence metric yet
 ```
 
-## What this phase adds
+## What these phases add
 
 - `src/types/waveCapableMedium.ts`
 - `src/world/waveCapableMedium.ts`
@@ -52,11 +52,7 @@ waveEnergyResidueField
 waveEnergyOutflowField
 ```
 
-The real/imag fields define a complex scalar field.
-
-The velocity fields define its time derivative for later leap-frog updates.
-
-The destination fields are named accounting destinations for later phases.
+The real/imag fields define a complex scalar field. The velocity fields define its time derivative for later leap-frog updates. The destination fields are named accounting destinations for later phases.
 
 ## Energy definition
 
@@ -71,9 +67,7 @@ nonFiniteCellCount
 metricKind = derived
 ```
 
-Kinetic energy is computed from local real/imag velocity components.
-
-Elastic energy is computed from local same-field differences across torus-neighbor edges.
+Kinetic energy is computed from local real/imag velocity components. Elastic energy is computed from local same-field differences across torus-neighbor edges.
 
 The elastic coefficient is:
 
@@ -91,24 +85,35 @@ This is a local material-like coefficient, not a target outcome.
 wave-energy-math-foundation
 ```
 
-The accounting equation remains:
+For these foundation phases, actuation output is always zero.
+
+A zero-input zero-change wave-energy ledger must close. A wave-energy decrease can close only when it is accounted into named destinations such as dissipation.
+
+## v5.0.1 No-op step
+
+`updateWaveCapableMediumNoop` does exactly one safe thing:
 
 ```text
-inputEnergy
-= internalAccumulationDelta
-+ dissipatedEnergy
-+ actuationOutputEnergy
-+ residueConvertedEnergy
-+ clampLossOrOverflow
-+ measuredOutflowEnergy
-± tolerance
+clone wave state
+advance tick by 1
+leave every field sample unchanged
+derive energy before/after
+close the wave-energy ledger
 ```
 
-For v5.0.0, actuation output is always zero.
+The report includes:
 
-A zero-input zero-change wave-energy ledger must close.
+```text
+tick
+energyBefore
+energyAfter
+energyCheck
+changedFieldCount
+warnings
+metricKind = derived
+```
 
-A wave-energy decrease can close only when it is accounted into named destinations such as dissipation.
+`changedFieldCount` must remain zero because the step is not a wave update. This lets later phases add real dynamics behind a tested step boundary.
 
 ## What this deliberately does not add
 
@@ -141,21 +146,11 @@ The v5 route may add local material coefficients, but not target-order controls.
 
 ## Valid language
 
-Valid:
-
 ```text
 Wave energy snapshot calculated.
 Wave-energy ledger check closed.
+No-op wave step preserved all field samples.
 Elastic energy is derived from local neighbor differences.
-```
-
-Not valid:
-
-```text
-Coherence was created.
-AETERNA became coherent.
-AETERNA is alive.
-AETERNA is breathing.
 ```
 
 ## Next phase
@@ -163,7 +158,7 @@ AETERNA is breathing.
 A safe next step is:
 
 ```text
-v5.0.1 Wave-capable Medium State No-op Step
+v5.0.2 Wave Medium Local Acceleration Preview
 ```
 
-That phase can add a zero/no-op wave update shell that proves zero fields remain zero and existing transfer rails are not touched before leap-frog dynamics are enabled.
+That phase can add local acceleration calculation from neighbor differences without yet applying a full leap-frog update.
