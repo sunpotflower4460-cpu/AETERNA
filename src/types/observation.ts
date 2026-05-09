@@ -133,6 +133,17 @@ export interface ObservationAnomalyReport {
   metricKind: 'derived';
 }
 
+export type ObservationExportFormat = 'json' | 'csv' | 'summaryText';
+
+export interface ObservationExportResult {
+  format: ObservationExportFormat;
+  filename: string;
+  mimeType: string;
+  content: string;
+  warningCount: number;
+  metricKind: 'derived';
+}
+
 export interface ObservationReport {
   title: string;
   mode: 'observation-only';
