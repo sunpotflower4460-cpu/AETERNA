@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  cloneWaveCapableMediumState,
   createWaveCapableMediumState,
   deriveWaveEnergyLedgerCheck,
   deriveWaveEnergySnapshot,
+  updateWaveCapableMediumNoop,
 } from '../../world/waveCapableMedium.ts';
 import type { WaveCapableMediumConfig } from '../../types/waveCapableMedium.ts';
 
@@ -148,6 +150,84 @@ describe('wave capable medium math foundation', () => {
     expect(check.ledger.status).toBe('closed');
     expect(check.dissipatedEnergy).toBe(0.5);
     expect(check.ledger.conservationResidual).toBe(0);
+  });
+
+  it('clones wave state without sharing field arrays', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      { mediumRealField: [1, 0, 0, 0] },
+    );
+    const clone = cloneWaveCapableMediumState(state);
+
+    clone.mediumRealField[0] = 9;
+
+    expect(state.mediumRealField[0]).toBe(1);
+    expect(clone.mediumRealField[0]).toBe(9);
+    expect(clone.tick).toBe(state.tick);
+  });
+
+  it('noop step advances tick but does not change any wave field sample', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      {
+        mediumRealField: [1, 0, 0, 0],
+        mediumImagField: [0, 1, 0, 0],
+        mediumRealVelocityField: [0.5, 0, 0, 0],
+        mediumImagVelocityField: [0, 0.25, 0, 0],
+      },
+    );
+    const before = {
+      real: Array.from(state.mediumRealField),
+      imag: Array.from(state.mediumImagField),
+      realVelocity: Array.from(state.mediumRealVelocityField),
+      imagVelocity: Array.from(state.mediumImagVelocityField),
+      dissipation: Array.from(state.waveEnergyDissipationField),
+      residue: Array.from(state.waveEnergyResidueField),
+      outflow: Array.from(state.waveEnergyOutflowField),
+    };
+
+    const result = updateWaveCapableMediumNoop(state, baseConfig);
+
+    expect(result.state.tick).toBe(state.tick + 1);
+    expect(Array.from(result.state.mediumRealField)).toEqual(before.real);
+    expect(Array.from(result.state.mediumImagField)).toEqual(before.imag);
+    expect(Array.from(result.state.mediumRealVelocityField)).toEqual(before.realVelocity);
+    expect(Array.from(result.state.mediumImagVelocityField)).toEqual(before.imagVelocity);
+    expect(Array.from(result.state.waveEnergyDissipationField)).toEqual(before.dissipation);
+    expect(Array.from(result.state.waveEnergyResidueField)).toEqual(before.residue);
+    expect(Array.from(result.state.waveEnergyOutflowField)).toEqual(before.outflow);
+    expect(result.report.changedFieldCount).toBe(0);
+  });
+
+  it('noop step keeps wave energy unchanged and ledger closed', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      {
+        mediumRealField: [1, 0, 0, 0],
+        mediumRealVelocityField: [0.5, 0, 0, 0],
+      },
+    );
+
+    const result = updateWaveCapableMediumNoop(state, baseConfig);
+
+    expect(result.report.energyBefore.totalEnergy).toBe(result.report.energyAfter.totalEnergy);
+    expect(result.report.energyCheck.ledger.status).toBe('closed');
+    expect(result.report.energyCheck.ledger.conservationResidual).toBe(0);
+    expect(result.report.metricKind).toBe('derived');
+  });
+
+  it('noop step does not mutate the previous state object', () => {
+    const state = createWaveCapableMediumState(
+      { width: 2, height: 2, boundaryMode: 'torus' },
+      { mediumRealField: [1, 2, 3, 4] },
+    );
+    const beforeTick = state.tick;
+    const beforeField = Array.from(state.mediumRealField);
+
+    updateWaveCapableMediumNoop(state, baseConfig);
+
+    expect(state.tick).toBe(beforeTick);
+    expect(Array.from(state.mediumRealField)).toEqual(beforeField);
   });
 
   it('does not include result-coded coherence identifiers in wave source files', () => {
