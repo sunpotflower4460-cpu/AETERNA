@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { observeFieldSnapshots } from '../../../observer/fieldSnapshotObserver.ts';
 import { deriveFlowAttribution } from '../../../observer/flowAttribution.ts';
+import { deriveObservationAnomalyReport } from '../../../observer/observationAnomalyDetector.ts';
 import { summarizeObservationTimeline } from '../../../observer/observationTimeline.ts';
 import { renderObservationShell, resolveObservationLayout } from '../../../components/observation/ObservationShell.ts';
 import type { ObservationReport, ObservationTimelineFrame, TransferObservation } from '../../../types/observation.ts';
@@ -56,6 +57,8 @@ function makeTimelineFrames(): ObservationTimelineFrame[] {
 
 function makeReport(): ObservationReport {
   const timelineFrames = makeTimelineFrames();
+  const transferObservation = makeTransferObservation();
+  const flowAttribution = deriveFlowAttribution(timelineFrames[0], timelineFrames[1]);
 
   return {
     title: 'AETERNA Observation Layer',
@@ -66,10 +69,15 @@ function makeReport(): ObservationReport {
       { fieldName: 'ExternalDriveField', field: [1, 1, 0, 0] },
       { fieldName: 'SpatialWorldMedium', field: [0, 2, 0, 0] },
     ]),
-    transferObservation: makeTransferObservation(),
+    transferObservation,
     timelineFrames,
     timelineSummary: summarizeObservationTimeline(timelineFrames),
-    flowAttribution: deriveFlowAttribution(timelineFrames[0], timelineFrames[1]),
+    flowAttribution,
+    anomalyReport: deriveObservationAnomalyReport({
+      transferObservation,
+      timelineFrames,
+      flowAttribution,
+    }),
     warnings: [],
     notes: ['Observation only — no runtime mutation'],
   };
@@ -82,7 +90,7 @@ describe('observation shell', () => {
     expect(resolveObservationLayout({ width: 1440 })).toBe('desktop');
   });
 
-  it('renders mobile tabs, transfer cards, timeline cards, and attribution for small screens', () => {
+  it('renders mobile tabs, transfer cards, timeline cards, attribution, and audit for small screens', () => {
     const result = renderObservationShell(makeReport(), { width: 390 });
 
     expect(result.layout).toBe('mobile');
@@ -91,15 +99,18 @@ describe('observation shell', () => {
     expect(result.html).toContain('data-panel="flow"');
     expect(result.html).toContain('data-panel="ledger"');
     expect(result.html).toContain('data-panel="history"');
+    expect(result.html).toContain('data-panel="audit"');
     expect(result.html).toContain('Transfer Pair Ledger');
     expect(result.html).toContain('Observation Timeline');
     expect(result.html).toContain('Flow Attribution');
+    expect(result.html).toContain('Audit');
+    expect(result.html).toContain('No anomalies detected');
     expect(result.html).toContain('tick 2');
     expect(result.html).toContain('↓ 1.000');
     expect(result.html).toContain('Observation only');
   });
 
-  it('renders desktop dashboard with transfer ledger, flow, timeline, and attribution panels for wide screens', () => {
+  it('renders desktop dashboard with transfer ledger, flow, timeline, attribution, and audit panels for wide screens', () => {
     const result = renderObservationShell(makeReport(), { width: 1440 });
 
     expect(result.layout).toBe('desktop');
@@ -111,6 +122,7 @@ describe('observation shell', () => {
     expect(result.html).toContain('Destination Input');
     expect(result.html).toContain('Observation Timeline');
     expect(result.html).toContain('Flow Attribution');
+    expect(result.html).toContain('Audit');
     expect(result.html).toContain('<th>tick</th>');
     expect(result.html).toContain('Observation only — no runtime mutation');
   });
@@ -128,6 +140,8 @@ describe('observation shell', () => {
     expect(desktop.html).toContain('<td>2</td>');
     expect(mobile.html).toContain('Flow Attribution');
     expect(desktop.html).toContain('Flow Attribution');
+    expect(mobile.html).toContain('Audit');
+    expect(desktop.html).toContain('Audit');
     expect(mobile.sections).toEqual(desktop.sections);
   });
 
