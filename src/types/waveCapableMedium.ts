@@ -84,3 +84,20 @@ export interface WaveAccelerationPreview {
   warnings: string[];
   metricKind: 'derived';
 }
+
+export interface WaveCapableMediumLeapfrogStepReport {
+  tick: number;
+  energyBefore: WaveEnergySnapshot;
+  energyAfter: WaveEnergySnapshot;
+  accelerationBefore: WaveAccelerationPreview;
+  accelerationAfter: WaveAccelerationPreview;
+  energyCheck: WaveEnergyLedgerCheck;
+  changedFieldCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
+
+export interface WaveCapableMediumLeapfrogStepResult {
+  state: WaveCapableMediumState;
+  report: WaveCapableMediumLeapfrogStepReport;
+}
