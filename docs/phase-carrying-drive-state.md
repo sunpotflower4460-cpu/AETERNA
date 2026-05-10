@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -6,9 +6,11 @@ v5.1.0 starts the phase-carrying drive route.
 
 v5.1.1 adds a periodic real/imag phase-drive waveform on the drive side only.
 
-These phases create the structure for a complex external drive field, local injection mask, and rotating drive waveform.
+v5.1.2 adds drive-side energy observation and a no-medium-transfer ledger check.
 
-They do not inject anything into the wave medium yet.
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, and drive-side diagnostics.
+
+They do not transfer anything into the wave medium yet.
 
 They do not try to create coherence.
 
@@ -30,16 +32,20 @@ spatial phase field
 injection mask
 creation diagnostics
 periodic real/imag drive waveform
-no wave-medium injection yet
-no drive energy ledger yet
+drive-side energy observation
+no-medium-transfer ledger check
+no wave-medium transfer yet
 no coherence metric yet
 ```
 
 ## What these phases add
 
 - `src/types/phaseCarryingDrive.ts`
+- `src/types/phaseDriveEnergyObservation.ts`
 - `src/world/phaseCarryingDrive.ts`
+- `src/observer/phaseDriveEnergyObservation.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
+- `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 
 ## State
 
@@ -126,27 +132,49 @@ Disabling mask weighting is allowed for experiments, but emits a warning.
 
 The update clones state before writing, so the previous drive state is not mutated.
 
-The report includes:
+## v5.1.2 Drive energy observation
+
+`derivePhaseDriveEnergyObservation` reads the drive-side field only:
 
 ```text
-tickBefore
-tickAfter
-periodTicks
-phaseOffsetTicks
-driveAmplitude
-applyInjectionMask
+driveEnergy[cell] = 0.5 * (driveRealField[cell]^2 + driveImagField[cell]^2)
+maskWeightedDriveEnergy[cell] = driveEnergy[cell] * injectionMask[cell]
+```
+
+It reports:
+
+```text
+driveEnergyTotal
+driveEnergyMax
+maskWeightedDriveEnergyTotal
 activeDriveCellCount
-driveMagnitudeTotal
-driveMagnitudeMax
+activeMaskedDriveCellCount
+finiteCellCount
+nonFiniteCellCount
 warnings
 metricKind = derived
 ```
 
+This is observation only.
+
+It does not mutate the drive state.
+
+It does not touch the wave medium.
+
+`derivePhaseDriveNoMediumTransferCheck` checks that, at this phase, nothing is transferred into the wave medium:
+
+```text
+mediumInputEnergy = 0
+driveToMediumTransferredEnergy = 0
+ledger.status = closed
+```
+
+The observed drive energy is kept as a diagnostic value. It is not counted as medium input until a later transfer phase explicitly models the work term.
+
 ## What this deliberately does not add
 
-- no drive energy ledger yet
-- no drive-to-medium injection
-- no injection work calculation
+- no drive-to-medium transfer
+- no transfer work calculation
 - no wave medium mutation
 - no coherence observation metrics
 - no runtime dynamics changes
@@ -169,7 +197,7 @@ driveSyncStrength
 globalDecayRate
 ```
 
-The drive route may define local phase, local mask, local amplitude, and later local coupling, but it must not define a target global order outcome.
+The drive route may define local phase, local mask, local amplitude, diagnostics, and later local coupling, but it must not define a target global order outcome.
 
 ## Valid language
 
@@ -179,6 +207,8 @@ Spatial phase field initialized.
 Injection mask initialized.
 Drive diagnostic derived.
 Periodic phase drive waveform generated.
+Drive-side energy observation derived.
+No-medium-transfer ledger closed.
 ```
 
 ## Invalid language
@@ -195,7 +225,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.2 Drive Energy Observation
+v5.1.3 Drive-to-Wave Medium Transfer Skeleton
 ```
 
-That phase can add drive-side energy diagnostics and ledger checks while still avoiding wave-medium injection.
+That phase can add the first local drive-to-medium transfer boundary, but should still begin with coupling zero or a no-op transfer check before any work term is allowed.
