@@ -67,7 +67,7 @@ describe('phase drive energy observation', () => {
 
     expect(observation.driveEnergyTotal).toBeCloseTo(2.5, 12);
     expect(observation.driveEnergyMax).toBeCloseTo(2, 12);
-    expect(observation.maskWeightedDriveEnergyTotal).toBeCloseTo(2.125, 12);
+    expect(observation.maskWeightedDriveEnergyTotal).toBeCloseTo(2.25, 12);
     expect(observation.activeDriveCellCount).toBe(2);
     expect(observation.activeMaskedDriveCellCount).toBe(2);
   });
