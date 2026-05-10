@@ -64,3 +64,36 @@ export interface PhaseCarryingDriveDiagnostic {
   warnings: string[];
   metricKind: 'derived';
 }
+
+export interface PeriodicPhaseDriveConfig {
+  /** Period length in ticks for one full real/imag rotation. */
+  periodTicks: number;
+  /** Phase offset in ticks, added to the current tick before conversion to turns. */
+  phaseOffsetTicks?: number;
+  /** Local source amplitude before optional injection-mask weighting. */
+  driveAmplitude: number;
+  /** When true, each cell's source amplitude is multiplied by its injectionMask value. Default: true. */
+  applyInjectionMask?: boolean;
+  /** When true, returned state tick advances by one. Default: true. */
+  advanceTick?: boolean;
+  tolerance?: number;
+}
+
+export interface PeriodicPhaseDriveReport {
+  tickBefore: number;
+  tickAfter: number;
+  periodTicks: number;
+  phaseOffsetTicks: number;
+  driveAmplitude: number;
+  applyInjectionMask: boolean;
+  activeDriveCellCount: number;
+  driveMagnitudeTotal: number;
+  driveMagnitudeMax: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
+
+export interface PeriodicPhaseDriveResult {
+  state: PhaseCarryingDriveState;
+  report: PeriodicPhaseDriveReport;
+}

@@ -1,12 +1,20 @@
 import type {
+  PeriodicPhaseDriveConfig,
+  PeriodicPhaseDriveResult,
   PhaseCarryingDriveConfig,
   PhaseCarryingDriveCreationResult,
   PhaseCarryingDriveDiagnostic,
   PhaseCarryingDriveState,
 } from '../types/phaseCarryingDrive.ts';
 
+const TAU = Math.PI * 2;
+
 function finiteNonNegative(value: number | undefined, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
+function finiteSample(value: number): number {
+  return Number.isFinite(value) ? value : 0;
 }
 
 function normalizeTurns(value: number): number {
@@ -103,6 +111,19 @@ function phaseSpread(field: Float64Array): number {
   return Number.isFinite(min) && Number.isFinite(max) ? max - min : 0;
 }
 
+function clonePhaseCarryingDriveState(state: PhaseCarryingDriveState): PhaseCarryingDriveState {
+  return {
+    width: state.width,
+    height: state.height,
+    boundaryMode: state.boundaryMode,
+    driveRealField: new Float64Array(state.driveRealField),
+    driveImagField: new Float64Array(state.driveImagField),
+    spatialPhaseField: new Float64Array(state.spatialPhaseField),
+    injectionMask: new Float64Array(state.injectionMask),
+    tick: state.tick,
+  };
+}
+
 export function createPhaseCarryingDriveState(
   configInput: PhaseCarryingDriveConfig,
 ): PhaseCarryingDriveCreationResult {
@@ -170,8 +191,8 @@ export function derivePhaseCarryingDriveDiagnostic(state: PhaseCarryingDriveStat
   const warnings: string[] = [];
 
   for (let i = 0; i < state.driveRealField.length; i++) {
-    const real = Number.isFinite(state.driveRealField[i]) ? state.driveRealField[i] : 0;
-    const imag = Number.isFinite(state.driveImagField[i]) ? state.driveImagField[i] : 0;
+    const real = finiteSample(state.driveRealField[i]);
+    const imag = finiteSample(state.driveImagField[i]);
     const magnitude = Math.sqrt(real * real + imag * imag);
     driveMagnitudeTotal += magnitude;
     driveMagnitudeMax = Math.max(driveMagnitudeMax, magnitude);
@@ -197,5 +218,67 @@ export function derivePhaseCarryingDriveDiagnostic(state: PhaseCarryingDriveStat
     phaseSpread: phaseSpread(state.spatialPhaseField),
     warnings,
     metricKind: 'derived',
+  };
+}
+
+export function updatePeriodicPhaseDrive(
+  state: PhaseCarryingDriveState,
+  configInput: PeriodicPhaseDriveConfig,
+): PeriodicPhaseDriveResult {
+  const periodTicks = Math.max(1, Math.floor(finiteNonNegative(configInput.periodTicks, 1)));
+  const phaseOffsetTicks = finiteNonNegative(configInput.phaseOffsetTicks, 0);
+  const driveAmplitude = finiteNonNegative(configInput.driveAmplitude, 0);
+  const applyInjectionMask = configInput.applyInjectionMask ?? true;
+  const advanceTick = configInput.advanceTick ?? true;
+  const nextState = clonePhaseCarryingDriveState(state);
+  const warnings: string[] = [];
+  const baseTurns = normalizeTurns((state.tick + phaseOffsetTicks) / periodTicks);
+  let activeDriveCellCount = 0;
+  let driveMagnitudeTotal = 0;
+  let driveMagnitudeMax = 0;
+
+  for (let i = 0; i < nextState.driveRealField.length; i++) {
+    const mask = applyInjectionMask ? clamp01(nextState.injectionMask[i]) : 1;
+    const amplitude = driveAmplitude * mask;
+    const turns = normalizeTurns(baseTurns + finiteSample(nextState.spatialPhaseField[i]));
+    const angle = TAU * turns;
+    const real = amplitude * Math.cos(angle);
+    const imag = amplitude * Math.sin(angle);
+    nextState.driveRealField[i] = real;
+    nextState.driveImagField[i] = imag;
+
+    const magnitude = Math.sqrt(real * real + imag * imag);
+    if (magnitude > 0) activeDriveCellCount += 1;
+    driveMagnitudeTotal += magnitude;
+    driveMagnitudeMax = Math.max(driveMagnitudeMax, magnitude);
+  }
+
+  if (driveAmplitude === 0) {
+    warnings.push('driveAmplitude is zero; periodic phase drive generated zero magnitude.');
+  }
+  if (applyInjectionMask && activeDriveCellCount === 0) {
+    warnings.push('No active drive cells after injection mask weighting.');
+  }
+  if (!applyInjectionMask && nextState.driveRealField.length > 1) {
+    warnings.push('Injection mask weighting is disabled; drive waveform covers every cell.');
+  }
+
+  if (advanceTick) nextState.tick = state.tick + 1;
+
+  return {
+    state: nextState,
+    report: {
+      tickBefore: state.tick,
+      tickAfter: nextState.tick,
+      periodTicks,
+      phaseOffsetTicks,
+      driveAmplitude,
+      applyInjectionMask,
+      activeDriveCellCount,
+      driveMagnitudeTotal,
+      driveMagnitudeMax,
+      warnings,
+      metricKind: 'derived',
+    },
   };
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createPhaseCarryingDriveState,
   derivePhaseCarryingDriveDiagnostic,
+  updatePeriodicPhaseDrive,
 } from '../../world/phaseCarryingDrive.ts';
 
 const forbiddenResultTerms = [
@@ -144,6 +145,110 @@ describe('phase-carrying drive state', () => {
     expect(diagnostic.metricKind).toBe('derived');
     expect(Array.from(result.state.driveRealField)).toEqual(beforeReal);
     expect(Array.from(result.state.driveImagField)).toEqual(beforeImag);
+  });
+
+  it('updates periodic real and imaginary drive from local spatial phase without medium injection', () => {
+    const result = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0.25, 0.5, 0.75],
+      injectionMask: [1, 1, 1, 1],
+    });
+
+    const updated = updatePeriodicPhaseDrive(result.state, {
+      periodTicks: 4,
+      phaseOffsetTicks: 0,
+      driveAmplitude: 2,
+      applyInjectionMask: true,
+    });
+
+    expect(updated.state.tick).toBe(1);
+    expect(Array.from(updated.state.driveRealField).map((value) => Number(value.toFixed(12)))).toEqual([2, 0, -2, -0]);
+    expect(Array.from(updated.state.driveImagField).map((value) => Number(value.toFixed(12)))).toEqual([0, 2, 0, -2]);
+    expect(updated.report.activeDriveCellCount).toBe(4);
+    expect(updated.report.driveMagnitudeTotal).toBeCloseTo(8, 12);
+    expect(updated.report.driveMagnitudeMax).toBeCloseTo(2, 12);
+  });
+
+  it('weights periodic drive by injection mask by default', () => {
+    const result = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0, 0, 0],
+      injectionMask: [1, 0.5, 0, 0],
+    });
+
+    const updated = updatePeriodicPhaseDrive(result.state, {
+      periodTicks: 8,
+      driveAmplitude: 4,
+    });
+
+    expect(Array.from(updated.state.driveRealField)).toEqual([4, 2, 0, 0]);
+    expect(Array.from(updated.state.driveImagField)).toEqual([0, 0, 0, 0]);
+    expect(updated.report.activeDriveCellCount).toBe(2);
+    expect(updated.report.driveMagnitudeTotal).toBe(6);
+  });
+
+  it('can disable mask weighting but emits a full-field warning', () => {
+    const result = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0, 0, 0],
+      injectionMask: [1, 0, 0, 0],
+    });
+
+    const updated = updatePeriodicPhaseDrive(result.state, {
+      periodTicks: 8,
+      driveAmplitude: 1,
+      applyInjectionMask: false,
+    });
+
+    expect(Array.from(updated.state.driveRealField)).toEqual([1, 1, 1, 1]);
+    expect(updated.report.activeDriveCellCount).toBe(4);
+    expect(updated.report.warnings.join('\n')).toContain('Injection mask weighting is disabled');
+  });
+
+  it('does not mutate previous drive state during periodic update', () => {
+    const result = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0, 0, 0],
+      injectionMask: [1, 1, 1, 1],
+    });
+    const beforeReal = Array.from(result.state.driveRealField);
+    const beforeTick = result.state.tick;
+
+    updatePeriodicPhaseDrive(result.state, {
+      periodTicks: 8,
+      driveAmplitude: 1,
+    });
+
+    expect(Array.from(result.state.driveRealField)).toEqual(beforeReal);
+    expect(result.state.tick).toBe(beforeTick);
+  });
+
+  it('warns for zero amplitude and zero active drive cells', () => {
+    const result = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0, 0, 0],
+      injectionMask: [0, 0, 0, 0],
+    });
+
+    const updated = updatePeriodicPhaseDrive(result.state, {
+      periodTicks: 8,
+      driveAmplitude: 0,
+    });
+
+    expect(updated.report.activeDriveCellCount).toBe(0);
+    expect(updated.report.driveMagnitudeTotal).toBe(0);
+    expect(updated.report.warnings.join('\n')).toContain('driveAmplitude is zero');
+    expect(updated.report.warnings.join('\n')).toContain('No active drive cells');
   });
 
   it('does not include result-coded coherence identifiers in phase-carrying drive source files', () => {
