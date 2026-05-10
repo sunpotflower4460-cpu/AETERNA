@@ -281,10 +281,8 @@ describe('wave capable medium math foundation', () => {
   });
 
   it('acceleration preview treats non-finite cells as zero and reports warnings', () => {
-    const state = createWaveCapableMediumState(
-      { width: 2, height: 2, boundaryMode: 'torus' },
-      { mediumRealField: [Number.NaN, 0, 0, 0] },
-    );
+    const state = createWaveCapableMediumState({ width: 2, height: 2, boundaryMode: 'torus' });
+    state.mediumRealField[0] = Number.NaN;
 
     const preview = deriveWaveAccelerationPreview(state, baseConfig);
 
