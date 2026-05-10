@@ -1,14 +1,16 @@
-# AETERNA Coherence Emergence v5.1.0 Phase-carrying Drive State
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 Phase-carrying Drive Route
 
 ## Purpose
 
 v5.1.0 starts the phase-carrying drive route.
 
-This phase creates the structure for a complex external drive field and local injection mask.
+v5.1.1 adds a periodic real/imag phase-drive waveform on the drive side only.
 
-It does not inject anything into the wave medium yet.
+These phases create the structure for a complex external drive field, local injection mask, and rotating drive waveform.
 
-It does not try to create coherence.
+They do not inject anything into the wave medium yet.
+
+They do not try to create coherence.
 
 ## Position
 
@@ -20,19 +22,20 @@ v5.1.x
   phase-carrying external drive route
 ```
 
-v5.1.0 only creates the drive-side vessel:
+The current drive-side route contains:
 
 ```text
 complex drive fields
 spatial phase field
 injection mask
 creation diagnostics
+periodic real/imag drive waveform
 no wave-medium injection yet
-no drive waveform yet
+no drive energy ledger yet
 no coherence metric yet
 ```
 
-## What this phase adds
+## What these phases add
 
 - `src/types/phaseCarryingDrive.ts`
 - `src/world/phaseCarryingDrive.ts`
@@ -52,7 +55,7 @@ tick
 
 The drive real/imag fields are initialized to zero in v5.1.0.
 
-That means the structure exists, but no external work is performed.
+v5.1.1 may fill them with a periodic real/imag waveform, but the waveform remains on the drive side.
 
 ## Spatial phase default
 
@@ -100,9 +103,47 @@ This is read-only.
 
 It does not mutate the drive state.
 
+## v5.1.1 Periodic phase drive
+
+`updatePeriodicPhaseDrive` creates a rotating real/imag drive waveform from local spatial phase:
+
+```text
+baseTurns = (tick + phaseOffsetTicks) / periodTicks
+cellTurns = baseTurns + spatialPhaseField[cell]
+driveRealField[cell] = amplitude[cell] * cos(2π * cellTurns)
+driveImagField[cell] = amplitude[cell] * sin(2π * cellTurns)
+```
+
+By default, amplitude is weighted by the injection mask:
+
+```text
+amplitude[cell] = driveAmplitude * injectionMask[cell]
+```
+
+This keeps the waveform local by default and prevents accidental full-field driving.
+
+Disabling mask weighting is allowed for experiments, but emits a warning.
+
+The update clones state before writing, so the previous drive state is not mutated.
+
+The report includes:
+
+```text
+tickBefore
+tickAfter
+periodTicks
+phaseOffsetTicks
+driveAmplitude
+applyInjectionMask
+activeDriveCellCount
+driveMagnitudeTotal
+driveMagnitudeMax
+warnings
+metricKind = derived
+```
+
 ## What this deliberately does not add
 
-- no periodic phase waveform yet
 - no drive energy ledger yet
 - no drive-to-medium injection
 - no injection work calculation
@@ -128,7 +169,7 @@ driveSyncStrength
 globalDecayRate
 ```
 
-The drive route may define local phase, local mask, and later local coupling, but it must not define a target global order outcome.
+The drive route may define local phase, local mask, local amplitude, and later local coupling, but it must not define a target global order outcome.
 
 ## Valid language
 
@@ -137,6 +178,7 @@ Phase-carrying drive state created.
 Spatial phase field initialized.
 Injection mask initialized.
 Drive diagnostic derived.
+Periodic phase drive waveform generated.
 ```
 
 ## Invalid language
@@ -153,7 +195,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.1 Periodic Phase Drive
+v5.1.2 Drive Energy Observation
 ```
 
-That phase can add a rotating real/imag drive waveform using local phase information, while still avoiding wave-medium injection.
+That phase can add drive-side energy diagnostics and ledger checks while still avoiding wave-medium injection.
