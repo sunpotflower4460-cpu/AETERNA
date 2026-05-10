@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.0.0 / v5.0.1 / v5.0.2 Wave Energy Foundation
+# AETERNA Coherence Emergence v5.0.0 / v5.0.1 / v5.0.2 / v5.0.3 Wave Energy Foundation
 
 ## Purpose
 
@@ -8,7 +8,9 @@ v5.0.1 adds a no-op wave update shell.
 
 v5.0.2 adds local acceleration preview.
 
-These phases do not try to create coherence. They define the local wave-field state, quadratic energy diagnostics, a no-op step, and a read-only acceleration preview before leap-frog dynamics are enabled.
+v5.0.3 adds a zero-damping leap-frog preview.
+
+These phases do not try to create coherence. They define the local wave-field state, quadratic energy diagnostics, a no-op step, a read-only acceleration preview, and a first conservative wave step before drive injection is enabled.
 
 ## Position
 
@@ -31,6 +33,7 @@ wave energy calculation
 wave-energy ledger check
 no-op step
 local acceleration preview
+zero-damping leap-frog preview
 no drive injection yet
 no coherence metric yet
 ```
@@ -39,7 +42,9 @@ no coherence metric yet
 
 - `src/types/waveCapableMedium.ts`
 - `src/world/waveCapableMedium.ts`
+- `src/world/waveCapableMediumLeapfrogPreview.ts`
 - `src/tests/world/waveCapableMedium.test.ts`
+- `src/tests/world/waveCapableMediumLeapfrogPreview.test.ts`
 
 ## Wave state
 
@@ -55,7 +60,7 @@ waveEnergyResidueField
 waveEnergyOutflowField
 ```
 
-The real/imag fields define a complex scalar field. The velocity fields define its time derivative for later leap-frog updates. The destination fields are named accounting destinations for later phases.
+The real/imag fields define a complex scalar field. The velocity fields define its time derivative for leap-frog updates. The destination fields are named accounting destinations for later phases.
 
 ## Energy definition
 
@@ -141,13 +146,48 @@ metricKind = derived
 
 This preview is read-only. It does not update position, velocity, energy, or destination fields.
 
-It exists so the next phase can add leap-frog dynamics behind a tested local-force calculation.
+## v5.0.3 Zero-damping leap-frog preview
+
+`updateWaveCapableMediumLeapfrogPreview` applies the tested local acceleration through a velocity-Verlet style step:
+
+```text
+velocityHalf = velocity + 0.5 * dt * accelerationBefore
+fieldNext = field + dt * velocityHalf
+accelerationAfter = acceleration(fieldNext)
+velocityNext = velocityHalf + 0.5 * dt * accelerationAfter
+```
+
+This phase is conservative-preview only:
+
+```text
+localWaveDamping > 0 is rejected with a warning
+no drive input
+no destination-field accounting
+no amplitude clamp side effect
+```
+
+The report includes:
+
+```text
+tick
+energyBefore
+energyAfter
+accelerationBefore
+accelerationAfter
+energyCheck
+changedFieldCount
+warnings
+metricKind = derived
+```
+
+Zero field and uniform velocity cases must keep the wave-energy ledger closed. Nontrivial finite-amplitude cases are allowed to show numerical energy residuals at this stage; those residuals are diagnostic and are not hidden.
 
 ## What this deliberately does not add
 
-- no leap-frog wave update yet
 - no phase-carrying drive
 - no injection mask
+- no damping accounting yet
+- no amplitude clamp side effect
 - no membrane reflection/transmission
 - no internal wave substrate
 - no coherence observation metrics
@@ -179,6 +219,7 @@ Wave energy snapshot calculated.
 Wave-energy ledger check closed.
 No-op wave step preserved all field samples.
 Local acceleration preview calculated from neighbor differences.
+Zero-damping leap-frog preview advanced the wave field.
 Elastic energy is derived from local neighbor differences.
 ```
 
@@ -187,7 +228,7 @@ Elastic energy is derived from local neighbor differences.
 A safe next step is:
 
 ```text
-v5.0.3 Wave Medium Leap-frog Step Zero-damping Preview
+v5.0.4 Wave Medium Damping Ledger
 ```
 
-That phase can apply the tested local acceleration through a conservative leap-frog step and verify wave-energy behavior without drive injection.
+That phase can allow localWaveDamping and account the energy decrease into named wave-energy destination fields.
