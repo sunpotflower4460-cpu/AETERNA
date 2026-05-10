@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.0.0 / v5.0.1 Wave Energy Foundation
+# AETERNA Coherence Emergence v5.0.0 / v5.0.1 / v5.0.2 Wave Energy Foundation
 
 ## Purpose
 
@@ -6,7 +6,9 @@ v5.0.0 starts the v5 wave/coherence route by adding wave-energy math only.
 
 v5.0.1 adds a no-op wave update shell.
 
-These phases do not try to create coherence. They define the local wave-field state, quadratic energy diagnostics, and a no-op step that proves the wave medium can be stepped without mutating field samples before leap-frog dynamics are enabled.
+v5.0.2 adds local acceleration preview.
+
+These phases do not try to create coherence. They define the local wave-field state, quadratic energy diagnostics, a no-op step, and a read-only acceleration preview before leap-frog dynamics are enabled.
 
 ## Position
 
@@ -28,6 +30,7 @@ wave fields
 wave energy calculation
 wave-energy ledger check
 no-op step
+local acceleration preview
 no drive injection yet
 no coherence metric yet
 ```
@@ -115,6 +118,31 @@ metricKind = derived
 
 `changedFieldCount` must remain zero because the step is not a wave update. This lets later phases add real dynamics behind a tested step boundary.
 
+## v5.0.2 Local acceleration preview
+
+`deriveWaveAccelerationPreview` reads the local force implied by the current wave state:
+
+```text
+acceleration = localElasticCoupling * neighborDeltaSum - localWaveDamping * velocity
+```
+
+It returns:
+
+```text
+realAccelerationField
+imagAccelerationField
+maxAccelerationMagnitude
+accelerationEnergyProxy
+finiteCellCount
+nonFiniteCellCount
+warnings
+metricKind = derived
+```
+
+This preview is read-only. It does not update position, velocity, energy, or destination fields.
+
+It exists so the next phase can add leap-frog dynamics behind a tested local-force calculation.
+
 ## What this deliberately does not add
 
 - no leap-frog wave update yet
@@ -150,6 +178,7 @@ The v5 route may add local material coefficients, but not target-order controls.
 Wave energy snapshot calculated.
 Wave-energy ledger check closed.
 No-op wave step preserved all field samples.
+Local acceleration preview calculated from neighbor differences.
 Elastic energy is derived from local neighbor differences.
 ```
 
@@ -158,7 +187,7 @@ Elastic energy is derived from local neighbor differences.
 A safe next step is:
 
 ```text
-v5.0.2 Wave Medium Local Acceleration Preview
+v5.0.3 Wave Medium Leap-frog Step Zero-damping Preview
 ```
 
-That phase can add local acceleration calculation from neighbor differences without yet applying a full leap-frog update.
+That phase can apply the tested local acceleration through a conservative leap-frog step and verify wave-energy behavior without drive injection.
