@@ -101,3 +101,21 @@ export interface WaveCapableMediumLeapfrogStepResult {
   state: WaveCapableMediumState;
   report: WaveCapableMediumLeapfrogStepReport;
 }
+
+export interface WaveCapableMediumDampingStepReport {
+  tick: number;
+  energyBefore: WaveEnergySnapshot;
+  energyBeforeDamping: WaveEnergySnapshot;
+  energyAfter: WaveEnergySnapshot;
+  dampingFactor: number;
+  dissipatedEnergy: number;
+  energyCheck: WaveEnergyLedgerCheck;
+  changedFieldCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
+
+export interface WaveCapableMediumDampingStepResult {
+  state: WaveCapableMediumState;
+  report: WaveCapableMediumDampingStepReport;
+}
