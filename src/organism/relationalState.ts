@@ -186,8 +186,21 @@ export function updateRelationalState(
       0, 1
     );
   } else if (hasPartnerInteraction) {
-    // Reset absence drift when partner returns
-    relationalState.partnerAbsenceDrift *= 0.95;
+    // Reset absence drift when partner returns.
+    // v4.3-b: record the implied loss into a named scalar sink on the network.
+    // The *= 0.95 mutation is kept exactly to preserve the numeric trajectory;
+    // we also track the lost magnitude as the explicit destination.
+    const PARTNER_ABSENCE_DRIFT_DECAY_K = 0.95;
+    const beforeDrift = relationalState.partnerAbsenceDrift;
+    const driftDecayDelta = beforeDrift * (1 - PARTNER_ABSENCE_DRIFT_DECAY_K);
+    relationalState.partnerAbsenceDrift *= PARTNER_ABSENCE_DRIFT_DECAY_K;
+    if (network) {
+      const current = typeof network.relationalDriftDecayAccumulator === 'number'
+        && Number.isFinite(network.relationalDriftDecayAccumulator)
+        ? network.relationalDriftDecayAccumulator
+        : 0;
+      network.relationalDriftDecayAccumulator = current + driftDecayDelta;
+    }
   }
 
   // 5. Update boundary permeability

@@ -8,12 +8,17 @@ import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRando
 import { getLivingStateInfluence } from '../organism/livingState.ts';
 import { defaultCoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
 import type { CoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
+import { ensureSinkField } from './dynamicCoreNamedDestinations.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
   const eventRate = tension * 0.2 + Math.abs(sigmaDisp - 1.0) * 0.1;
   const finalRate = network.clampFinite(thermalRate + eventRate, 0, 1, 0);
   network.hardwareRandomNoiseSource = hasHardwareRandomSource() ? 'crypto' : 'fallback';
+  // v4.3-b: source-side budget tracking for noise injection into currentBuffer.
+  // The numeric trajectory of currentBuffer is unchanged; we additionally
+  // record how much energy was drawn from the external noise source per cell.
+  const noiseInjectionConsumed = ensureSinkField(network, 'noiseInjectionConsumedField', network.numNodes);
   let injectedMagnitude = 0;
   let injectedEvents = 0;
   for (let i = 0; i < 3; i++) {
@@ -21,6 +26,7 @@ export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
       const index = Math.floor(getHardwareRandomFloat() * network.numNodes);
       const magnitude = 1.0 + getHardwareRandomFloat();
       network.currentBuffer[index] += magnitude;
+      noiseInjectionConsumed[index] += magnitude;
       injectedMagnitude += magnitude;
       injectedEvents++;
     }
@@ -62,6 +68,12 @@ export function updateResidue(network: any) {
   // Phase 2: Apply living state influence to residue
   const livingInfluence = network.livingState ? getLivingStateInfluence(network.livingState) : { residueGainModifier: 1.0 };
 
+  // v4.3-b: name the destination of residue decay loss and the clamp-loss bucket.
+  // The numeric trajectory of activityResidue is unchanged; we additionally
+  // record where the energy that "left" each cell went.
+  const residueDecaySink = ensureSinkField(network, 'residueDecayField', network.numNodes);
+  const residueClampLossSink = ensureSinkField(network, 'residueClampLossField', network.numNodes);
+
   for (let i = 0; i < network.numNodes; i++) {
     const persistenceBias = network.priorChannels.persistence[i]; // direct behavioral dependency; target for weakening in Phase C
     const decay = network.clampFinite(RESIDUE_DECAY + persistenceBias * 0.01, 0.97, 0.995, RESIDUE_DECAY);
@@ -72,8 +84,19 @@ export function updateResidue(network: any) {
     // Apply living state residue bias to intake
     const adjustedIntake = intake * livingInfluence.residueGainModifier;
 
-    network.activityResidue[i] = network.activityResidue[i] * modeDecay + network.spikeTrace[i] * adjustedIntake;
-    network.activityResidue[i] = network.clampFinite(network.activityResidue[i], 0, 1.25, 0);
+    const beforeResidue = network.activityResidue[i];
+    const decayDelta = beforeResidue * (1 - modeDecay);
+    const intakeDelta = network.spikeTrace[i] * adjustedIntake;
+    // Keep the exact original float expression to preserve the numeric trajectory.
+    const preClamp = beforeResidue * modeDecay + intakeDelta;
+    const clamped = network.clampFinite(preClamp, 0, 1.25, 0);
+    network.activityResidue[i] = clamped;
+
+    residueDecaySink[i] += decayDelta;
+    const clampLoss = preClamp - clamped;
+    if (clampLoss !== 0) {
+      residueClampLossSink[i] += clampLoss;
+    }
   }
 }
 
@@ -82,10 +105,20 @@ export function updateBaselineAndResidue(network: any) {
   const RESIDUE_GAIN = 0.005;
   updateBaseline(network);
   updateResidue(network);
+  // v4.3-b: track the magnitude flowing from baselineActivity and activityResidue
+  // into currentBuffer per cell. baselineActivity is an external-generator-shaped
+  // source (handled fully in v4.4); activityResidue is an internal trace whose
+  // contribution is sampled (not depleted), so this is bookkeeping only.
+  const baselineInjectionConsumed = ensureSinkField(network, 'baselineInjectionConsumedField', network.numNodes);
+  const residueInjectionConsumed = ensureSinkField(network, 'residueInjectionConsumedField', network.numNodes);
   let baselineSum = 0;
   let residueSum = 0;
   for (let i = 0; i < network.numNodes; i++) {
-    network.currentBuffer[i] += network.baselineActivity[i] * BASELINE_GAIN + network.activityResidue[i] * RESIDUE_GAIN;
+    const baselineContribution = network.baselineActivity[i] * BASELINE_GAIN;
+    const residueContribution = network.activityResidue[i] * RESIDUE_GAIN;
+    network.currentBuffer[i] += baselineContribution + residueContribution;
+    baselineInjectionConsumed[i] += baselineContribution;
+    residueInjectionConsumed[i] += residueContribution;
     baselineSum += Math.abs(network.baselineActivity[i]);
     residueSum += network.activityResidue[i];
   }
@@ -98,17 +131,32 @@ export function updateBaselineAndResidue(network: any) {
 export function injectPredictionError(network: any, index: number) {
   const targetVal = 10.0;
   const error = targetVal - network.currentBuffer[index];
-  network.currentBuffer[index] += error * 0.8;
+  // v4.3-b: source-side accounting for prediction-error injection. Numeric
+  // trajectory of currentBuffer is unchanged; we additionally record the
+  // signed magnitudes drawn from the external prediction-error generator.
+  const predictionErrorInjectionConsumed = ensureSinkField(
+    network,
+    'predictionErrorInjectionConsumedField',
+    network.numNodes,
+  );
+  const centerDelta = error * 0.8;
+  network.currentBuffer[index] += centerDelta;
+  predictionErrorInjectionConsumed[index] += centerDelta;
   const i = Math.floor(index / network.segments);
   const j = index % network.segments;
   const up = ((i - 1 + network.segments) % network.segments) * network.segments + j;
   const down = ((i + 1) % network.segments) * network.segments + j;
   const left = i * network.segments + ((j - 1 + network.segments) % network.segments);
   const right = i * network.segments + ((j + 1) % network.segments);
-  network.currentBuffer[up] += error * 0.4;
-  network.currentBuffer[down] += error * 0.4;
-  network.currentBuffer[left] += error * 0.4;
-  network.currentBuffer[right] += error * 0.4;
+  const neighborDelta = error * 0.4;
+  network.currentBuffer[up] += neighborDelta;
+  network.currentBuffer[down] += neighborDelta;
+  network.currentBuffer[left] += neighborDelta;
+  network.currentBuffer[right] += neighborDelta;
+  predictionErrorInjectionConsumed[up] += neighborDelta;
+  predictionErrorInjectionConsumed[down] += neighborDelta;
+  predictionErrorInjectionConsumed[left] += neighborDelta;
+  predictionErrorInjectionConsumed[right] += neighborDelta;
   network.injectedNodes.push(index);
 }
 
@@ -172,6 +220,19 @@ export function updateDynamicsCore(network: any) {
   const modulatedThreshold = baseThreshold + thresholdDelta;
   const clampedThreshold = Math.max(0.6, Math.min(1.0, modulatedThreshold));
 
+  // v4.3-b: name the destinations for spikeTrace decay and weight decay.
+  // The actual `*= k` operations are kept as-is to preserve the exact float
+  // trajectory. We additionally compute the implied loss `(1-k) * before` and
+  // record it into a named sink — satisfying principle 2 (every decrease has
+  // a named destination) without changing any numeric value of spikeTrace or
+  // the weight fields.
+  const spikeDecaySink = ensureSinkField(network, 'spikeDecayField', network.numNodes);
+  const weightDecaySink = ensureSinkField(network, 'weightDecayField', network.numNodes);
+  const SPIKE_TRACE_DECAY_K = 0.9;
+  const SPIKE_TRACE_DECAY_LOSS = 1 - SPIKE_TRACE_DECAY_K; // 0.1
+  const WEIGHT_DECAY_K = 0.99995;
+  const WEIGHT_DECAY_LOSS = 1 - WEIGHT_DECAY_K; // ≈ 0.00005
+
   let newlyFiredCount = 0;
   for (let i = 0; i < network.numNodes; i++) {
     const dormantThreshold = network.dormantTraitMask?.[i] === 1 && network.isDormantNode?.[i] === 1 ? 1.05 : clampedThreshold;
@@ -180,15 +241,22 @@ export function updateDynamicsCore(network: any) {
       network.lastSpikeTime[i] = network.simTime;
       newlyFiredCount++;
     } else {
-      network.spikeTrace[i] *= 0.9;
+      const delta = network.spikeTrace[i] * SPIKE_TRACE_DECAY_LOSS;
+      network.spikeTrace[i] *= SPIKE_TRACE_DECAY_K;
+      spikeDecaySink[i] += delta;
     }
   }
 
   for (let i = 0; i < network.numNodes; i++) {
-    network.w_up[i] *= 0.99995;
-    network.w_down[i] *= 0.99995;
-    network.w_left[i] *= 0.99995;
-    network.w_right[i] *= 0.99995;
+    const upDelta = network.w_up[i] * WEIGHT_DECAY_LOSS;
+    const downDelta = network.w_down[i] * WEIGHT_DECAY_LOSS;
+    const leftDelta = network.w_left[i] * WEIGHT_DECAY_LOSS;
+    const rightDelta = network.w_right[i] * WEIGHT_DECAY_LOSS;
+    network.w_up[i] *= WEIGHT_DECAY_K;
+    network.w_down[i] *= WEIGHT_DECAY_K;
+    network.w_left[i] *= WEIGHT_DECAY_K;
+    network.w_right[i] *= WEIGHT_DECAY_K;
+    weightDecaySink[i] += upDelta + downDelta + leftDelta + rightDelta;
     const sum = network.w_up[i] + network.w_down[i] + network.w_left[i] + network.w_right[i];
     if (sum > 0.001) {
       const f = 4.0 / sum;
