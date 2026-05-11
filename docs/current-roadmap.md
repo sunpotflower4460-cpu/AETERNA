@@ -27,6 +27,15 @@
 - AETERNA-NATURAL v2.2 Public Demo Polish / Landing Copy ✅ 完了 (2026-05-07)
 - AETERNA-NATURAL v2.6.5 Current State Audit / Core Boundary Freeze ✅ 完了 (2026-05-07)
 - AETERNA-NATURAL v2.7 今起きていること要約パネル / Now Summary Panel ✅ 完了 (2026-05-08)
+- AETERNA-NATURAL v3.8 Membrane→Internal 境界 (zero step) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v3.9 Chain integration test (External→Medium→Membrane→Substrate) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.0 cell-granularity 保存観測面 / Conservation chain section ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.1 curvature-weighted exchange (structure / mean = 1) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.2 curvature-weighted exchange (drive / globalGain) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.3-a dynamicCore shadow ledger (observer-only) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.3-b 散逸先を名指す (numeric-invariant) ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.3-c substrate-backed currentBuffer injection ✅ 完了 (2026-05-11)
+- AETERNA-NATURAL v4.4 baseline oscillator 解体 ✅ 完了 (2026-05-11)
 
 ## Planned Observation Maturity Phases
 
@@ -415,3 +424,129 @@ runtime 挙動は変更しない。fake results は生成しない。
 - `src/tests/ui/scenarioUx.test.ts` — U7 ユニットテスト
 
 U7 は観測条件プリセットのみを実装する。生命・意識・感情・学習の主張はしない。
+
+---
+
+## Energy Realness Phases (v3.8 → v4.4)
+
+`docs/energy-realness-principles.md` の 6 原則 (条件を書く / 散逸先を名指す / 中心バッファ直接注入禁止 / 動力学層も観測層と同じ厳しさ / 何も起きないことも valid / 構造先・駆動後) を動力学層に系統的に適用する段階。
+
+各 phase は `*-zero` (transferCoefficient = 0、構造のみ) → `*-positive` (係数 > 0、流量あり) の規律を守って land。
+
+| Phase | 内容 | kind | 解消した gap |
+|---|---|---|---|
+| **v3.8** | Membrane→Internal 境界 (zero) | structure | 1 (膜が sink-only) / 2 (substrate 孤立) |
+| **v3.9** | Chain integration test (External→Medium→Membrane→Substrate, 1000 tick) | drive verification | 1 / 2 |
+| **v4.0** | cell-granularity 保存観測面 / Now Summary "保存則チェーン" セクション | observer | 5 (cell 単位の保存値が見えない) |
+| **v4.1** | curvature-weighted exchange (structure, mean = 1) | structure | 4 (flat torus) |
+| **v4.2** | curvature-weighted exchange (drive, globalGain) | drive | 4 |
+| **v4.3-a** | dynamicCore shadow ledger (observer-only) | observer | 3 (dynamicCore violations) 準備 |
+| **v4.3-b** | 散逸先を名指す (numeric-invariant) | structure | 3 |
+| **v4.3-c** | substrate-backed currentBuffer injection + 供給切断テスト + lint guard | drive | 3 |
+| **v4.4** | baseline oscillator 解体 (Math.sin / BASELINE_AMP 除去) | structure → drive | 3 (最終) |
+
+### v3.8 Membrane→Internal 境界 (zero)
+
+**目的**: SpatialWorldMedium.membraneExchangeField が sink-only だった状態を解消し、`LocalConservationSubstrate.storageField` を chain の "内部側" として吊り下げる。
+
+**実装済み**:
+- `src/types/membraneToInternalTransfer.ts` — 型定義
+- `src/world/membraneToInternalTransfer.ts` — `updateMembraneToInternalTransferZero` / `updateMembraneToInternalTransferPositive` + pair ledger
+- `src/types/spatialWorldMedium.ts` — `membraneExchangeReleasedField` 追加 (累積 outflow 記録)
+- `src/world/spatialWorldMedium.ts` — released field の伝播
+- `src/world/externalDriveToMediumTransfer.ts` — released field の copy 経路
+- `src/tests/world/membraneToInternalTransfer.test.ts` — zero/positive 両方の pair-ledger テスト
+
+### v3.9 Chain integration test
+
+**目的**: `External → Medium → Membrane → Substrate` の chain 全段が、毎 tick `closed` で、総エネルギー保存が崩れないことを end-to-end で検証。
+
+**実装済み**:
+- `src/tests/integration/externalToSubstrateChain.test.ts` — 1000 tick steady drive ledger チェック、総保存、clampLoss 境界性、**供給切断テスト** (誰も decay 式を書いていないのに、substrate が drain する)
+
+### v4.0 cell-granularity 保存観測面
+
+**目的**: 保存則チェーンの状態を per-cell と chain-level の両方で観測層に出す。
+
+**実装済み**:
+- `src/types/cellObservation.ts` — `conservation` グループ追加 (mediumStorage / Dissipation / Residue / Outflow, membraneInflow / Released, substrateStorage / Dissipation / Residue / Outflow)
+- `src/types/cellObservation.ts` — `CellObservationInput` に `spatialWorldMedium` / `localConservationSubstrate` snapshot 追加
+- `src/observation/deriveCellObservation.ts` — conservation 値を 'measured' kind で populate
+- `src/types/nowSummary.ts` — `ConservationChainLedgerStatus` 型と `conservationChain` section ID
+- `src/observer/deriveNowSummary.ts` — `_deriveConservationChain` deriver、9 セクション目として統合、open ledger 検出時に "Energy flow is not yet verified" 警告
+- テスト: `src/tests/observation/deriveCellObservation.test.ts` 5 件追加、`src/tests/observer/deriveNowSummary.test.ts` 5 件追加
+
+### v4.1 curvature-weighted exchange (structure)
+
+**目的**: トーラスを "形だけ" から脱却。`torusGeometry.ts` の `areaElement / gaussianCurvature / meanCurvature` を local exchange の per-edge weight に反映。v4.1 では mean = 1 制約を保つ (再分配のみ)。
+
+**実装済み**:
+- `src/types/curvatureWeightedExchange.ts` — `CurvatureWeightedExchangeConfig` / `CurvatureWeightFields` 型
+- `src/world/curvatureWeightedExchange.ts` — `deriveCurvatureWeights(torusGeometry, config)`
+- `src/world/spatialWorldMedium.ts` — `curvatureWeights` config を受け取り、per-edge weighted rate を適用 (反対称 delta 会計を保つ)
+- `src/substrate/localConservationSubstrate.ts` — 同等の組み込み
+- テスト: flat torus mock で bit-identical 検証
+
+### v4.2 curvature-weighted exchange (drive)
+
+**目的**: v4.1 の "mean = 1" を解除する knob を追加。`globalGainCoefficient` (default 1) を導入。
+
+**実装済み**:
+- `CurvatureWeightedExchangeConfig.globalGainCoefficient` 追加
+- `weight = (1 + s * (rawNorm - 1)) * globalGain` の合成式
+- テスト: globalGain ∈ {0.5, 1, 2, 4} の parametrized ledger テスト、directional drift 観測
+
+### v4.3-a dynamicCore shadow ledger (observer-only)
+
+**目的**: dynamicCore に手を入れず、`*= k` / `+= d` / `= f(t)` の各パターンを before/after snapshot から仮想転送として観測する純粋関数を用意。v4.3-b の回帰基準を作る。
+
+**実装済み**:
+- `src/core/dynamicCoreEnergyLedger.ts` — `ShadowLedgerEntry` 型、`deriveMultiplicativeDecayShadow` / `deriveScalarMultiplicativeDecayShadow` / `deriveAdditiveInjectionShadow` / `deriveOverwriteShadow`、`aggregateDynamicCoreShadowLedger`
+- `ShadowLedgerEntry` は `snapshotComparable` (データが揃ったか) と `ruleObeyed` (ルールが守られたか) を分離して `'insufficient' > 'open' > 'closed'` の優先順
+- テスト: 17 件 — 各 helper の closed/violation/insufficient、aggregator のステータス優先順、6 パターン合成テスト
+
+### v4.3-b 散逸先を名指す (numeric-invariant)
+
+**目的**: v4.3-a で観測した転送を実装に昇格させる。**数値軌道は不変** (`*= k` を helper に隠して bit-exact な float 軌道を保つ)。
+
+**実装済み**:
+- `src/core/dynamicCoreNamedDestinations.ts` — `ensureSinkField` / `decayWithSink` / `decayAllFourWeightsWithSink` / `decayScalarWithSink` ヘルパー
+- `dynamicCore.ts` の以下を named transfer に:
+  - `spikeTrace[i] *= 0.9` → `spikeDecayField`
+  - `w_*[i] *= 0.99995` → `weightDecayField`
+  - `updateResidue` の `RESIDUE_DECAY` → `residueDecayField` / `residueClampLossField`
+  - `triggerNoise` の noise injection → `noiseInjectionConsumedField`
+  - `injectPredictionError` → `predictionErrorInjectionConsumedField`
+  - `updateBaselineAndResidue` → `baselineInjectionConsumedField` / `residueInjectionConsumedField`
+- `relationalState.ts` の `partnerAbsenceDrift *= 0.95` → `relationalDriftDecayAccumulator` (scalar)
+- テスト: 11 件 — `ensureSinkField` ライフサイクル、scalar sink helpers、bit-exact numeric invariance
+
+### v4.3-c substrate-backed currentBuffer injection (drive)
+
+**目的**: External → Medium → Membrane → Substrate → CurrentBuffer の全 chain を成立させる。注入は substrate に蓄積された量を超えられない。
+
+**実装済み**:
+- `src/types/internalToBufferTransfer.ts` — 型定義
+- `src/core/internalToBufferTransfer.ts` — `updateInternalToBufferTransferZero` / `updateInternalToBufferTransferPositive` + pair ledger、`applyInternalToBufferInjectionRequest` (per-cell bounded injection)
+- `dynamicCore.ts:triggerNoise` に opt-in flag `network.substrateBackedNoiseInjection`、bare `*=` literal を helper 呼び出しに置換
+- `relationalState.ts` の `*= 0.95` も helper に置換
+- テスト: 13 件 — pair ledger / per-cell 制限 / **供給切断 end-to-end** / **lint guard** (`*= 0.X` literal が 2 ファイルとも 0)
+
+### v4.4 baseline oscillator 解体
+
+**目的**: `energy-realness-principles.md` が明示禁止する "life-like baseline oscillator" を `dynamicCore.ts` から消す。
+
+**実装済み**:
+- `src/core/legacyBaselineOscillator.ts` — 旧 `Math.sin` driven 実装を分離 (bit-exact な back-compat 経路)
+- `src/core/emergentBaselineFromSubstrate.ts` — substrate.storageField を読む observation-only deriver
+- `dynamicCore.ts:updateBaseline` を dispatcher に縮退 (default: legacy / opt-in: emergent)
+- テスト: 17 件 — legacy 数値等価、emergent path 各ケース、time-invariance 検証、**lint guard** (dynamicCore.ts に `Math.sin\s*\(` / `BASELINE_AMP` / 文字列 "Math.sin" がコメント含めて存在しない)
+
+---
+
+## 残作業 (Energy Realness 関連)
+
+- **観測インフラの実行時接続**: v4.0 で deriver は揃ったが、`runScenario` / `runScenarioWithEnergyLedgerVisibility` から ledger status と substrate snapshot を渡す配線がまだ。「保存則チェーン」セクションは現状「未提供」のまま実行される。
+- **emergent baseline / substrate-backed noise injection の default 化**: 現在は legacy が default、新パスは opt-in。emergent 環境で既存テストが何を観測するかを慎重に確認してから反転。
+- **relationalState.ts の残り decay** (`partnerTraceStrength *= traceDecay`, `partnerFamiliarity *= familiarityDecay` 他): `*= 0.X` lint は通っているが、変数経由なので散逸先未指定の状態。
+- **W-Series W1〜W6** (未着手): 出力側 (Actuation Pulse → 世界 → Sensory Return) で chain を閉じる作業。本 v3.8→v4.4 の延長線上にある。
