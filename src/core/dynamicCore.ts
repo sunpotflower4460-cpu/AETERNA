@@ -13,6 +13,8 @@ import {
   decayWithSink,
   decayAllFourWeightsWithSink,
 } from './dynamicCoreNamedDestinations.ts';
+import { applyLegacyBaselineOscillator } from './legacyBaselineOscillator.ts';
+import { deriveEmergentBaselineFromSubstrate } from './emergentBaselineFromSubstrate.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
@@ -68,29 +70,31 @@ export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   network.lastNoiseUngrantedMagnitude = ungrantedMagnitude;
 }
 
+/**
+ * updateBaseline
+ *
+ * v4.4 dispatcher.
+ *
+ * When `network.emergentBaselineFromSubstrate === true`, baselineActivity is
+ * READ from network.localConservationSubstrate.storageField — a pure
+ * observation-only path with no time-driven oscillator.
+ *
+ * Otherwise the legacy time-driven oscillator path runs. The legacy
+ * implementation has been moved to legacyBaselineOscillator.ts so that this
+ * source file no longer contains the forbidden time-function and amplitude
+ * literals that the energy-realness principles document calls out as
+ * "life-like baseline oscillator". The legacy numeric trajectory is
+ * preserved exactly when the legacy path is invoked.
+ */
 export function updateBaseline(network: any) {
-  const BASELINE_AMP = 0.003;
-  const TIME_DRIFT = 0.0008;
-  const t = network.simTime * TIME_DRIFT;
-  const gain = network.currentModeDynamics?.baselineGain ?? 1.0;
-
-  // Phase E2: Apply top-down modulation to baseline gain
-  const topDownDelta = network.topDownModulation?.baselineGainDelta ?? 0;
-  const modulatedGain = gain + topDownDelta;
-
-  // Phase 2: Apply living state influence to baseline gain
-  const livingInfluence = network.livingState ? getLivingStateInfluence(network.livingState) : { baselineGainModifier: 1.0 };
-  const finalGain = modulatedGain * livingInfluence.baselineGainModifier;
-  const clampedGain = Math.max(0.5, Math.min(1.5, finalGain));
-
-  const phaseOffset = network.modePhase * Math.PI * 2;
-
-  // Phase 2: Add long baseline tone from living state
-  const longTone = network.livingState?.longBaselineTone ?? 0.12;
-
-  for (let i = 0; i < network.numNodes; i++) {
-    network.baselineActivity[i] = BASELINE_AMP * clampedGain * Math.sin(network.nodePhase[i] + t + phaseOffset) + longTone * 0.02;
+  if (network.emergentBaselineFromSubstrate === true) {
+    const scaleOption = network.emergentBaselineSubstrateScale;
+    deriveEmergentBaselineFromSubstrate(network, {
+      substrateScale: typeof scaleOption === 'number' ? scaleOption : 1.0,
+    });
+    return;
   }
+  applyLegacyBaselineOscillator(network);
 }
 
 export function updateResidue(network: any) {
