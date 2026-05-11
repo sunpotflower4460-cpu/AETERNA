@@ -103,6 +103,35 @@ export function decayScalarWithSink(
 }
 
 /**
+ * decayPlainArrayWithSink
+ *
+ * Like decayWithSink, but for plain `number[]` arrays (e.g.
+ * partnerTouchStyleSignature in relationalState). Applies
+ * `arr[i] = arr[i] * multiplier` (bit-exact prior trajectory) and adds
+ * the per-cell `before * (1 - multiplier)` loss to a scalar sink on the
+ * network. (Plain arrays do not have a per-cell sink target available in
+ * the same shape; aggregating into a scalar accumulator is the cheapest
+ * way to give the loss a name.)
+ */
+export function decayPlainArrayWithSink(
+    arr: number[],
+    multiplier: number,
+    network: any,
+    sinkFieldName: string,
+): void {
+    if (!Array.isArray(arr)) return;
+    let totalLoss = 0;
+    for (let i = 0; i < arr.length; i++) {
+        const before = arr[i];
+        if (!Number.isFinite(before)) continue;
+        const result = before * multiplier;
+        totalLoss += before - result;
+        arr[i] = result;
+    }
+    addToScalarSink(network, sinkFieldName, totalLoss);
+}
+
+/**
  * decayAllFourWeightsWithSink
  *
  * Convenience for the dynamicCore four-edge weight decay loop. Applies

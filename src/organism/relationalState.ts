@@ -15,7 +15,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { decayScalarWithSink } from '../core/dynamicCoreNamedDestinations.ts';
+import {
+  decayPlainArrayWithSink,
+  decayScalarWithSink,
+} from '../core/dynamicCoreNamedDestinations.ts';
 
 /**
  * Relational state interface
@@ -145,7 +148,12 @@ export function updateRelationalState(
     );
   } else {
     const traceDecay = 0.9998;  // Extremely slow decay
-    relationalState.partnerTraceStrength *= traceDecay;
+    relationalState.partnerTraceStrength = decayScalarWithSink(
+      relationalState.partnerTraceStrength,
+      traceDecay,
+      network,
+      'partnerTraceStrengthDecayAccumulator',
+    );
   }
 
   // 2. Update partner familiarity
@@ -158,7 +166,12 @@ export function updateRelationalState(
     );
   } else {
     const familiarityDecay = 0.9995;  // Very slow decay
-    relationalState.partnerFamiliarity *= familiarityDecay;
+    relationalState.partnerFamiliarity = decayScalarWithSink(
+      relationalState.partnerFamiliarity,
+      familiarityDecay,
+      network,
+      'partnerFamiliarityDecayAccumulator',
+    );
   }
 
   // 3. Update partner valence
@@ -246,7 +259,12 @@ export function updateRelationalState(
     );
   } else {
     const continuityDecay = 0.998;
-    relationalState.partnerContinuityConfidence *= continuityDecay;
+    relationalState.partnerContinuityConfidence = decayScalarWithSink(
+      relationalState.partnerContinuityConfidence,
+      continuityDecay,
+      network,
+      'partnerContinuityConfidenceDecayAccumulator',
+    );
   }
 
   // 9. Update touch style signature (simplified)
@@ -270,9 +288,12 @@ export function updateRelationalState(
   } else {
     // Slow decay
     const signatureDecay = 0.999;
-    for (let i = 0; i < relationalState.partnerTouchStyleSignature.length; i++) {
-      relationalState.partnerTouchStyleSignature[i] *= signatureDecay;
-    }
+    decayPlainArrayWithSink(
+      relationalState.partnerTouchStyleSignature,
+      signatureDecay,
+      network,
+      'partnerTouchStyleSignatureDecayAccumulator',
+    );
   }
 
   // 10. Update interaction rhythm
