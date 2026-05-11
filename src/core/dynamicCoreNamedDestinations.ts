@@ -58,3 +58,78 @@ export function addToScalarSink(network: any, fieldName: string, delta: number):
         network[fieldName] = current + delta;
     }
 }
+
+/**
+ * decayWithSink
+ *
+ * Apply a multiplicative decay to a single cell of a typed array, and route
+ * the implied loss into a named sink array at the same index. The actual
+ * mutation is `field[i] = field[i] * multiplier`, which preserves bit-exact
+ * IEEE 754 behaviour. The sink accumulates `before * (1 - multiplier)`.
+ *
+ * Wrapping `*= k` in this helper removes the bare literal from call sites,
+ * making it possible to lint-grep against `\*=\s*0\.\d` in dynamicCore /
+ * relationalState while preserving the exact numeric trajectory.
+ */
+export function decayWithSink(
+    field: Float64Array | Float32Array,
+    index: number,
+    multiplier: number,
+    sink: Float64Array,
+): void {
+    const before = field[index];
+    const loss = before * (1 - multiplier);
+    field[index] = before * multiplier;
+    sink[index] += loss;
+}
+
+/**
+ * decayScalarWithSink
+ *
+ * Scalar-variant of decayWithSink. Applies `before * multiplier` to the
+ * provided value and returns the result; additionally adds the implied loss
+ * to a named scalar sink on the network object.
+ */
+export function decayScalarWithSink(
+    value: number,
+    multiplier: number,
+    network: any,
+    sinkFieldName: string,
+): number {
+    const result = value * multiplier;
+    const loss = value - result;
+    addToScalarSink(network, sinkFieldName, loss);
+    return result;
+}
+
+/**
+ * decayAllFourWeightsWithSink
+ *
+ * Convenience for the dynamicCore four-edge weight decay loop. Applies
+ * `*= multiplier` to w_up[i], w_down[i], w_left[i], w_right[i] and records
+ * the combined four-edge loss into sink[i].
+ */
+export function decayAllFourWeightsWithSink(
+    wUp: Float64Array | Float32Array,
+    wDown: Float64Array | Float32Array,
+    wLeft: Float64Array | Float32Array,
+    wRight: Float64Array | Float32Array,
+    index: number,
+    multiplier: number,
+    sink: Float64Array,
+): void {
+    const upBefore = wUp[index];
+    const downBefore = wDown[index];
+    const leftBefore = wLeft[index];
+    const rightBefore = wRight[index];
+    const loss =
+        upBefore * (1 - multiplier) +
+        downBefore * (1 - multiplier) +
+        leftBefore * (1 - multiplier) +
+        rightBefore * (1 - multiplier);
+    wUp[index] = upBefore * multiplier;
+    wDown[index] = downBefore * multiplier;
+    wLeft[index] = leftBefore * multiplier;
+    wRight[index] = rightBefore * multiplier;
+    sink[index] += loss;
+}

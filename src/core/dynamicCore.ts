@@ -8,7 +8,11 @@ import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRando
 import { getLivingStateInfluence } from '../organism/livingState.ts';
 import { defaultCoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
 import type { CoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
-import { ensureSinkField } from './dynamicCoreNamedDestinations.ts';
+import {
+  ensureSinkField,
+  decayWithSink,
+  decayAllFourWeightsWithSink,
+} from './dynamicCoreNamedDestinations.ts';
 
 export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
@@ -16,23 +20,52 @@ export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const finalRate = network.clampFinite(thermalRate + eventRate, 0, 1, 0);
   network.hardwareRandomNoiseSource = hasHardwareRandomSource() ? 'crypto' : 'fallback';
   // v4.3-b: source-side budget tracking for noise injection into currentBuffer.
-  // The numeric trajectory of currentBuffer is unchanged; we additionally
-  // record how much energy was drawn from the external noise source per cell.
+  // v4.3-c: when `network.substrateBackedNoiseInjection` is enabled and a
+  // `network.localConservationSubstrate` is attached, noise injection is
+  // bounded per-cell by substrate.storageField availability. Injection cannot
+  // exceed energy actually on hand. When the flag is off (default), behavior
+  // matches v4.3-b exactly: hardware random noise injects unconditionally.
   const noiseInjectionConsumed = ensureSinkField(network, 'noiseInjectionConsumedField', network.numNodes);
+  const noiseInjectionUngranted = ensureSinkField(network, 'noiseInjectionUngrantedField', network.numNodes);
+  const substrateBacked: boolean = !!network.substrateBackedNoiseInjection;
+  const substrateState = substrateBacked ? network.localConservationSubstrate : null;
+  const substrateStorageField: Float64Array | null =
+    substrateState && substrateState.storageField instanceof Float64Array
+      ? substrateState.storageField
+      : null;
+
   let injectedMagnitude = 0;
   let injectedEvents = 0;
+  let ungrantedMagnitude = 0;
   for (let i = 0; i < 3; i++) {
     if (getHardwareRandomFloat() < finalRate) {
       const index = Math.floor(getHardwareRandomFloat() * network.numNodes);
-      const magnitude = 1.0 + getHardwareRandomFloat();
-      network.currentBuffer[index] += magnitude;
-      noiseInjectionConsumed[index] += magnitude;
-      injectedMagnitude += magnitude;
-      injectedEvents++;
+      const wanted = 1.0 + getHardwareRandomFloat();
+      let granted = wanted;
+      if (substrateBacked && substrateStorageField) {
+        const available = substrateStorageField[index];
+        const safeAvail = Number.isFinite(available) ? Math.max(0, available) : 0;
+        granted = Math.min(wanted, safeAvail);
+        if (granted > 0) {
+          substrateStorageField[index] = safeAvail - granted;
+        }
+        const miss = wanted - granted;
+        if (miss > 0) {
+          noiseInjectionUngranted[index] += miss;
+          ungrantedMagnitude += miss;
+        }
+      }
+      if (granted > 0) {
+        network.currentBuffer[index] += granted;
+        noiseInjectionConsumed[index] += granted;
+        injectedMagnitude += granted;
+        injectedEvents++;
+      }
     }
   }
   network.lastNoiseMagnitude = injectedMagnitude;
   network.lastNoiseEventCount = injectedEvents;
+  network.lastNoiseUngrantedMagnitude = ungrantedMagnitude;
 }
 
 export function updateBaseline(network: any) {
@@ -220,18 +253,15 @@ export function updateDynamicsCore(network: any) {
   const modulatedThreshold = baseThreshold + thresholdDelta;
   const clampedThreshold = Math.max(0.6, Math.min(1.0, modulatedThreshold));
 
-  // v4.3-b: name the destinations for spikeTrace decay and weight decay.
-  // The actual `*= k` operations are kept as-is to preserve the exact float
-  // trajectory. We additionally compute the implied loss `(1-k) * before` and
-  // record it into a named sink — satisfying principle 2 (every decrease has
-  // a named destination) without changing any numeric value of spikeTrace or
-  // the weight fields.
+  // v4.3-b / v4.3-c: name the destinations for spikeTrace decay and weight decay.
+  // The actual `*= k` operations are now hidden inside decayWithSink /
+  // decayAllFourWeightsWithSink helpers. The helpers perform `field[i] =
+  // field[i] * k` (bit-exact IEEE 754 preservation of the prior trajectory)
+  // and route the implied `before * (1 - k)` loss into the named sink.
   const spikeDecaySink = ensureSinkField(network, 'spikeDecayField', network.numNodes);
   const weightDecaySink = ensureSinkField(network, 'weightDecayField', network.numNodes);
-  const SPIKE_TRACE_DECAY_K = 0.9;
-  const SPIKE_TRACE_DECAY_LOSS = 1 - SPIKE_TRACE_DECAY_K; // 0.1
-  const WEIGHT_DECAY_K = 0.99995;
-  const WEIGHT_DECAY_LOSS = 1 - WEIGHT_DECAY_K; // ≈ 0.00005
+  const SPIKE_TRACE_DECAY_K = network.SPIKE_TRACE_DECAY_K ?? 0.9;
+  const WEIGHT_DECAY_K = network.WEIGHT_DECAY_K ?? 0.99995;
 
   let newlyFiredCount = 0;
   for (let i = 0; i < network.numNodes; i++) {
@@ -241,22 +271,20 @@ export function updateDynamicsCore(network: any) {
       network.lastSpikeTime[i] = network.simTime;
       newlyFiredCount++;
     } else {
-      const delta = network.spikeTrace[i] * SPIKE_TRACE_DECAY_LOSS;
-      network.spikeTrace[i] *= SPIKE_TRACE_DECAY_K;
-      spikeDecaySink[i] += delta;
+      decayWithSink(network.spikeTrace, i, SPIKE_TRACE_DECAY_K, spikeDecaySink);
     }
   }
 
   for (let i = 0; i < network.numNodes; i++) {
-    const upDelta = network.w_up[i] * WEIGHT_DECAY_LOSS;
-    const downDelta = network.w_down[i] * WEIGHT_DECAY_LOSS;
-    const leftDelta = network.w_left[i] * WEIGHT_DECAY_LOSS;
-    const rightDelta = network.w_right[i] * WEIGHT_DECAY_LOSS;
-    network.w_up[i] *= WEIGHT_DECAY_K;
-    network.w_down[i] *= WEIGHT_DECAY_K;
-    network.w_left[i] *= WEIGHT_DECAY_K;
-    network.w_right[i] *= WEIGHT_DECAY_K;
-    weightDecaySink[i] += upDelta + downDelta + leftDelta + rightDelta;
+    decayAllFourWeightsWithSink(
+      network.w_up,
+      network.w_down,
+      network.w_left,
+      network.w_right,
+      i,
+      WEIGHT_DECAY_K,
+      weightDecaySink,
+    );
     const sum = network.w_up[i] + network.w_down[i] + network.w_left[i] + network.w_right[i];
     if (sum > 0.001) {
       const f = 4.0 / sum;

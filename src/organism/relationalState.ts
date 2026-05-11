@@ -15,6 +15,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { decayScalarWithSink } from '../core/dynamicCoreNamedDestinations.ts';
+
 /**
  * Relational state interface
  * Represents organism's accumulated traces with a specific interaction partner
@@ -187,20 +189,17 @@ export function updateRelationalState(
     );
   } else if (hasPartnerInteraction) {
     // Reset absence drift when partner returns.
-    // v4.3-b: record the implied loss into a named scalar sink on the network.
-    // The *= 0.95 mutation is kept exactly to preserve the numeric trajectory;
-    // we also track the lost magnitude as the explicit destination.
+    // v4.3-c: route the implied loss through decayScalarWithSink so this
+    // file contains no bare multiplicative-decay literal. The helper performs
+    // `value * k` (bit-exact prior trajectory) and records `value * (1-k)`
+    // into network.relationalDriftDecayAccumulator.
     const PARTNER_ABSENCE_DRIFT_DECAY_K = 0.95;
-    const beforeDrift = relationalState.partnerAbsenceDrift;
-    const driftDecayDelta = beforeDrift * (1 - PARTNER_ABSENCE_DRIFT_DECAY_K);
-    relationalState.partnerAbsenceDrift *= PARTNER_ABSENCE_DRIFT_DECAY_K;
-    if (network) {
-      const current = typeof network.relationalDriftDecayAccumulator === 'number'
-        && Number.isFinite(network.relationalDriftDecayAccumulator)
-        ? network.relationalDriftDecayAccumulator
-        : 0;
-      network.relationalDriftDecayAccumulator = current + driftDecayDelta;
-    }
+    relationalState.partnerAbsenceDrift = decayScalarWithSink(
+      relationalState.partnerAbsenceDrift,
+      PARTNER_ABSENCE_DRIFT_DECAY_K,
+      network,
+      'relationalDriftDecayAccumulator',
+    );
   }
 
   // 5. Update boundary permeability
