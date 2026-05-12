@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -8,9 +8,11 @@ v5.1.1 adds a periodic real/imag phase-drive waveform on the drive side only.
 
 v5.1.2 adds drive-side energy observation and a no-medium-transfer ledger check.
 
-These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, and drive-side diagnostics.
+v5.1.3 adds the first drive-to-wave-medium boundary skeleton, with effective coupling held at zero.
 
-They do not transfer anything into the wave medium yet.
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, and a checked transfer boundary.
+
+v5.1.3 still does not transfer anything into the wave medium.
 
 They do not try to create coherence.
 
@@ -34,7 +36,9 @@ creation diagnostics
 periodic real/imag drive waveform
 drive-side energy observation
 no-medium-transfer ledger check
-no wave-medium transfer yet
+drive-to-wave transfer boundary skeleton
+effective drive coupling = 0
+no applied wave-medium transfer yet
 no coherence metric yet
 ```
 
@@ -42,10 +46,13 @@ no coherence metric yet
 
 - `src/types/phaseCarryingDrive.ts`
 - `src/types/phaseDriveEnergyObservation.ts`
+- `src/types/phaseDriveToWaveTransfer.ts`
 - `src/world/phaseCarryingDrive.ts`
 - `src/observer/phaseDriveEnergyObservation.ts`
+- `src/observer/phaseDriveToWaveTransferSkeleton.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
+- `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
 
 ## State
 
@@ -171,9 +178,47 @@ ledger.status = closed
 
 The observed drive energy is kept as a diagnostic value. It is not counted as medium input until a later transfer phase explicitly models the work term.
 
+## v5.1.3 Drive-to-wave transfer skeleton
+
+`derivePhaseDriveToWaveTransferSkeleton` creates the first checked boundary between the phase drive and wave medium.
+
+It observes both sides:
+
+```text
+driveObservation = derivePhaseDriveEnergyObservation(driveState)
+mediumEnergyBefore = deriveWaveEnergySnapshot(mediumState)
+mediumEnergyAfter = deriveWaveEnergySnapshot(mediumState)
+```
+
+Then it explicitly keeps the effective coupling at zero:
+
+```text
+requestedDriveCoupling = user/config value
+effectiveDriveCoupling = 0
+candidateMaskedDriveEnergy = driveObservation.maskWeightedDriveEnergyTotal
+transferredEnergy = 0
+mediumInputEnergy = 0
+mediumChangedFieldCount = 0
+```
+
+The ledger checks that the wave medium received no input and did not change:
+
+```text
+inputEnergy = 0
+internalEnergyBefore = mediumEnergyBefore.totalEnergy
+internalEnergyAfter = mediumEnergyAfter.totalEnergy
+boundaryExchangeEnergy = 0
+ledger.status = closed
+```
+
+If a nonzero requested coupling is passed, the skeleton records it and emits a warning, but still applies zero effective coupling.
+
+This creates the transfer boundary without yet applying a work term.
+
 ## What this deliberately does not add
 
-- no drive-to-medium transfer
+- no applied drive-to-medium transfer
+- no nonzero effective drive coupling
 - no transfer work calculation
 - no wave medium mutation
 - no coherence observation metrics
@@ -209,6 +254,7 @@ Drive diagnostic derived.
 Periodic phase drive waveform generated.
 Drive-side energy observation derived.
 No-medium-transfer ledger closed.
+Drive-to-wave transfer boundary skeleton checked.
 ```
 
 ## Invalid language
@@ -225,7 +271,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.3 Drive-to-Wave Medium Transfer Skeleton
+v5.1.4 Drive-to-Wave Work Term Preview
 ```
 
-That phase can add the first local drive-to-medium transfer boundary, but should still begin with coupling zero or a no-op transfer check before any work term is allowed.
+That phase can introduce a nonzero effective drive coupling in a separate preview path and account any medium energy change through an explicit work term.
