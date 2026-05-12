@@ -29,4 +29,12 @@ export interface MembraneState {
   membraneIntegrity: number;
   membraneConfidence: number;
   nanOrInfinityCount: number;
+  /**
+   * Optional per-cell accumulator for sensory return energy that has entered
+   * the membrane via the W4→Membrane weak coupling (D2-d). Length matches
+   * cells.length when present. Absent by default to preserve back-compat
+   * with existing W7/W8 consumers that read MembraneState without this
+   * field.
+   */
+  receivedSensoryField?: Float64Array;
 }
