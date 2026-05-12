@@ -241,14 +241,16 @@ AETERNA を「内側で生きるトーラス場」から「世界と閉じて呼
 | Phase | 内容 | 状態 |
 |---|---|---|
 | **W0** | Body-World Closure 原則固定 | ✅ 完了（docs のみ） |
-| **W1** | Body Surface 導入 | 未着手 |
-| **W2** | Actuation Pulse 導入 | 未着手 |
-| **W3** | Simulated World Medium 導入 | 未着手 |
-| **W4** | Sensory Return 導入 | 未着手 |
-| **W5** | Reafference Comparison 導入 | 未着手 |
-| **W6** | Body-World Closure Metrics | 未着手 |
+| **W1** | Body Surface 導入 | ✅ 完了 (`src/body/deriveBodySurfaceState.ts`, `src/types/bodySurfaceState.ts`) |
+| **W2** | Actuation Pulse 導入 | ✅ 完了 (`src/actuation/deriveActuationPulse.ts`, `src/types/actuationPulse.ts`) |
+| **W3** | Simulated World Medium 導入 | ✅ 完了 (`src/world/updateWorldMedium.ts`, `src/types/worldMediumState.ts`; v3.x `src/world/spatialWorldMedium.ts` は並列) |
+| **W4** | Sensory Return 導入 | ✅ 完了 (`src/perception/deriveSensoryReturn.ts`, `src/perception/sensoryReturnToPerturbation.ts`, `src/types/sensoryReturnPacket.ts`) |
+| **W5** | Reafference Comparison 導入 | ✅ 完了 (`src/closure/deriveReafferenceComparison.ts`, `src/types/reafferenceComparisonState.ts`) |
+| **W6** | Body-World Closure Metrics | ✅ 完了 (`src/closure/deriveBodyWorldClosureState.ts`, `src/types/bodyWorldClosureState.ts`) |
 | **W7** | Emergent Proto-Neuron Observation | ✅ observer-side candidate observation |
 | **W8** | Closed-Loop Scenario Tests | ✅ scenario / behavioral tests / docs |
+
+W1–W6 はもともと W7/W8 を支える前段として早期に実装されていたが、roadmap の status marker が `未着手` のままだった (stale marker)。D1 でマーカーを更新し、`docs/w-series-implementation-summary.md` に W1–W8 の types / derivers / tests を一覧した。outflow chain (Buffer → Actuation → World → Sensory → Membrane) の pair-ledger 規律は v3.8 → v4.4 の inflow chain と並列に D2 以降で land する。
 
 ### W0 完了条件
 
