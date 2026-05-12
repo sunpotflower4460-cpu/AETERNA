@@ -165,7 +165,7 @@ export function deriveEnergyLedger(input: EnergyLedgerInput): EnergyLedgerState 
   const notes = [
     'Observer-side Check-kind diagnostic only.',
     'This does not modify runtime dynamics.',
-    'This does not prove life, consciousness, intelligence, or selfhood.',
+    'This is not evidence of consciousness, intelligence, selfhood, or any property of a living being.',
     verifiedModeledFlow
       ? 'Provided ledger terms close within tolerance.'
       : 'Energy flow is not yet verified. Current values are diagnostic/proxy readings.',

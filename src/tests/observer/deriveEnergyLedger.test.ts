@@ -135,7 +135,7 @@ describe('deriveEnergyLedger', () => {
     const text = ledger.notes.join('\n');
     expect(text).not.toContain('AETERNA is alive');
     expect(text).not.toContain('AETERNA is conscious');
-    expect(text).toContain('does not prove life, consciousness, intelligence, or selfhood');
+    expect(text).toContain('not evidence of consciousness, intelligence, selfhood, or any property of a living being');
   });
 });
 

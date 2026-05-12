@@ -33,6 +33,14 @@ input = internal accumulation + dissipation + actuation output + residue convers
 
 If this relation does not close, the result must be labeled as derived / proxy / presentation-smoothed, not as energy flow.
 
+When the ledger is open or insufficient at a given tick, the observer surface must display the verbatim warning:
+
+```text
+Energy flow is not yet verified. Current values are diagnostic/proxy readings.
+```
+
+This phrase is the visibility regulator. It appears verbatim in `deriveEnergyLedger.ts` notes and in any UI surface that displays an unverified ledger.
+
 ## Allowed rates vs forbidden rates
 
 Some rates are allowed. Others are result-coded and must be avoided.

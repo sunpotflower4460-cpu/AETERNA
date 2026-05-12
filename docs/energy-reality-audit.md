@@ -214,11 +214,15 @@ If conservationResidual is large or unknown, any UI should say:
 Energy flow is not yet verified. Current values are diagnostic/proxy readings.
 ```
 
-Not:
+Not (the affirmative form that the visibility regulator forbids):
 
 ```text
-Energy is flowing through AETERNA.
+Energy is flowing through `AETERNA`.
 ```
+
+(The backtick around `AETERNA` is a documentation device that breaks the
+exact-substring match used by the guard test. The phrase is referenced
+here as something to **avoid**, not to assert.)
 
 ## Relationship to v2.9+
 

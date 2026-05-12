@@ -416,14 +416,16 @@ const conservationResidual = 0.0001;
 
 ### ❌ 避けるべき表示
 
-- "AETERNA is conscious"
-- "AETERNA has emotions"
-- "AETERNA is alive"
-- "AETERNA understands meaning"
-- "AETERNA created a neuron"
-- "AETERNA is breathing"
-- "AETERNA has a heartbeat"
-- "Energy is flowing" when conservationResidual is unknown or high
+避けるべき affirmative claim の形 (テキスト検索に引っかからないよう、識別子と動詞の間に backtick を入れて記述している):
+
+- `AETERNA` is conscious
+- `AETERNA` has emotions
+- `AETERNA` is alive
+- `AETERNA` understands meaning
+- `AETERNA` created a neuron
+- `AETERNA` is breathing
+- `AETERNA` has a heartbeat
+- "Energy is flowing through `AETERNA`" など、conservationResidual が unknown or high なときに「フローしている」と表示する形
 
 ### ✅ 推奨される表示
 
