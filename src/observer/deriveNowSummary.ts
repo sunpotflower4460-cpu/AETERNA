@@ -81,13 +81,22 @@ export interface DeriveNowSummaryInput {
     motionActive?: boolean;
     recentInputKind?: string | null;
     recentActionPulse?: number;
-    // H. 保存則チェーン (v4.0)
+    // H. 保存則チェーン (v4.0 / inflow)
     /** Status of the External→Medium pair ledger this tick. */
     externalToMediumLedgerStatus?: ConservationChainLedgerStatus;
     /** Status of the Membrane→Internal substrate pair ledger this tick. */
     membraneToInternalLedgerStatus?: ConservationChainLedgerStatus;
     /** Status of the internal substrate's own per-tick energy ledger. */
     internalSubstrateLedgerStatus?: ConservationChainLedgerStatus;
+    // I. 保存則チェーン (D3 / outflow)
+    /** Status of the Buffer→Actuation pair ledger this tick. */
+    bufferToActuationLedgerStatus?: ConservationChainLedgerStatus;
+    /** Status of the Actuation→World pair ledger this tick. */
+    actuationToWorldLedgerStatus?: ConservationChainLedgerStatus;
+    /** Status of the World→Sensory pair ledger this tick. */
+    worldToSensoryLedgerStatus?: ConservationChainLedgerStatus;
+    /** Status of the Sensory→Membrane pair ledger this tick. */
+    sensoryToMembraneLedgerStatus?: ConservationChainLedgerStatus;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -509,6 +518,72 @@ function _deriveConservationChain(inp: DeriveNowSummaryInput): NowSummarySection
     };
 }
 
+// ── 保存則チェーン (outflow) — D3 ─────────────────────────────────────────────
+
+function _deriveConservationChainOutflow(inp: DeriveNowSummaryInput): NowSummarySection {
+    const statuses = [
+        inp.bufferToActuationLedgerStatus,
+        inp.actuationToWorldLedgerStatus,
+        inp.worldToSensoryLedgerStatus,
+        inp.sensoryToMembraneLedgerStatus,
+    ];
+    const confidence = _confidenceFromDefined(statuses);
+
+    const anyOpen = statuses.some((s) => s === 'open');
+    const anyInsufficient = statuses.some((s) => s === 'insufficient');
+    const anyNearClosed = statuses.some((s) => s === 'nearClosed');
+    const allClosed = statuses.every((s) => s === 'closed');
+    const allDefined = statuses.every((s) => s !== undefined);
+
+    let severity: NowSummarySeverity = 'unknown';
+    let oneLineJa = '保存則チェーン (outflow) の観測値が提供されていません。';
+
+    if (allDefined) {
+        if (allClosed) {
+            severity = 'calm';
+            oneLineJa = '保存則チェーン (outflow) の全段が閉じています。';
+        } else if (anyOpen) {
+            severity = 'unstable';
+            oneLineJa = 'Energy outflow is not yet verified. Some ledgers are open.';
+        } else if (anyInsufficient) {
+            severity = 'unknown';
+            oneLineJa = 'Energy outflow is not yet verified. Some ledger terms are insufficient.';
+        } else if (anyNearClosed) {
+            severity = 'recovering';
+            oneLineJa = '保存則チェーン (outflow) は近接閉の段があります。';
+        }
+    }
+
+    const detailsJa: string[] = [];
+    detailsJa.push(`Buffer→Actuation: ${_formatLedgerStatusJa(inp.bufferToActuationLedgerStatus)}`);
+    detailsJa.push(`Actuation→World: ${_formatLedgerStatusJa(inp.actuationToWorldLedgerStatus)}`);
+    detailsJa.push(`World→Sensory: ${_formatLedgerStatusJa(inp.worldToSensoryLedgerStatus)}`);
+    detailsJa.push(`Sensory→Membrane: ${_formatLedgerStatusJa(inp.sensoryToMembraneLedgerStatus)}`);
+
+    const cautionsJa: string[] = [
+        '保存則チェーン (outflow) の検証は出力側 4 段 (Buffer→Actuation→World→Sensory→Membrane) の整合性観測であり、生命・意識・行為性の証拠ではありません。',
+    ];
+    if (anyOpen || anyInsufficient) {
+        cautionsJa.push('表示中の値は診断/プロキシ読みであり、検証済みエネルギー外向きフローとして扱わないでください。');
+    }
+
+    return {
+        id: 'conservationChainOutflow',
+        titleJa: '保存則チェーン (outflow)',
+        oneLineJa,
+        detailsJa,
+        severity,
+        confidence,
+        sourceMetricIds: [
+            'bufferToActuationLedgerStatus',
+            'actuationToWorldLedgerStatus',
+            'worldToSensoryLedgerStatus',
+            'sensoryToMembraneLedgerStatus',
+        ],
+        cautionsJa,
+    };
+}
+
 // ── Consciousness candidate conditions derivation ─────────────────────────────
 
 function _deriveConditionStatus(defined: boolean, value: number | undefined, threshold: number, invert = false): ConsciousnessCandidateConditionStatus {
@@ -696,6 +771,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
     const risksSection = _deriveRisks(input);
     const signalExchangeSection = _deriveSignalExchange(input);
     const conservationChainSection = _deriveConservationChain(input);
+    const conservationChainOutflowSection = _deriveConservationChainOutflow(input);
     const conditions = _deriveConsciousnessConditions(input);
     const consciousnessSection = _deriveConsciousnessCandidateConditionsSection(input, conditions);
 
@@ -708,6 +784,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
         risksSection,
         signalExchangeSection,
         conservationChainSection,
+        conservationChainOutflowSection,
         consciousnessSection,
     ];
 
@@ -719,6 +796,8 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
         overallOneLineJa = '⚠ 数値異常が検出されています。Safe Baselineと比較してください。';
     } else if (conservationChainSection.severity === 'unstable') {
         overallOneLineJa = '⚠ 保存則チェーンに開いた段があります。Energy flow is not yet verified.';
+    } else if (conservationChainOutflowSection.severity === 'unstable') {
+        overallOneLineJa = '⚠ 保存則チェーン (outflow) に開いた段があります。Energy outflow is not yet verified.';
     } else if (overallConfidence === 'insufficient') {
         overallOneLineJa = '観測値が不足しています。各センサーの状態を確認してください。';
     } else if (torusSection.severity === 'active' && vitalStemSection.severity === 'calm') {
@@ -751,6 +830,7 @@ export function deriveNowSummaryPanel(input: DeriveNowSummaryInput): NowSummaryP
     if (emergenceCandidatesSection.severity === 'active') strongestObservedChanges.push('創発候補出現');
     if (bodyWorldLoopSection.severity === 'strained') strongestObservedChanges.push('閉ループミスマッチ');
     if (conservationChainSection.severity === 'unstable') strongestObservedChanges.push('保存則チェーン開');
+    if (conservationChainOutflowSection.severity === 'unstable') strongestObservedChanges.push('保存則チェーン (outflow) 開');
 
     return {
         timestamp: input.timestamp,

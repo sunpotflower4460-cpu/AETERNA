@@ -27,6 +27,7 @@ const EXPECTED_SECTION_IDS = [
     'signalExchange',
     'consciousnessCandidateConditions',
     'conservationChain',
+    'conservationChainOutflow',
 ] as const;
 
 describe('deriveNowSummaryPanel', () => {
@@ -38,12 +39,12 @@ describe('deriveNowSummaryPanel', () => {
         expect(result.beginnerSummaryJa).toBeTruthy();
         expect(result.researcherSummaryJa).toBeTruthy();
         expect(result.claimGuardJa).toBeTruthy();
-        expect(result.sections).toHaveLength(9);
+        expect(result.sections).toHaveLength(10);
         expect(result.suggestedNextObservations).toBeInstanceOf(Array);
         expect(result.suggestedNextObservations.length).toBeGreaterThan(0);
     });
 
-    it('has all 9 required section IDs', () => {
+    it('has all 10 required section IDs', () => {
         const result = deriveNowSummaryPanel({ timestamp: 0 });
         const ids = result.sections.map((s) => s.id);
         for (const expectedId of EXPECTED_SECTION_IDS) {
@@ -153,6 +154,74 @@ describe('deriveNowSummaryPanel', () => {
         expect(joined).toContain('External→Medium: 閉');
         expect(joined).toContain('Medium→Internal: 近接閉');
         expect(joined).toContain('Internal closure: 開');
+    });
+
+    // ── D3 — Outflow chain section ────────────────────────────────────────
+
+    it('conservation chain (outflow) reports insufficient when no statuses provided', () => {
+        const result = deriveNowSummaryPanel({ timestamp: 0 });
+        const section = result.sections.find((s) => s.id === 'conservationChainOutflow')!;
+        expect(section).toBeDefined();
+        expect(section.confidence).toBe('insufficient');
+        expect(section.severity).toBe('unknown');
+    });
+
+    it('conservation chain (outflow) reports calm when all 4 ledgers are closed', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            bufferToActuationLedgerStatus: 'closed',
+            actuationToWorldLedgerStatus: 'closed',
+            worldToSensoryLedgerStatus: 'closed',
+            sensoryToMembraneLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChainOutflow')!;
+        expect(section.severity).toBe('calm');
+        expect(section.oneLineJa).toContain('閉じています');
+    });
+
+    it('conservation chain (outflow) reports unstable and emits "Energy outflow is not yet verified" when any ledger is open', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            bufferToActuationLedgerStatus: 'closed',
+            actuationToWorldLedgerStatus: 'closed',
+            worldToSensoryLedgerStatus: 'open',
+            sensoryToMembraneLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChainOutflow')!;
+        expect(section.severity).toBe('unstable');
+        expect(section.oneLineJa).toContain('Energy outflow is not yet verified');
+        expect(section.cautionsJa.some((c) => c.includes('診断/プロキシ'))).toBe(true);
+        expect(result.overallOneLineJa).toContain('Energy outflow is not yet verified');
+        expect(result.strongestObservedChanges).toContain('保存則チェーン (outflow) 開');
+    });
+
+    it('conservation chain (outflow) emits insufficient warning when any ledger is insufficient', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            bufferToActuationLedgerStatus: 'closed',
+            actuationToWorldLedgerStatus: 'insufficient',
+            worldToSensoryLedgerStatus: 'closed',
+            sensoryToMembraneLedgerStatus: 'closed',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChainOutflow')!;
+        expect(section.severity).toBe('unknown');
+        expect(section.oneLineJa).toContain('insufficient');
+    });
+
+    it('conservation chain (outflow) details list per-link statuses in Japanese for all 4 links', () => {
+        const result = deriveNowSummaryPanel({
+            timestamp: 0,
+            bufferToActuationLedgerStatus: 'closed',
+            actuationToWorldLedgerStatus: 'nearClosed',
+            worldToSensoryLedgerStatus: 'open',
+            sensoryToMembraneLedgerStatus: 'insufficient',
+        });
+        const section = result.sections.find((s) => s.id === 'conservationChainOutflow')!;
+        const joined = section.detailsJa.join('|');
+        expect(joined).toContain('Buffer→Actuation: 閉');
+        expect(joined).toContain('Actuation→World: 近接閉');
+        expect(joined).toContain('World→Sensory: 開');
+        expect(joined).toContain('Sensory→Membrane: 不足');
     });
 
     it('each section has at least one cautionJa', () => {

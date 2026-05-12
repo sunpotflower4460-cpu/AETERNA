@@ -132,7 +132,8 @@ export interface NowSummarySection {
     | 'risks'
     | 'signalExchange'
     | 'consciousnessCandidateConditions'
-    | 'conservationChain';
+    | 'conservationChain'
+    | 'conservationChainOutflow';
   titleJa: string;
   oneLineJa: string;
   detailsJa: string[];
