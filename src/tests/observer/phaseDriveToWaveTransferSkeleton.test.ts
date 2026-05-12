@@ -100,7 +100,7 @@ describe('phase drive to wave transfer skeleton', () => {
     });
 
     expect(report.driveObservation.driveEnergyTotal).toBeCloseTo(2.5, 12);
-    expect(report.candidateMaskedDriveEnergy).toBeCloseTo(2.125, 12);
+    expect(report.candidateMaskedDriveEnergy).toBeCloseTo(2.25, 12);
     expect(report.transferredEnergy).toBe(0);
     expect(report.mediumInputEnergy).toBe(0);
     expect(report.warnings.join('\n')).toContain('Masked drive energy is diagnostic only');
