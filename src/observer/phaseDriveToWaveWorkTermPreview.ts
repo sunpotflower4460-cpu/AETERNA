@@ -8,8 +8,9 @@ import type {
 import type { WaveCapableMediumConfig, WaveCapableMediumState } from '../types/waveCapableMedium.ts';
 import { deriveWaveEnergySnapshot } from '../world/waveCapableMedium.ts';
 
-function finiteNonNegative(value: number | undefined, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+function finiteUnitInterval(value: number | undefined, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(1, Math.max(0, value));
 }
 
 export function derivePhaseDriveToWaveWorkTermPreview(input: {
@@ -18,7 +19,7 @@ export function derivePhaseDriveToWaveWorkTermPreview(input: {
   mediumConfig: WaveCapableMediumConfig;
   transferConfig: PhaseDriveToWaveWorkTermPreviewConfig;
 }): PhaseDriveToWaveWorkTermPreviewReport {
-  const requestedDriveCoupling = finiteNonNegative(input.transferConfig.driveCoupling, 0);
+  const requestedDriveCoupling = finiteUnitInterval(input.transferConfig.driveCoupling, 0);
   const effectiveDriveCoupling = requestedDriveCoupling;
   const warnings: string[] = [];
 
@@ -36,7 +37,7 @@ export function derivePhaseDriveToWaveWorkTermPreview(input: {
     warnings.push('Preview work term is nonzero but not applied to the wave medium in v5.1.4.');
   }
   if (requestedDriveCoupling !== input.transferConfig.driveCoupling) {
-    warnings.push('Requested drive coupling was non-finite or negative and was normalized for preview math.');
+    warnings.push('Requested drive coupling was non-finite or outside [0, 1] and was normalized for preview math.');
   }
   if (previewWorkTermEnergy > 0) {
     warnings.push('Preview medium input is diagnostic only; actual medium input remains zero in v5.1.4.');
