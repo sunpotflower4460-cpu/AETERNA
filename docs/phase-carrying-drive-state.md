@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -10,9 +10,11 @@ v5.1.2 adds drive-side energy observation and a no-medium-transfer ledger check.
 
 v5.1.3 adds the first drive-to-wave-medium boundary skeleton, with effective coupling held at zero.
 
-These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, and a checked transfer boundary.
+v5.1.4 adds a drive-to-wave work-term preview. It computes what a local drive-to-medium work term would be under a nonzero coupling, but still does not apply it to the wave medium.
 
-v5.1.3 still does not transfer anything into the wave medium.
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, and a preview-only work term.
+
+v5.1.4 still does not transfer anything into the wave medium.
 
 They do not try to create coherence.
 
@@ -37,7 +39,10 @@ periodic real/imag drive waveform
 drive-side energy observation
 no-medium-transfer ledger check
 drive-to-wave transfer boundary skeleton
-effective drive coupling = 0
+drive-to-wave work-term preview
+effective drive coupling for preview math
+preview work term energy
+actual medium input = 0
 no applied wave-medium transfer yet
 no coherence metric yet
 ```
@@ -50,9 +55,11 @@ no coherence metric yet
 - `src/world/phaseCarryingDrive.ts`
 - `src/observer/phaseDriveEnergyObservation.ts`
 - `src/observer/phaseDriveToWaveTransferSkeleton.ts`
+- `src/observer/phaseDriveToWaveWorkTermPreview.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 - `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
+- `src/tests/observer/phaseDriveToWaveWorkTermPreview.test.ts`
 
 ## State
 
@@ -215,12 +222,63 @@ If a nonzero requested coupling is passed, the skeleton records it and emits a w
 
 This creates the transfer boundary without yet applying a work term.
 
+## v5.1.4 Drive-to-wave work-term preview
+
+`derivePhaseDriveToWaveWorkTermPreview` computes a preview-only work term from the drive-side masked energy and an effective coupling value.
+
+The preview math is:
+
+```text
+candidateMaskedDriveEnergy = driveObservation.maskWeightedDriveEnergyTotal
+effectiveDriveCoupling = normalized requested drive coupling
+previewWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy
+previewMediumInputEnergy = previewWorkTermEnergy
+```
+
+Concrete example:
+
+```text
+candidateMaskedDriveEnergy = 2.25
+effectiveDriveCoupling = 0.2
+previewWorkTermEnergy = 0.45
+```
+
+However, v5.1.4 still does not apply that work term to the wave medium:
+
+```text
+actualTransferredEnergy = 0
+actualMediumInputEnergy = 0
+mediumChangedFieldCount = 0
+```
+
+The actual ledger remains a no-application check:
+
+```text
+inputEnergy = actualMediumInputEnergy = 0
+internalEnergyBefore = mediumEnergyBefore.totalEnergy
+internalEnergyAfter = mediumEnergyAfter.totalEnergy
+boundaryExchangeEnergy = actualTransferredEnergy = 0
+ledger.status = closed
+```
+
+The preview values are diagnostic. They are not counted as actual medium input and must not be used to claim applied transfer.
+
+If the preview work term is nonzero, the report emits warnings stating that the preview is not applied and actual medium input remains zero.
+
+This phase exists to separate three quantities that must not be confused:
+
+| Quantity | Meaning |
+|---|---|
+| `candidateMaskedDriveEnergy` | drive-side diagnostic energy behind the local mask |
+| `previewWorkTermEnergy` | what the work term would contribute if applied |
+| `actualMediumInputEnergy` | energy actually added to the wave medium in this phase, always zero |
+
 ## What this deliberately does not add
 
 - no applied drive-to-medium transfer
-- no nonzero effective drive coupling
-- no transfer work calculation
 - no wave medium mutation
+- no actual medium input
+- no counted transfer work in the actual ledger
 - no coherence observation metrics
 - no runtime dynamics changes
 - no transfer behavior changes
@@ -242,7 +300,7 @@ driveSyncStrength
 globalDecayRate
 ```
 
-The drive route may define local phase, local mask, local amplitude, diagnostics, and later local coupling, but it must not define a target global order outcome.
+The drive route may define local phase, local mask, local amplitude, diagnostics, preview work, and later local coupling, but it must not define a target global order outcome.
 
 ## Valid language
 
@@ -255,6 +313,8 @@ Periodic phase drive waveform generated.
 Drive-side energy observation derived.
 No-medium-transfer ledger closed.
 Drive-to-wave transfer boundary skeleton checked.
+Drive-to-wave work-term preview computed.
+Actual medium input remains zero.
 ```
 
 ## Invalid language
@@ -262,6 +322,8 @@ Drive-to-wave transfer boundary skeleton checked.
 ```text
 Coherence was created.
 The drive synchronized the medium.
+The drive changed the wave medium in v5.1.4.
+Preview work was applied.
 AETERNA became coherent.
 AETERNA is alive.
 ```
@@ -271,7 +333,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.4 Drive-to-Wave Work Term Preview
+v5.1.5 Applied Drive-to-Wave Transfer with Ledger
 ```
 
-That phase can introduce a nonzero effective drive coupling in a separate preview path and account any medium energy change through an explicit work term.
+That phase may apply a small nonzero transfer, but only if the actual medium energy change is accounted through an explicit ledger term and tested against zero-coupling and no-application references.
