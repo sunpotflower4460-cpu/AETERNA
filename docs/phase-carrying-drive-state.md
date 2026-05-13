@@ -56,15 +56,15 @@ no coherence metric yet
 - `src/types/phaseDriveEnergyObservation.ts`
 - `src/types/phaseDriveToWaveTransfer.ts`
 - `src/world/phaseCarryingDrive.ts`
+- `src/world/phaseDriveToWaveAppliedTransfer.ts`
 - `src/observer/phaseDriveEnergyObservation.ts`
 - `src/observer/phaseDriveToWaveTransferSkeleton.ts`
 - `src/observer/phaseDriveToWaveWorkTermPreview.ts`
-- `src/observer/phaseDriveToWaveAppliedTransfer.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
+- `src/tests/world/phaseDriveToWaveAppliedTransfer.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 - `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
 - `src/tests/observer/phaseDriveToWaveWorkTermPreview.test.ts`
-- `src/tests/observer/phaseDriveToWaveAppliedTransfer.test.ts`
 
 ## State
 
@@ -282,6 +282,8 @@ This phase exists to separate three quantities that must not be confused:
 ## v5.1.5 Applied drive-to-wave transfer with ledger
 
 `applyPhaseDriveToWaveTransfer` applies a small work term into the wave medium velocity field.
+
+Because it returns a new medium state, it belongs to `src/world/phaseDriveToWaveAppliedTransfer.ts`, not the observer layer.
 
 It still does not write into medium position fields directly.
 
