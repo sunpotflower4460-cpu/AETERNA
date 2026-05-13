@@ -41,6 +41,7 @@ import { updateActuationToWorldTransferPositive } from '../world/actuationToWorl
 import { updateWorldToSensoryTransferPositive } from '../perception/worldToSensoryTransfer.ts';
 import { updateSensoryToMembraneTransferPositive } from '../perception/sensoryToMembraneTransfer.ts';
 import { initializeWorldMediumState } from '../world/initializeWorldMediumState.ts';
+import { createMembraneState } from '../boundary/membrane.ts';
 
 import type { ActuationPulse } from '../types/actuationPulse.ts';
 import type {
@@ -283,7 +284,8 @@ export function applyEnergyChainInflowTick(
  * G2: run the outflow chain (buffer → actuation → world → sensory → membrane)
  * for one tick. The `pulse` is normally the actuation pulse derived from
  * AETERNA's normal action pipeline; if null the transfer is still recorded
- * but with zero energy.
+ * but with zero energy. `membrane` is optional — if omitted, the hook lazily
+ * creates one sized to the chain's segments and reuses it across ticks.
  *
  * Returns the updated ChainLedgerStatuses for the outflow legs of this tick.
  */
@@ -291,11 +293,21 @@ export function applyEnergyChainOutflowTick(
     network: any,
     t: number,
     pulse: ActuationPulse | null,
-    membrane: MembraneState,
+    membrane?: MembraneState,
 ): ChainLedgerStatuses | null {
     if (!network.enableEnergyChain) return null;
     const state = network.energyChain as EnergyChainState | undefined;
     if (!state) return null;
+    // Membrane is owned by the chain state once initialized. Caller can
+    // supply one on the first call; after that, state.membrane accumulates
+    // receivedSensoryField across ticks and the parameter is ignored.
+    if (!state.membrane) {
+        state.membrane = membrane ?? createMembraneState({
+            segments: state.config.width,
+            timestamp: t,
+        });
+    }
+    const activeMembrane = state.membrane;
     const statuses = (network.chainLedgerStatuses as ChainLedgerStatuses) ?? freshChainLedgerStatuses();
     const { config } = state;
     const TOL = config.tolerance ?? 1e-9;
@@ -329,7 +341,7 @@ export function applyEnergyChainOutflowTick(
     state.totalWorldRetainedEnergy += w2s.report.worldRetainedEnergy;
     statuses.worldToSensory = statusOf(w2s.report.pairLedger.status);
 
-    const s2m = updateSensoryToMembraneTransferPositive(w2s.packets, membrane, t, {
+    const s2m = updateSensoryToMembraneTransferPositive(w2s.packets, activeMembrane, t, {
         transferCoefficient: config.sensoryToMembraneCoefficient ?? 60,
         dt: 1 / 60,
         tolerance: TOL,

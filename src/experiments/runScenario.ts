@@ -42,6 +42,11 @@ import type { ActuationPulse, ActuationPulseChannel } from '../types/actuationPu
 import { initializeWorldMediumState } from '../world/initializeWorldMediumState.ts';
 import { updateWorldMedium } from '../world/updateWorldMedium.ts';
 import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
+import {
+  applyEnergyChainInflowTick,
+  applyEnergyChainOutflowTick,
+  ensureEnergyChainState,
+} from './energyChainHook.ts';
 import { deriveReafferenceComparison } from '../closure/deriveReafferenceComparison.ts';
 import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureState.ts';
 import { deriveDynamicViabilityState } from '../closure/deriveDynamicViabilityState.ts';
@@ -94,6 +99,20 @@ export interface ScenarioConfig {
     initialEnergyState?: Partial<OrganismEnergyState>;
     initialWorldMediumState?: Partial<WorldMediumState>;
     naturalFeedbackFlags?: Partial<NaturalFeedbackAblationFlags>;
+    /**
+     * G hook: when set, runScenario enables the v3.x/D2 energy chain on the
+     * network and runs the inflow + outflow chain helpers per tick. The
+     * existing scalar W3 outflow path (`updateWorldMedium`,
+     * `deriveSensoryReturn`) continues to run in parallel for backward
+     * compatibility. Default unset = behavior unchanged from prior versions.
+     */
+    energyChain?: {
+        steadyDrivePerCell: number;
+        bufferInjectionRequestPerCell?: ArrayLike<number>;
+        supplyCutoffFrame?: number;
+        externalToMediumCoefficient?: number;
+        membraneExchangeCoefficient?: number;
+    };
 }
 
 export interface MetricsSnapshot {
@@ -1432,6 +1451,23 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     network.currentBuffer[0] = +8.0;
     network.currentBuffer[Math.floor(network.numNodes / 2)] = -8.0;
 
+    // G: opt-in v3.x/D2 energy chain hook. When `config.energyChain` is set,
+    // the inflow chain runs each tick BEFORE the dynamics step (so the
+    // substrate is fresh when substrate-backed ignition / noise injection
+    // flags consult it), and the outflow chain runs after `deriveActuationPulse`
+    // each tick. Default unset = no chain code paths execute.
+    if (config.energyChain) {
+        (network as { enableEnergyChain?: boolean }).enableEnergyChain = true;
+        ensureEnergyChainState(network as never, {
+            width: segments,
+            height: segments,
+            steadyDrivePerCell: config.energyChain.steadyDrivePerCell,
+            bufferInjectionRequestPerCell: config.energyChain.bufferInjectionRequestPerCell,
+            externalToMediumCoefficient: config.energyChain.externalToMediumCoefficient,
+            membraneExchangeCoefficient: config.energyChain.membraneExchangeCoefficient,
+        });
+    }
+
     const metrics: MetricsSnapshot[] = [];
     const recentMeans: number[] = [];
     const activityHistory: number[] = [];
@@ -1536,6 +1572,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
         // Decay touch memory
         touchMem.decay();
+
+        // G: inflow chain (drive → medium → substrate → buffer). Default no-op
+        // unless config.energyChain is set. Must run before updateDynamics so
+        // that substrate-backed ignition/noise flags see fresh storage.
+        if (config.energyChain) {
+            applyEnergyChainInflowTick(network as never, frame, {
+                supplyCutoffTick: config.energyChain.supplyCutoffFrame,
+            });
+            // G outflow: buffer → actuation → world → sensory → membrane. Uses the
+            // most recent actuation pulse derived in the previous frame (null on
+            // frame 0; that records a closed zero-energy transfer). Runs in
+            // parallel to the existing scalar W3 outflow path (D mini-plan
+            // intentional double-track).
+            applyEnergyChainOutflowTick(network as never, frame, lastActuationPulse);
+        }
 
         // Update network dynamics
         const dyn = network.updateDynamics(diskNodeIdx, activeTouches);
