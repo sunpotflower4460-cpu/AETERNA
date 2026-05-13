@@ -8,6 +8,12 @@ import {
   TOUCH_STROKE_MIN_DIST,
   TOUCH_TAP_MAX_FRAMES,
 } from '../core/aeternaTuning.ts';
+import {
+  decayScalarWithSink,
+  decayWithSink,
+  emaWithSink,
+  ensureSinkField,
+} from '../core/dynamicCoreNamedDestinations.ts';
 
 export function computeTouchCentroid(network: any, activeTouches: Map<any, any>) {
   if (activeTouches.size === 0) return null;
@@ -36,7 +42,14 @@ export function updateTouchSequenceFeatures(network: any, activeTouches: Map<any
       const dy = centroid[1] - network.lastTouchCentroid[1];
       const dist = Math.sqrt(dx * dx + dy * dy);
       network.touchMoveDistance += dist;
-      network.touchVelocityEstimate = network.touchVelocityEstimate * 0.8 + dist * 0.2;
+      network.touchVelocityEstimate = emaWithSink(
+        network.touchVelocityEstimate,
+        0.8,
+        dist,
+        network,
+        'touchVelocityEstimateEMADecayAccumulator',
+        'touchVelocityEstimateEMAIntakeAccumulator',
+      );
       network.touchDirectionVector = { dx, dy, strength: Math.min(dist / TOUCH_STROKE_MIN_DIST, 1.0) };
     } else {
       network.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
@@ -45,8 +58,8 @@ export function updateTouchSequenceFeatures(network: any, activeTouches: Map<any
   } else {
     network.touchGapFrames += 1;
     network.touchDurationFrames = 0;
-    network.touchMoveDistance *= 0.95;
-    network.touchVelocityEstimate *= 0.9;
+    network.touchMoveDistance = decayScalarWithSink(network.touchMoveDistance, 0.95, network, 'touchMoveDistanceDecayAccumulator');
+    network.touchVelocityEstimate = decayScalarWithSink(network.touchVelocityEstimate, 0.9, network, 'touchVelocityEstimateDecayAccumulator');
     network.lastTouchCentroid = null;
     network.touchDirectionVector = { dx: 0, dy: 0, strength: 0 };
   }
@@ -86,17 +99,28 @@ export function applyTouchPatternModulation(network: any) {
   const repeatS = network.touchPatternScores.repeat;
   const strokeS = network.touchPatternScores.stroke;
   if (tapS < 0.02 && holdS < 0.02 && repeatS < 0.02 && strokeS < 0.02) return;
+  const tapTraceFadeSink = tapS > 0.02
+    ? ensureSinkField(network, 'touchTraceTapFadeField', network.numNodes)
+    : null;
+  const holdProjectionFadeSink = holdS > 0.02
+    ? ensureSinkField(network, 'touchProjectionHoldFadeField', network.numNodes)
+    : null;
+  const repeatProjectionFadeSink = repeatS > 0.02
+    ? ensureSinkField(network, 'touchProjectionRepeatFadeField', network.numNodes)
+    : null;
+  const holdFade = holdS > 0.02 ? Math.min(network.touchDurationFrames / 40.0, 1.0) : 0;
   for (let i = 0; i < network.numNodes; i++) {
-    if (tapS > 0.02) {
+    if (tapS > 0.02 && tapTraceFadeSink) {
       network.touchProjection[i] += network.touchOnset[i] * tapS * 0.06;
-      network.touchTrace[i] *= 1.0 - tapS * 0.04;
+      decayWithSink(network.touchTrace, i, 1.0 - tapS * 0.04, tapTraceFadeSink);
     }
-    if (holdS > 0.02) {
-      const holdFade = Math.min(network.touchDurationFrames / 40.0, 1.0);
-      network.touchProjection[i] *= 1.0 - holdS * holdFade * 0.10;
+    if (holdS > 0.02 && holdProjectionFadeSink) {
+      decayWithSink(network.touchProjection, i, 1.0 - holdS * holdFade * 0.10, holdProjectionFadeSink);
       network.touchTrace[i] += network.touchNovelty[i] * holdS * 0.015;
     }
-    if (repeatS > 0.02) network.touchProjection[i] *= 1.0 - repeatS * 0.06;
+    if (repeatS > 0.02 && repeatProjectionFadeSink) {
+      decayWithSink(network.touchProjection, i, 1.0 - repeatS * 0.06, repeatProjectionFadeSink);
+    }
     if (strokeS > 0.02) network.touchTrace[i] += network.touchNovelty[i] * strokeS * 0.02;
   }
   if (strokeS > 0.05 && network.lastTouchCentroid) {

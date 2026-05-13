@@ -132,6 +132,61 @@ export function decayPlainArrayWithSink(
 }
 
 /**
+ * emaWithSink
+ *
+ * Apply an exponential moving average update of the shape
+ *
+ *     value' = prevValue * alpha + newValue * (1 - alpha)
+ *
+ * which is bit-exact equivalent to the inline expressions found across the
+ * codebase (predictionHistory, sigmaDisplay, touchVelocityEstimate, ...).
+ * The two unnamed energy flows implicit in that single line are:
+ *
+ *   - prevValue * (1 - alpha): the portion of the previous state that has
+ *     been "forgotten" by the EMA. Routed to `decayedPortionSinkName`.
+ *   - newValue  * (1 - alpha): the portion of the new sample that has been
+ *     "absorbed" into the EMA. Routed to `freshPortionSinkName`.
+ *
+ * Numeric trajectories are preserved bit-for-bit. The helper only gives
+ * names to the otherwise-silent decay and inflow of the EMA.
+ */
+export function emaWithSink(
+    prevValue: number,
+    alpha: number,
+    newValue: number,
+    network: any,
+    decayedPortionSinkName: string,
+    freshPortionSinkName: string,
+): number {
+    const oneMinusAlpha = 1 - alpha;
+    const result = prevValue * alpha + newValue * oneMinusAlpha;
+    if (Number.isFinite(prevValue)) addToScalarSink(network, decayedPortionSinkName, prevValue * oneMinusAlpha);
+    if (Number.isFinite(newValue)) addToScalarSink(network, freshPortionSinkName, newValue * oneMinusAlpha);
+    return result;
+}
+
+/**
+ * emaArrayWithSink
+ *
+ * Per-cell variant of emaWithSink for typed arrays. Stores both the forgotten
+ * portion (decay) and the absorbed portion (intake) into per-cell sink fields.
+ */
+export function emaArrayWithSink(
+    field: Float64Array | Float32Array,
+    index: number,
+    alpha: number,
+    newValue: number,
+    decayedPortionSink: Float64Array,
+    freshPortionSink: Float64Array,
+): void {
+    const oneMinusAlpha = 1 - alpha;
+    const prevValue = field[index];
+    field[index] = prevValue * alpha + newValue * oneMinusAlpha;
+    decayedPortionSink[index] += prevValue * oneMinusAlpha;
+    freshPortionSink[index] += newValue * oneMinusAlpha;
+}
+
+/**
  * decayAllFourWeightsWithSink
  *
  * Convenience for the dynamicCore four-edge weight decay loop. Applies

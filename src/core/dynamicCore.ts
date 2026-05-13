@@ -12,6 +12,8 @@ import {
   ensureSinkField,
   decayWithSink,
   decayAllFourWeightsWithSink,
+  emaWithSink,
+  emaArrayWithSink,
 } from './dynamicCoreNamedDestinations.ts';
 import { applyLegacyBaselineOscillator } from './legacyBaselineOscillator.ts';
 import { deriveEmergentBaselineFromSubstrate } from './emergentBaselineFromSubstrate.ts';
@@ -201,9 +203,18 @@ export function autoPredictAndError(network: any) {
   if (network.simTime % 60 !== 0) return;
   let maxError = 0;
   let maxErrorNode = -1;
+  const predictionHistoryDecaySink = ensureSinkField(network, 'predictionHistoryEMADecayField', network.numNodes);
+  const predictionHistoryIntakeSink = ensureSinkField(network, 'predictionHistoryEMAIntakeField', network.numNodes);
   for (let i = 0; i < network.numNodes; i++) {
     const error = Math.abs(network.currentBuffer[i] - network.prevBuffer[i]) * 2.0;
-    network.predictionHistory[i] = network.predictionHistory[i] * 0.95 + error * 0.05;
+    emaArrayWithSink(
+      network.predictionHistory,
+      i,
+      0.95,
+      error,
+      predictionHistoryDecaySink,
+      predictionHistoryIntakeSink,
+    );
     if (error > maxError) {
       maxError = error;
       maxErrorNode = i;
@@ -267,11 +278,41 @@ export function updateDynamicsCore(network: any) {
   const SPIKE_TRACE_DECAY_K = network.SPIKE_TRACE_DECAY_K ?? 0.9;
   const WEIGHT_DECAY_K = network.WEIGHT_DECAY_K ?? 0.99995;
 
+  // F2: spikeTrace ignition (the `= 1.0` jump on threshold crossing) is a
+  // silent state injection unless we name where the +1.0 energy comes from.
+  // When `network.substrateBackedSpikeEvents` is true and a substrate is
+  // attached, the ignition is bounded by per-cell substrate.storageField, the
+  // granted energy is subtracted from the substrate, and ungranted excess is
+  // recorded as shortfall. Otherwise behavior matches the legacy direct write.
+  const substrateBackedSpike: boolean = !!network.substrateBackedSpikeEvents;
+  const substrateStateForSpike = substrateBackedSpike ? network.localConservationSubstrate : null;
+  const spikeSubstrateStorageField: Float64Array | null =
+    substrateStateForSpike && substrateStateForSpike.storageField instanceof Float64Array
+      ? substrateStateForSpike.storageField
+      : null;
+  const spikeIgnitionConsumedSink = substrateBackedSpike
+    ? ensureSinkField(network, 'spikeIgnitionConsumedField', network.numNodes)
+    : null;
+  const spikeIgnitionShortfallSink = substrateBackedSpike
+    ? ensureSinkField(network, 'spikeIgnitionShortfallField', network.numNodes)
+    : null;
+
   let newlyFiredCount = 0;
   for (let i = 0; i < network.numNodes; i++) {
     const dormantThreshold = network.dormantTraitMask?.[i] === 1 && network.isDormantNode?.[i] === 1 ? 1.05 : clampedThreshold;
     if (network.currentBuffer[i] > dormantThreshold && network.prevBuffer[i] <= dormantThreshold) {
-      network.spikeTrace[i] = 1.0;
+      if (spikeSubstrateStorageField && spikeIgnitionConsumedSink && spikeIgnitionShortfallSink) {
+        const currentTrace = network.spikeTrace[i];
+        const wanted = Math.max(0, 1.0 - currentTrace);
+        const available = Math.max(0, spikeSubstrateStorageField[i]);
+        const granted = Math.min(wanted, available);
+        spikeSubstrateStorageField[i] -= granted;
+        network.spikeTrace[i] = currentTrace + granted;
+        spikeIgnitionConsumedSink[i] += granted;
+        spikeIgnitionShortfallSink[i] += Math.max(0, wanted - granted);
+      } else {
+        network.spikeTrace[i] = 1.0;
+      }
       network.lastSpikeTime[i] = network.simTime;
       newlyFiredCount++;
     } else {
@@ -303,11 +344,36 @@ export function updateDynamicsCore(network: any) {
   network.prevGenFiring = network.currGenFiring;
   network.currGenFiring = newlyFiredCount;
   network.branchingRatioRaw = network.prevGenFiring > 0 ? network.currGenFiring / network.prevGenFiring : 1.0;
-  network.sigmaDisplay = network.sigmaDisplay * 0.9 + network.branchingRatioRaw * 0.1;
+  network.sigmaDisplay = emaWithSink(
+    network.sigmaDisplay,
+    0.9,
+    network.branchingRatioRaw,
+    network,
+    'sigmaDisplayEMADecayAccumulator',
+    'sigmaDisplayEMAIntakeAccumulator',
+  );
 
   const arousal = network.currGenFiring / network.numNodes;
   network.firingRateError = network.TARGET_FIRING_RATE - arousal;
-  const homeoDamping = damping + network.firingRateError * 0.002;
+  // F1: TARGET_FIRING_RATE/homeoDamping is a homeostatic pull (Principle 1 violation
+  // when used to actively yank dynamics). It is preserved as an opt-in observer
+  // hook. The flag defaults to `true` to preserve legacy numerical trajectories.
+  // Setting `network.enableTargetFiringRateHomeoDamping = false` keeps
+  // `firingRateError` available for observers (Now Summary) but stops it from
+  // modulating the damping coefficient.
+  const homeoDampingActive = network.enableTargetFiringRateHomeoDamping !== false;
+  const homeoDamping = homeoDampingActive
+    ? damping + network.firingRateError * 0.002
+    : damping;
+
+  // F4: name destinations for silent losses in the wave-update step:
+  //   - dampingLossField:           pre-damping  - post-damping
+  //   - dormantSuppressionLossField: pre-suppression - post-suppression
+  //   - clampLossField:             pre-clamp    - post-clamp (positive both ways)
+  // These are bit-exact preserving (no math change) — only naming.
+  const dampingLossSink = ensureSinkField(network, 'dynamicCoreDampingLossField', network.numNodes);
+  const dormantSuppressionLossSink = ensureSinkField(network, 'dynamicCoreDormantSuppressionLossField', network.numNodes);
+  const clampLossSink = ensureSinkField(network, 'dynamicCoreClampLossField', network.numNodes);
 
   for (let i = 0; i < network.segments; i++) {
     for (let j = 0; j < network.segments; j++) {
@@ -323,18 +389,24 @@ export function updateDynamicsCore(network: any) {
         - ((network.w_up[idx] + network.w_down[idx] + network.w_left[idx] + network.w_right[idx]) * network.currentBuffer[idx]);
 
       let nextVal = 2 * network.currentBuffer[idx] - network.prevBuffer[idx] + waveSpeed * laplacian;
+      const preDampingVal = nextVal;
       nextVal *= homeoDamping;
+      dampingLossSink[idx] += preDampingVal - nextVal;
       if (network.dormantTraitMask?.[idx] === 1) {
         if (network.isDormantNode?.[idx] === 1) {
           const dormantSuppression = 0.78 + Math.min(network.dormantWakePressure?.[idx] ?? 0, 1.0) * 0.08;
+          const preSuppressionVal = nextVal;
           nextVal *= dormantSuppression;
+          dormantSuppressionLossSink[idx] += preSuppressionVal - nextVal;
         } else {
           const wakeLift = Math.min(network.dormantWakePressure?.[idx] ?? 0, 1.0) * 0.05;
           nextVal += wakeLift * (network.nodeSign[idx] >= 0 ? 1 : -0.6);
         }
       }
+      const preClampVal = nextVal;
       if (nextVal > 8.0) nextVal = 8.0 + (nextVal - 8.0) * 0.01;
       if (nextVal < -8.0) nextVal = -8.0 + (nextVal + 8.0) * 0.01;
+      if (preClampVal !== nextVal) clampLossSink[idx] += Math.abs(preClampVal - nextVal);
       network.nextBuffer[idx] = nextVal;
     }
   }

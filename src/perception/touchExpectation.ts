@@ -10,6 +10,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import {
+  decayScalarWithSink,
+  decayWithSink,
+  ensureSinkField,
+} from '../core/dynamicCoreNamedDestinations.ts';
+
 /**
  * Touch expectation state
  * Represents the organism's learned anticipation of touch patterns
@@ -56,6 +62,10 @@ export interface TouchExpectationState {
 
   // Hold duration frames
   holdDuration: number;
+
+  // F5 named destinations for decay losses
+  holdContinuationExpectationDecayAccumulator?: number;
+  touchHabituationSurpriseResetField?: Float64Array;
 }
 
 /**
@@ -196,7 +206,12 @@ export function updateTouchExpectation(
     );
   } else {
     // Not holding - decay expectation
-    expectationState.holdContinuationExpectation *= 0.95;
+    expectationState.holdContinuationExpectation = decayScalarWithSink(
+      expectationState.holdContinuationExpectation,
+      0.95,
+      expectationState,
+      'holdContinuationExpectationDecayAccumulator',
+    );
   }
 
   // Clamp all values
@@ -319,6 +334,11 @@ export function updateTouchHabituation(
   const touchPresent = activeTouches.size > 0;
 
   if (touchPresent) {
+    const surpriseResetSink = ensureSinkField(
+      expectationState,
+      'touchHabituationSurpriseResetField',
+      numNodes,
+    );
     // Increase habituation where touch is present and expected
     for (let i = 0; i < numNodes; i++) {
       const touchLevel = network.rawTouch[i];
@@ -333,7 +353,7 @@ export function updateTouchHabituation(
         );
       } else if (touchLevel > 0.1 && surpriseLevel > NOVELTY_RESET_THRESHOLD) {
         // Touch is surprising - partially reset habituation
-        expectationState.touchHabituationField[i] *= 0.7;
+        decayWithSink(expectationState.touchHabituationField, i, 0.7, surpriseResetSink);
       }
     }
   } else {

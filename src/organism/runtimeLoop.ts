@@ -4,6 +4,7 @@ import { injectMassiveError } from '../perception/pointerHandlers.js';
 import { updateMetricsUI } from '../ui/updateMetricsUI.js';
 import { buildTorusStatePacket, bridgeTorusToSignal } from '../bridge/bridge';
 import { TENSION_90S_FRAMES, TENSION_LAMBDA } from '../constants/aeternaConstants.js';
+import { decayScalarWithSink } from '../core/dynamicCoreNamedDestinations.ts';
 
 const UI_FPS = 15;
 const GUIDE_FPS = 10;
@@ -16,7 +17,7 @@ export function updateTensionState(dyn: any) {
   if (state.tensionDuration > TENSION_90S_FRAMES && state.tensionLoad > 0.3) {
     injectMassiveError();
     state.tensionDuration = 0;
-    state.tensionLoad *= 0.15;
+    state.tensionLoad = decayScalarWithSink(state.tensionLoad, 0.15, state, 'tensionLoadDecayAccumulator');
   }
 }
 

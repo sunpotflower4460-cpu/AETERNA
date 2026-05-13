@@ -31,15 +31,63 @@ function clamp01(value: number): number {
   return clampFinite(value, 0, 1);
 }
 
-function smoothDecay(value: number, target: number, rate: number, dt: number): number {
-  const delta = (target - value) * rate * dt;
-  return clamp01(value + delta);
+/**
+ * F3: `smoothDecay` was a homeostatic pull (Principle 1 violation when read as
+ * "decay this field toward a goal"). Re-framed as `applyAmbientExchange`: the
+ * world field equilibrates against an external ambient bath via a one-sided
+ * exchange rate. The math is bit-exact identical, but the destinations of
+ * the inflow and outflow are now explicit.
+ *
+ * Returns `{ next, inflowFromAmbient, outflowToAmbient }`. When
+ * `ambientBaseline > value`, inflow > 0; when smaller, outflow > 0.
+ */
+export interface AmbientExchangeResult {
+  next: number;
+  inflowFromAmbient: number;
+  outflowToAmbient: number;
+}
+
+function applyAmbientExchange(
+  value: number,
+  ambientBaseline: number,
+  exchangeRate: number,
+  dt: number,
+): AmbientExchangeResult {
+  const delta = (ambientBaseline - value) * exchangeRate * dt;
+  const next = clamp01(value + delta);
+  if (delta >= 0) {
+    return { next, inflowFromAmbient: delta, outflowToAmbient: 0 };
+  }
+  return { next, inflowFromAmbient: 0, outflowToAmbient: -delta };
+}
+
+/**
+ * Optional per-field accounting of named ambient inflows/outflows. When a
+ * caller passes this collector, `updateWorldMedium` will populate it with the
+ * exchange terms produced by `applyAmbientExchange` for each world field.
+ */
+export interface WorldAmbientExchangeAudit {
+  inflows: Record<string, number>;
+  outflows: Record<string, number>;
+}
+
+function recordExchange(
+  audit: WorldAmbientExchangeAudit | undefined,
+  fieldName: string,
+  result: AmbientExchangeResult,
+): number {
+  if (audit) {
+    audit.inflows[fieldName] = (audit.inflows[fieldName] ?? 0) + result.inflowFromAmbient;
+    audit.outflows[fieldName] = (audit.outflows[fieldName] ?? 0) + result.outflowToAmbient;
+  }
+  return result.next;
 }
 
 export function updateWorldMedium(
   world: WorldMediumState,
   pulse: ActuationPulse | null,
   dt: number,
+  audit?: WorldAmbientExchangeAudit,
 ): WorldMediumState {
   const timestamp = Date.now();
 
@@ -60,32 +108,61 @@ export function updateWorldMedium(
   const impactDecayRate = 1.2; // Fast decay for pulse impact
   const residueDecayRate = 0.9; // Fast decay for residues
 
-  // --- Natural drift (slow random-like changes) ---
-  // Drift is small and subtle, representing world's own dynamics
+  // --- External ambient perturbation injected into motionDrift ---
+  // F7: This is not emergent — it is a multi-frequency sin generator driven by
+  // wall-clock. We name it `externalAmbientPerturbation` so its source is
+  // explicit (an external ambient generator, not a field property), and we
+  // record the signed perturbation injected this tick.
   const driftAmplitude = 0.08;
   const driftFrequency = 0.5; // cycles per second
   const phase = (timestamp / 1000) * driftFrequency;
-  const driftNoise = Math.sin(phase * 2.1) * 0.5 + Math.sin(phase * 3.7) * 0.3 + Math.sin(phase * 5.3) * 0.2;
-  const normalizedDrift = driftNoise / 1.0; // Normalize to roughly [-1, 1]
-  const driftDelta = normalizedDrift * driftAmplitude * dt;
+  const externalAmbientPerturbation =
+    Math.sin(phase * 2.1) * 0.5 + Math.sin(phase * 3.7) * 0.3 + Math.sin(phase * 5.3) * 0.2;
+  const driftDelta = externalAmbientPerturbation * driftAmplitude * dt;
+  if (audit) {
+    // Negative driftDelta = motionDrift decreased = perturbation pulled energy
+    // out (outflow). Positive = perturbation pushed energy in (inflow).
+    if (driftDelta >= 0) {
+      audit.inflows['motionDriftAmbientPerturbation'] =
+        (audit.inflows['motionDriftAmbientPerturbation'] ?? 0) + driftDelta;
+    } else {
+      audit.outflows['motionDriftAmbientPerturbation'] =
+        (audit.outflows['motionDriftAmbientPerturbation'] ?? 0) + (-driftDelta);
+    }
+  }
 
-  // --- Start with decayed baseline values ---
-  let ambientLight = smoothDecay(world.ambientLight, baselineLight, lightDecayRate, dt);
-  let ambientNoise = smoothDecay(world.ambientNoise, baselineNoise, noiseDecayRate, dt);
-  let surfaceResistance = smoothDecay(world.surfaceResistance, baselineResistance, resistanceDecayRate, dt);
-  let echoLevel = smoothDecay(world.echoLevel, 0, echoDecayRate, dt);
+  // --- Equilibrate each field against its named external ambient source ---
+  // The math is bit-exact equivalent to the previous smoothDecay() calls.
+  // applyAmbientExchange names the inflow/outflow as explicit ambient flows;
+  // recordExchange optionally writes them into a caller-supplied audit object.
+  let ambientLight = recordExchange(audit, 'ambientLight',
+    applyAmbientExchange(world.ambientLight, baselineLight, lightDecayRate, dt));
+  let ambientNoise = recordExchange(audit, 'ambientNoise',
+    applyAmbientExchange(world.ambientNoise, baselineNoise, noiseDecayRate, dt));
+  let surfaceResistance = recordExchange(audit, 'surfaceResistance',
+    applyAmbientExchange(world.surfaceResistance, baselineResistance, resistanceDecayRate, dt));
+  let echoLevel = recordExchange(audit, 'echoLevel',
+    applyAmbientExchange(world.echoLevel, 0, echoDecayRate, dt));
   let motionDrift = clamp01(world.motionDrift + driftDelta);
-  let fieldTemperature = smoothDecay(world.fieldTemperature, baselineTemperature, temperatureDecayRate, dt);
-  let lastPulseImpact = smoothDecay(world.lastPulseImpact, 0, impactDecayRate, dt);
-  let mediumStability = smoothDecay(world.mediumStability, baselineStability, stabilityDecayRate, dt);
+  let fieldTemperature = recordExchange(audit, 'fieldTemperature',
+    applyAmbientExchange(world.fieldTemperature, baselineTemperature, temperatureDecayRate, dt));
+  let lastPulseImpact = recordExchange(audit, 'lastPulseImpact',
+    applyAmbientExchange(world.lastPulseImpact, 0, impactDecayRate, dt));
+  let mediumStability = recordExchange(audit, 'mediumStability',
+    applyAmbientExchange(world.mediumStability, baselineStability, stabilityDecayRate, dt));
 
-  let visualResidue = smoothDecay(world.visualResidue ?? 0, 0, residueDecayRate, dt);
-  let forceResidue = smoothDecay(world.forceResidue ?? 0, 0, residueDecayRate, dt);
-  let worldTurbulence = smoothDecay(world.worldTurbulence ?? 0.15, 0.15, 0.4, dt);
-  let returnReadiness = smoothDecay(world.returnReadiness ?? 0.3, 0.3, 0.2, dt);
+  let visualResidue = recordExchange(audit, 'visualResidue',
+    applyAmbientExchange(world.visualResidue ?? 0, 0, residueDecayRate, dt));
+  let forceResidue = recordExchange(audit, 'forceResidue',
+    applyAmbientExchange(world.forceResidue ?? 0, 0, residueDecayRate, dt));
+  let worldTurbulence = recordExchange(audit, 'worldTurbulence',
+    applyAmbientExchange(world.worldTurbulence ?? 0.15, 0.15, 0.4, dt));
+  let returnReadiness = recordExchange(audit, 'returnReadiness',
+    applyAmbientExchange(world.returnReadiness ?? 0.3, 0.3, 0.2, dt));
 
-  // feedbackDelay slowly returns to baseline
-  let feedbackDelay = smoothDecay(world.feedbackDelay, 0.2, 0.1, dt);
+  // feedbackDelay slowly returns to its ambient baseline (0.2)
+  let feedbackDelay = recordExchange(audit, 'feedbackDelay',
+    applyAmbientExchange(world.feedbackDelay, 0.2, 0.1, dt));
 
   // --- Apply Actuation Pulse effects (if present) ---
   if (pulse !== null) {

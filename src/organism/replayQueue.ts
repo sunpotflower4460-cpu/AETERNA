@@ -39,6 +39,8 @@ export interface ReplayCandidate {
   localSignature?: number[];
 }
 
+import { decayScalarWithSink } from '../core/dynamicCoreNamedDestinations.ts';
+
 /**
  * ReplayQueue manages replay candidates
  */
@@ -47,6 +49,13 @@ export class ReplayQueue {
   private readonly maxCandidates: number;
   private readonly decayRate: number;
   private nextId: number = 0;
+
+  // Named destinations for decay losses (F5).
+  // Cumulative magnitude of weight / traceStrength / recurrenceWeight that
+  // has been removed by decay() so far, summed across all candidates and ticks.
+  public weightDecayAccumulator: number = 0;
+  public traceStrengthDecayAccumulator: number = 0;
+  public recurrenceWeightDecayAccumulator: number = 0;
 
   constructor(maxCandidates = 50, decayRate = 0.998) {
     this.maxCandidates = maxCandidates;
@@ -106,9 +115,9 @@ export class ReplayQueue {
    */
   decay(): void {
     for (const candidate of this.candidates) {
-      candidate.weight *= this.decayRate;
-      candidate.traceStrength *= 0.999;
-      candidate.recurrenceWeight *= 0.9995;
+      candidate.weight = decayScalarWithSink(candidate.weight, this.decayRate, this, 'weightDecayAccumulator');
+      candidate.traceStrength = decayScalarWithSink(candidate.traceStrength, 0.999, this, 'traceStrengthDecayAccumulator');
+      candidate.recurrenceWeight = decayScalarWithSink(candidate.recurrenceWeight, 0.9995, this, 'recurrenceWeightDecayAccumulator');
     }
 
     this.candidates = this.candidates.filter(c => c.weight > 0.01);
@@ -136,8 +145,8 @@ export class ReplayQueue {
   reduceWeight(id: string, factor: number): void {
     const candidate = this.candidates.find(c => c.id === id);
     if (candidate) {
-      candidate.weight *= factor;
-      candidate.traceStrength *= Math.min(1, factor + 0.08);
+      candidate.weight = decayScalarWithSink(candidate.weight, factor, this, 'weightDecayAccumulator');
+      candidate.traceStrength = decayScalarWithSink(candidate.traceStrength, Math.min(1, factor + 0.08), this, 'traceStrengthDecayAccumulator');
     }
   }
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ACTION_PULSE_LIMIT, ACTION_PULSE_SMOOTHING } from '../core/aeternaTuning.ts';
 import { applyDirectionalRewrite } from './rewrite.ts';
+import { decayWithSink, ensureSinkField } from '../core/dynamicCoreNamedDestinations.ts';
 
 export function getActionDebugSummary(network: any) {
   return {
@@ -114,9 +115,11 @@ export function applyActionToDynamics(network: any, {
     const projectionDamp = 1.0 - pulse * 0.16;
     const residueDamp = 1.0 - pulse * 0.06;
     const contraction = pulse * 0.018;
+    const withdrawProjectionSink = ensureSinkField(network, 'touchProjectionWithdrawDampField', network.numNodes);
+    const withdrawResidueSink = ensureSinkField(network, 'activityResidueWithdrawDampField', network.numNodes);
     for (let i = 0; i < network.numNodes; i++) {
-      network.touchProjection[i] *= projectionDamp;
-      network.activityResidue[i] *= residueDamp;
+      decayWithSink(network.touchProjection, i, projectionDamp, withdrawProjectionSink);
+      decayWithSink(network.activityResidue, i, residueDamp, withdrawResidueSink);
       network.currentBuffer[i] = network.clampFinite(network.currentBuffer[i] * (1.0 - contraction) + network.baselineActivity[i] * contraction, -8.0, 8.0, 0);
     }
     network.overload = network.clamp01(network.overload - pulse * 0.02, network.overload);
@@ -124,10 +127,13 @@ export function applyActionToDynamics(network: any, {
     const projectionDamp = 1.0 - pulse * 0.05;
     const traceDamp = 1.0 - pulse * 0.04;
     const residueDamp = 1.0 - pulse * 0.07;
+    const settleProjectionSink = ensureSinkField(network, 'touchProjectionSettleDampField', network.numNodes);
+    const settleTraceSink = ensureSinkField(network, 'touchTraceSettleDampField', network.numNodes);
+    const settleResidueSink = ensureSinkField(network, 'activityResidueSettleDampField', network.numNodes);
     for (let i = 0; i < network.numNodes; i++) {
-      network.touchProjection[i] *= projectionDamp;
-      network.touchTrace[i] *= traceDamp;
-      network.activityResidue[i] *= residueDamp;
+      decayWithSink(network.touchProjection, i, projectionDamp, settleProjectionSink);
+      decayWithSink(network.touchTrace, i, traceDamp, settleTraceSink);
+      decayWithSink(network.activityResidue, i, residueDamp, settleResidueSink);
     }
     network.stability = network.clamp01(network.stability + pulse * 0.02, network.stability);
     network.overload = network.clamp01(network.overload - pulse * 0.03, network.overload);

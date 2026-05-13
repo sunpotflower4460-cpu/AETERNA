@@ -13,6 +13,7 @@ export const state = {
     disk: null,
 
     tensionLoad: 0,
+    tensionLoadDecayAccumulator: 0,
     tensionDuration: 0,
     lastHeartbeatTime: 0,
     lastPhiApprox: 0,
