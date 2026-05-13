@@ -105,6 +105,7 @@ describe('phase drive to wave work term preview', () => {
       },
     });
 
+    expect(report.requestedDriveCoupling).toBe(0);
     expect(report.effectiveDriveCoupling).toBe(0);
     expect(report.candidateMaskedDriveEnergy).toBeCloseTo(2, 12);
     expect(report.previewWorkTermEnergy).toBe(0);
@@ -113,7 +114,7 @@ describe('phase drive to wave work term preview', () => {
     expect(report.ledger.status).toBe('closed');
   });
 
-  it('normalizes out-of-range or non-finite requested coupling for preview math', () => {
+  it('separates requested coupling from effective preview coupling', () => {
     const drive = createPhaseCarryingDriveState({
       width: 2,
       height: 2,
@@ -137,10 +138,10 @@ describe('phase drive to wave work term preview', () => {
       },
     });
 
-    expect(negativeReport.requestedDriveCoupling).toBe(0);
+    expect(negativeReport.requestedDriveCoupling).toBe(-1);
     expect(negativeReport.effectiveDriveCoupling).toBe(0);
     expect(negativeReport.previewWorkTermEnergy).toBe(0);
-    expect(negativeReport.warnings.join('\n')).toContain('normalized for preview math');
+    expect(negativeReport.warnings.join('\n')).toContain('clamped to [0, 1]');
 
     const nonFiniteReport = derivePhaseDriveToWaveWorkTermPreview({
       driveState: periodicDrive.state,
@@ -155,7 +156,7 @@ describe('phase drive to wave work term preview', () => {
     expect(nonFiniteReport.requestedDriveCoupling).toBe(0);
     expect(nonFiniteReport.effectiveDriveCoupling).toBe(0);
     expect(nonFiniteReport.previewWorkTermEnergy).toBe(0);
-    expect(nonFiniteReport.warnings.join('\n')).toContain('normalized for preview math');
+    expect(nonFiniteReport.warnings.join('\n')).toContain('recorded as zero');
 
     const aboveUnitReport = derivePhaseDriveToWaveWorkTermPreview({
       driveState: periodicDrive.state,
@@ -167,13 +168,13 @@ describe('phase drive to wave work term preview', () => {
       },
     });
 
-    expect(aboveUnitReport.requestedDriveCoupling).toBe(1);
+    expect(aboveUnitReport.requestedDriveCoupling).toBe(2);
     expect(aboveUnitReport.effectiveDriveCoupling).toBe(1);
     expect(aboveUnitReport.candidateMaskedDriveEnergy).toBeCloseTo(2, 12);
     expect(aboveUnitReport.previewWorkTermEnergy).toBeCloseTo(2, 12);
     expect(aboveUnitReport.previewWorkTermEnergy).toBeLessThanOrEqual(aboveUnitReport.candidateMaskedDriveEnergy);
     expect(aboveUnitReport.actualMediumInputEnergy).toBe(0);
-    expect(aboveUnitReport.warnings.join('\n')).toContain('normalized for preview math');
+    expect(aboveUnitReport.warnings.join('\n')).toContain('clamped to [0, 1]');
   });
 
   it('does not mutate drive or medium state', () => {
