@@ -113,7 +113,7 @@ describe('phase drive to wave work term preview', () => {
     expect(report.ledger.status).toBe('closed');
   });
 
-  it('normalizes negative or non-finite requested coupling for preview math', () => {
+  it('normalizes out-of-range or non-finite requested coupling for preview math', () => {
     const drive = createPhaseCarryingDriveState({
       width: 2,
       height: 2,
@@ -156,6 +156,24 @@ describe('phase drive to wave work term preview', () => {
     expect(nonFiniteReport.effectiveDriveCoupling).toBe(0);
     expect(nonFiniteReport.previewWorkTermEnergy).toBe(0);
     expect(nonFiniteReport.warnings.join('\n')).toContain('normalized for preview math');
+
+    const aboveUnitReport = derivePhaseDriveToWaveWorkTermPreview({
+      driveState: periodicDrive.state,
+      mediumState: medium,
+      mediumConfig,
+      transferConfig: {
+        driveCoupling: 2,
+        tolerance: 1e-9,
+      },
+    });
+
+    expect(aboveUnitReport.requestedDriveCoupling).toBe(1);
+    expect(aboveUnitReport.effectiveDriveCoupling).toBe(1);
+    expect(aboveUnitReport.candidateMaskedDriveEnergy).toBeCloseTo(2, 12);
+    expect(aboveUnitReport.previewWorkTermEnergy).toBeCloseTo(2, 12);
+    expect(aboveUnitReport.previewWorkTermEnergy).toBeLessThanOrEqual(aboveUnitReport.candidateMaskedDriveEnergy);
+    expect(aboveUnitReport.actualMediumInputEnergy).toBe(0);
+    expect(aboveUnitReport.warnings.join('\n')).toContain('normalized for preview math');
   });
 
   it('does not mutate drive or medium state', () => {
