@@ -25,3 +25,29 @@ export interface PhaseDriveToWaveTransferSkeletonReport {
   warnings: string[];
   metricKind: 'check';
 }
+
+export interface PhaseDriveToWaveWorkTermPreviewConfig {
+  /** Requested local coupling for preview math. v5.1.4 computes it but still does not apply it. */
+  driveCoupling: number;
+  tolerance?: number;
+}
+
+export interface PhaseDriveToWaveWorkTermPreviewReport {
+  source: 'phase-drive-to-wave-work-term-preview';
+  driveTick: number;
+  mediumTick: number;
+  requestedDriveCoupling: number;
+  effectiveDriveCoupling: number;
+  driveObservation: PhaseDriveEnergyObservation;
+  mediumEnergyBefore: WaveEnergySnapshot;
+  mediumEnergyAfter: WaveEnergySnapshot;
+  candidateMaskedDriveEnergy: number;
+  previewWorkTermEnergy: number;
+  previewMediumInputEnergy: number;
+  actualTransferredEnergy: 0;
+  actualMediumInputEnergy: 0;
+  mediumChangedFieldCount: 0;
+  ledger: EnergyLedgerState;
+  warnings: string[];
+  metricKind: 'check';
+}
