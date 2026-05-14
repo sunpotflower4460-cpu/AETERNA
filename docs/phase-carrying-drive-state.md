@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 / v5.1.5 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 / v5.1.5 / v5.1.6 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -14,9 +14,13 @@ v5.1.4 adds a drive-to-wave work-term preview. It computes what a local drive-to
 
 v5.1.5 applies a small drive-to-wave work term into the wave medium velocity field and closes the medium energy ledger against the actual measured medium energy delta.
 
-These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, a preview-only work term, and a first applied velocity-side transfer.
+v5.1.6 adds a transfer scenario suite. It compares zero-coupling, preview-only, applied transfer, high coupling clamp, no drive direction, existing medium velocity, and size mismatch conditions without adding new runtime behavior.
+
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, a preview-only work term, a first applied velocity-side transfer, and a repeatable scenario suite around the transfer boundary.
 
 v5.1.5 is the first phase in this route where actual medium input may be nonzero.
+
+v5.1.6 does not introduce new input paths. It only tests and documents existing transfer behavior.
 
 They do not try to create coherence.
 
@@ -43,9 +47,10 @@ no-medium-transfer ledger check
 drive-to-wave transfer boundary skeleton
 drive-to-wave work-term preview
 applied drive-to-wave velocity transfer
+transfer scenario suite
 effective drive coupling for applied math
 requested/effective coupling separation
-actual medium input can be nonzero
+actual medium input can be nonzero in applied mode
 medium energy delta is ledgered
 no coherence metric yet
 ```
@@ -62,6 +67,7 @@ no coherence metric yet
 - `src/observer/phaseDriveToWaveWorkTermPreview.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
 - `src/tests/world/phaseDriveToWaveAppliedTransfer.test.ts`
+- `src/tests/world/phaseDriveToWaveTransferScenarioSuite.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 - `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
 - `src/tests/observer/phaseDriveToWaveWorkTermPreview.test.ts`
@@ -382,11 +388,32 @@ measuredOutflowEnergy = 0
 
 This phase does not claim coherence. It only applies and accounts a small velocity-side work term.
 
+## v5.1.6 Transfer scenario suite
+
+`phaseDriveToWaveTransferScenarioSuite.test.ts` does not add a new transfer path.
+
+It compares the already existing preview and applied routes under fixed conditions:
+
+| Scenario | Expected behavior |
+|---|---|
+| preview-only nonzero coupling | preview work may be nonzero, actual medium input remains zero |
+| applied nonzero coupling | actual medium input equals measured medium energy delta |
+| zero coupling | both preview and applied paths remain closed no-input cases |
+| high requested coupling | requested coupling is recorded, effective coupling is clamped to `[0, 1]` |
+| no drive direction | applied path remains no-input and ledger-closed |
+| existing medium velocity | kinetic-energy delta still closes against requested work |
+| size mismatch | applied candidate energy is derived from the shortest shared transfer region |
+
+This phase exists to prevent accidental regressions before adding any next transfer behavior.
+
+It does not add a new metric, a new runtime coupling, a new medium update, or any target coherence outcome.
+
 ## What this deliberately does not add
 
 - no coherence observation metrics
 - no target order parameter
 - no phase-locking target
+- no new applied transfer behavior beyond v5.1.5
 - no SpatialWorldMedium update behavior changes
 - no AETERNA internal buffer coupling
 - no center-buffer injection
@@ -425,6 +452,7 @@ Drive-to-wave work-term preview computed.
 Actual medium input remains zero in v5.1.4.
 Applied drive-to-wave velocity transfer computed in v5.1.5.
 Medium energy delta is ledgered.
+Transfer scenario suite compared existing paths in v5.1.6.
 ```
 
 ## Invalid language
@@ -434,6 +462,7 @@ Coherence was created.
 The drive synchronized the medium.
 The drive changed the wave medium in v5.1.4.
 Preview work was applied.
+The scenario suite proves coherence.
 AETERNA became coherent.
 AETERNA is alive.
 ```
@@ -443,7 +472,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.6 Transfer Scenario Suite
+v5.1.7 Transfer Boundary Audit / v6.0 Nonlinear Potential Field preparation
 ```
 
-That phase should compare zero-coupling, preview-only, applied transfer, high coupling clamp, no drive direction, existing medium velocity, and size mismatch conditions.
+That phase should either audit transfer boundaries one more time or begin preparing the nonlinear-potential-field route without turning it into a target-order mechanism.
