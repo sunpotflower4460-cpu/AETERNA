@@ -27,28 +27,6 @@ function normalizeConfig(config: NonlinearPotentialFieldConfig): NonlinearPotent
   };
 }
 
-function countChangedSamples(before: Float64Array, after: Float64Array): number {
-  const count = Math.min(before.length, after.length);
-  let changed = before.length === after.length ? 0 : Math.abs(before.length - after.length);
-  for (let i = 0; i < count; i++) {
-    if (!Object.is(before[i], after[i])) changed += 1;
-  }
-  return changed;
-}
-
-function countMediumChanges(before: WaveCapableMediumState, after: WaveCapableMediumState): number {
-  return (
-    countChangedSamples(before.mediumRealField, after.mediumRealField) +
-    countChangedSamples(before.mediumImagField, after.mediumImagField) +
-    countChangedSamples(before.mediumRealVelocityField, after.mediumRealVelocityField) +
-    countChangedSamples(before.mediumImagVelocityField, after.mediumImagVelocityField) +
-    countChangedSamples(before.waveEnergyDissipationField, after.waveEnergyDissipationField) +
-    countChangedSamples(before.waveEnergyResidueField, after.waveEnergyResidueField) +
-    countChangedSamples(before.waveEnergyOutflowField, after.waveEnergyOutflowField) +
-    (before.tick === after.tick ? 0 : 1)
-  );
-}
-
 export function deriveNonlinearPotentialFieldPreparation(input: {
   mediumState: WaveCapableMediumState;
   config: NonlinearPotentialFieldConfig;
@@ -65,7 +43,7 @@ export function deriveNonlinearPotentialFieldPreparation(input: {
   }
 
   if (config.localQuadraticCoefficient < 0) {
-    warnings.push('Local quadratic coefficient is negative; potential energy may be locally unbounded without a stabilizing higher-order term.');
+    warnings.push('Local quadratic coefficient is negative; potential energy may be locally unstable without a stabilizing higher-order term.');
   }
 
   if (config.localQuarticCoefficient < 0) {
@@ -78,7 +56,7 @@ export function deriveNonlinearPotentialFieldPreparation(input: {
   const gradientImagField = new Float64Array(size);
 
   let potentialEnergyTotal = 0;
-  let potentialEnergyMax = 0;
+  let potentialEnergyMax = Number.NEGATIVE_INFINITY;
   let maxGradientMagnitude = 0;
   let gradientEnergyProxy = 0;
   let finiteCellCount = 0;
@@ -129,7 +107,7 @@ export function deriveNonlinearPotentialFieldPreparation(input: {
     gradientEnergyProxy,
     finiteCellCount,
     nonFiniteCellCount,
-    mediumChangedFieldCount: countMediumChanges(input.mediumState, input.mediumState),
+    mediumChangedFieldCount: 0,
     warnings,
     metricKind: 'derived',
   };
