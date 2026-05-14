@@ -1,4 +1,4 @@
-# AETERNA v6.0 / v6.1 / v6.2 / v6.3 Nonlinear Potential Field Route
+# AETERNA v6.0 / v6.1 / v6.2 / v6.3 / v6.4 Nonlinear Potential Field Route
 
 ## Purpose
 
@@ -10,7 +10,9 @@ v6.2 adds a read-only nonlinear potential acceleration preview. It converts the 
 
 v6.3 adds a boundary audit for the v6.0-v6.2 preview chain. It checks whether the chain remains read-only, whether every preview report declares zero medium changes, and whether non-finite preview cells are visible as warnings.
 
-These phases are intentionally read-only.
+v6.4 adds an applied update proposal. It proposes future velocity-delta candidates and required mutation/accounting boundaries, but it does not mutate the medium and does not authorize runtime application.
+
+These phases are intentionally read-only through v6.4.
 
 ## Position
 
@@ -21,11 +23,12 @@ v6.0   nonlinear potential field preparation
 v6.1   nonlinear potential force preview
 v6.2   nonlinear potential acceleration preview
 v6.3   nonlinear potential boundary audit
+v6.4   nonlinear potential applied update proposal
 ```
 
 v6.x begins a new route after the v5.1 transfer boundary audit.
 
-v6.0, v6.1, v6.2, and v6.3 should be treated as preparation/preview/audit layers, not as the first nonlinear runtime.
+v6.0, v6.1, v6.2, v6.3, and v6.4 should be treated as preparation/preview/audit/proposal layers, not as the first nonlinear runtime.
 
 ## Added files
 
@@ -49,12 +52,20 @@ v6.2 added:
 - `NonlinearPotentialAccelerationPreviewConfig`
 - `NonlinearPotentialAccelerationPreviewReport`
 
-v6.3 adds:
+v6.3 added:
 
 - `src/observer/nonlinearPotentialBoundaryAudit.ts`
 - `src/tests/observer/nonlinearPotentialBoundaryAudit.test.ts`
 - `NonlinearPotentialBoundaryAuditStatus`
 - `NonlinearPotentialBoundaryAuditReport`
+
+v6.4 adds:
+
+- `src/observer/nonlinearPotentialAppliedUpdateProposal.ts`
+- `src/tests/observer/nonlinearPotentialAppliedUpdateProposal.test.ts`
+- `NonlinearPotentialAppliedUpdateProposalStatus`
+- `NonlinearPotentialAppliedUpdateProposalConfig`
+- `NonlinearPotentialAppliedUpdateProposalReport`
 
 ## Local potential definition
 
@@ -132,6 +143,41 @@ fail    = actual medium fields changed or preview reports declare medium changes
 ```
 
 `appliedRuntimeReady` is always `false` in v6.3. This audit locks the current boundary; it does not authorize runtime application.
+
+## v6.4 Applied update proposal definition
+
+v6.4 reads the v6.3 boundary audit and proposes future velocity-delta candidates only when the audit status is `pass`.
+
+```text
+proposedVelocityDeltaReal = previewAccelerationReal * effectiveProposedDt * effectiveProposedVelocityUpdateScale
+proposedVelocityDeltaImag = previewAccelerationImag * effectiveProposedDt * effectiveProposedVelocityUpdateScale
+```
+
+If the boundary audit returns `warning` or `fail`, the proposal is blocked and all proposed velocity-delta fields remain zero.
+
+`proposedDt` and `proposedVelocityUpdateScale` are proposal-only parameters. They are not runtime parameters in v6.4.
+
+v6.4 explicitly lists future allowed mutation fields:
+
+```text
+mediumRealVelocityField
+mediumImagVelocityField
+tick
+```
+
+v6.4 explicitly lists forbidden mutation fields:
+
+```text
+mediumRealField
+mediumImagField
+waveEnergyDissipationField
+waveEnergyResidueField
+waveEnergyOutflowField
+phaseDriveState
+internalBuffers
+```
+
+v6.4 also lists required future energy accounting fields before any applied update can be accepted.
 
 ## v6.0 Report fields
 
@@ -228,9 +274,41 @@ metricKind = derived
 
 `mediumChangedFieldCount` must remain zero in this phase.
 
+## v6.4 Report fields
+
+`deriveNonlinearPotentialAppliedUpdateProposal` returns:
+
+```text
+source = nonlinear-potential-applied-update-proposal
+mediumTick
+boundaryAudit
+proposalStatus
+appliedRuntimeReady
+requestedProposedDt
+effectiveProposedDt
+requestedProposedVelocityUpdateScale
+effectiveProposedVelocityUpdateScale
+proposedVelocityDeltaRealField
+proposedVelocityDeltaImagField
+maxProposedVelocityDeltaMagnitude
+proposedVelocityDeltaEnergyProxy
+proposedTickDelta
+allowedMutationFields
+forbiddenMutationFields
+requiredEnergyAccounting
+findings
+warnings
+mediumChangedFieldCount
+metricKind = derived
+```
+
+`mediumChangedFieldCount` must remain zero in this phase.
+
+`appliedRuntimeReady` must remain `false` in this phase.
+
 ## Boundary rules
 
-v6.0, v6.1, v6.2, and v6.3 must not:
+v6.0, v6.1, v6.2, v6.3, and v6.4 must not:
 
 - mutate `WaveCapableMediumState`
 - increment medium `tick`
@@ -256,7 +334,7 @@ However, this must remain a material-like local law, not a desired outcome.
 The correct direction is:
 
 ```text
-local field state -> local potential -> local gradient -> preview force -> preview acceleration -> boundary audit -> later audited applied update
+local field state -> local potential -> local gradient -> preview force -> preview acceleration -> boundary audit -> applied update proposal -> later audited applied update
 ```
 
 The incorrect direction is:
@@ -276,8 +354,9 @@ Preview force was computed from the negative local gradient.
 Nonlinear potential acceleration preview derived.
 Preview acceleration was computed from preview force divided by preview mass.
 Nonlinear potential boundary audit derived.
+Nonlinear potential applied update proposal derived.
 Medium state was not mutated.
-No nonlinear acceleration was applied in v6.3.
+No nonlinear acceleration was applied in v6.4.
 Applied nonlinear runtime remains locked behind a later audited phase.
 ```
 
@@ -290,6 +369,7 @@ The gradient pulled the system toward a target state.
 The force preview changed the medium.
 The acceleration preview changed velocity.
 The boundary audit authorized runtime application.
+The applied update proposal changed the medium.
 The medium became more alive.
 The nonlinear field is now a life force.
 ```
@@ -299,7 +379,7 @@ The nonlinear field is now a life force.
 A safe next phase is:
 
 ```text
-v6.4 Nonlinear Potential Applied Update Proposal
+v6.5 Nonlinear Potential Applied Velocity Update
 ```
 
-That phase may propose the first applied nonlinear update, but it must explicitly define mutation boundaries, energy accounting, tick behavior, and rollback-safe tests before any runtime behavior is accepted.
+That phase may implement the first applied nonlinear velocity update only if it includes explicit mutation boundaries, energy accounting, tick behavior, rollback-safe tests, and a closed ledger.
