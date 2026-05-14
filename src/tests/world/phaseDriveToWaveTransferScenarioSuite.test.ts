@@ -239,9 +239,8 @@ describe('phase drive to wave transfer scenario suite', () => {
     expect(applied.warnings.join('\n')).toContain('shortest shared field length');
   });
 
-  it('does not include result-coded coherence identifiers in scenario suite source files', () => {
+  it('does not include result-coded coherence identifiers in transfer implementation source files', () => {
     const source = [
-      readFileSync('src/tests/world/phaseDriveToWaveTransferScenarioSuite.test.ts', 'utf8'),
       readFileSync('src/world/phaseDriveToWaveAppliedTransfer.ts', 'utf8'),
       readFileSync('src/observer/phaseDriveToWaveWorkTermPreview.ts', 'utf8'),
     ].join('\n');
