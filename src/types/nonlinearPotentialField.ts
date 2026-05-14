@@ -71,3 +71,21 @@ export interface NonlinearPotentialAccelerationPreviewReport {
   warnings: string[];
   metricKind: 'derived';
 }
+
+export type NonlinearPotentialBoundaryAuditStatus = 'pass' | 'warning' | 'fail';
+
+export interface NonlinearPotentialBoundaryAuditReport {
+  source: 'nonlinear-potential-boundary-audit';
+  mediumTick: number;
+  accelerationPreview: NonlinearPotentialAccelerationPreviewReport;
+  boundaryAuditStatus: NonlinearPotentialBoundaryAuditStatus;
+  appliedRuntimeReady: boolean;
+  mediumFieldChangeCount: number;
+  previewReportChangeCount: number;
+  boundaryViolationCount: number;
+  numericWarningCount: number;
+  findings: string[];
+  warnings: string[];
+  mediumChangedFieldCount: number;
+  metricKind: 'derived';
+}
