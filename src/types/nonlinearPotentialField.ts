@@ -27,3 +27,25 @@ export interface NonlinearPotentialFieldPreparationReport {
   warnings: string[];
   metricKind: 'derived';
 }
+
+export interface NonlinearPotentialForcePreviewConfig extends NonlinearPotentialFieldConfig {
+  /** Preview-only scale for converting local potential gradient into a force candidate. Nonnegative and not an outcome target. */
+  previewForceScale: number;
+}
+
+export interface NonlinearPotentialForcePreviewReport {
+  source: 'nonlinear-potential-force-preview';
+  mediumTick: number;
+  preparation: NonlinearPotentialFieldPreparationReport;
+  requestedPreviewForceScale: number;
+  effectivePreviewForceScale: number;
+  previewForceRealField: Float64Array;
+  previewForceImagField: Float64Array;
+  maxPreviewForceMagnitude: number;
+  previewForceEnergyProxy: number;
+  finiteCellCount: number;
+  nonFiniteCellCount: number;
+  mediumChangedFieldCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
