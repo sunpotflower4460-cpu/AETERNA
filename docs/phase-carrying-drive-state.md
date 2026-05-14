@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 / v5.1.5 / v5.1.6 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 / v5.1.5 / v5.1.6 / v5.1.7 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -16,11 +16,15 @@ v5.1.5 applies a small drive-to-wave work term into the wave medium velocity fie
 
 v5.1.6 adds a transfer scenario suite. It compares zero-coupling, preview-only, applied transfer, high coupling clamp, no drive direction, existing medium velocity, and size mismatch conditions without adding new runtime behavior.
 
-These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, a preview-only work term, a first applied velocity-side transfer, and a repeatable scenario suite around the transfer boundary.
+v5.1.7 adds a transfer boundary audit. It verifies that observer-side transfer paths remain read-only, applied transfer remains constrained to cloned velocity fields, and transfer implementation does not couple into internal buffers, center buffers, runtime medium behavior, or target-order mechanisms.
+
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, a preview-only work term, a first applied velocity-side transfer, a repeatable scenario suite, and an explicit boundary audit around the transfer route.
 
 v5.1.5 is the first phase in this route where actual medium input may be nonzero.
 
 v5.1.6 does not introduce new input paths. It only tests and documents existing transfer behavior.
+
+v5.1.7 does not introduce new input paths. It only audits and locks down the existing boundary rules before any later route begins.
 
 They do not try to create coherence.
 
@@ -48,6 +52,7 @@ drive-to-wave transfer boundary skeleton
 drive-to-wave work-term preview
 applied drive-to-wave velocity transfer
 transfer scenario suite
+transfer boundary audit
 effective drive coupling for applied math
 requested/effective coupling separation
 actual medium input can be nonzero in applied mode
@@ -68,6 +73,7 @@ no coherence metric yet
 - `src/tests/world/phaseCarryingDrive.test.ts`
 - `src/tests/world/phaseDriveToWaveAppliedTransfer.test.ts`
 - `src/tests/world/phaseDriveToWaveTransferScenarioSuite.test.ts`
+- `src/tests/world/phaseDriveToWaveTransferBoundaryAudit.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 - `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
 - `src/tests/observer/phaseDriveToWaveWorkTermPreview.test.ts`
@@ -408,12 +414,29 @@ This phase exists to prevent accidental regressions before adding any next trans
 
 It does not add a new metric, a new runtime coupling, a new medium update, or any target coherence outcome.
 
+## v5.1.7 Transfer boundary audit
+
+`phaseDriveToWaveTransferBoundaryAudit.test.ts` locks down the transfer boundary before later routes add new field behavior.
+
+It checks three boundary rules:
+
+| Boundary rule | Audit expectation |
+|---|---|
+| observer-side transfer paths | skeleton and preview remain read-only even when requested coupling is nonzero |
+| applied transfer path | only cloned velocity fields may change; position and ledger side fields stay unchanged |
+| source coupling surface | transfer implementation does not reference AETERNA internal buffers, center buffers, runtime medium classes, or target-order controls |
+
+The applied transfer audit intentionally uses a medium that already has position, velocity, dissipation, residue, and outflow fields. This catches accidental writes outside the intended velocity-side work term.
+
+v5.1.7 does not change physics, runtime update order, or transfer math. It only prevents accidental boundary widening.
+
 ## What this deliberately does not add
 
 - no coherence observation metrics
 - no target order parameter
 - no phase-locking target
 - no new applied transfer behavior beyond v5.1.5
+- no new transfer scenario beyond v5.1.6
 - no SpatialWorldMedium update behavior changes
 - no AETERNA internal buffer coupling
 - no center-buffer injection
@@ -453,6 +476,7 @@ Actual medium input remains zero in v5.1.4.
 Applied drive-to-wave velocity transfer computed in v5.1.5.
 Medium energy delta is ledgered.
 Transfer scenario suite compared existing paths in v5.1.6.
+Transfer boundary audit checked existing paths in v5.1.7.
 ```
 
 ## Invalid language
@@ -463,6 +487,7 @@ The drive synchronized the medium.
 The drive changed the wave medium in v5.1.4.
 Preview work was applied.
 The scenario suite proves coherence.
+The boundary audit proves coherence.
 AETERNA became coherent.
 AETERNA is alive.
 ```
@@ -472,7 +497,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.7 Transfer Boundary Audit / v6.0 Nonlinear Potential Field preparation
+v6.0 Nonlinear Potential Field preparation
 ```
 
-That phase should either audit transfer boundaries one more time or begin preparing the nonlinear-potential-field route without turning it into a target-order mechanism.
+That phase may begin preparing a nonlinear-potential-field route, but it should remain local, measured, and explicitly non-target-order. It should not turn the phase drive into a global synchronization or coherence target mechanism.
