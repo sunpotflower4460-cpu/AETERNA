@@ -75,7 +75,7 @@ export interface PhaseDriveToWaveAppliedTransferReport {
   mediumEnergyDelta: number;
   velocityKickScale: number;
   driveDirectionEnergyProxy: number;
-  changedFieldCount: number;
+  mediumChangedFieldCount: number;
   ledger: EnergyLedgerState;
   warnings: string[];
   metricKind: 'check';
