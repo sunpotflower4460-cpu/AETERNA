@@ -25,6 +25,10 @@ function clampUnitInterval(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+function normalizeTolerance(value: number | undefined): number {
+  return Math.max(1e-9, Math.abs(finiteNumber(value, 1e-9)));
+}
+
 function countChangedSamples(before: Float64Array, after: Float64Array): number {
   const count = Math.min(before.length, after.length);
   let changed = before.length === after.length ? 0 : Math.abs(before.length - after.length);
@@ -61,6 +65,7 @@ export function applyPhaseDriveToWaveTransfer(input: {
 }): PhaseDriveToWaveAppliedTransferResult {
   const requestedDriveCoupling = finiteNumber(input.transferConfig.driveCoupling, 0);
   const effectiveDriveCoupling = clampUnitInterval(requestedDriveCoupling);
+  const normalizedTolerance = normalizeTolerance(input.transferConfig.tolerance);
   const warnings: string[] = [];
 
   const driveObservation = derivePhaseDriveEnergyObservation(input.driveState);
@@ -119,7 +124,7 @@ export function applyPhaseDriveToWaveTransfer(input: {
   const mediumEnergyDelta = mediumEnergyAfter.totalEnergy - mediumEnergyBefore.totalEnergy;
   const appliedWorkTermEnergy = mediumEnergyDelta;
   const mediumInputEnergy = appliedWorkTermEnergy;
-  const changedFieldCount =
+  const mediumChangedFieldCount =
     countChangedSamples(input.mediumState.mediumRealField, nextState.mediumRealField) +
     countChangedSamples(input.mediumState.mediumImagField, nextState.mediumImagField) +
     countChangedSamples(input.mediumState.mediumRealVelocityField, nextState.mediumRealVelocityField) +
@@ -138,14 +143,13 @@ export function applyPhaseDriveToWaveTransfer(input: {
     warnings.push('Requested work term was nonzero, but no finite drive direction was available for applied transfer.');
   }
 
-  const residualTolerance = Math.max(1e-9, Math.abs(input.transferConfig.tolerance ?? 1e-9));
-  if (Math.abs(appliedWorkTermEnergy - requestedWorkTermEnergy) > residualTolerance) {
+  if (Math.abs(appliedWorkTermEnergy - requestedWorkTermEnergy) > normalizedTolerance) {
     warnings.push('Applied work term differs from requested work term beyond tolerance.');
   }
 
   const ledger = deriveEnergyLedger({
     source: 'phase-drive-to-wave-applied-transfer',
-    tolerance: input.transferConfig.tolerance,
+    tolerance: normalizedTolerance,
     inputEnergy: mediumInputEnergy,
     internalEnergyBefore: mediumEnergyBefore.totalEnergy,
     internalEnergyAfter: mediumEnergyAfter.totalEnergy,
@@ -178,7 +182,7 @@ export function applyPhaseDriveToWaveTransfer(input: {
       mediumEnergyDelta,
       velocityKickScale,
       driveDirectionEnergyProxy,
-      changedFieldCount,
+      mediumChangedFieldCount,
       ledger,
       warnings,
       metricKind: 'check',
