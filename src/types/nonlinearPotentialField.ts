@@ -49,3 +49,25 @@ export interface NonlinearPotentialForcePreviewReport {
   warnings: string[];
   metricKind: 'derived';
 }
+
+export interface NonlinearPotentialAccelerationPreviewConfig extends NonlinearPotentialForcePreviewConfig {
+  /** Preview-only local mass divisor for converting force candidates into acceleration candidates. Must be positive. */
+  previewMass: number;
+}
+
+export interface NonlinearPotentialAccelerationPreviewReport {
+  source: 'nonlinear-potential-acceleration-preview';
+  mediumTick: number;
+  forcePreview: NonlinearPotentialForcePreviewReport;
+  requestedPreviewMass: number;
+  effectivePreviewMass: number;
+  previewAccelerationRealField: Float64Array;
+  previewAccelerationImagField: Float64Array;
+  maxPreviewAccelerationMagnitude: number;
+  previewAccelerationEnergyProxy: number;
+  finiteCellCount: number;
+  nonFiniteCellCount: number;
+  mediumChangedFieldCount: number;
+  warnings: string[];
+  metricKind: 'derived';
+}
