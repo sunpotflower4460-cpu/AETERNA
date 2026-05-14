@@ -70,8 +70,6 @@ export function applyPhaseDriveToWaveTransfer(input: {
 
   const driveObservation = derivePhaseDriveEnergyObservation(input.driveState);
   const mediumEnergyBefore = deriveWaveEnergySnapshot(input.mediumState, input.mediumConfig);
-  const candidateMaskedDriveEnergy = driveObservation.maskWeightedDriveEnergyTotal;
-  const requestedWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy;
 
   const size = Math.min(
     input.driveState.driveRealField.length,
@@ -101,6 +99,9 @@ export function applyPhaseDriveToWaveTransfer(input: {
     driveDirectionEnergyProxy += 0.5 * (directionReal * directionReal + directionImag * directionImag);
     velocityDirectionDot += velocityReal * directionReal + velocityImag * directionImag;
   }
+
+  const candidateMaskedDriveEnergy = driveDirectionEnergyProxy;
+  const requestedWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy;
 
   const velocityKickScale = solveVelocityKickScale({
     targetWorkEnergy: requestedWorkTermEnergy,
