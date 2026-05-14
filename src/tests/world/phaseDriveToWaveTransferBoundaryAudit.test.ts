@@ -45,7 +45,7 @@ function makeDrive(): PhaseCarryingDriveState {
     width: 2,
     height: 2,
     boundaryMode: 'torus',
-    spatialPhaseField: [0, 0, 0, 0],
+    spatialPhaseField: [0, 0.25, 0, 0],
     injectionMask: [1, 0.5, 0, 0],
   });
 
