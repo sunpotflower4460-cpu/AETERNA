@@ -117,6 +117,7 @@ describe('nonlinear potential field preparation', () => {
     });
 
     expect(report.potentialEnergyTotal).toBeCloseTo(-0.625, 12);
+    expect(report.potentialEnergyMax).toBeCloseTo(-0.625, 12);
     expect(report.gradientRealField[0]).toBeCloseTo(-1.5, 12);
     expect(report.warnings.join('\n')).toContain('Local quadratic coefficient is negative');
     expect(report.warnings.join('\n')).toContain('Local quartic coefficient is negative');
