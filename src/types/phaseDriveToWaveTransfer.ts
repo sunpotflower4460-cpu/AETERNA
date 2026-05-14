@@ -1,6 +1,6 @@
 import type { EnergyLedgerState } from './energyLedger.ts';
 import type { PhaseDriveEnergyObservation } from './phaseDriveEnergyObservation.ts';
-import type { WaveEnergySnapshot } from './waveCapableMedium.ts';
+import type { WaveCapableMediumState, WaveEnergySnapshot } from './waveCapableMedium.ts';
 
 export interface PhaseDriveToWaveTransferSkeletonConfig {
   /** Requested local coupling. v5.1.3 keeps effective coupling at zero. */
@@ -50,4 +50,38 @@ export interface PhaseDriveToWaveWorkTermPreviewReport {
   ledger: EnergyLedgerState;
   warnings: string[];
   metricKind: 'check';
+}
+
+export interface PhaseDriveToWaveAppliedTransferConfig {
+  /** Requested local coupling. The effective applied value is clamped to [0, 1]. */
+  driveCoupling: number;
+  tolerance?: number;
+}
+
+export interface PhaseDriveToWaveAppliedTransferReport {
+  source: 'phase-drive-to-wave-applied-transfer';
+  driveTick: number;
+  mediumTickBefore: number;
+  mediumTickAfter: number;
+  requestedDriveCoupling: number;
+  effectiveDriveCoupling: number;
+  driveObservation: PhaseDriveEnergyObservation;
+  mediumEnergyBefore: WaveEnergySnapshot;
+  mediumEnergyAfter: WaveEnergySnapshot;
+  candidateMaskedDriveEnergy: number;
+  requestedWorkTermEnergy: number;
+  appliedWorkTermEnergy: number;
+  mediumInputEnergy: number;
+  mediumEnergyDelta: number;
+  velocityKickScale: number;
+  driveDirectionEnergyProxy: number;
+  mediumChangedFieldCount: number;
+  ledger: EnergyLedgerState;
+  warnings: string[];
+  metricKind: 'check';
+}
+
+export interface PhaseDriveToWaveAppliedTransferResult {
+  state: WaveCapableMediumState;
+  report: PhaseDriveToWaveAppliedTransferReport;
 }

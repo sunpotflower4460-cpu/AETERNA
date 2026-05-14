@@ -1,4 +1,4 @@
-# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 Phase-carrying Drive Route
+# AETERNA Coherence Emergence v5.1.0 / v5.1.1 / v5.1.2 / v5.1.3 / v5.1.4 / v5.1.5 Phase-carrying Drive Route
 
 ## Purpose
 
@@ -12,9 +12,11 @@ v5.1.3 adds the first drive-to-wave-medium boundary skeleton, with effective cou
 
 v5.1.4 adds a drive-to-wave work-term preview. It computes what a local drive-to-medium work term would be under a nonzero coupling, but still does not apply it to the wave medium.
 
-These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, and a preview-only work term.
+v5.1.5 applies a small drive-to-wave work term into the wave medium velocity field and closes the medium energy ledger against the actual measured medium energy delta.
 
-v5.1.4 still does not transfer anything into the wave medium.
+These phases create the structure for a complex external drive field, local injection mask, rotating drive waveform, drive-side diagnostics, a checked transfer boundary, a preview-only work term, and a first applied velocity-side transfer.
+
+v5.1.5 is the first phase in this route where actual medium input may be nonzero.
 
 They do not try to create coherence.
 
@@ -40,10 +42,11 @@ drive-side energy observation
 no-medium-transfer ledger check
 drive-to-wave transfer boundary skeleton
 drive-to-wave work-term preview
-effective drive coupling for preview math
-preview work term energy
-actual medium input = 0
-no applied wave-medium transfer yet
+applied drive-to-wave velocity transfer
+effective drive coupling for applied math
+requested/effective coupling separation
+actual medium input can be nonzero
+medium energy delta is ledgered
 no coherence metric yet
 ```
 
@@ -53,10 +56,12 @@ no coherence metric yet
 - `src/types/phaseDriveEnergyObservation.ts`
 - `src/types/phaseDriveToWaveTransfer.ts`
 - `src/world/phaseCarryingDrive.ts`
+- `src/world/phaseDriveToWaveAppliedTransfer.ts`
 - `src/observer/phaseDriveEnergyObservation.ts`
 - `src/observer/phaseDriveToWaveTransferSkeleton.ts`
 - `src/observer/phaseDriveToWaveWorkTermPreview.ts`
 - `src/tests/world/phaseCarryingDrive.test.ts`
+- `src/tests/world/phaseDriveToWaveAppliedTransfer.test.ts`
 - `src/tests/observer/phaseDriveEnergyObservation.test.ts`
 - `src/tests/observer/phaseDriveToWaveTransferSkeleton.test.ts`
 - `src/tests/observer/phaseDriveToWaveWorkTermPreview.test.ts`
@@ -230,7 +235,8 @@ The preview math is:
 
 ```text
 candidateMaskedDriveEnergy = driveObservation.maskWeightedDriveEnergyTotal
-effectiveDriveCoupling = normalized requested drive coupling
+requestedDriveCoupling = requested config value or 0 if non-finite
+effectiveDriveCoupling = requestedDriveCoupling clamped to [0, 1]
 previewWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy
 previewMediumInputEnergy = previewWorkTermEnergy
 ```
@@ -273,18 +279,120 @@ This phase exists to separate three quantities that must not be confused:
 | `previewWorkTermEnergy` | what the work term would contribute if applied |
 | `actualMediumInputEnergy` | energy actually added to the wave medium in this phase, always zero |
 
+## v5.1.5 Applied drive-to-wave transfer with ledger
+
+`applyPhaseDriveToWaveTransfer` applies a small work term into the wave medium velocity field.
+
+Because it returns a new medium state, it belongs to `src/world/phaseDriveToWaveAppliedTransfer.ts`, not the observer layer.
+
+It still does not write into medium position fields directly.
+
+The applied path still derives a full drive-side observation:
+
+```text
+driveObservation = derivePhaseDriveEnergyObservation(driveState)
+driveObservation.maskWeightedDriveEnergyTotal = full drive-side masked diagnostic energy
+```
+
+However, the actual applied work term must be derived only from the shared transfer region. This is important when the drive field and wave medium field sizes differ.
+
+v5.1.5 builds a masked drive direction only across the shortest shared field length:
+
+```text
+sharedLength = min(
+  driveRealField.length,
+  driveImagField.length,
+  injectionMask.length,
+  mediumRealVelocityField.length,
+  mediumImagVelocityField.length
+)
+
+directionReal[cell] = driveRealField[cell] * sqrt(injectionMask[cell])
+directionImag[cell] = driveImagField[cell] * sqrt(injectionMask[cell])
+driveDirectionEnergyProxy = 0.5 * sum(directionReal^2 + directionImag^2) over sharedLength
+candidateMaskedDriveEnergy = driveDirectionEnergyProxy
+```
+
+Therefore:
+
+```text
+requestedDriveCoupling = requested config value or 0 if non-finite
+effectiveDriveCoupling = requestedDriveCoupling clamped to [0, 1]
+requestedWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy
+```
+
+When drive and medium sizes match, `candidateMaskedDriveEnergy` matches the corresponding masked drive-side energy.
+
+When drive and medium sizes differ, `driveObservation.maskWeightedDriveEnergyTotal` may be larger than `candidateMaskedDriveEnergy`, because the former describes the full drive field while the latter describes only the actually transferable shared region.
+
+Size-mismatch example:
+
+```text
+full drive masked energy = 8
+shared transfer candidateMaskedDriveEnergy = 2
+effectiveDriveCoupling = 1
+requestedWorkTermEnergy = 2
+```
+
+The velocity kick scale is solved from the kinetic-energy delta equation:
+
+```text
+ΔE = s * dot(velocity, direction) + s^2 * driveDirectionEnergyProxy
+```
+
+where:
+
+```text
+s = velocityKickScale
+```
+
+The positive root is used so that:
+
+```text
+mediumEnergyAfter.totalEnergy - mediumEnergyBefore.totalEnergy ≈ requestedWorkTermEnergy
+```
+
+Concrete zero-velocity same-size example:
+
+```text
+candidateMaskedDriveEnergy = 2.25
+effectiveDriveCoupling = 0.2
+requestedWorkTermEnergy = 0.45
+velocityKickScale = sqrt(0.2)
+appliedWorkTermEnergy ≈ 0.45
+mediumInputEnergy ≈ 0.45
+mediumEnergyDelta ≈ 0.45
+ledger.status = closed
+```
+
+The actual ledger is now nonzero:
+
+```text
+inputEnergy = mediumInputEnergy
+internalEnergyBefore = mediumEnergyBefore.totalEnergy
+internalEnergyAfter = mediumEnergyAfter.totalEnergy
+internalAccumulationDelta = mediumEnergyAfter.totalEnergy - mediumEnergyBefore.totalEnergy
+dissipatedEnergy = 0
+actuationOutputEnergy = 0
+residueConvertedEnergy = 0
+boundaryExchangeEnergy = 0
+clampLossOrOverflow = 0
+measuredOutflowEnergy = 0
+```
+
+This phase does not claim coherence. It only applies and accounts a small velocity-side work term.
+
 ## What this deliberately does not add
 
-- no applied drive-to-medium transfer
-- no wave medium mutation
-- no actual medium input
-- no counted transfer work in the actual ledger
 - no coherence observation metrics
-- no runtime dynamics changes
-- no transfer behavior changes
+- no target order parameter
+- no phase-locking target
 - no SpatialWorldMedium update behavior changes
 - no AETERNA internal buffer coupling
 - no center-buffer injection
+- no position-field injection
+- no hidden dissipation
+- no clamp loss
 - no life-like framing
 
 ## Forbidden result-coded terms
@@ -300,7 +408,7 @@ driveSyncStrength
 globalDecayRate
 ```
 
-The drive route may define local phase, local mask, local amplitude, diagnostics, preview work, and later local coupling, but it must not define a target global order outcome.
+The drive route may define local phase, local mask, local amplitude, diagnostics, preview work, applied work, and later local coupling, but it must not define a target global order outcome.
 
 ## Valid language
 
@@ -314,7 +422,9 @@ Drive-side energy observation derived.
 No-medium-transfer ledger closed.
 Drive-to-wave transfer boundary skeleton checked.
 Drive-to-wave work-term preview computed.
-Actual medium input remains zero.
+Actual medium input remains zero in v5.1.4.
+Applied drive-to-wave velocity transfer computed in v5.1.5.
+Medium energy delta is ledgered.
 ```
 
 ## Invalid language
@@ -333,7 +443,7 @@ AETERNA is alive.
 A safe next step is:
 
 ```text
-v5.1.5 Applied Drive-to-Wave Transfer with Ledger
+v5.1.6 Transfer Scenario Suite
 ```
 
-That phase may apply a small nonzero transfer, but only if the actual medium energy change is accounted through an explicit ledger term and tested against zero-coupling and no-application references.
+That phase should compare zero-coupling, preview-only, applied transfer, high coupling clamp, no drive direction, existing medium velocity, and size mismatch conditions.
