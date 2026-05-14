@@ -19,6 +19,17 @@ const mediumConfig: WaveCapableMediumConfig = {
   tolerance: 1e-9,
 };
 
+const oneCellMediumConfig: WaveCapableMediumConfig = {
+  width: 1,
+  height: 1,
+  boundaryMode: 'torus',
+  localElasticCoupling: 1,
+  localWaveDamping: 0,
+  amplitudeClamp: 10,
+  dt: 1,
+  tolerance: 1e-9,
+};
+
 const forbiddenResultTerms = [
   'coherenceTarget',
   'phaseLockingRate',
@@ -115,6 +126,43 @@ describe('phase drive to wave applied transfer', () => {
     expect(result.report.mediumEnergyDelta).toBe(0);
     expect(result.report.mediumChangedFieldCount).toBe(0);
     expect(result.report.ledger.status).toBe('closed');
+    expect(result.state.tick).toBe(1);
+  });
+
+  it('uses only the shortest shared transfer region when drive and medium sizes differ', () => {
+    const drive = createPhaseCarryingDriveState({
+      width: 2,
+      height: 2,
+      boundaryMode: 'torus',
+      spatialPhaseField: [0, 0, 0, 0],
+      injectionMask: [1, 1, 1, 1],
+    });
+    const periodicDrive = updatePeriodicPhaseDrive(drive.state, {
+      periodTicks: 8,
+      driveAmplitude: 2,
+    });
+    const medium = createWaveCapableMediumState({ width: 1, height: 1, boundaryMode: 'torus' });
+
+    const result = applyPhaseDriveToWaveTransfer({
+      driveState: periodicDrive.state,
+      mediumState: medium,
+      mediumConfig: oneCellMediumConfig,
+      transferConfig: {
+        driveCoupling: 1,
+        tolerance: 1e-9,
+      },
+    });
+
+    expect(result.report.driveObservation.maskWeightedDriveEnergyTotal).toBeCloseTo(8, 12);
+    expect(result.report.candidateMaskedDriveEnergy).toBeCloseTo(2, 12);
+    expect(result.report.driveDirectionEnergyProxy).toBeCloseTo(2, 12);
+    expect(result.report.requestedWorkTermEnergy).toBeCloseTo(2, 12);
+    expect(result.report.appliedWorkTermEnergy).toBeCloseTo(2, 12);
+    expect(result.report.mediumInputEnergy).toBeCloseTo(2, 12);
+    expect(result.report.mediumEnergyDelta).toBeCloseTo(2, 12);
+    expect(result.report.mediumEnergyAfter.totalEnergy).toBeCloseTo(2, 12);
+    expect(result.report.ledger.status).toBe('closed');
+    expect(result.report.warnings.join('\n')).toContain('shortest shared field length');
     expect(result.state.tick).toBe(1);
   });
 
