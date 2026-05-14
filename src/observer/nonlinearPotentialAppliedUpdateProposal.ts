@@ -84,20 +84,46 @@ export function deriveNonlinearPotentialAppliedUpdateProposal(input: {
   const proposedVelocityDeltaImagField = new Float64Array(size);
   const warnings = [...boundaryAudit.warnings, ...dt.warnings, ...velocityScale.warnings];
   const findings = [...boundaryAudit.findings];
+  const accelerationPreview = boundaryAudit.accelerationPreview;
 
-  const proposalStatus: NonlinearPotentialAppliedUpdateProposalStatus =
+  let proposalStatus: NonlinearPotentialAppliedUpdateProposalStatus =
     boundaryAudit.boundaryAuditStatus === 'pass' ? 'proposed' : 'blocked';
+
+  const previewFieldSizeMatches =
+    accelerationPreview.previewAccelerationRealField.length === size &&
+    accelerationPreview.previewAccelerationImagField.length === size;
+
+  if (proposalStatus === 'proposed' && !previewFieldSizeMatches) {
+    proposalStatus = 'blocked';
+    warnings.push('Applied update proposal was blocked because acceleration preview field lengths did not match medium size.');
+    findings.push('Applied nonlinear update proposal was blocked by preview field size mismatch.');
+  }
+
+  const updateScale = dt.effective * velocityScale.effective;
+  if (proposalStatus === 'proposed' && !Number.isFinite(updateScale)) {
+    proposalStatus = 'blocked';
+    warnings.push('Applied update proposal was blocked because proposed dt and velocity scale produced a non-finite update scale.');
+    findings.push('Applied nonlinear update proposal was blocked by non-finite update scale.');
+  }
 
   let maxProposedVelocityDeltaMagnitude = 0;
   let proposedVelocityDeltaEnergyProxy = 0;
 
   if (proposalStatus === 'proposed') {
-    const accelerationPreview = boundaryAudit.accelerationPreview;
-    const updateScale = dt.effective * velocityScale.effective;
-
     for (let i = 0; i < size; i++) {
       const deltaReal = accelerationPreview.previewAccelerationRealField[i] * updateScale;
       const deltaImag = accelerationPreview.previewAccelerationImagField[i] * updateScale;
+
+      if (!Number.isFinite(deltaReal) || !Number.isFinite(deltaImag)) {
+        proposalStatus = 'blocked';
+        proposedVelocityDeltaRealField.fill(0);
+        proposedVelocityDeltaImagField.fill(0);
+        maxProposedVelocityDeltaMagnitude = 0;
+        proposedVelocityDeltaEnergyProxy = 0;
+        warnings.push('Applied update proposal was blocked because a proposed velocity delta was non-finite.');
+        findings.push('Applied nonlinear update proposal was blocked by non-finite velocity delta.');
+        break;
+      }
 
       proposedVelocityDeltaRealField[i] = deltaReal;
       proposedVelocityDeltaImagField[i] = deltaImag;
@@ -107,9 +133,13 @@ export function deriveNonlinearPotentialAppliedUpdateProposal(input: {
       proposedVelocityDeltaEnergyProxy += 0.5 * (deltaReal * deltaReal + deltaImag * deltaImag);
     }
 
-    findings.push('A future applied update may be proposed for velocity fields only.');
-  } else {
-    findings.push('Applied nonlinear update proposal was blocked by boundary audit status.');
+    if (proposalStatus === 'proposed') {
+      findings.push('A future applied update may be proposed for velocity fields only.');
+    }
+  }
+
+  if (proposalStatus === 'blocked') {
+    findings.push('Applied nonlinear update proposal was blocked before runtime application.');
   }
 
   findings.push('v6.4 does not mutate medium state and does not authorize runtime application.');
