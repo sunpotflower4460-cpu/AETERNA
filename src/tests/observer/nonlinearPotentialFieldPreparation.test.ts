@@ -82,10 +82,13 @@ describe('nonlinear potential field preparation', () => {
     const medium = createWaveCapableMediumState(
       { width: 2, height: 2, boundaryMode: 'torus' },
       {
-        mediumRealField: [Number.NaN, 1, Number.POSITIVE_INFINITY, 0],
-        mediumImagField: [0, 0, 1, Number.NEGATIVE_INFINITY],
+        mediumRealField: [0, 1, 0, 0],
+        mediumImagField: [0, 0, 0, 0],
       },
     );
+    medium.mediumRealField[0] = Number.NaN;
+    medium.mediumRealField[2] = Number.POSITIVE_INFINITY;
+    medium.mediumImagField[3] = Number.NEGATIVE_INFINITY;
 
     const report = deriveNonlinearPotentialFieldPreparation({ mediumState: medium, config });
 
