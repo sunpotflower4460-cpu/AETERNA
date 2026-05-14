@@ -1,4 +1,4 @@
-# AETERNA v6.0 / v6.1 / v6.2 Nonlinear Potential Field Route
+# AETERNA v6.0 / v6.1 / v6.2 / v6.3 Nonlinear Potential Field Route
 
 ## Purpose
 
@@ -7,6 +7,8 @@ v6.0 prepares a local nonlinear-potential-field observation layer for the wave-c
 v6.1 adds a read-only nonlinear potential force preview. It converts the v6.0 local potential gradient into a negative-gradient force candidate, but it does not apply that force to acceleration, velocity, position, damping, drive, synchronization, or any runtime update.
 
 v6.2 adds a read-only nonlinear potential acceleration preview. It converts the v6.1 force candidate into an acceleration candidate using a preview-only positive mass divisor, but it does not integrate acceleration into velocity or position.
+
+v6.3 adds a boundary audit for the v6.0-v6.2 preview chain. It checks whether the chain remains read-only, whether every preview report declares zero medium changes, and whether non-finite preview cells are visible as warnings.
 
 These phases are intentionally read-only.
 
@@ -18,11 +20,12 @@ v5.1.x phase-carrying external drive route
 v6.0   nonlinear potential field preparation
 v6.1   nonlinear potential force preview
 v6.2   nonlinear potential acceleration preview
+v6.3   nonlinear potential boundary audit
 ```
 
 v6.x begins a new route after the v5.1 transfer boundary audit.
 
-v6.0, v6.1, and v6.2 should be treated as preparation/preview layers, not as the first nonlinear runtime.
+v6.0, v6.1, v6.2, and v6.3 should be treated as preparation/preview/audit layers, not as the first nonlinear runtime.
 
 ## Added files
 
@@ -39,12 +42,19 @@ v6.1 added:
 - `NonlinearPotentialForcePreviewConfig`
 - `NonlinearPotentialForcePreviewReport`
 
-v6.2 adds:
+v6.2 added:
 
 - `src/observer/nonlinearPotentialAccelerationPreview.ts`
 - `src/tests/observer/nonlinearPotentialAccelerationPreview.test.ts`
 - `NonlinearPotentialAccelerationPreviewConfig`
 - `NonlinearPotentialAccelerationPreviewReport`
+
+v6.3 adds:
+
+- `src/observer/nonlinearPotentialBoundaryAudit.ts`
+- `src/tests/observer/nonlinearPotentialBoundaryAudit.test.ts`
+- `NonlinearPotentialBoundaryAuditStatus`
+- `NonlinearPotentialBoundaryAuditReport`
 
 ## Local potential definition
 
@@ -100,6 +110,28 @@ previewAccelerationImag = previewForceImag / effectivePreviewMass
 If `previewMass` is non-finite, v6.2 treats it as `1` and emits a warning.
 
 If `previewMass` is zero or negative, v6.2 clamps it to `1` and emits a warning.
+
+v6.2 recomputes finite/non-finite cell counts after mass division so overflow in acceleration preview remains visible.
+
+## v6.3 Boundary audit definition
+
+v6.3 runs the nonlinear potential preview chain and audits three boundaries:
+
+```text
+actual medium field changes
+preview-reported medium changes
+non-finite preview diagnostics
+```
+
+It returns one of three statuses:
+
+```text
+pass    = no medium change, no preview-reported medium change, no warnings
+warning = read-only boundary held, but numeric or normalization warnings exist
+fail    = actual medium fields changed or preview reports declare medium changes
+```
+
+`appliedRuntimeReady` is always `false` in v6.3. This audit locks the current boundary; it does not authorize runtime application.
 
 ## v6.0 Report fields
 
@@ -174,9 +206,31 @@ metricKind = derived
 
 The preview acceleration field is not counted as medium input energy, because no medium mutation occurs in v6.2.
 
+## v6.3 Report fields
+
+`deriveNonlinearPotentialBoundaryAudit` returns:
+
+```text
+source = nonlinear-potential-boundary-audit
+mediumTick
+accelerationPreview
+boundaryAuditStatus
+appliedRuntimeReady
+mediumFieldChangeCount
+previewReportChangeCount
+boundaryViolationCount
+numericWarningCount
+findings
+warnings
+mediumChangedFieldCount
+metricKind = derived
+```
+
+`mediumChangedFieldCount` must remain zero in this phase.
+
 ## Boundary rules
 
-v6.0, v6.1, and v6.2 must not:
+v6.0, v6.1, v6.2, and v6.3 must not:
 
 - mutate `WaveCapableMediumState`
 - increment medium `tick`
@@ -202,7 +256,7 @@ However, this must remain a material-like local law, not a desired outcome.
 The correct direction is:
 
 ```text
-local field state -> local potential -> local gradient -> preview force -> preview acceleration -> later audited applied update
+local field state -> local potential -> local gradient -> preview force -> preview acceleration -> boundary audit -> later audited applied update
 ```
 
 The incorrect direction is:
@@ -221,8 +275,10 @@ Nonlinear potential force preview derived.
 Preview force was computed from the negative local gradient.
 Nonlinear potential acceleration preview derived.
 Preview acceleration was computed from preview force divided by preview mass.
+Nonlinear potential boundary audit derived.
 Medium state was not mutated.
-No nonlinear acceleration was applied in v6.2.
+No nonlinear acceleration was applied in v6.3.
+Applied nonlinear runtime remains locked behind a later audited phase.
 ```
 
 ## Invalid language
@@ -233,6 +289,7 @@ The potential synchronized the medium.
 The gradient pulled the system toward a target state.
 The force preview changed the medium.
 The acceleration preview changed velocity.
+The boundary audit authorized runtime application.
 The medium became more alive.
 The nonlinear field is now a life force.
 ```
@@ -242,7 +299,7 @@ The nonlinear field is now a life force.
 A safe next phase is:
 
 ```text
-v6.3 Nonlinear Potential Boundary Audit
+v6.4 Nonlinear Potential Applied Update Proposal
 ```
 
-That phase may audit the v6.0-v6.2 preview chain before any applied nonlinear runtime behavior is introduced.
+That phase may propose the first applied nonlinear update, but it must explicitly define mutation boundaries, energy accounting, tick behavior, and rollback-safe tests before any runtime behavior is accepted.
