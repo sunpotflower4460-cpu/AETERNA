@@ -114,7 +114,75 @@ describe('nonlinear potential applied update proposal', () => {
     expect(Array.from(report.proposedVelocityDeltaRealField)).toEqual([0]);
     expect(Array.from(report.proposedVelocityDeltaImagField)).toEqual([0]);
     expect(report.warnings.join('\n')).toContain('non-finite nonlinear-acceleration preview cell');
-    expect(report.findings.join('\n')).toContain('blocked by boundary audit status');
+    expect(report.findings.join('\n')).toContain('blocked before runtime application');
+    expect(report.appliedRuntimeReady).toBe(false);
+  });
+
+  it('blocks proposal when proposed dt and velocity scale overflow into a non-finite update scale', () => {
+    const medium = createWaveCapableMediumState(
+      { width: 1, height: 1, boundaryMode: 'torus' },
+      { mediumRealField: [1], mediumImagField: [0] },
+    );
+    const before = snapshotMedium(medium);
+
+    const report = deriveNonlinearPotentialAppliedUpdateProposal({
+      mediumState: medium,
+      config: {
+        width: 1,
+        height: 1,
+        boundaryMode: 'torus',
+        localQuadraticCoefficient: 2,
+        localQuarticCoefficient: 0,
+        previewForceScale: 0.5,
+        previewMass: 1,
+        proposedDt: 1e308,
+        proposedVelocityUpdateScale: 1e308,
+      },
+    });
+
+    expect(snapshotMedium(medium)).toEqual(before);
+    expect(report.boundaryAudit.boundaryAuditStatus).toBe('pass');
+    expect(report.proposalStatus).toBe('blocked');
+    expect(report.proposedTickDelta).toBe(0);
+    expect(Array.from(report.proposedVelocityDeltaRealField)).toEqual([0]);
+    expect(Array.from(report.proposedVelocityDeltaImagField)).toEqual([0]);
+    expect(report.maxProposedVelocityDeltaMagnitude).toBe(0);
+    expect(report.proposedVelocityDeltaEnergyProxy).toBe(0);
+    expect(report.warnings.join('\n')).toContain('non-finite update scale');
+    expect(report.appliedRuntimeReady).toBe(false);
+  });
+
+  it('blocks proposal if proposed velocity deltas become non-finite', () => {
+    const medium = createWaveCapableMediumState(
+      { width: 1, height: 1, boundaryMode: 'torus' },
+      { mediumRealField: [Number.MAX_VALUE], mediumImagField: [0] },
+    );
+    const before = snapshotMedium(medium);
+
+    const report = deriveNonlinearPotentialAppliedUpdateProposal({
+      mediumState: medium,
+      config: {
+        width: 1,
+        height: 1,
+        boundaryMode: 'torus',
+        localQuadraticCoefficient: 1,
+        localQuarticCoefficient: 0,
+        previewForceScale: Number.MIN_VALUE,
+        previewMass: 1,
+        proposedDt: Number.MAX_VALUE,
+        proposedVelocityUpdateScale: 1,
+      },
+    });
+
+    expect(snapshotMedium(medium)).toEqual(before);
+    expect(report.boundaryAudit.boundaryAuditStatus).toBe('pass');
+    expect(report.proposalStatus).toBe('blocked');
+    expect(report.proposedTickDelta).toBe(0);
+    expect(Array.from(report.proposedVelocityDeltaRealField)).toEqual([0]);
+    expect(Array.from(report.proposedVelocityDeltaImagField)).toEqual([0]);
+    expect(report.maxProposedVelocityDeltaMagnitude).toBe(0);
+    expect(report.proposedVelocityDeltaEnergyProxy).toBe(0);
+    expect(report.warnings.join('\n')).toContain('non-finite velocity delta');
     expect(report.appliedRuntimeReady).toBe(false);
   });
 
