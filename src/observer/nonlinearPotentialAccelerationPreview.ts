@@ -50,6 +50,9 @@ export function deriveNonlinearPotentialAccelerationPreview(input: {
 
   let maxPreviewAccelerationMagnitude = 0;
   let previewAccelerationEnergyProxy = 0;
+  let finiteCellCount = 0;
+  let nonFiniteCellCount = 0;
+  const warnings = [...forcePreview.warnings, ...mass.warnings];
 
   for (let i = 0; i < size; i++) {
     const accelerationReal = forcePreview.previewForceRealField[i] / mass.effectivePreviewMass;
@@ -58,9 +61,19 @@ export function deriveNonlinearPotentialAccelerationPreview(input: {
     previewAccelerationRealField[i] = accelerationReal;
     previewAccelerationImagField[i] = accelerationImag;
 
+    if (Number.isFinite(accelerationReal) && Number.isFinite(accelerationImag)) {
+      finiteCellCount += 1;
+    } else {
+      nonFiniteCellCount += 1;
+    }
+
     const magnitude = Math.sqrt(accelerationReal * accelerationReal + accelerationImag * accelerationImag);
     maxPreviewAccelerationMagnitude = Math.max(maxPreviewAccelerationMagnitude, magnitude);
     previewAccelerationEnergyProxy += 0.5 * (accelerationReal * accelerationReal + accelerationImag * accelerationImag);
+  }
+
+  if (nonFiniteCellCount > 0) {
+    warnings.push(`${nonFiniteCellCount} non-finite nonlinear-acceleration preview cell(s) were produced.`);
   }
 
   return {
@@ -73,10 +86,10 @@ export function deriveNonlinearPotentialAccelerationPreview(input: {
     previewAccelerationImagField,
     maxPreviewAccelerationMagnitude,
     previewAccelerationEnergyProxy,
-    finiteCellCount: forcePreview.finiteCellCount,
-    nonFiniteCellCount: forcePreview.nonFiniteCellCount,
+    finiteCellCount,
+    nonFiniteCellCount,
     mediumChangedFieldCount: 0,
-    warnings: [...forcePreview.warnings, ...mass.warnings],
+    warnings,
     metricKind: 'derived',
   };
 }
