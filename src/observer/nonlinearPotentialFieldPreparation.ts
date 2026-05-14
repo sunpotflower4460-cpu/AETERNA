@@ -31,7 +31,7 @@ function countChangedSamples(before: Float64Array, after: Float64Array): number 
   const count = Math.min(before.length, after.length);
   let changed = before.length === after.length ? 0 : Math.abs(before.length - after.length);
   for (let i = 0; i < count; i++) {
-    if (before[i] !== after[i]) changed += 1;
+    if (!Object.is(before[i], after[i])) changed += 1;
   }
   return changed;
 }
