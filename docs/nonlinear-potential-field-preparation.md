@@ -1,10 +1,12 @@
-# AETERNA v6.0 / v6.1 Nonlinear Potential Field Route
+# AETERNA v6.0 / v6.1 / v6.2 Nonlinear Potential Field Route
 
 ## Purpose
 
 v6.0 prepares a local nonlinear-potential-field observation layer for the wave-capable medium.
 
 v6.1 adds a read-only nonlinear potential force preview. It converts the v6.0 local potential gradient into a negative-gradient force candidate, but it does not apply that force to acceleration, velocity, position, damping, drive, synchronization, or any runtime update.
+
+v6.2 adds a read-only nonlinear potential acceleration preview. It converts the v6.1 force candidate into an acceleration candidate using a preview-only positive mass divisor, but it does not integrate acceleration into velocity or position.
 
 These phases are intentionally read-only.
 
@@ -15,11 +17,12 @@ v5.0.x wave-capable medium foundation
 v5.1.x phase-carrying external drive route
 v6.0   nonlinear potential field preparation
 v6.1   nonlinear potential force preview
+v6.2   nonlinear potential acceleration preview
 ```
 
 v6.x begins a new route after the v5.1 transfer boundary audit.
 
-v6.0 and v6.1 should be treated as preparation/preview layers, not as the first nonlinear runtime.
+v6.0, v6.1, and v6.2 should be treated as preparation/preview layers, not as the first nonlinear runtime.
 
 ## Added files
 
@@ -29,12 +32,19 @@ v6.0 added:
 - `src/observer/nonlinearPotentialFieldPreparation.ts`
 - `src/tests/observer/nonlinearPotentialFieldPreparation.test.ts`
 
-v6.1 adds:
+v6.1 added:
 
 - `src/observer/nonlinearPotentialForcePreview.ts`
 - `src/tests/observer/nonlinearPotentialForcePreview.test.ts`
 - `NonlinearPotentialForcePreviewConfig`
 - `NonlinearPotentialForcePreviewReport`
+
+v6.2 adds:
+
+- `src/observer/nonlinearPotentialAccelerationPreview.ts`
+- `src/tests/observer/nonlinearPotentialAccelerationPreview.test.ts`
+- `NonlinearPotentialAccelerationPreviewConfig`
+- `NonlinearPotentialAccelerationPreviewReport`
 
 ## Local potential definition
 
@@ -75,6 +85,21 @@ previewForceImag = -effectivePreviewForceScale * gradientImag
 If `previewForceScale` is non-finite, v6.1 treats it as zero and emits a warning.
 
 If `previewForceScale` is negative, v6.1 clamps it to zero and emits a warning.
+
+## v6.2 Acceleration preview definition
+
+v6.2 reads the v6.1 force preview and derives a local acceleration candidate:
+
+```text
+previewAccelerationReal = previewForceReal / effectivePreviewMass
+previewAccelerationImag = previewForceImag / effectivePreviewMass
+```
+
+`previewMass` is not a target order parameter. It is a preview-only positive mass divisor for checking how a later local force term might be converted into acceleration.
+
+If `previewMass` is non-finite, v6.2 treats it as `1` and emits a warning.
+
+If `previewMass` is zero or negative, v6.2 clamps it to `1` and emits a warning.
 
 ## v6.0 Report fields
 
@@ -124,9 +149,34 @@ metricKind = derived
 
 The preview force field is not counted as medium input energy, because no medium mutation occurs in v6.1.
 
+## v6.2 Report fields
+
+`deriveNonlinearPotentialAccelerationPreview` returns:
+
+```text
+source = nonlinear-potential-acceleration-preview
+mediumTick
+forcePreview
+requestedPreviewMass
+effectivePreviewMass
+previewAccelerationRealField
+previewAccelerationImagField
+maxPreviewAccelerationMagnitude
+previewAccelerationEnergyProxy
+finiteCellCount
+nonFiniteCellCount
+mediumChangedFieldCount
+warnings
+metricKind = derived
+```
+
+`mediumChangedFieldCount` must remain zero in this phase.
+
+The preview acceleration field is not counted as medium input energy, because no medium mutation occurs in v6.2.
+
 ## Boundary rules
 
-v6.0 and v6.1 must not:
+v6.0, v6.1, and v6.2 must not:
 
 - mutate `WaveCapableMediumState`
 - increment medium `tick`
@@ -135,6 +185,8 @@ v6.0 and v6.1 must not:
 - write into dissipation, residue, or outflow fields
 - apply nonlinear acceleration
 - apply nonlinear force
+- integrate acceleration into velocity
+- integrate velocity into position
 - connect to phase-drive transfer
 - connect to AETERNA internal buffers
 - define a target order parameter
@@ -150,7 +202,7 @@ However, this must remain a material-like local law, not a desired outcome.
 The correct direction is:
 
 ```text
-local field state -> local potential -> local gradient -> preview force -> later audited applied force
+local field state -> local potential -> local gradient -> preview force -> preview acceleration -> later audited applied update
 ```
 
 The incorrect direction is:
@@ -167,8 +219,10 @@ Local quadratic-quartic potential observed.
 Potential gradient field derived as diagnostic output.
 Nonlinear potential force preview derived.
 Preview force was computed from the negative local gradient.
+Nonlinear potential acceleration preview derived.
+Preview acceleration was computed from preview force divided by preview mass.
 Medium state was not mutated.
-No nonlinear force was applied in v6.1.
+No nonlinear acceleration was applied in v6.2.
 ```
 
 ## Invalid language
@@ -178,6 +232,7 @@ The nonlinear field created coherence.
 The potential synchronized the medium.
 The gradient pulled the system toward a target state.
 The force preview changed the medium.
+The acceleration preview changed velocity.
 The medium became more alive.
 The nonlinear field is now a life force.
 ```
@@ -187,7 +242,7 @@ The nonlinear field is now a life force.
 A safe next phase is:
 
 ```text
-v6.2 Nonlinear Potential Acceleration Preview
+v6.3 Nonlinear Potential Boundary Audit
 ```
 
-That phase may convert the preview force into a preview acceleration term, but it should still remain read-only until a later applied phase explicitly accounts energy and mutation boundaries.
+That phase may audit the v6.0-v6.2 preview chain before any applied nonlinear runtime behavior is introduced.
