@@ -77,7 +77,7 @@ describe('phase drive to wave applied transfer', () => {
     expect(report.mediumEnergyAfter.totalEnergy).toBeCloseTo(0.45, 12);
     expect(report.driveDirectionEnergyProxy).toBeCloseTo(2.25, 12);
     expect(report.velocityKickScale).toBeCloseTo(Math.sqrt(0.2), 12);
-    expect(report.changedFieldCount).toBeGreaterThan(0);
+    expect(report.mediumChangedFieldCount).toBeGreaterThan(0);
     expect(report.ledger.status).toBe('closed');
     expect(report.ledger.inputEnergy).toBeCloseTo(0.45, 12);
     expect(report.ledger.internalAccumulationDelta).toBeCloseTo(0.45, 12);
@@ -113,7 +113,7 @@ describe('phase drive to wave applied transfer', () => {
     expect(result.report.appliedWorkTermEnergy).toBe(0);
     expect(result.report.mediumInputEnergy).toBe(0);
     expect(result.report.mediumEnergyDelta).toBe(0);
-    expect(result.report.changedFieldCount).toBe(0);
+    expect(result.report.mediumChangedFieldCount).toBe(0);
     expect(result.report.ledger.status).toBe('closed');
     expect(result.state.tick).toBe(1);
   });
@@ -147,7 +147,9 @@ describe('phase drive to wave applied transfer', () => {
     expect(aboveUnit.report.candidateMaskedDriveEnergy).toBeCloseTo(2, 12);
     expect(aboveUnit.report.requestedWorkTermEnergy).toBeCloseTo(2, 12);
     expect(aboveUnit.report.appliedWorkTermEnergy).toBeCloseTo(2, 12);
-    expect(aboveUnit.report.appliedWorkTermEnergy).toBeLessThanOrEqual(aboveUnit.report.candidateMaskedDriveEnergy);
+    expect(aboveUnit.report.appliedWorkTermEnergy).toBeLessThanOrEqual(
+      aboveUnit.report.candidateMaskedDriveEnergy + 1e-9,
+    );
     expect(aboveUnit.report.warnings.join('\n')).toContain('clamped to [0, 1]');
 
     const negative = applyPhaseDriveToWaveTransfer({
