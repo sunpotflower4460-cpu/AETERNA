@@ -89,3 +89,36 @@ export interface NonlinearPotentialBoundaryAuditReport {
   mediumChangedFieldCount: number;
   metricKind: 'derived';
 }
+
+export type NonlinearPotentialAppliedUpdateProposalStatus = 'proposed' | 'blocked';
+
+export interface NonlinearPotentialAppliedUpdateProposalConfig extends NonlinearPotentialAccelerationPreviewConfig {
+  /** Proposal-only timestep for converting acceleration candidates into velocity delta candidates. Nonnegative and not applied in v6.4. */
+  proposedDt: number;
+  /** Proposal-only scale for velocity delta candidates. Nonnegative and not an outcome target. */
+  proposedVelocityUpdateScale: number;
+}
+
+export interface NonlinearPotentialAppliedUpdateProposalReport {
+  source: 'nonlinear-potential-applied-update-proposal';
+  mediumTick: number;
+  boundaryAudit: NonlinearPotentialBoundaryAuditReport;
+  proposalStatus: NonlinearPotentialAppliedUpdateProposalStatus;
+  appliedRuntimeReady: boolean;
+  requestedProposedDt: number;
+  effectiveProposedDt: number;
+  requestedProposedVelocityUpdateScale: number;
+  effectiveProposedVelocityUpdateScale: number;
+  proposedVelocityDeltaRealField: Float64Array;
+  proposedVelocityDeltaImagField: Float64Array;
+  maxProposedVelocityDeltaMagnitude: number;
+  proposedVelocityDeltaEnergyProxy: number;
+  proposedTickDelta: number;
+  allowedMutationFields: string[];
+  forbiddenMutationFields: string[];
+  requiredEnergyAccounting: string[];
+  findings: string[];
+  warnings: string[];
+  mediumChangedFieldCount: number;
+  metricKind: 'derived';
+}
