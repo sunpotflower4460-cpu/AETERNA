@@ -72,6 +72,8 @@ describe('nonlinear potential acceleration preview', () => {
     expect(report.maxPreviewAccelerationMagnitude).toBeCloseTo(4, 12);
     expect(report.previewAccelerationEnergyProxy).toBeCloseTo(0.5 * (1.25 * 1.25 + 1.25 * 1.25 + 4 * 4), 12);
 
+    expect(report.finiteCellCount).toBe(4);
+    expect(report.nonFiniteCellCount).toBe(0);
     expect(report.mediumChangedFieldCount).toBe(0);
     expect(report.metricKind).toBe('derived');
     expect(report.source).toBe('nonlinear-potential-acceleration-preview');
@@ -102,6 +104,8 @@ describe('nonlinear potential acceleration preview', () => {
     expect(Array.from(report.previewAccelerationRealField)).toEqual([-1]);
     expect(Array.from(report.previewAccelerationImagField)).toEqual([-0]);
     expect(report.warnings.join('\n')).toContain('Non-positive preview mass was clamped to 1.');
+    expect(report.finiteCellCount).toBe(1);
+    expect(report.nonFiniteCellCount).toBe(0);
     expect(report.mediumChangedFieldCount).toBe(0);
   });
 
@@ -154,6 +158,33 @@ describe('nonlinear potential acceleration preview', () => {
     expect(report.warnings.join('\n')).toContain('Non-finite preview mass was treated as 1.');
   });
 
+  it('recomputes finite counts after mass division and warns on non-finite acceleration output', () => {
+    const medium = createWaveCapableMediumState(
+      { width: 1, height: 1, boundaryMode: 'torus' },
+      { mediumRealField: [Number.MAX_VALUE], mediumImagField: [0] },
+    );
+
+    const report = deriveNonlinearPotentialAccelerationPreview({
+      mediumState: medium,
+      config: {
+        width: 1,
+        height: 1,
+        boundaryMode: 'torus',
+        localQuadraticCoefficient: Number.MAX_VALUE,
+        localQuarticCoefficient: 0,
+        previewForceScale: 1,
+        previewMass: Number.MIN_VALUE,
+      },
+    });
+
+    expect(report.forcePreview.finiteCellCount).toBe(1);
+    expect(report.finiteCellCount).toBe(0);
+    expect(report.nonFiniteCellCount).toBe(1);
+    expect(report.previewAccelerationRealField[0]).toBe(Number.NEGATIVE_INFINITY);
+    expect(report.warnings.join('\n')).toContain('non-finite nonlinear-acceleration preview cell');
+    expect(report.mediumChangedFieldCount).toBe(0);
+  });
+
   it('propagates force preview warnings while keeping acceleration preview read-only', () => {
     const medium = createWaveCapableMediumState({ width: 1, height: 1, boundaryMode: 'torus' });
     medium.mediumRealField[0] = Number.NaN;
@@ -171,8 +202,9 @@ describe('nonlinear potential acceleration preview', () => {
       },
     });
 
-    expect(report.finiteCellCount).toBe(0);
-    expect(report.nonFiniteCellCount).toBe(1);
+    expect(report.finiteCellCount).toBe(1);
+    expect(report.nonFiniteCellCount).toBe(0);
+    expect(report.forcePreview.nonFiniteCellCount).toBe(1);
     expect(report.warnings.join('\n')).toContain('non-finite nonlinear-potential cell');
     expect(report.warnings.join('\n')).toContain('Local quadratic coefficient is negative');
     expect(report.warnings.join('\n')).toContain('Local quartic coefficient is negative');
