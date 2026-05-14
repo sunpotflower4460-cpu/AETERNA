@@ -287,31 +287,52 @@ Because it returns a new medium state, it belongs to `src/world/phaseDriveToWave
 
 It still does not write into medium position fields directly.
 
-The applied path uses the existing drive-side energy definition:
+The applied path still derives a full drive-side observation:
 
 ```text
-driveEnergy[cell] = 0.5 * (driveRealField[cell]^2 + driveImagField[cell]^2)
-maskWeightedDriveEnergy[cell] = driveEnergy[cell] * injectionMask[cell]
+driveObservation = derivePhaseDriveEnergyObservation(driveState)
+driveObservation.maskWeightedDriveEnergyTotal = full drive-side masked diagnostic energy
 ```
 
-The work term is:
+However, the actual applied work term must be derived only from the shared transfer region. This is important when the drive field and wave medium field sizes differ.
+
+v5.1.5 builds a masked drive direction only across the shortest shared field length:
 
 ```text
-candidateMaskedDriveEnergy = driveObservation.maskWeightedDriveEnergyTotal
+sharedLength = min(
+  driveRealField.length,
+  driveImagField.length,
+  injectionMask.length,
+  mediumRealVelocityField.length,
+  mediumImagVelocityField.length
+)
+
+directionReal[cell] = driveRealField[cell] * sqrt(injectionMask[cell])
+directionImag[cell] = driveImagField[cell] * sqrt(injectionMask[cell])
+driveDirectionEnergyProxy = 0.5 * sum(directionReal^2 + directionImag^2) over sharedLength
+candidateMaskedDriveEnergy = driveDirectionEnergyProxy
+```
+
+Therefore:
+
+```text
 requestedDriveCoupling = requested config value or 0 if non-finite
 effectiveDriveCoupling = requestedDriveCoupling clamped to [0, 1]
 requestedWorkTermEnergy = effectiveDriveCoupling * candidateMaskedDriveEnergy
 ```
 
-Then v5.1.5 builds a masked drive direction for the velocity kick:
+When drive and medium sizes match, `candidateMaskedDriveEnergy` matches the corresponding masked drive-side energy.
+
+When drive and medium sizes differ, `driveObservation.maskWeightedDriveEnergyTotal` may be larger than `candidateMaskedDriveEnergy`, because the former describes the full drive field while the latter describes only the actually transferable shared region.
+
+Size-mismatch example:
 
 ```text
-directionReal[cell] = driveRealField[cell] * sqrt(injectionMask[cell])
-directionImag[cell] = driveImagField[cell] * sqrt(injectionMask[cell])
-driveDirectionEnergyProxy = 0.5 * sum(directionReal^2 + directionImag^2)
+full drive masked energy = 8
+shared transfer candidateMaskedDriveEnergy = 2
+effectiveDriveCoupling = 1
+requestedWorkTermEnergy = 2
 ```
-
-This makes `driveDirectionEnergyProxy` match `candidateMaskedDriveEnergy`.
 
 The velocity kick scale is solved from the kinetic-energy delta equation:
 
@@ -331,7 +352,7 @@ The positive root is used so that:
 mediumEnergyAfter.totalEnergy - mediumEnergyBefore.totalEnergy ≈ requestedWorkTermEnergy
 ```
 
-Concrete zero-velocity example:
+Concrete zero-velocity same-size example:
 
 ```text
 candidateMaskedDriveEnergy = 2.25
