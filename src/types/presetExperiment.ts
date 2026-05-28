@@ -19,6 +19,7 @@
  */
 
 import type { ResearchScenarioId } from './researchScenario.ts';
+import type { ExperimentKind } from '../observer/experimentKind.ts';
 
 // ── PresetExperiment ──────────────────────────────────────────────────────────
 
@@ -30,6 +31,9 @@ import type { ResearchScenarioId } from './researchScenario.ts';
 export interface PresetExperiment {
   /** Unique identifier for this preset experiment */
   id: string;
+
+  /** Phase 0 required explicit experiment classification */
+  experimentKind: ExperimentKind;
 
   /** Short display name for use in UI and export headers */
   title: string;

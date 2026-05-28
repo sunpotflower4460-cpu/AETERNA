@@ -49,7 +49,6 @@ import { deriveBodyWorldClosureState } from '../closure/deriveBodyWorldClosureSt
 import { deriveMediumProfileState } from '../closure/deriveMediumProfileState.ts';
 import { defaultMembraneConfig } from '../config/membraneConfig.ts';
 import { createMembraneState, updateMembraneState } from '../boundary/membrane.ts';
-import { deriveMembraneObservation } from '../observer/deriveMembraneObservation.ts';
 import {
     computeBeautifulLoopModulation,
     smoothModulation,
@@ -61,11 +60,14 @@ import {
     defaultTorusMetricConfig,
     normalizeTorusMetricConfig,
 } from '../config/torusMetricConfig.ts';
-import { deriveTorusCurvatureObservation } from '../observer/deriveTorusCurvatureObservation.ts';
 import { createComplexFieldState } from './complexField.ts';
 import { updateComplexField } from './updateComplexField.ts';
-import { deriveVortexCandidates } from '../observer/deriveVortexCandidates.ts';
 import { defaultComplexFieldConfig } from '../types/complexField.ts';
+import {
+    deriveMembraneObservation,
+    deriveTorusCurvatureObservation,
+    deriveVortexCandidates,
+} from '../bridge/coreObserverReadBridge.js';
 
 export class AeternaNetwork {
     constructor(segments = 72) {
