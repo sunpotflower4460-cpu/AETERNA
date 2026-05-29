@@ -49,8 +49,8 @@ export const PHASE0_MECHANISM_WRITEBACK_FLAGS: readonly MechanismWritebackFlag[]
   {
     mechanismId: 'reafference_comparison',
     writeback_enabled: false,
-    requires_writeback_review: false,
-    note: 'Reafference comparison is currently computed as derived closure observation.',
+    requires_writeback_review: true,
+    note: 'Reafference comparison is derived inside the closure/core loop and requires explicit Phase 2 review before any writeback path is allowed.',
   },
   {
     mechanismId: 'proto_network_proto_neuron',

@@ -47,8 +47,12 @@ describe('phase0 safety modules', () => {
   });
 
   it('marks all phase0 mechanisms with writeback_enabled false', () => {
+    const flagById = (id: string) => PHASE0_MECHANISM_WRITEBACK_FLAGS.find((flag) => flag.mechanismId === id);
+
     expect(PHASE0_MECHANISM_WRITEBACK_FLAGS).toHaveLength(8);
     expect(PHASE0_MECHANISM_WRITEBACK_FLAGS.every((flag) => flag.writeback_enabled === false)).toBe(true);
-    expect(PHASE0_MECHANISM_WRITEBACK_FLAGS.some((flag) => flag.requires_writeback_review)).toBe(true);
+    expect(flagById('weak_plasticity_trace')?.requires_writeback_review).toBe(true);
+    expect(flagById('reafference_comparison')?.requires_writeback_review).toBe(true);
+    expect(flagById('vital_pulse_breath_wave')?.requires_writeback_review).toBe(true);
   });
 });

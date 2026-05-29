@@ -8,7 +8,7 @@
 
 ## 今回の分離適用
 
-- `src/core/AeternaNetwork.js` の `../observer/*` 直接 import を削除し、`src/bridge/coreObserverReadBridge.ts` 経由に統一。
+- `src/core/AeternaNetwork.js` の `../observer/*` 直接 import を削除し、`src/bridge/coreObserverReadBridge.js` 経由に統一。
 - Core 側から Observer 側への「直接依存」を bridge に集約（read-only）。
 
 ## writeback 判定（Step 0-2）
