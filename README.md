@@ -198,6 +198,8 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/super-observation-architecture.md` — Super Observation Architecture
 - `docs/deployment-readiness.md` — Deployment readiness guide
 - `docs/agent-guardrails.md` — Agent rules for safe changes
+- `docs/pure-physics-core-design.md` — AETERNA PURE PHYSICS core design
+- `docs/pure-physics-implementation-plan.md` — staged implementation plan for `src/pure/`
 - `docs/observation-and-expression-boundary.md` — Boundary rules for Aeterna actual output, observer records, interpretation candidates, and unknowns
 - `docs/auto-experiment-report-format.md` — Intuitive report format for automated experiment observations
 - `docs/current-roadmap.md` — Current roadmap
