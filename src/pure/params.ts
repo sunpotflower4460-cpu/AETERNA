@@ -7,7 +7,7 @@ export const PURE_SOLVER_STEP_ORDER = [
 ] as const;
 
 export type PureSolverStep = typeof PURE_SOLVER_STEP_ORDER[number];
-export type PureLinearSolverKind = 'conjugateGradient';
+export type PureLinearSolverKind = 'direct' | 'iterative' | 'spectral';
 
 export interface PurePhysicsParams {
   R: number;
@@ -45,11 +45,13 @@ export const DEFAULT_PURE_PHYSICS_PARAMS: PurePhysicsParams = {
 };
 
 export const DEFAULT_PURE_SOLVER_SETTINGS: PureSolverSettings = {
-  linearSolverKind: 'conjugateGradient',
+  linearSolverKind: 'iterative',
   linearSolverTolerance: 1e-10,
   linearSolverMaxIterations: 1000,
   solverStepOrder: PURE_SOLVER_STEP_ORDER,
 };
+
+const PURE_LINEAR_SOLVER_KINDS: readonly PureLinearSolverKind[] = ['direct', 'iterative', 'spectral'];
 
 export function createPurePhysicsParams(overrides: Partial<PurePhysicsParams> = {}): PurePhysicsParams {
   return validatePurePhysicsParams({
@@ -94,8 +96,8 @@ export function validatePurePhysicsParams(params: PurePhysicsParams): PurePhysic
 export function validatePureSolverSettings(settings: PureSolverSettings): PureSolverSettings {
   const errors: string[] = [];
 
-  if (settings.linearSolverKind !== 'conjugateGradient') {
-    errors.push('linearSolverKind must be conjugateGradient');
+  if (!PURE_LINEAR_SOLVER_KINDS.includes(settings.linearSolverKind)) {
+    errors.push(`linearSolverKind must be one of: ${PURE_LINEAR_SOLVER_KINDS.join(', ')}`);
   }
   if (!(Number.isFinite(settings.linearSolverTolerance) && settings.linearSolverTolerance > 0)) {
     errors.push('linearSolverTolerance must be positive');

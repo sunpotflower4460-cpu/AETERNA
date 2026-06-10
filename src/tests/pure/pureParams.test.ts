@@ -12,6 +12,7 @@ describe('PURE PHYSICS params', () => {
   it('validates the default physical params and solver settings', () => {
     expect(() => validatePurePhysicsParams(DEFAULT_PURE_PHYSICS_PARAMS)).not.toThrow();
     expect(() => createPureSolverSettings()).not.toThrow();
+    expect(DEFAULT_PURE_SOLVER_SETTINGS.linearSolverKind).toBe('iterative');
   });
 
   it('rejects invalid torus geometry', () => {
@@ -38,5 +39,14 @@ describe('PURE PHYSICS params', () => {
     expect(runtimeKeys).not.toContain('tolerance');
     expect(runtimeKeys).not.toContain('testTolerance');
     expect(runtimeKeys).not.toContain('selfAdjointTolerance');
+  });
+
+  it('accepts only supported linear solver kinds', () => {
+    expect(() => createPureSolverSettings({ linearSolverKind: 'direct' })).not.toThrow();
+    expect(() => createPureSolverSettings({ linearSolverKind: 'iterative' })).not.toThrow();
+    expect(() => createPureSolverSettings({ linearSolverKind: 'spectral' })).not.toThrow();
+    expect(() => createPureSolverSettings({ linearSolverKind: 'conjugateGradient' as never })).toThrow(
+      'linearSolverKind must be one of: direct, iterative, spectral'
+    );
   });
 });
