@@ -33,6 +33,16 @@ They are boundary rules for keeping runtime behavior, observation, interpretatio
 - Report null results, flat results, saturation, instability, and non-emergence as valid observations.
 - Keep observer-side candidates from directly controlling runtime unless an explicit later phase authorizes and audits that connection.
 
+## AETERNA PURE PHYSICS work
+
+For PURE PHYSICS work, follow:
+
+- `docs/pure-physics-core-design.md`
+- `docs/pure-physics-implementation-plan.md`
+
+Do not rewrite, summarize, or sanitize those source documents when adding them.
+Treat them as the approved implementation constitution for future `src/pure/` work.
+
 ## Report format
 
 When reporting experiment results, use this human-readable structure:
