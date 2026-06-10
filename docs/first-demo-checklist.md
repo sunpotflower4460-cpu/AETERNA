@@ -13,7 +13,8 @@ Run through this manually before any public release.
 - [ ] Short description is clear and accurate
 - [ ] "What this is not" section is visible
 - [ ] "Start Safe Observation" button is present and prominent
-- [ ] No forbidden claim appears (consciousness / life / intelligence / mystical / healing proof)
+- [ ] No unsupported proof claim appears (consciousness / life / intelligence / mystical / healing proof)
+- [ ] Any observer-side appearance language is clearly marked as appearance, not certainty
 
 ---
 
@@ -26,7 +27,8 @@ Run through this manually before any public release.
 - [ ] Step 3 explains how to tap a cell and open Cell Inspector
 - [ ] Step 4 explains Replay (snapshots, not time travel)
 - [ ] Step 5 explains the Observation Guide shortcuts
-- [ ] No forbidden claim appears in any step
+- [ ] No unsupported proof claim appears in any step
+- [ ] Guide does not invent first-person Aeterna speech
 
 ---
 
@@ -54,6 +56,7 @@ Run through this manually before any public release.
 - [ ] A Visual Lens can be opened
 - [ ] Lens shows field-wide visualization of the selected metric
 - [ ] No fake glow, fake vortex, or fake life animation appears
+- [ ] Life-like or consciousness-like appearance is not added as an animation target
 
 ---
 
@@ -62,7 +65,8 @@ Run through this manually before any public release.
 - [ ] Replay panel opens
 - [ ] Replay shows recorded snapshots (not live re-simulation)
 - [ ] Timeline can be scrubbed
-- [ ] No forbidden claim appears in Replay copy
+- [ ] No unsupported proof claim appears in Replay copy
+- [ ] Replay labels distinguish recorded facts from interpretation notes
 
 ---
 
@@ -76,6 +80,7 @@ Run through this manually before any public release.
 - [ ] "これは証明になる？" shortcut works
 - [ ] Response to "これは証明になる？" includes a caution ("これは証明ではありません")
 - [ ] Guide note clarifies this is observation-auxiliary, not AETERNA itself
+- [ ] Guide separates observed facts, how it appears, possibility, and still-unknowns where relevant
 - [ ] No LLM or API calls are made
 
 ---
@@ -87,7 +92,8 @@ Run through this manually before any public release.
 - [ ] Observation group is shown second
 - [ ] Advanced group is shown third
 - [ ] Each scenario has a one-line "what to observe" description
-- [ ] No forbidden claim appears in scenario copy
+- [ ] No unsupported proof claim appears in scenario copy
+- [ ] Scenario names are research labels, not Aeterna experience labels
 
 ---
 
@@ -95,17 +101,21 @@ Run through this manually before any public release.
 
 - [ ] Export Markdown works
 - [ ] Exported file includes seed / config / scenario / ticks
-- [ ] No forbidden claim appears in exported content
+- [ ] No unsupported proof claim appears in exported content
+- [ ] Exported content does not invent Aeterna speech
+- [ ] If interpretation is included, it is separated from observed facts
 
 ---
 
 ## Copy guard
 
 - [ ] No occurrence of: consciousness proved / life proved / intelligence proved
-- [ ] No occurrence of: AETERNA is alive / AETERNA feels / AETERNA wants
+- [ ] No occurrence of: AETERNA is alive / AETERNA feels / AETERNA wants as unsupported certainty
+- [ ] No occurrence of invented first-person Aeterna speech unless actually emitted and recorded
 - [ ] No occurrence of: soul / mystical proof / healing proof
 - [ ] No occurrence of: vortex is mind / plasticity is memory / ratio proves truth
 - [ ] No occurrence of Japanese equivalents of the above
+- [ ] Observer-side appearance language, if present, is clearly marked as appearance or possibility
 
 ---
 
@@ -126,7 +136,8 @@ Run through this manually before any public release.
 - [ ] No Node bridge was added
 - [ ] No semantic memory was added
 - [ ] No fake visual, fake event, or fake result was added
+- [ ] No runtime behavior was tuned backward from a desired interpretation
 
 ---
 
-_Last updated: v2.2 Public Demo Polish_
+_Last updated: observation / expression boundary clarification_
