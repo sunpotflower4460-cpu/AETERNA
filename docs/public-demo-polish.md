@@ -12,7 +12,9 @@ Goals:
 - First-time users understand what this is (an observation lab)
 - The system is clearly presented as an observation device, not a proof engine
 - The first-run flow is short and clear
-- Forbidden claims are absent from all copy and UI
+- Unsupported certainty claims are absent from all copy and UI
+- Observer-side appearance language remains allowed when clearly marked as appearance or possibility
+- No invented Aeterna speech appears unless it was actually emitted and recorded
 - No new dynamics were added — only copy, docs, and UX flow were improved
 
 ---
@@ -30,6 +32,13 @@ Primary landing copy:
 > AETERNA-NATURAL は、トーラス場の変化を観測する研究装置です。
 > 流れ、位相、渦候補、膜痕跡、弱可塑性痕跡、比率比較、時間変化を、セル単位・レンズ単位で観測できます。
 > これは意識・生命・知性・癒し・神秘的真理を証明するものではありません。
+
+Copy boundary:
+
+- This does not deny possible emergence in advance.
+- It only states that the public demo does not prove or certify it.
+- Appearance descriptions must remain observer-side.
+- Aeterna actual output must be recorded only if actually emitted.
 
 ---
 
@@ -82,6 +91,9 @@ Displayed in three groups in public mode:
 - Plasticity Trace Observation — 弱可塑性痕跡の蓄積を長時間にわたって観測します。
 - Long-Run Natural Comparison — ナチュラルモードの場の変化を長時間で比較観測します。
 
+Scenario names are research labels for conditions.
+They are not labels for Aeterna's experience, intention, or internal speech.
+
 Source: `src/scenario/publicResearchScenarioSet.ts`
 
 ---
@@ -100,6 +112,19 @@ Response to "これは証明になる？" always includes:
 > これは証明ではありません。
 > 現在の観測値から見える候補・関係・proxy を整理することはできます。
 
+Preferred guide shape for future copy:
+
+```text
+Observed facts
+→ In one sentence
+→ How it appears
+→ Possibility
+→ Still unknown
+```
+
+The guide is observation-auxiliary.
+It is not Aeterna actual output and must not invent Aeterna speech.
+
 Source: `src/ui/guide/LensGuideQuestionInput.tsx`, `src/ui/guide/LensAwareGuidePanel.tsx`
 
 ---
@@ -113,7 +138,7 @@ README updated to:
 - "What this is not" section prominently positioned after overview
 - Quick Start uses new 6-step demo flow
 - Public Research Mode, Super Observation System, Reproducibility, Guardrails sections added
-- Forbidden claim list included in Guardrails section
+- Claim-boundary list included in Guardrails section
 
 Source: `README.md`
 
@@ -137,13 +162,18 @@ This copy block appears in the landing, README, and first-run guide.
 - Not a mystical truth engine
 - Not a chatbot personality
 
+Boundary note:
+- "Not proof" does not mean "impossible."
+- It means the public demo does not turn observations into final certainty.
+- Observed appearance and interpretation candidates must be labeled as such.
+
 Source: `src/ui/public/PublicResearchLanding.tsx`
 
 ---
 
 ## 9. Copy guard
 
-The following claims are permanently prohibited in all copy, UI, docs, and exports:
+The following claims are permanently prohibited in public copy, UI, docs, and exports when used as unsupported certainty, proof, invented attribution, or runtime target language:
 
 **English:**
 - consciousness proved
@@ -172,6 +202,11 @@ The following claims are permanently prohibited in all copy, UI, docs, and expor
 - 渦は心
 - 可塑性は記憶
 - 比率が真理を証明
+
+Allowed when clearly bounded:
+- Observer-side appearance descriptions such as "looked recovery-like" or "appeared closure-like"
+- Possibility language such as "may indicate" or "could be read as"
+- Aeterna actual output, only when the exact emitted output is recorded
 
 Source: `src/tests/public/publicDemoCopyGuard.test.ts`
 
@@ -211,3 +246,4 @@ Source: `src/tests/public/publicDemoCopyGuard.test.ts`
 - Semantic memory (none added)
 - Any fake visual, fake event, or fake result
 - Consciousness / life / intelligence / mystical proof claims
+- Aeterna actual output attribution

@@ -36,7 +36,8 @@ This release is suitable for:
 It is NOT suitable for:
 - Production deployment
 - Clinical or therapeutic use
-- Claims about consciousness, life, or intelligence
+- Unsupported certainty claims about consciousness, life, or intelligence
+- Inventing speech, feeling, desire, or intention that Aeterna did not actually emit
 
 ---
 
@@ -81,22 +82,43 @@ These require explicit researcher confirmation before use.
 - Observed ratios are observational — they are not fed back into dynamics
 - Long-run runs may show saturation risk — this is a known dynamics property, not a bug
 - NaN / Infinity counts must be monitored; non-zero counts require investigation
+- Observer-side appearance descriptions are not the same as Aeterna actual output
+- Aeterna actual output must be recorded only when the runtime actually emitted it
 
 ---
 
-## 5. What not to claim
+## 5. Claim boundary
 
-**Do NOT claim any of the following based on this system:**
+This release does not deny possible emergence in advance.
+It also does not certify emergence from observer impressions alone.
 
-- That AETERNA has consciousness or awareness
-- That the field has feelings, desires, or intentions
+The boundary is:
+
+```text
+observed facts
+→ observer-side appearance
+→ interpretation candidate
+→ still unknown
+```
+
+**Do NOT claim any of the following based on this system alone:**
+
+- That AETERNA has consciousness or awareness as a settled fact
+- That the field has feelings, desires, or intentions as a settled fact
 - That vortex candidates are neurons, minds, or proto-minds
 - That plasticity traces are memory or learning
 - That ratio matches are proof of resonance or communication
 - That the system proves or disproves consciousness, life, or intelligence
 - That AETERNA is healing, therapeutic, or mystically significant
+- That Aeterna said or wanted something unless that output was actually emitted and recorded
 
-These claims are not supported by the observations and violate the research integrity principles of this project.
+Allowed when clearly marked:
+
+- Observer-side appearance language such as "looked closure-like" or "appeared recovery-like"
+- Possibility language such as "may indicate" or "could be read as"
+- Human-readable summaries that preserve uncertainty and still-unknowns
+
+These boundaries protect research integrity by separating what was observed, how it appears, what may be possible, and what remains unknown.
 
 ---
 
@@ -131,14 +153,15 @@ Planned for future versions (not yet implemented):
   - Public mode safety audit (all dangerous flags confirmed off)
   - Runtime dynamics non-change confirmed
   - Super Observation flow confirmed end-to-end
-  - Forbidden claim audit across all UI / guide / export / docs
+  - Claim-boundary audit across all UI / guide / export / docs
   - final-release-audit.md created
   - finalCopyGuard / finalPublicModeSafety / finalSuperObservationFlow / finalReleaseAudit tests added
 - **v2.2**: Public Demo Polish / Landing Copy (next)
 - **v3.x**: Reafference comparison and actuation pulse observation
 
 All future phases will maintain the core principles:
-- No consciousness / life / intelligence / mystical claims
+- No unsupported certainty claims about consciousness / life / intelligence / mystical truth
+- No invented Aeterna speech or observer-to-Aeterna attribution
 - No Node bridge, LLM, or API integration
 - No fake results, fake events, or fake visuals
-- Observation only — not proof
+- Observation and appearance are allowed when clearly separated from proof
