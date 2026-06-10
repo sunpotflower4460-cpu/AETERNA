@@ -202,6 +202,7 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/auto-experiment-report-format.md` — Intuitive report format for automated experiment observations
 - `docs/current-roadmap.md` — Current roadmap
 - `docs/implementation-language-guardrails.md` — Forbidden claim list
+- `docs/implementation-language-boundary-addendum.md` — Addendum clarifying appearance language, actual output, and certainty boundaries
 
 ---
 
