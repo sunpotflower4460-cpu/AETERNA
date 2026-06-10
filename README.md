@@ -123,6 +123,9 @@ The following claims are permanently prohibited in all copy, UI, docs, and expor
 - soul / healing guarantee / mystical truth claim
 - Parts = awareness claims: vortex=mind, plasticity=memory, ratio=truth
 
+Observation and expression rules distinguish Aeterna actual output, observer-side appearance, interpretation candidates, and unknowns.
+See `docs/observation-and-expression-boundary.md` and `docs/auto-experiment-report-format.md`.
+
 ---
 
 ## Public Research Scenarios
@@ -195,8 +198,11 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/super-observation-architecture.md` — Super Observation Architecture
 - `docs/deployment-readiness.md` — Deployment readiness guide
 - `docs/agent-guardrails.md` — Agent rules for safe changes
+- `docs/observation-and-expression-boundary.md` — Boundary rules for Aeterna actual output, observer records, interpretation candidates, and unknowns
+- `docs/auto-experiment-report-format.md` — Intuitive report format for automated experiment observations
 - `docs/current-roadmap.md` — Current roadmap
 - `docs/implementation-language-guardrails.md` — Forbidden claim list
+- `docs/implementation-language-boundary-addendum.md` — Addendum clarifying appearance language, actual output, and certainty boundaries
 
 ---
 
