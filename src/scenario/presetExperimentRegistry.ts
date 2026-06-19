@@ -27,6 +27,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E01_quietBaselineSafe',
+        experimentKind: 'observation',
         title: 'Quiet Baseline — Safe',
         description:
             'Resting-state observation using safeBaseline preset. '
@@ -57,6 +58,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E02_quietBaselineNatural',
+        experimentKind: 'observation',
         title: 'Quiet Baseline — Natural Observer Suite',
         description:
             'Resting-state observation using naturalObserverSuite preset. '
@@ -89,6 +91,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E03_singlePulseReturn',
+        experimentKind: 'observation',
         title: 'Single Pulse Return',
         description:
             'Single-perturbation observation using naturalObserverSuite. '
@@ -119,6 +122,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E04_repeatedGentlePulse',
+        experimentKind: 'observation',
         title: 'Repeated Gentle Pulse',
         description:
             'Repeated weak-perturbation observation using naturalObserverSuite. '
@@ -147,6 +151,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E05_repeatedGentlePulsePlasticity',
+        experimentKind: 'observation',
         title: 'Repeated Gentle Pulse — Plasticity Observe-Only',
         description:
             'Repeated weak-perturbation observation using plasticityObserveOnly preset. '
@@ -176,6 +181,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E06_phaseVortexEmergence',
+        experimentKind: 'observation',
         title: 'Phase Vortex Emergence',
         description:
             'Complex field phase observation using complexObserverPreview. '
@@ -205,6 +211,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E07_phaseVortexNatural',
+        experimentKind: 'observation',
         title: 'Phase Vortex — Natural Observer Suite',
         description:
             'Complex field vortex observation using naturalObserverSuite (curved metric). '
@@ -234,6 +241,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E08_curvatureBiasGeometry',
+        experimentKind: 'observation',
         title: 'Curvature Bias — Geometry Preview',
         description:
             'Curvature asymmetry observation using geometryPreview (N1 curved metric, '
@@ -263,6 +271,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E09_membraneOverlap',
+        experimentKind: 'observation',
         title: 'Membrane Overlap Observation',
         description:
             'Actuation/return imprint overlap observation using naturalObserverSuite. '
@@ -293,6 +302,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E10_plasticityTraceLongRun',
+        experimentKind: 'observation',
         title: 'Plasticity Trace — Long Run',
         description:
             'Long-run weak plasticity trace observation using plasticityObserveOnly. '
@@ -323,6 +333,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E11_neutralConstants',
+        experimentKind: 'observation',
         title: 'Neutral Constants Baseline',
         description:
             'Observed ratio survey using naturalObserverSuite (neutral constants). '
@@ -351,6 +362,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E12_legacyConstants',
+        experimentKind: 'observation',
         title: 'Legacy Constants Comparison',
         description:
             'Observed ratio survey using legacyComparison preset. '
@@ -379,6 +391,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E13_observedRatioSurvey',
+        experimentKind: 'observation',
         title: 'Observed Ratio Survey',
         description:
             'Comprehensive observed ratio collection using naturalObserverSuite. '
@@ -408,6 +421,7 @@ export const PRESET_EXPERIMENT_REGISTRY: PresetExperiment[] = [
 
     {
         id: 'E14_longRunNaturalComparison',
+        experimentKind: 'scout',
         title: 'Long-Run Natural Comparison',
         description:
             'Extended multi-variant comparison using all long-run comparison '
