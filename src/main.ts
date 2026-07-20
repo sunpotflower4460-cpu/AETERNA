@@ -12,6 +12,8 @@ import {
     testAPIConnection,
 } from './perception/pointerHandlers.js';
 import { dispatchRuntimeCommand } from './app/runtime/RuntimeAdapter.js';
+import { uiStore } from './app/state/UiStore.js';
+import type { InteractionMode } from './app/state/UiState.js';
 import { RealityVisualLayer } from './render/RealityVisualLayer.js';
 import { GuidePanel } from './ui/GuidePanel.js';
 import { actionLoop } from './organism/actionLoop.js';
@@ -47,6 +49,10 @@ window.toggleAutoRotate = () => {
 };
 window.setCameraViewMode = (mode: string) => state.cameraControls?.setViewMode(mode);
 window.setTorusMetricMode = (mode: string) => state.network?.setTorusMetricMode(mode);
+// No mode-switcher UI exists yet (no ObservatoryShell/Context Pane —
+// docs/ui-migration-boundary.md) — reachable for now the same way other
+// not-yet-shell-wired controls are (setCameraViewMode above).
+window.setInteractionMode = (mode: string) => uiStore.setInteractionMode(mode as InteractionMode);
 window.toggleMobileHelp = () => {
     const overlay = document.getElementById('mobile-help-overlay');
     if (overlay) {

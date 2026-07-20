@@ -128,7 +128,9 @@ See `docs/ui-feature-status.md` for the full per-feature table. Summary: the vas
 
 ## 12. P0 bug re-confirmation
 
-All 13 items from the kickoff prompt were checked against current code; full detail is folded into `docs/ui-feature-status.md` bug rows and `docs/current-public-runtime-map.md` §Safety Gaps. Headline confirmations:
+All 13 items from the kickoff prompt were checked against current code; full detail is folded into `docs/ui-feature-status.md` bug rows and `docs/current-public-runtime-map.md` §Safety Gaps. Headline confirmations below are the original PR0 findings, left as-is; **fix status as of PR5 is tracked in `docs/ui-feature-status.md`'s PR1–PR5 addendum, not here** — items 1, 2 (except the frozen `phaseCarryingDrive.ts` seed fallback, deliberately left for a separate Runtime PR), 6, 7, 8, 9, 10, 12, 13 are now fixed; item 11 (mobile-bottom-sheet) is fixed for open/close but half/full still has no dedicated CSS.
+
+Headline confirmations:
 
 1. **`MajorStateObserver` empty-candidate fallback** (`MajorStateObserver.js:90-108`) — the empty-`processes` early-return only covers `dyn.arousal < 0.02`; for `processes.length === 0 && dyn.arousal >= 0.02` (reachable), `processes[0]` is `undefined` and `dominant.type` throws `TypeError`, uncaught, live every UI frame (no try/catch around `actionLoop`/`maybeUpdateUi`).
 2. **`||` destroying valid 0s** — confirmed real risky instances at `MajorStateObserver.js:50,55,79,82,150` (`dreamReplayStrength||0.5`, `actionPulseLevel||0.5`, `collapseRisk||0.5`, `replaySuppression||1`, `energy||1.0`), `world/phaseCarryingDrive.ts:31` (`seedInput||1`, breaks seed-0 reproducibility), `tests/scenario/runLongRunEmergenceScenario.ts:65` (same seed-0 issue), and a double-fallback bug at `tests/scenario/perturbationComparisonScenario.ts:139` where `(x ?? 0) || 0.5` defeats the `?? 0` safeguard it was clearly written to provide. (The much larger set of `x || 0` numeric-formatting fallbacks elsewhere are not risky: `0 || 0 === 0`, no distortion.)

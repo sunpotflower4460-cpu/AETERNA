@@ -1,6 +1,8 @@
 import { state } from '../organism/state.js';
 import { PRESETS } from '../constants/aeternaConstants.js';
 import { updateSliderTrack } from '../utils/slider.js';
+import { uiStore } from '../app/state/UiStore.ts';
+import { shouldStimulateOnTap } from '../app/interaction/interactionPredicates.ts';
 
 // ── Pointer / Touch / Camera Input ──────────────────
 
@@ -56,12 +58,19 @@ export function handlePointerUp(event) {
             state.observationDisplay.showTouchMessage(normX, normY);
         }
 
-        if(state.touchMem && state.network) state.touchMem.recordTouch(normX, normY, state.network.simTime, state.network);
-        if(state.raycaster && state.mouse && state.camera && state.particleSystem) {
-            state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
-            state.raycaster.setFromCamera(state.mouse, state.camera);
-            const intersects = state.raycaster.intersectObject(state.particleSystem);
-            if (intersects.length > 0 && state.network) state.network.injectPredictionError(intersects[0].index);
+        // Runtime-affecting effects (touchMem.recordTouch calls
+        // network.injectSTDPExternal; the raycast branch calls
+        // network.injectPredictionError) are gated to 'stimulate' mode —
+        // previously unconditional on any tap, with no interaction-mode
+        // gate at all (docs/ui-runtime-inventory.md §12 item 9).
+        if (shouldStimulateOnTap(uiStore.getState().interactionMode)) {
+            if(state.touchMem && state.network) state.touchMem.recordTouch(normX, normY, state.network.simTime, state.network);
+            if(state.raycaster && state.mouse && state.camera && state.particleSystem) {
+                state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
+                state.raycaster.setFromCamera(state.mouse, state.camera);
+                const intersects = state.raycaster.intersectObject(state.particleSystem);
+                if (intersects.length > 0 && state.network) state.network.injectPredictionError(intersects[0].index);
+            }
         }
     }
     state.activeTouches.delete(event.pointerId);
