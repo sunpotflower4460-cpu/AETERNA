@@ -47,12 +47,12 @@ export class MajorStateObserver {
         }
 
         if (dyn.modeState === 'dream' || dyn.dreamReplayActive) {
-            processes.push({ type: 'dream_replay', score: dyn.dreamReplayStrength || 0.5, label: 'DREAM REPLAY' });
+            processes.push({ type: 'dream_replay', score: dyn.dreamReplayStrength ?? 0.5, label: 'DREAM REPLAY' });
         }
 
         if (dyn.actionState && dyn.actionState !== 'idle') {
             const actionLabel = `ACTION: ${dyn.actionState.toUpperCase()}`;
-            processes.push({ type: 'action_active', score: dyn.actionPulseLevel || 0.5, label: actionLabel });
+            processes.push({ type: 'action_active', score: dyn.actionPulseLevel ?? 0.5, label: actionLabel });
         }
 
         if (dyn.energy < 0.3) {
@@ -76,10 +76,10 @@ export class MajorStateObserver {
         } else if (dyn.recoveryTrajectory === 'partial_repair' && dyn.boundaryRepairPressure > 0.45) {
             processes.push({ type: 'recovery_partial_repair', score: dyn.boundaryRepairPressure, label: 'PARTIAL REPAIR' });
         } else if (dyn.recoveryTrajectory === 'degrade') {
-            processes.push({ type: 'recovery_degrading', score: dyn.collapseRisk || 0.5, label: 'DEGRADING' });
+            processes.push({ type: 'recovery_degrading', score: dyn.collapseRisk ?? 0.5, label: 'DEGRADING' });
         }
 
-        if ((dyn.activeTouchCount || 0) === 0 && (dyn.traceStrength || 0) > 0.28 && (dyn.replaySuppression || 1) < 0.6) {
+        if ((dyn.activeTouchCount || 0) === 0 && (dyn.traceStrength || 0) > 0.28 && (dyn.replaySuppression ?? 1) < 0.6) {
             processes.push({
                 type: 'trace_echo_ready',
                 score: (dyn.traceStrength || 0) * Math.max(0.2, 1 - (dyn.replaySuppression || 0)),
@@ -93,6 +93,11 @@ export class MajorStateObserver {
             } else if (dyn.arousal < 0.02) {
                 return { type: 'low_drift', label: 'LOW DRIFT', color: '#9ca3af' };
             }
+            // No candidate process crossed a scoring threshold, but arousal
+            // is above the "low drift" cutoff — still a real, nameable
+            // state, not an absence of one. Must not fall through to
+            // processes[0], which would be undefined here.
+            return { type: 'ambient_activity', label: 'AMBIENT ACTIVITY', color: this.getProcessColor('ambient_activity') };
         }
 
         // Pick highest-score process
@@ -129,7 +134,8 @@ export class MajorStateObserver {
             'recovery_runaway': '#f43f5e',       // strong red
             'trace_echo_ready': '#38bdf8',       // sky
             'quiet': '#6b7280',                  // gray
-            'low_drift': '#9ca3af'               // light gray
+            'low_drift': '#9ca3af',              // light gray
+            'ambient_activity': '#9ca3af'        // light gray
         };
 
         return colorMap[processType] || '#9ca3af';
@@ -147,7 +153,7 @@ export class MajorStateObserver {
             sigma: dyn.sigmaDisplay,
             phi: dyn.phiApprox,
             overload: dyn.overload || 0,
-            energy: dyn.energy || 1.0,
+            energy: dyn.energy ?? 1.0,
             arousalLevel: dyn.bl_arousalLevel || 0,
             awarenessWindow: dyn.bl_awarenessWindow || 0,
             salienceOpenness: dyn.bl_salienceOpenness || 0,
@@ -180,5 +186,10 @@ export class MajorStateObserver {
 
     getHistory() {
         return this.stateHistory;
+    }
+
+    resetHistory() {
+        this.stateHistory = [];
+        this.currentDominantProcess = 'quiet';
     }
 }

@@ -1,5 +1,9 @@
 // Shared mutable state — all modules that need cross-cutting globals import this object.
 export const state = {
+    // Resolved once at boot by main.ts (see src/release/resolveReleaseEnvironment.ts).
+    // null until then; treat as "everything gated off" if still null.
+    releaseSafety: null,
+
     scene: null,
     camera: null,
     renderer: null,

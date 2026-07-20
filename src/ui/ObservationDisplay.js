@@ -181,6 +181,15 @@ export class ObservationDisplay {
     }
 
     /**
+     * リセット時に履歴・ヒステリシス状態をクリア
+     * Clear hysteresis state tracked across messages on reset
+     */
+    resetHistory() {
+        this.lastSystemState = '';
+        this.lastSigma = 1.0;
+    }
+
+    /**
      * 刺激注入時の説明を表示
      * Show explanation when massive error is injected
      */

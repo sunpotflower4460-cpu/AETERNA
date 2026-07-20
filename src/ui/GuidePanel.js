@@ -1,6 +1,15 @@
 import { state } from '../organism/state.js';
 import { TENSION_90S_FRAMES } from '../constants/aeternaConstants.js';
 
+function _escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export class GuidePanel {
     constructor(network) {
         this.network = network; this.history = []; this.lastEventTime = { whiteEngine: 0, heartbeat: 0, tension: 0, eye: 0, sigma: 0 };
@@ -12,6 +21,14 @@ export class GuidePanel {
         this.apiProvider = 'none'; this.apiKey = '';
     }
     updateConfig(provider, key) { this.apiProvider = provider; this.apiKey = key; if(this.providerEl) this.providerEl.innerText = `PROVIDER: ${provider.toUpperCase()}`; }
+    resetHistory() {
+        this.history = [];
+        this.lastRewriteEventId = 0;
+        this.lastModeState = null;
+        this.lastActionState = null;
+        if (this.latestEl) this.latestEl.innerHTML = '';
+        if (this.historyEl) this.historyEl.innerHTML = '';
+    }
     update(dynamicsInfo, engineState) {
         const simTime = this.network.simTime; const COOLDOWN = 300; let ev = null;
         if (engineState === 'WHITE') {
@@ -86,7 +103,7 @@ export class GuidePanel {
     async handleEvent(event, dynamicsInfo, engineState) {
         const baseText = `[σ=${dynamicsInfo.sigmaDisplay.toFixed(2)}] ${event.text}`;
         this.addLog(baseText, 'LOCAL');
-        if (this.apiProvider !== 'none' && this.apiKey) {
+        if (state.releaseSafety?.externalApiEnabled && this.apiProvider !== 'none' && this.apiKey) {
             const prompt = `System state: Sigma=${dynamicsInfo.sigmaDisplay.toFixed(3)}, Phi Proxy=${dynamicsInfo.phiApprox.toFixed(4)}, Engine=${engineState}. Event: ${baseText}. Rephrase naturally in Japanese as an observing guide. Limit 60 chars.`;
             try {
                 let resText = "";
@@ -102,7 +119,9 @@ export class GuidePanel {
         }
     }
     addLog(text, source) {
-        const item = `<span class="text-white/40">[${source}]</span> <span class="text-white/80">${text}</span>`;
+        // text may originate from an external LLM API response (see
+        // handleEvent) — always escape before writing into innerHTML.
+        const item = `<span class="text-white/40">[${_escapeHtml(source)}]</span> <span class="text-white/80">${_escapeHtml(text)}</span>`;
         this.history.unshift(item); if (this.history.length > 5) this.history.pop();
         if(this.latestEl) { this.latestEl.innerHTML = item; this.latestEl.classList.remove('fade-in'); void this.latestEl.offsetWidth; this.latestEl.classList.add('fade-in'); }
         if(this.historyEl) { this.historyEl.innerHTML = this.history.slice(1).map(t => `<li>${t}</li>`).join(''); }

@@ -52,28 +52,43 @@ export function selectResearchTab(tabName) {
 
 // ── Mobile Bottom Sheet ────────────────────────────────────────────────────
 
+// On mobile, #research-panel becomes the bottom sheet (see the
+// max-width:768px media query in index.html) — there is no separate
+// #mobile-bottom-sheet element in the DOM. rp-open/rp-closed are the only
+// classes the CSS actually reacts to; dataset.state is also set so future
+// CSS can distinguish half vs full without another code change.
+function _mobileSheetEl() {
+    return document.getElementById('research-panel');
+}
+
 export function openMobileSheet(tabName) {
-    const sheet = document.getElementById('mobile-bottom-sheet');
+    const sheet = _mobileSheetEl();
     if (!sheet) return;
 
     if (tabName) selectResearchTab(tabName);
 
     _mobileSheetState = 'half';
     sheet.dataset.state = 'half';
+    sheet.classList.add('rp-open');
+    sheet.classList.remove('rp-closed');
 }
 
 export function closeMobileSheet() {
-    const sheet = document.getElementById('mobile-bottom-sheet');
+    const sheet = _mobileSheetEl();
     if (!sheet) return;
     _mobileSheetState = 'collapsed';
     sheet.dataset.state = 'collapsed';
+    sheet.classList.remove('rp-open');
+    sheet.classList.add('rp-closed');
 }
 
 export function setMobileSheetFull() {
-    const sheet = document.getElementById('mobile-bottom-sheet');
+    const sheet = _mobileSheetEl();
     if (!sheet) return;
     _mobileSheetState = 'full';
     sheet.dataset.state = 'full';
+    sheet.classList.add('rp-open');
+    sheet.classList.remove('rp-closed');
 }
 
 // Drag-handle interaction for mobile sheet
@@ -95,20 +110,28 @@ export function onSheetDragStart(e) {
 
 function _onSheetDragMove(e) {
     const dy = _sheetDragStartY - _getClientY(e);
-    const sheet = document.getElementById('mobile-bottom-sheet');
+    const sheet = _mobileSheetEl();
     if (!sheet) return;
     if (dy > 60 && _sheetDragStartState === 'collapsed') {
         _mobileSheetState = 'half';
         sheet.dataset.state = 'half';
+        sheet.classList.add('rp-open');
+        sheet.classList.remove('rp-closed');
     } else if (dy > 60 && _sheetDragStartState === 'half') {
         _mobileSheetState = 'full';
         sheet.dataset.state = 'full';
+        sheet.classList.add('rp-open');
+        sheet.classList.remove('rp-closed');
     } else if (dy < -60 && _sheetDragStartState === 'full') {
         _mobileSheetState = 'half';
         sheet.dataset.state = 'half';
+        sheet.classList.add('rp-open');
+        sheet.classList.remove('rp-closed');
     } else if (dy < -60 && _sheetDragStartState === 'half') {
         _mobileSheetState = 'collapsed';
         sheet.dataset.state = 'collapsed';
+        sheet.classList.remove('rp-open');
+        sheet.classList.add('rp-closed');
     }
 }
 
@@ -195,7 +218,7 @@ function _renderEventStrip() {
         const age = now - e.time;
         const opacity = Math.max(0.3, 1 - (age / EVENT_STRIP_FADE_DURATION));
         const sev = e.severity ?? 'info';
-        return `<span class="event-strip-item" data-severity="${sev}" style="opacity:${opacity.toFixed(2)}">${e.text}</span>`;
+        return `<span class="event-strip-item" data-severity="${sev}" style="opacity:${opacity.toFixed(2)}">${_escapeHtml(e.text)}</span>`;
     }).join('');
 }
 

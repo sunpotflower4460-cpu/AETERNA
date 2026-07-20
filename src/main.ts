@@ -1,5 +1,6 @@
 // ── Active app wiring: connect current src modules without changing runtime behavior ──
 import { state } from './organism/state.js';
+import { resolveReleaseEnvironment } from './release/resolveReleaseEnvironment.js';
 import { PhysicalDisk } from './core/PhysicalDisk.js';
 import { TouchMemory } from './perception/TouchMemory.js';
 import { AeternaNetwork } from './core/AeternaNetwork.js';
@@ -49,6 +50,9 @@ window.toggleMobileHelp = () => {
     }
 };
 
+// ── Release safety: resolve once, before any user interaction is possible ──
+state.releaseSafety = resolveReleaseEnvironment();
+
 // ── DOM-ready setup ──
 document.addEventListener('DOMContentLoaded', () => {
     initDOMCache();
@@ -57,6 +61,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if(icon) icon.style.transform = 'rotate(-180deg)';
     });
     setTimeout(() => { if(UI['intro-guide']) UI['intro-guide'].style.opacity = '0'; }, 5000);
+
+    // Public safety: the API key input must not even be present in the DOM
+    // when external API calls aren't allowed (docs/current-public-runtime-map.md).
+    if (!state.releaseSafety?.externalApiEnabled) {
+        const guideApiSection = document.getElementById('guide-api-config-section');
+        if (guideApiSection) {
+            const notice = document.createElement('div');
+            notice.className = 'text-[7.5px] text-white/35';
+            notice.textContent = '外部APIはこのビルドでは無効です。';
+            guideApiSection.replaceWith(notice);
+        }
+    }
 });
 
 // ── Initialisation ──
@@ -64,7 +80,7 @@ function init() {
     try {
         state.scene = new THREE.Scene(); state.scene.fog = new THREE.FogExp2(0x010205, 0.025);
         state.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100); state.camera.position.set(3, 6, 12); state.camera.lookAt(0, 0, 0);
-        state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); state.renderer.setPixelRatio(window.devicePixelRatio); state.renderer.setSize(window.innerWidth, window.innerHeight);
+        state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); state.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('canvas-container').appendChild(state.renderer.domElement);
         
         state.network = new AeternaNetwork(72); state.touchMem = new TouchMemory(72);
@@ -113,7 +129,46 @@ function init() {
         requestAnimationFrame(actionLoop);
     } catch (e) {
         console.error('AETERNA init failed:', e);
+        showBootFailureFallback(e);
     }
+}
+
+// Public safety / basic usability: a failed boot must not leave the user
+// staring at a silent black screen with only a console error (see
+// docs/ui-runtime-inventory.md §12 item 12).
+function showBootFailureFallback(error: unknown) {
+    const overlay = document.createElement('div');
+    overlay.setAttribute('role', 'alert');
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:99999',
+        'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+        'gap:12px', 'padding:24px', 'text-align:center',
+        'background:rgba(1,2,5,0.96)', 'color:rgba(255,255,255,0.92)',
+        'font-family:system-ui,sans-serif',
+    ].join(';');
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:16px;font-weight:600;';
+    title.textContent = '観測を開始できませんでした';
+
+    const detail = document.createElement('div');
+    detail.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.6);max-width:480px;';
+    detail.textContent = 'このブラウザ・環境ではAETERNAを起動できませんでした（WebGL非対応の可能性があります）。';
+
+    const reload = document.createElement('button');
+    reload.style.cssText = [
+        'margin-top:8px', 'padding:8px 20px', 'border-radius:8px',
+        'border:1px solid rgba(34,211,238,0.4)', 'background:rgba(34,211,238,0.12)',
+        'color:rgba(34,211,238,0.95)', 'font-size:13px', 'cursor:pointer',
+    ].join(';');
+    reload.textContent = '再読み込み';
+    reload.addEventListener('click', () => window.location.reload());
+
+    overlay.appendChild(title);
+    overlay.appendChild(detail);
+    overlay.appendChild(reload);
+    document.body.appendChild(overlay);
+    void error; // already logged via console.error above
 }
 
 init();

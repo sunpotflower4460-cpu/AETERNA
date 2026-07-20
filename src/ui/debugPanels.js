@@ -2,6 +2,7 @@
 // This file is plain ES module JavaScript so it can be loaded directly by the
 // browser without a build step, while the TypeScript sources are compiled for
 // the bundled build.
+import { state } from '../organism/state.js';
 
 // Dynamic import so that Vite can tree-shake and bundle correctly.
 async function getRuntime() {
@@ -9,8 +10,14 @@ async function getRuntime() {
     return mod.runSignalRuntime;
 }
 
+// Public safety: debug panels (this whole file) must not run when disabled
+// (docs/current-public-runtime-map.md). Checked once here rather than
+// per-function so the gate can't be missed if a function is added later.
+const DEBUG_PANELS_ENABLED = !!state.releaseSafety?.showDebugPanels;
+
 // ── Experience Mode toggle ──
 window.onExperienceModeChange = function(mode) {
+    if (!DEBUG_PANELS_ENABLED) return;
     const inputArea = document.getElementById('signal-input-area');
     const observePanel = document.getElementById('signal-observe-panel');
     if (mode === 'signal_runtime') {
@@ -24,8 +31,12 @@ window.onExperienceModeChange = function(mode) {
 
 // ── Run Signal Mode ──
 window.runSignalMode = async function() {
-    const input = document.getElementById('signal-stimulus-input');
     const statusEl = document.getElementById('signal-status');
+    if (!DEBUG_PANELS_ENABLED) {
+        if (statusEl) statusEl.textContent = 'Debug panels are disabled in this build.';
+        return;
+    }
+    const input = document.getElementById('signal-stimulus-input');
     if (!input || !statusEl) return;
 
     const text = input.value.trim();

@@ -127,6 +127,11 @@ export function resetTouchMemory() {
         state.touchMem.lastTouchNode = -1;
         state.touchMem.lastTouchTime = -Infinity;
     }
+    // Clear accumulated notification/observer history so stale entries
+    // don't survive a reset (docs/ui-runtime-inventory.md §12 item 10).
+    if (state.guidePanel) state.guidePanel.resetHistory();
+    if (state.majorStateObserver) state.majorStateObserver.resetHistory();
+    if (state.observationDisplay) state.observationDisplay.resetHistory();
     // Show observation display message
     if (state.observationDisplay) {
         state.observationDisplay.showResetMessage();
@@ -170,10 +175,14 @@ export function toggleDebugLabels() {
 }
 
 export async function testAPIConnection() {
+    const statusEl = document.getElementById('api-status');
+    if (!state.releaseSafety?.externalApiEnabled) {
+        if (statusEl) statusEl.innerText = "External API is disabled in this build.";
+        return;
+    }
     const provider = document.getElementById('api-provider')?.value;
     const key = document.getElementById('api-key')?.value;
-    const statusEl = document.getElementById('api-status');
-    
+
     if (!provider || !statusEl) return;
     if (provider === 'none') {
         statusEl.innerText = "Please select a provider.";

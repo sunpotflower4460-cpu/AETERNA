@@ -43,6 +43,7 @@ export function maybeUpdateUi(now: number, dyn: any, engineState: string) {
 }
 
 export function maybeBridgeSignal(now: number, dyn: any, engineState: string) {
+  if (!state.releaseSafety?.nodeBridgeEnabled) return;
   if (now - state.lastBridgeTime <= BRIDGE_INTERVAL_MS) return;
   const packet = buildTorusStatePacket({ now, dyn, engineState, tension: state.tensionLoad, activeTouches: state.activeTouches });
   const bridgeResult = bridgeTorusToSignal(packet);
