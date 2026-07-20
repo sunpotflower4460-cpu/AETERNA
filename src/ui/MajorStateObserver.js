@@ -9,7 +9,7 @@ export class MajorStateObserver {
     }
 
     // Analyze dynamics and determine current dominant process
-    analyzeDominantProcess(dyn, engineState) {
+    analyzeDominantProcess(dyn, _engineState) {
         const processes = [];
 
         // Check for different dominant processes with scores

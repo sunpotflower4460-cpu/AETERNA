@@ -18,7 +18,7 @@ export class ObservationDisplay {
      * タッチ時の説明を表示
      * Show explanation when user touches the screen
      */
-    showTouchMessage(x, y) {
+    showTouchMessage(_x, _y) {
         const messages = [
             '刺激が伝わっています...',
             'ニューロンが活性化しました',
@@ -87,7 +87,7 @@ export class ObservationDisplay {
      * 重要なネットワークイベントの説明を表示
      * Show explanation for important network events
      */
-    showNetworkEvent(eventType, data) {
+    showNetworkEvent(eventType, _data) {
         let message = '';
         let type = 'state-change';
         let duration = 3000;

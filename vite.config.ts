@@ -11,4 +11,9 @@ export default defineConfig({
   resolve: {
     extensions: ['.ts', '.js'],
   },
+  test: {
+    // Playwright e2e specs under tests/e2e live in a separate runner
+    // (npm run test:e2e) and must not be collected by vitest.
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
+  },
 });

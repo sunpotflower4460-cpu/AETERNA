@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/ui/**/*.ts", "src/ui/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "src/ui/**/__tests__/**", "src/ui/**/*.test.ts", "src/ui/**/*.js"]
+}

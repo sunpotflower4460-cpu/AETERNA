@@ -66,11 +66,6 @@ function formatRange(min, max, digits = 3) {
     return `${min.toFixed(digits)} .. ${max.toFixed(digits)}`;
 }
 
-function formatPercent(value) {
-    const num = Number(value || 0);
-    return `${(num * 100).toFixed(1)}%`;
-}
-
 function applyNaturalValueKindBadges() {
     if (_naturalValueKindsApplied) return;
 
@@ -644,14 +639,6 @@ export function updateMetricsUI(dyn, engineState) {
         _updateU5(dyn);
         _updateNaturalModeHud(dyn);
     }
-}
-
-// ── U1 helpers: HUD chips ─────────────────────────────────────────────────────
-
-function _hudLevel(value, lowThresh, highThresh) {
-    if (value >= highThresh) return 'critical';
-    if (value >= lowThresh)  return 'high';
-    return 'normal';
 }
 
 // ── U1 helpers: shared risk computation ──────────────────────────────────────

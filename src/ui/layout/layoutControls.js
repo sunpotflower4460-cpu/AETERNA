@@ -11,7 +11,6 @@ import { formatValueKindLabel } from '../natural/ValueKindBadge.tsx';
 // ── State ──────────────────────────────────────────────────────────────────
 
 let _researchPanelOpen = false;
-let _currentResearchTab = 'overview';
 let _mobileSheetState = 'collapsed'; // 'collapsed' | 'half' | 'full'
 let _explainOpen = false;
 let _eventStripOpen = false;
@@ -40,8 +39,6 @@ export function toggleResearchPanel() {
 // ── Research Tabs ──────────────────────────────────────────────────────────
 
 export function selectResearchTab(tabName) {
-    _currentResearchTab = tabName;
-
     // Update tab buttons
     document.querySelectorAll('.rtab').forEach(btn => {
         btn.classList.toggle('rtab-active', btn.dataset.tab === tabName);

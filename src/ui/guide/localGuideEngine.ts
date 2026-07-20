@@ -215,13 +215,14 @@ function _delegatedSuggestionClick(e: Event): void {
     switch (action) {
         case 'openPanel':
             if (panel && typeof window !== 'undefined') {
-                if (typeof (window as Record<string, unknown>)['selectResearchTab'] === 'function') {
-                    (window as Record<string, unknown>)['selectResearchTab'](panel);
+                const win = window as unknown as Record<string, unknown>;
+                if (typeof win['selectResearchTab'] === 'function') {
+                    (win['selectResearchTab'] as (panel: string) => void)(panel);
                 }
                 const rp = document.getElementById('research-panel');
                 if (rp && !rp.classList.contains('rp-open')) {
-                    if (typeof (window as Record<string, unknown>)['toggleResearchPanel'] === 'function') {
-                        (window as Record<string, unknown>)['toggleResearchPanel']();
+                    if (typeof win['toggleResearchPanel'] === 'function') {
+                        (win['toggleResearchPanel'] as () => void)();
                     }
                 }
             }

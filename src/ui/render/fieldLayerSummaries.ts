@@ -491,6 +491,8 @@ export function formatLayerEventStripText(
         vortexCandidate:            'Vortex Candidate',
         curvatureVortexCoupling:    'Curvature × Vortex',
         riskOverlay:                'Risk Overlay',
+        membraneState:              'Membrane Layer',
+        weakPlasticityTrace:        'Weak Plasticity Trace',
     };
     const label = labels[layerId] ?? layerId;
     return `tick ${tick}: ${label} layer — status → ${newStatus}`;

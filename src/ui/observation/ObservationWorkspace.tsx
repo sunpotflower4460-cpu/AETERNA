@@ -188,8 +188,8 @@ export function renderObservationWorkspaceHTML(props: ObservationWorkspaceProps)
         : '';
 
     // ── Observed ratio involvement panel ─────────────────────────────────────
-    const ratioInvolvementHtml = ratioInvolvements.length > 0
-        ? renderObservedRatioInvolvementPanelHTML({ involvements: ratioInvolvements })
+    const ratioInvolvementHtml = ratioInvolvements.length > 0 && selectedCellIndex !== null
+        ? renderObservedRatioInvolvementPanelHTML({ involvements: ratioInvolvements, cellIndex: selectedCellIndex })
         : '';
 
     // ── Now Summary Panel v2.7 ────────────────────────────────────────────────

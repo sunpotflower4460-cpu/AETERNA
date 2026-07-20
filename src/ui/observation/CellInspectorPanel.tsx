@@ -152,7 +152,8 @@ export function renderCellInspectorPanelHTML(props: CellInspectorPanelProps): st
 
     const eventsHtml = eventsToShow.length > 0
         ? eventsToShow.map((ev) => {
-            const text = 'text' in ev && ev.text ? ev.text : `Event ${ev.id}`;
+            const evText = (ev as { text?: unknown }).text;
+            const text: string = typeof evText === 'string' && evText ? evText : `Event ${ev.id}`;
             const tick = ev.tick;
             return `<div class="cell-inspector-panel__event"
   data-event-id="${_esc(ev.id)}"
