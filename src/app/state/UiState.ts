@@ -1,17 +1,18 @@
 /**
  * UiState.ts
  *
- * Deliberately minimal first slice of the target UiState (master spec
- * §8.3) — only fields with a real, live consumer are included.
- * primaryRoute/contextPanel/contextSheetState/selectedCellId/
- * activeLensId/displayDensity from the full target interface have no
- * corresponding UI yet (no ObservatoryShell/Context Pane exist — see
- * docs/ui-migration-boundary.md), so adding them now would be dead
- * fields, not real state. Extend this interface only as each field gets
- * a real consumer.
+ * Deliberately minimal slice of the target UiState (master spec §8.3) —
+ * only fields with a real, live consumer are included.
+ * contextPanel/contextSheetState/selectedCellId/activeLensId/
+ * displayDensity from the full target interface still have no
+ * corresponding UI (Context Pane doesn't exist yet — see
+ * docs/ui-migration-boundary.md), so they are not added as dead fields.
+ * primaryRoute was added in PR6 once NavigationRail became a real
+ * consumer (src/ui/shell/NavigationRail.ts, src/app/AppShell.ts).
  */
 
 export type InteractionMode = 'observe' | 'inspect' | 'stimulate' | 'camera';
+export type PrimaryRoute = 'observe' | 'experiment' | 'history' | 'research';
 
 export interface UiState {
   /**
@@ -23,8 +24,16 @@ export interface UiState {
    * missing gate without silently changing that default.
    */
   interactionMode: InteractionMode;
+
+  /**
+   * Which of the 4 top-level routes (master spec §5.1) is active in the
+   * new Observatory Shell (src/app/AppShell.ts, opt-in — see
+   * docs/ui-feature-status.md PR6 entry). Has no effect on the legacy UI.
+   */
+  primaryRoute: PrimaryRoute;
 }
 
 export const DEFAULT_UI_STATE: UiState = {
   interactionMode: 'stimulate',
+  primaryRoute: 'observe',
 };

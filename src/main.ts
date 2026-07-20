@@ -14,6 +14,8 @@ import {
 import { dispatchRuntimeCommand } from './app/runtime/RuntimeAdapter.js';
 import { uiStore } from './app/state/UiStore.js';
 import type { InteractionMode } from './app/state/UiState.js';
+import { mountAppShell } from './app/AppShell.js';
+import { isNewShellEnabled } from './app/shellFeatureFlag.js';
 import { RealityVisualLayer } from './render/RealityVisualLayer.js';
 import { GuidePanel } from './ui/GuidePanel.js';
 import { actionLoop } from './organism/actionLoop.js';
@@ -82,6 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
             notice.textContent = '外部APIはこのビルドでは無効です。';
             guideApiSection.replaceWith(notice);
         }
+    }
+
+    // Observatory Shell: opt-in only, mounted alongside the legacy UI —
+    // see src/app/shellFeatureFlag.ts and docs/ui-migration-boundary.md.
+    if (isNewShellEnabled()) {
+        const shellRoot = document.createElement('div');
+        shellRoot.id = 'observatory-shell';
+        document.body.appendChild(shellRoot);
+        mountAppShell(shellRoot, uiStore);
     }
 });
 

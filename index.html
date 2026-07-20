@@ -734,6 +734,42 @@
         .event-strip-item[data-severity="warning"] { color:rgba(251,191,36,0.7); }
         .event-strip-item[data-severity="notice"]  { color:rgba(34,211,238,0.6); }
         .event-strip-item[data-severity="info"]    { color:rgba(255,255,255,0.4); }
+
+        /* ── PR6: Observatory Shell (opt-in, ?newShell=1 — see src/app/shellFeatureFlag.ts) ──
+           Scoped entirely under .observatory-shell so it cannot affect legacy styles. ── */
+        .observatory-shell {
+            position: fixed; inset: 0; z-index: 30; pointer-events: none;
+            display: flex; flex-direction: column; font-family: 'Hiragino Sans','Noto Sans JP',sans-serif;
+        }
+        .observatory-shell * { pointer-events: auto; }
+        .observatory-topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px; color: #fff; font-size: 14px; letter-spacing: 0.1em;
+        }
+        .observatory-topbar__badge {
+            font-size: 9px; padding: 2px 8px; border-radius: 5px; border: 1px solid currentColor;
+        }
+        .observatory-topbar__badge--live { color: rgba(34,211,238,0.9); }
+        .observatory-topbar__badge--replay { color: rgba(251,191,36,0.9); }
+        .observatory-shell__body { flex: 1; display: flex; min-height: 0; }
+        .observatory-nav {
+            display: flex; flex-direction: column; gap: 4px; padding: 8px;
+            width: 64px; pointer-events: auto;
+        }
+        @media (max-width: 768px) { .observatory-nav { display: none; } }
+        .observatory-nav__item, .observatory-bottom-nav__item {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6); border-radius: 8px; font-size: 10px;
+            padding: 8px 4px; cursor: pointer;
+        }
+        .observatory-nav__item--active, .observatory-bottom-nav__item--active {
+            color: rgba(34,211,238,0.95); border-color: rgba(34,211,238,0.4);
+        }
+        .observatory-shell__context-pane { flex: 1; }
+        .observatory-bottom-nav {
+            display: none; gap: 4px; padding: 8px; justify-content: space-around;
+        }
+        @media (max-width: 768px) { .observatory-bottom-nav { display: flex; } }
     </style>
 </head>
 <body>
