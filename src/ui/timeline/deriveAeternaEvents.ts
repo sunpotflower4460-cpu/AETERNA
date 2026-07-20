@@ -16,6 +16,8 @@
  */
 
 import type { AeternaEvent, AeternaEventKind, AeternaEventSeverity } from '../../types/aeternaEvent.ts';
+import { observationEventStore } from '../../app/events/ObservationEventStore.ts';
+import { adaptAeternaEvent } from '../../app/events/adaptAeternaEvent.ts';
 import type { DynamicViabilityState } from '../../types/dynamicViabilityState.ts';
 import type { BodyWorldClosureState } from '../../types/bodyWorldClosureState.ts';
 import type { LocalExcitabilityFieldState } from '../../types/localExcitabilityField.ts';
@@ -91,6 +93,10 @@ function push(ev: AeternaEvent): void {
     if (_eventHistory.length > MAX_EVENT_HISTORY) {
         _eventHistory.length = MAX_EVENT_HISTORY;
     }
+    // Also feed the new shared event store (src/app/events/) — the first
+    // real producer connected to it (docs/ui-feature-status.md addendum).
+    // Does not change this module's own history/dedupe behavior above.
+    observationEventStore.add(adaptAeternaEvent(ev));
 }
 
 // ── deriveAeternaEvents ────────────────────────────────────────────────────────
