@@ -3,6 +3,7 @@ import { PRESETS } from '../constants/aeternaConstants.js';
 import { updateSliderTrack } from '../utils/slider.js';
 import { uiStore } from '../app/state/UiStore.ts';
 import { shouldStimulateOnTap } from '../app/interaction/interactionPredicates.ts';
+import { emitStimulate } from '../app/interaction/stimulationEvents.ts';
 
 // ── Pointer / Touch / Camera Input ──────────────────
 
@@ -69,7 +70,10 @@ export function handlePointerUp(event) {
                 state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
                 state.raycaster.setFromCamera(state.mouse, state.camera);
                 const intersects = state.raycaster.intersectObject(state.particleSystem);
-                if (intersects.length > 0 && state.network) state.network.injectPredictionError(intersects[0].index);
+                if (intersects.length > 0 && state.network) {
+                    state.network.injectPredictionError(intersects[0].index);
+                    emitStimulate();
+                }
             }
         }
     }

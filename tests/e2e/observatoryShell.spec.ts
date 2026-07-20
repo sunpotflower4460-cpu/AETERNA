@@ -46,3 +46,15 @@ test('legacy UI is still present and untouched when the new Shell is enabled', a
   await expect(page.locator('#canvas-container')).toBeAttached();
   await expect(page.locator('#hud-title-row h1')).toBeAttached();
 });
+
+// PR7: First Observation Flow's WELCOME card. Attachment/text checks only
+// (no click) so this runs regardless of the boot-failure overlay above —
+// the click-driven lifecycle itself is covered by src/tests/app/appShell.test.ts
+// (jsdom + fake timers), since it can't be Playwright-verified in this sandbox.
+test('First Observation Flow WELCOME card renders in the Context Pane with ?newShell=1', async ({ page }) => {
+  await page.goto('/?newShell=1');
+  const card = page.locator('[data-testid="first-observation-card"]');
+  await expect(card).toBeAttached();
+  await expect(card).toContainText('観測は証明ではありません');
+  await expect(card.locator('[data-action="start"]')).toBeAttached();
+});
