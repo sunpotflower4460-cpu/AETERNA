@@ -78,5 +78,23 @@ Nothing below is promoted past what was directly confirmed by import-graph traci
 
 - Live, CONNECTED (legacy or new-but-wired): ~20 files/areas.
 - RENDERABLE/DEFINED but NOT CONNECTED (spec-aligned scaffolding awaiting migration): ~60 `.tsx`/`.ts` files.
-- VERIFIED: **0** — no browser E2E exists in this repo (see `docs/ui-runtime-inventory.md` §14); nothing should be marked VERIFIED in any doc until Playwright coverage lands (PR1) and is actually run against a real browser.
+- VERIFIED: **0** — no browser E2E existed at PR0 time (see `docs/ui-runtime-inventory.md` §14); PR1 added Playwright, but nothing below is promoted to VERIFIED until a specific browser assertion actually covers it — see the PR1/PR2/PR3 addendum below for what Playwright now covers.
 - Confirmed dead/orphaned (REMOVE candidate, pending confirmation, not deleted in this PR): `src/ui/observation/CausalTraceOverlay.tsx` (no importer at all, likely superseded by `CausalTracePanel.tsx`).
+
+## Addendum — PR1/PR2/PR3 status changes
+
+Everything below was CONNECTED for the first time (or fixed while already CONNECTED) after PR0's audit. Rows above are left as the original PR0 snapshot; this section is the delta.
+
+| Feature | File | Status | Notes |
+|---|---|---|---|
+| Release environment resolver | `src/release/resolveReleaseEnvironment.ts` | **CONNECTED** (PR2) | First real consumer of `ReleaseEnvironmentConfig`. Called from `main.ts` at module load, before any user interaction. |
+| API key input gating | `index.html` `#guide-api-config-section`, `src/main.ts` | **CONNECTED** (PR2) | Removed from the DOM entirely (not just hidden) when `externalApiEnabled` is false — Playwright-verified in `tests/e2e/network.spec.ts`. |
+| External LLM fetch gating | `src/perception/pointerHandlers.js` `testAPIConnection`, `src/ui/GuidePanel.js` `handleEvent` | **CONNECTED** (PR2) | Both now check `state.releaseSafety?.externalApiEnabled` before firing. |
+| Bridge gating | `src/organism/runtimeLoop.ts` `maybeBridgeSignal` | **CONNECTED** (PR2) | Checks `state.releaseSafety?.nodeBridgeEnabled` before running the bridge pipeline. |
+| Debug panels gating | `src/ui/debugPanels.js` | **CONNECTED** (PR2) | Checks `state.releaseSafety?.showDebugPanels`; wires no-op stubs instead of the real handlers when disabled. |
+| `RuntimeSnapshot` | `src/app/runtime/RuntimeSnapshot.ts` | **CONNECTED (partial)** (PR3) | `buildRuntimeSnapshot()` reads `tick`/`engineState`/`sigma`/`phi`/`energy`/`arousal` from `state.lastDyn` (now set every frame by `actionLoop.js`). `viability`/`closure`/`membrane`/`localField`/`repeatedFlowPaths`/`protoNetwork`/`observedRatios` are explicit `null` — not wired yet, deliberately not faked. Nothing in the live app calls this yet (no consumer PR has landed) — it exists and is unit-tested, but is not yet read by anything in the running app, so it does not qualify as fully CONNECTED until a real caller lands. |
+| `RuntimeCommand` / `RuntimeAdapter.dispatchRuntimeCommand` | `src/app/runtime/RuntimeCommand.ts`, `RuntimeAdapter.ts` | **CONNECTED** (PR3) | `main.ts`'s `window.applyPreset`/`resetTouchMemory`/`injectMassiveError`/`toggleVisualLayer`/`toggleDebugLabels` now route through `dispatchRuntimeCommand` instead of calling `pointerHandlers.js` directly. Scoped to only the commands the legacy app actually supports (`SELECT_CELL`/`SET_SCENARIO` from the master-spec target set are intentionally not included yet — no live implementation exists for them). |
+| `RuntimeCapabilities` | `src/app/runtime/RuntimeCapabilities.ts` | **CONNECTED (partial)** | `deriveRuntimeCapabilities()` is unit-tested and mirrors `state.releaseSafety`, but — like `RuntimeSnapshot` — has no consumer in the live UI yet; the actual gating in PR2 checks `state.releaseSafety` directly rather than through this module. A later PR should migrate those call sites to use it, or this entry should be downgraded to RENDERABLE. |
+| Reset history clearing | `src/ui/GuidePanel.js` `resetHistory()`, `src/ui/MajorStateObserver.js` `resetHistory()`, `src/ui/ObservationDisplay.js` `resetHistory()`, called from `resetTouchMemory()` | **CONNECTED** (PR2) | Previously the only reset path left stale history in all three. |
+| Mobile bottom sheet | `src/ui/layout/layoutControls.js` `openMobileSheet`/`closeMobileSheet`/`setMobileSheetFull`/drag handlers | **CONNECTED (fixed)** (PR2) | Retargeted from the nonexistent `#mobile-bottom-sheet` id to the real `#research-panel` element. Half/full visual distinction still has no dedicated CSS (only open/closed does) — a real gap, not fully resolved, tracked here rather than silently called done. |
+| Boot failure fallback | `src/main.ts` `showBootFailureFallback()` | **CONNECTED, Playwright-verified** (PR2) | Confirmed rendering in this sandbox (Three.js CDN blocked here) — screenshot showed the fallback UI, not a black screen. |

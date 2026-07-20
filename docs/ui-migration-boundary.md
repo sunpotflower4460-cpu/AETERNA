@@ -51,6 +51,8 @@ index.html (3 independent <script type="module"> entries: main.ts, debugPanels.j
 
 No `RuntimeAdapter`/`RuntimeSnapshot`/`RuntimeCommand` boundary, no `ObservationEventStore` (four independent notification decision-makers instead, see `ui-runtime-inventory.md` §6), no `UiStateStore` (state lives in `window`-global-mutated `state` object and scattered DOM classes/`window.*` functions), no `ObservatoryShell`/4-route navigation (today's nav is tab buttons + `window.selectResearchTab`).
 
+**Update (PR3):** `src/app/runtime/{RuntimeSnapshot,RuntimeCommand,RuntimeCapabilities,RuntimeAdapter}.ts` now exist as a thin, tested wrapper around the legacy `state` singleton and `pointerHandlers.js`. `main.ts`'s command-shaped `window.*` globals (`applyPreset`, `resetTouchMemory`, `injectMassiveError`, `toggleVisualLayer`, `toggleDebugLabels`) route through `dispatchRuntimeCommand` — real, not aspirational. `RuntimeSnapshot`/`RuntimeCapabilities` are built and unit-tested but have **no consumer in the live UI yet** (see `docs/ui-feature-status.md` addendum) — the boundary exists but nothing reads through it yet. `ObservationEventStore` and `UiStateStore` remain unbuilt (PR4/PR5).
+
 Migration must build the new boundary **alongside** this graph (PR3–PR6), prove it with real Runtime data end-to-end for one panel at a time (PR8's stated order: Now Summary → Cell Inspector → Lens → Replay → Difference → Causal Trace → Layer Correlation → Ratio Involvement → Guide), and only delete the corresponding legacy path once its replacement is VERIFIED via the Playwright suite introduced in PR1 — not before.
 
 ## 5. Constraints this boundary implies for PR1/PR2

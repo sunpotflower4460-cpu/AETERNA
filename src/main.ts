@@ -9,9 +9,9 @@ import { toggleAccordion } from './ui/accordion.js';
 import { updateSliderTrack } from './utils/slider.js';
 import {
     handlePointerDown, handlePointerMove, handlePointerUp,
-    applyPreset, resetTouchMemory, injectMassiveError,
-    toggleVisualLayer, toggleDebugLabels, testAPIConnection,
+    testAPIConnection,
 } from './perception/pointerHandlers.js';
+import { dispatchRuntimeCommand } from './app/runtime/RuntimeAdapter.js';
 import { RealityVisualLayer } from './render/RealityVisualLayer.js';
 import { GuidePanel } from './ui/GuidePanel.js';
 import { actionLoop } from './organism/actionLoop.js';
@@ -21,12 +21,16 @@ import { ObservationDisplay } from './ui/ObservationDisplay.js';
 import { registerCameraKeyboardShortcuts } from './ui/camera/createTorusCameraControls.js';
 
 // ── Assign globals required by HTML onclick attributes ──
+// Command-shaped globals route through RuntimeAdapter's typed dispatcher
+// (src/app/runtime/RuntimeCommand.ts) rather than calling
+// pointerHandlers.js directly — same behavior, single seam for future
+// callers (master spec §8.1).
 window.toggleAccordion  = toggleAccordion;
-window.applyPreset      = applyPreset;
-window.injectMassiveError = injectMassiveError;
-window.resetTouchMemory = resetTouchMemory;
-window.toggleVisualLayer  = toggleVisualLayer;
-window.toggleDebugLabels  = toggleDebugLabels;
+window.applyPreset      = (name: string) => dispatchRuntimeCommand({ type: 'APPLY_PRESET', name });
+window.injectMassiveError = () => dispatchRuntimeCommand({ type: 'INJECT_MASSIVE_ERROR' });
+window.resetTouchMemory = () => dispatchRuntimeCommand({ type: 'RESET_TOUCH_MEMORY' });
+window.toggleVisualLayer  = () => dispatchRuntimeCommand({ type: 'TOGGLE_VISUAL_LAYER' });
+window.toggleDebugLabels  = () => dispatchRuntimeCommand({ type: 'TOGGLE_DEBUG_LABELS' });
 window.testAPIConnection  = testAPIConnection;
 window.cameraResetView = () => state.cameraControls?.resetView();
 window.cameraTopView = () => state.cameraControls?.topView();

@@ -12,6 +12,7 @@ export function actionLoop(now) {
     state.network.triggerNoise(state.tensionLoad, state.network.sigmaDisplay);
     state.touchMem.decay();
     const dyn = state.network.updateDynamics(diskNodeIdx, state.activeTouches);
+    state.lastDyn = dyn;
 
     state.particleSystem.geometry.attributes.position.needsUpdate = true;
     state.particleSystem.geometry.attributes.color.needsUpdate = true;
@@ -29,6 +30,7 @@ export function actionLoop(now) {
 
     updateTensionState(dyn);
     const engineState = deriveEngineState(dyn);
+    state.lastEngineState = engineState;
     maybeUpdateUi(now, dyn, engineState);
     maybeBridgeSignal(now, dyn, engineState);
     state.renderer.render(state.scene, state.camera);

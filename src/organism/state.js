@@ -35,4 +35,11 @@ export const state = {
     lastUIRenderTime: 0,
     lastGuideTime: 0,
     lastBridgeTime: 0,
+
+    // Most recently computed per-frame dynamics/engine state, set by
+    // actionLoop.js. Read-only outside the loop — used by
+    // src/app/runtime/RuntimeAdapter.ts to build a RuntimeSnapshot without
+    // recomputing anything.
+    lastDyn: null,
+    lastEngineState: null,
 };

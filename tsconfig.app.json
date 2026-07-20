@@ -12,6 +12,6 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/release/**/*.ts", "src/config/**/*.ts", "src/state/**/*.ts"],
+  "include": ["src/release/**/*.ts", "src/config/**/*.ts", "src/state/**/*.ts", "src/app/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"]
 }
