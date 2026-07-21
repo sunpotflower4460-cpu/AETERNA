@@ -3,15 +3,27 @@
  *
  * Deliberately minimal slice of the target UiState (master spec §8.3) —
  * only fields with a real, live consumer are included.
- * contextPanel/contextSheetState/activeLensId/displayDensity from the
- * full target interface still have no corresponding UI, so they are not
- * added as dead fields. primaryRoute was added in PR6
- * (NavigationRail is its consumer); selectedCellId was added in PR8b
- * (CellInspectorPanel is its consumer).
+ * contextPanel/contextSheetState/displayDensity from the full target
+ * interface still have no corresponding UI, so they are not added as
+ * dead fields. primaryRoute was added in PR6 (NavigationRail is its
+ * consumer); selectedCellId was added in PR8b (CellInspectorPanel is
+ * its consumer); activeLensId was added in PR8c.
  */
 
 export type InteractionMode = 'observe' | 'inspect' | 'stimulate' | 'camera';
 export type PrimaryRoute = 'observe' | 'experiment' | 'history' | 'research';
+
+/**
+ * A lens picks which of a selected cell's real metrics to emphasize.
+ * Deliberately NOT the full 17-lens set in the existing (unconnected)
+ * src/ui/lens/metricLensRegistry.ts scaffolding — that registry assumes
+ * a rich CellObservation (curvature, membrane, vortex, plasticity, ...)
+ * none of which is available from the live legacy Runtime today (only
+ * AeternaNetwork.currentBuffer/spikeTrace are real per-node accessors —
+ * see PR8b). This lens set only covers what's genuinely there; extend it
+ * once more per-cell derivations are wired into RuntimeAdapter.
+ */
+export type LensId = 'currentValue' | 'spikeTrace';
 
 export interface UiState {
   /**
@@ -39,10 +51,18 @@ export interface UiState {
    * src/app/runtime/RuntimeAdapter.ts's getCellValue, a read-only accessor.
    */
   selectedCellId: number | null;
+
+  /**
+   * Which of the selected cell's metrics is emphasized in the Cell
+   * Inspector panel (src/ui/shell/CellInspectorPanel.ts). Null means no
+   * particular metric is emphasized (both rows shown equally).
+   */
+  activeLensId: LensId | null;
 }
 
 export const DEFAULT_UI_STATE: UiState = {
   interactionMode: 'stimulate',
   primaryRoute: 'observe',
   selectedCellId: null,
+  activeLensId: null,
 };

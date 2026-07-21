@@ -7,13 +7,14 @@
  * across test files.
  */
 
-import { DEFAULT_UI_STATE, type InteractionMode, type PrimaryRoute, type UiState } from './UiState.js';
+import { DEFAULT_UI_STATE, type InteractionMode, type LensId, type PrimaryRoute, type UiState } from './UiState.js';
 
 export interface UiStore {
   getState(): UiState;
   setInteractionMode(mode: InteractionMode): void;
   setPrimaryRoute(route: PrimaryRoute): void;
   setSelectedCellId(cellId: number | null): void;
+  setActiveLensId(lensId: LensId | null): void;
   subscribe(listener: (state: UiState) => void): () => void;
 }
 
@@ -42,6 +43,11 @@ export function createUiStore(initial: UiState = DEFAULT_UI_STATE): UiStore {
     setSelectedCellId(cellId) {
       if (state.selectedCellId === cellId) return;
       state = { ...state, selectedCellId: cellId };
+      notify();
+    },
+    setActiveLensId(lensId) {
+      if (state.activeLensId === lensId) return;
+      state = { ...state, activeLensId: lensId };
       notify();
     },
     subscribe(listener) {

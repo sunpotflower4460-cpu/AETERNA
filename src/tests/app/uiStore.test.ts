@@ -74,6 +74,28 @@ describe('createUiStore', () => {
     store.setSelectedCellId(5);
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('defaults to activeLensId=null', () => {
+    expect(createUiStore().getState().activeLensId).toBeNull();
+  });
+
+  it('setActiveLensId updates state and notifies subscribers', () => {
+    const store = createUiStore();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setActiveLensId('spikeTrace');
+    expect(store.getState().activeLensId).toBe('spikeTrace');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not notify when setting the same activeLensId again', () => {
+    const store = createUiStore();
+    store.setActiveLensId('currentValue');
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setActiveLensId('currentValue');
+    expect(listener).not.toHaveBeenCalled();
+  });
 });
 
 describe('shouldStimulateOnTap', () => {

@@ -216,6 +216,29 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(getCellValue.mock.calls.length).toBe(callsAfterUnmount);
   });
 
+  it('clicking a metric row selects it as the active lens, and clicking again toggles it off (PR8c)', () => {
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    getCellValue.mockReturnValue({ cellId: 3, currentValue: 0.5, spikeTrace: 0.1 });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+    store.setSelectedCellId(3);
+
+    const spikeRow = root.querySelector('[data-lens="spikeTrace"]') as HTMLElement;
+    spikeRow.click();
+    expect(store.getState().activeLensId).toBe('spikeTrace');
+    expect(root.querySelector('[data-lens="spikeTrace"]')?.getAttribute('aria-pressed')).toBe('true');
+
+    (root.querySelector('[data-lens="spikeTrace"]') as HTMLElement).click();
+    expect(store.getState().activeLensId).toBeNull();
+  });
+
   it('polls getNowSummary while showing the Now Summary panel and stops on unmount', () => {
     getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
     const root = document.createElement('div');

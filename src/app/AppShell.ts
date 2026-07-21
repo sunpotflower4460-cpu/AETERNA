@@ -30,7 +30,7 @@ import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
 import type { UiStore } from './state/UiStore.js';
-import type { PrimaryRoute } from './state/UiState.js';
+import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
@@ -105,11 +105,14 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     const selectedCellId = store.getState().selectedCellId;
     if (selectedCellId !== null) {
       stopNowSummaryPoll();
-      pane.innerHTML = renderCellInspectorPanelHTML(getCellValue(selectedCellId));
+      const renderCell = () =>
+        (pane.innerHTML = renderCellInspectorPanelHTML(
+          getCellValue(selectedCellId),
+          store.getState().activeLensId
+        ));
+      renderCell();
       if (cellInspectorPollId === null) {
-        cellInspectorPollId = setInterval(() => {
-          pane.innerHTML = renderCellInspectorPanelHTML(getCellValue(selectedCellId));
-        }, CELL_INSPECTOR_POLL_MS);
+        cellInspectorPollId = setInterval(renderCell, CELL_INSPECTOR_POLL_MS);
       }
       return;
     }
@@ -150,6 +153,16 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     if (navTarget) {
       const route = navTarget.dataset.route as PrimaryRoute | undefined;
       if (route) store.setPrimaryRoute(route);
+      return;
+    }
+    const lensTarget = target.closest('[data-lens]') as HTMLElement | null;
+    if (lensTarget) {
+      const lensId = lensTarget.dataset.lens as LensId | undefined;
+      if (lensId) {
+        // Clicking the already-active lens's row clears it (toggle off),
+        // matching a single-select control rather than a one-way switch.
+        store.setActiveLensId(store.getState().activeLensId === lensId ? null : lensId);
+      }
       return;
     }
     const actionTarget = target.closest('[data-action]') as HTMLElement | null;
