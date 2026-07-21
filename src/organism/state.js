@@ -42,4 +42,9 @@ export const state = {
     // recomputing anything.
     lastDyn: null,
     lastEngineState: null,
+
+    // Most recently computed NowSummaryState, set by updateMetricsUI.js
+    // (~every 30 frames, U5 cadence). Used by
+    // src/app/runtime/RuntimeAdapter.ts's getNowSummary().
+    lastNowSummary: null,
 };

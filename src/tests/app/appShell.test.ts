@@ -26,7 +26,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createUiStore } from '../../app/state/UiStore.js';
 
 const getRuntimeSnapshot = vi.fn();
-vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({ getRuntimeSnapshot }));
+const getNowSummary = vi.fn(() => null);
+vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({ getRuntimeSnapshot, getNowSummary }));
 
 let stimulateListener: (() => void) | null = null;
 vi.mock('../../app/interaction/stimulationEvents.js', () => ({
@@ -96,6 +97,8 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     getRuntimeSnapshot.mockReset();
+    getNowSummary.mockReset();
+    getNowSummary.mockReturnValue(null);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -132,8 +135,55 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(finishBtn).not.toBeNull();
 
     finishBtn.click();
-    // FREE_EXPLORATION — card disappears
+    // FREE_EXPLORATION on the default 'observe' route — Now Summary panel
+    // replaces the flow card (PR8a).
     expect(root.querySelector('[data-testid="first-observation-card"]')).toBeNull();
+    expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('shows nothing in the Context Pane on a non-observe route after FREE_EXPLORATION', () => {
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+
+    store.setPrimaryRoute('experiment');
+    const pane = root.querySelector('[data-testid="observatory-context-pane"]');
+    expect(pane?.querySelector('[data-testid="now-summary-panel"]')).toBeNull();
+    expect(pane?.querySelector('[data-testid="first-observation-card"]')).toBeNull();
+
+    store.setPrimaryRoute('observe');
+    expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('polls getNowSummary while showing the Now Summary panel and stops on unmount', () => {
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    const handle = mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+
+    const callsAtFreeExploration = getNowSummary.mock.calls.length;
+    expect(callsAtFreeExploration).toBeGreaterThan(0);
+
+    vi.advanceTimersByTime(3000);
+    expect(getNowSummary.mock.calls.length).toBeGreaterThan(callsAtFreeExploration);
+
+    handle.unmount();
+    const callsAfterUnmount = getNowSummary.mock.calls.length;
+    vi.advanceTimersByTime(5000);
+    expect(getNowSummary.mock.calls.length).toBe(callsAfterUnmount);
   });
 
   it('does not react to a stimulation before TOUCH_INVITED (no fabricated reaction)', () => {

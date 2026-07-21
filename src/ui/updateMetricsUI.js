@@ -846,6 +846,11 @@ function _updateU5(dyn) {
         timestamp,
     });
     updateNowSummary(nowSummaryState);
+    // Expose the already-computed value for the new Observatory Shell's
+    // NowSummaryPanel (src/ui/shell/NowSummaryPanel.ts) — same "capture
+    // what's already computed" pattern as state.lastDyn (PR3). Does not
+    // change what deriveNowSummary computes or how the legacy DOM path renders.
+    state.lastNowSummary = nowSummaryState;
 
     // ── Derive and update Event Timeline ─────────────────────────────────────
     const recentEvents = deriveAeternaEvents({

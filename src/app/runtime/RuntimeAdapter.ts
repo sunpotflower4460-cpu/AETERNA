@@ -20,9 +20,19 @@ import {
 import { buildRuntimeSnapshot, type RuntimeSnapshot } from './RuntimeSnapshot.js';
 import { deriveRuntimeCapabilities, type RuntimeCapabilities } from './RuntimeCapabilities.js';
 import type { RuntimeCommand } from './RuntimeCommand.js';
+import type { NowSummaryState } from '../../types/nowSummary.js';
 
 export function getRuntimeSnapshot(now: number = performance.now()): RuntimeSnapshot | null {
   return buildRuntimeSnapshot(state, now);
+}
+
+/**
+ * Most recently computed NowSummaryState (src/ui/summary/deriveNowSummary.ts,
+ * already-live — see state.lastNowSummary in updateMetricsUI.js). Null
+ * before the first ~30-frame U5 cycle has run.
+ */
+export function getNowSummary(): NowSummaryState | null {
+  return state.lastNowSummary;
 }
 
 export function getRuntimeCapabilities(): RuntimeCapabilities {

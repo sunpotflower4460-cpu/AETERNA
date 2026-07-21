@@ -2,27 +2,33 @@
  * AppShell.ts
  *
  * Mounts the new Observatory Shell chrome (TopBar + Navigation +
- * First Observation Flow) into a dedicated container, alongside — not
+ * Context Pane content) into a dedicated container, alongside — not
  * replacing — the legacy UI (docs/ui-migration-boundary.md, master spec
  * §0 "旧UIを削除する前に、新UIのE2Eを完了してください"). Opt-in only
  * (see shellFeatureFlag.ts); default behavior is completely unaffected.
  *
- * The Context Pane's only real content so far is the First Observation
- * Flow card (PR7) — no other panel content exists yet
- * (ObservationSnapshotStore/ObservationEventStore consumers are
- * PR8-scoped work). The Field Stage is intentionally not duplicated
- * here: the existing legacy canvas shows through underneath.
+ * Context Pane content, in order:
+ * 1. While the First Observation Flow (PR7) hasn't reached
+ *    FREE_EXPLORATION yet: its card.
+ * 2. Once FREE_EXPLORATION, on the 'observe' route: the Now Summary
+ *    panel (PR8a — master spec §8's PR8 order, item 1), reading the
+ *    already-live NowSummaryState via RuntimeAdapter.getNowSummary().
+ * 3. Any other route: empty — no panel content exists for
+ *    experiment/history/research yet (not faked here).
+ * The Field Stage is intentionally not duplicated: the existing legacy
+ * canvas shows through underneath.
  */
 
 import { renderTopBarHTML } from '../ui/shell/TopBar.js';
 import { renderNavigationRailHTML } from '../ui/shell/NavigationRail.js';
 import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
+import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import type { UiStore } from './state/UiStore.js';
 import type { PrimaryRoute } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
-import { getRuntimeSnapshot } from './runtime/RuntimeAdapter.js';
+import { getRuntimeSnapshot, getNowSummary } from './runtime/RuntimeAdapter.js';
 
 export interface AppShellHandle {
   unmount(): void;
@@ -30,6 +36,10 @@ export interface AppShellHandle {
 
 const BASELINE_OBSERVING_MS = 5000;
 const REACTION_TO_INSIGHT_MS = 2000;
+// Now Summary is recomputed live roughly every 30 frames (~2/sec at
+// 60fps); polling at 1s stays within the "max 2 FPS" Now Summary budget
+// (master spec §16) without needing a dedicated change-subscription.
+const NOW_SUMMARY_POLL_MS = 1000;
 
 export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle {
   root.className = 'observatory-shell';
@@ -47,10 +57,37 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
   let baselineSigma: number | null = null;
   let insightText: string | null = null;
   const timers: ReturnType<typeof setTimeout>[] = [];
+  let nowSummaryPollId: ReturnType<typeof setInterval> | null = null;
 
-  function renderFlowCard() {
+  function stopNowSummaryPoll() {
+    if (nowSummaryPollId !== null) {
+      clearInterval(nowSummaryPollId);
+      nowSummaryPollId = null;
+    }
+  }
+
+  function renderContextPane() {
     const pane = root.querySelector('[data-testid="observatory-context-pane"]');
-    if (pane) pane.innerHTML = renderFirstObservationCardHTML(flow.getState().stage, insightText);
+    if (!pane) return;
+
+    if (flow.getState().stage !== 'FREE_EXPLORATION') {
+      stopNowSummaryPoll();
+      pane.innerHTML = renderFirstObservationCardHTML(flow.getState().stage, insightText);
+      return;
+    }
+
+    if (store.getState().primaryRoute !== 'observe') {
+      stopNowSummaryPoll();
+      pane.innerHTML = '';
+      return;
+    }
+
+    pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary());
+    if (nowSummaryPollId === null) {
+      nowSummaryPollId = setInterval(() => {
+        pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary());
+      }, NOW_SUMMARY_POLL_MS);
+    }
   }
 
   const unsubscribeFlow = flow.subscribe((flowState) => {
@@ -66,12 +103,12 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
         }, REACTION_TO_INSIGHT_MS)
       );
     }
-    renderFlowCard();
+    renderContextPane();
   });
 
   const unsubscribeStimulate = onStimulate(() => flow.recordTouch());
 
-  renderFlowCard();
+  renderContextPane();
 
   // ── Nav + flow-card click routing ──────────────────────────────────────
   function handleClick(event: Event) {
@@ -101,6 +138,7 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     const route = store.getState().primaryRoute;
     if (nav) nav.outerHTML = renderNavigationRailHTML(route);
     if (bottomNav) bottomNav.outerHTML = renderBottomNavigationHTML(route);
+    renderContextPane();
   }
 
   const unsubscribeStore = store.subscribe(render);
@@ -110,6 +148,7 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       unsubscribeStore();
       unsubscribeFlow();
       unsubscribeStimulate();
+      stopNowSummaryPoll();
       for (const t of timers) clearTimeout(t);
       root.removeEventListener('click', handleClick);
       root.innerHTML = '';
