@@ -25,7 +25,10 @@
  *    underneath whenever a specific tick is selected — comparing that
  *    recorded tick against the current live RuntimeSnapshot and
  *    reporting the single strongest metric change as a possible
- *    contributing signal (never framed as proof).
+ *    contributing signal (never framed as proof) — and the Layer
+ *    Correlation panel (PR8g — item 7) always shown, computing real
+ *    Pearson correlation across the whole captured history (not gated
+ *    by tick selection — it describes the recorded interval as a whole).
  * 5. Any other route (experiment/research): empty — no panel content
  *    exists for them yet (not faked here).
  * The Field Stage is intentionally not duplicated: the existing legacy
@@ -40,6 +43,7 @@ import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js'
 import { renderReplayPanelHTML } from '../ui/shell/ReplayPanel.js';
 import { renderDifferencePanelHTML } from '../ui/shell/DifferencePanel.js';
 import { renderCausalTracePanelHTML } from '../ui/shell/CausalTracePanel.js';
+import { renderLayerCorrelationPanelHTML } from '../ui/shell/LayerCorrelationPanel.js';
 import type { UiStore } from './state/UiStore.js';
 import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
@@ -48,6 +52,7 @@ import { onStimulate } from './interaction/stimulationEvents.js';
 import { getRuntimeSnapshot, getNowSummary, getCellValue } from './runtime/RuntimeAdapter.js';
 import { createRuntimeSnapshotHistory, pushRuntimeSnapshot, getSnapshotByTick } from './replay/RuntimeSnapshotHistory.js';
 import { buildRuntimeSnapshotDifference } from './replay/RuntimeSnapshotDifference.js';
+import { computeLayerCorrelation } from './replay/computeLayerCorrelation.js';
 import { deriveCausalTraceSignal } from './replay/deriveCausalTraceSignal.js';
 
 export interface AppShellHandle {
@@ -128,6 +133,7 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
         html += renderDifferencePanelHTML(diff);
         html += renderCausalTracePanelHTML(deriveCausalTraceSignal(diff));
       }
+      html += renderLayerCorrelationPanelHTML(computeLayerCorrelation(snapshotHistory));
       pane.innerHTML = html;
       return;
     }

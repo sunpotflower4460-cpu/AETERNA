@@ -197,6 +197,11 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(pane?.querySelector('[data-testid="replay-panel"]')).not.toBeNull();
     expect(pane?.textContent).toContain('2.0000'); // latest captured sigma, shown live
 
+    // PR8g: the Layer Correlation panel is always shown on the history
+    // route, even with no tick selected (it describes the whole recorded
+    // interval, not a single before/after comparison).
+    expect(pane?.querySelector('[data-testid="layer-correlation-panel"]')).not.toBeNull();
+
     const select = pane?.querySelector('[data-testid="replay-tick-select"]') as HTMLSelectElement;
     expect(select).not.toBeNull();
     const firstTickOption = select.querySelector('option') as HTMLOptionElement;
@@ -221,6 +226,8 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(store.getState().replaySelectedTick).toBeNull();
     expect(root.querySelector('[data-testid="difference-panel"]')).toBeNull();
     expect(root.querySelector('[data-testid="causal-trace-panel"]')).toBeNull();
+    // Layer Correlation stays regardless — it was never gated by tick selection.
+    expect(root.querySelector('[data-testid="layer-correlation-panel"]')).not.toBeNull();
   });
 
   it('shows the Cell Inspector panel instead of Now Summary once a cell is selected', () => {

@@ -73,6 +73,8 @@ No `RuntimeAdapter`/`RuntimeSnapshot`/`RuntimeCommand` boundary, no `Observation
 
 **Update (PR8f):** Item 6/9 (Causal Trace) is done — `deriveCausalTraceSignal` picks the single strongest metric out of the same `RuntimeSnapshotDifference` (PR8e) and reports it with the real `CausalTraceResult`'s confidence vocabulary, an honest strict subset rather than a fabricated multi-signal graph (`src/types/causalTrace.ts` needs data this app doesn't have). 3/9 panels remain (Layer Correlation, Ratio Involvement, Guide).
 
+**Update (PR8g):** Item 7/9 (Layer Correlation) is done — `computeLayerCorrelation` computes a real Pearson correlation coefficient across all 6 pairs of the 4 real `RuntimeSnapshot` metrics, sampled from the same `RuntimeSnapshotHistory` (PR8d) ring-buffer, rather than reusing `src/types/layerCorrelation.ts`/`src/ui/observation/LayerCorrelationPanel.tsx` (assume rich `globalSummary` metric keys this Runtime never populates). Unlike Difference/Causal Trace, it's always shown on the `'history'` route regardless of tick selection — it describes the whole recorded interval, not a single before/after comparison. 2/9 panels remain (Ratio Involvement, Guide).
+
 Migration must build the new boundary **alongside** this graph (PR3–PR6), prove it with real Runtime data end-to-end for one panel at a time (PR8's stated order: Now Summary → Cell Inspector → Lens → Replay → Difference → Causal Trace → Layer Correlation → Ratio Involvement → Guide), and only delete the corresponding legacy path once its replacement is VERIFIED via the Playwright suite introduced in PR1 — not before.
 
 ## 5. Constraints this boundary implies for PR1/PR2

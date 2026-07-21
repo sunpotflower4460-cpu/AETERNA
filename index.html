@@ -879,6 +879,22 @@
         .causal-trace-panel__confidence[data-confidence="high"] { color: rgba(251,113,133,0.9); }
         .causal-trace-panel__caution { margin: 0; font-size: 10px; color: rgba(255,255,255,0.35); line-height: 1.4; }
         .causal-trace-panel__empty { margin: 0 0 8px; color: rgba(255,255,255,0.4); font-size: 12px; }
+
+        /* ── PR8g: Layer Correlation panel (Observatory Shell) ── */
+        .layer-correlation-panel {
+            margin: 0 16px 16px; padding: 16px; border-radius: 12px;
+            background: rgba(5,10,15,0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(96,165,250,0.2); color: rgba(255,255,255,0.9);
+            font-size: 12px; max-width: 320px;
+        }
+        .layer-correlation-panel__title { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.02em; }
+        .layer-correlation-panel__table { width: 100%; border-collapse: collapse; }
+        .layer-correlation-panel__table th { text-align: right; font-weight: normal; color: rgba(255,255,255,0.4); font-size: 10px; padding-bottom: 4px; }
+        .layer-correlation-panel__table th:first-child { text-align: left; }
+        .layer-correlation-panel__cell { text-align: right; font-family: monospace; padding: 3px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+        .layer-correlation-panel__cell--label { text-align: left; font-family: inherit; color: rgba(255,255,255,0.6); }
+        .layer-correlation-panel__cell--n { color: rgba(255,255,255,0.4); font-size: 10px; }
+        .layer-correlation-panel__caution { margin: 10px 0 0; font-size: 10px; color: rgba(255,255,255,0.35); line-height: 1.4; }
     </style>
 </head>
 <body>
