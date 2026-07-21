@@ -865,6 +865,11 @@ function _updateU5(dyn) {
     currentExplainableSnapshot = buildExplainableSnapshot(
         overviewState, nowSummaryState, recentEvents.slice(0, 10)
     );
+    // Expose alongside state.lastNowSummary for the Observatory Shell's
+    // GuidePanel (src/ui/shell/GuidePanel.ts) — same "capture what's
+    // already computed" pattern, read via `state` rather than importing
+    // this module directly so RuntimeAdapter.ts stays a thin wrapper.
+    state.lastExplainableSnapshot = currentExplainableSnapshot;
 
     _updateObservationDashboard(dyn, {
         curvatureObservation,

@@ -28,7 +28,13 @@ import { createUiStore } from '../../app/state/UiStore.js';
 const getRuntimeSnapshot = vi.fn();
 const getNowSummary = vi.fn(() => null);
 const getCellValue = vi.fn(() => null);
-vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({ getRuntimeSnapshot, getNowSummary, getCellValue }));
+const getExplainableSnapshot = vi.fn(() => null);
+vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({
+  getRuntimeSnapshot,
+  getNowSummary,
+  getCellValue,
+  getExplainableSnapshot,
+}));
 
 let stimulateListener: (() => void) | null = null;
 vi.mock('../../app/interaction/stimulationEvents.js', () => ({
@@ -102,6 +108,8 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     getNowSummary.mockReturnValue(null);
     getCellValue.mockReset();
     getCellValue.mockReturnValue(null);
+    getExplainableSnapshot.mockReset();
+    getExplainableSnapshot.mockReturnValue(null);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -145,6 +153,8 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     // replaces the flow card (PR8a).
     expect(root.querySelector('[data-testid="first-observation-card"]')).toBeNull();
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+    // PR8i: the Guide panel is shown alongside Now Summary.
+    expect(root.querySelector('[data-testid="guide-panel"]')).not.toBeNull();
   });
 
   it('shows nothing in the Context Pane on the experiment/research routes after FREE_EXPLORATION', () => {
@@ -255,6 +265,9 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     // getRuntimeSnapshot here has no observedRatios field, matching real
     // production behavior — RuntimeSnapshot.observedRatios is null today).
     expect(root.querySelector('[data-testid="ratio-involvement-panel__unavailable"]')).not.toBeNull();
+
+    // PR8i: the Guide panel renders alongside Cell Inspector too.
+    expect(root.querySelector('[data-testid="guide-panel"]')).not.toBeNull();
 
     store.setSelectedCellId(null);
     expect(root.querySelector('[data-testid="cell-inspector-panel"]')).toBeNull();

@@ -22,6 +22,12 @@
  * 3. Once FREE_EXPLORATION, on the 'observe' route, no cell selected:
  *    the Now Summary panel (PR8a — item 1), reading the already-live
  *    NowSummaryState via RuntimeAdapter.getNowSummary().
+ * Both 'observe'-route branches (2 and 3) also show the Guide panel
+ * (PR8i — item 9, the final Context Panel Migration item) underneath,
+ * reading RuntimeAdapter.getExplainableSnapshot() — a genuinely real,
+ * already-live ExplainableObservationSnapshot (updateMetricsUI.js builds
+ * one every frame for the U6 Guide system but it had zero live consumers
+ * until now) through the real rule-based generateGuide (no LLM/API key).
  * 4. On the 'history' route: the Replay panel (PR8d — item 4), showing
  *    a captured history of RuntimeSnapshot readings
  *    (src/app/replay/RuntimeSnapshotHistory.ts), plus the Difference
@@ -45,6 +51,7 @@ import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
 import { renderRatioInvolvementPanelHTML } from '../ui/shell/RatioInvolvementPanel.js';
+import { renderGuidePanelHTML } from '../ui/shell/GuidePanel.js';
 import { renderReplayPanelHTML } from '../ui/shell/ReplayPanel.js';
 import { renderDifferencePanelHTML } from '../ui/shell/DifferencePanel.js';
 import { renderCausalTracePanelHTML } from '../ui/shell/CausalTracePanel.js';
@@ -54,7 +61,7 @@ import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
-import { getRuntimeSnapshot, getNowSummary, getCellValue } from './runtime/RuntimeAdapter.js';
+import { getRuntimeSnapshot, getNowSummary, getCellValue, getExplainableSnapshot } from './runtime/RuntimeAdapter.js';
 import { createRuntimeSnapshotHistory, pushRuntimeSnapshot, getSnapshotByTick } from './replay/RuntimeSnapshotHistory.js';
 import { buildRuntimeSnapshotDifference } from './replay/RuntimeSnapshotDifference.js';
 import { computeLayerCorrelation } from './replay/computeLayerCorrelation.js';
@@ -156,7 +163,8 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       const renderCell = () =>
         (pane.innerHTML =
           renderCellInspectorPanelHTML(getCellValue(selectedCellId), store.getState().activeLensId) +
-          renderRatioInvolvementPanelHTML(getRuntimeSnapshot()?.observedRatios ?? null, selectedCellId));
+          renderRatioInvolvementPanelHTML(getRuntimeSnapshot()?.observedRatios ?? null, selectedCellId) +
+          renderGuidePanelHTML(getExplainableSnapshot()));
       renderCell();
       if (cellInspectorPollId === null) {
         cellInspectorPollId = setInterval(renderCell, CELL_INSPECTOR_POLL_MS);
@@ -165,10 +173,12 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     }
 
     stopCellInspectorPoll();
-    pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary());
+    const renderNowSummaryAndGuide = () =>
+      (pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary()) + renderGuidePanelHTML(getExplainableSnapshot()));
+    renderNowSummaryAndGuide();
     if (nowSummaryPollId === null) {
       nowSummaryPollId = setInterval(() => {
-        pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary());
+        renderNowSummaryAndGuide();
       }, NOW_SUMMARY_POLL_MS);
     }
   }

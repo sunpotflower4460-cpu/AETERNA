@@ -21,6 +21,7 @@ import { buildRuntimeSnapshot, type RuntimeSnapshot } from './RuntimeSnapshot.js
 import { deriveRuntimeCapabilities, type RuntimeCapabilities } from './RuntimeCapabilities.js';
 import type { RuntimeCommand } from './RuntimeCommand.js';
 import type { NowSummaryState } from '../../types/nowSummary.js';
+import type { ExplainableObservationSnapshot } from '../../ui/explain/explainableObservationSnapshot.js';
 
 export function getRuntimeSnapshot(now: number = performance.now()): RuntimeSnapshot | null {
   return buildRuntimeSnapshot(state, now);
@@ -37,6 +38,17 @@ export function getNowSummary(): NowSummaryState | null {
 
 export function getRuntimeCapabilities(): RuntimeCapabilities {
   return deriveRuntimeCapabilities(state.releaseSafety);
+}
+
+/**
+ * Most recently built ExplainableObservationSnapshot (real overview +
+ * NowSummary + recent events), set by updateMetricsUI.js on
+ * state.lastExplainableSnapshot alongside state.lastNowSummary — its
+ * first live consumer outside the legacy LLM-based GuidePanel.js path.
+ * Null before the first frame.
+ */
+export function getExplainableSnapshot(): ExplainableObservationSnapshot | null {
+  return state.lastExplainableSnapshot;
 }
 
 export interface CellObservationValue {

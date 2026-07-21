@@ -47,4 +47,13 @@ export const state = {
     // (~every 30 frames, U5 cadence). Used by
     // src/app/runtime/RuntimeAdapter.ts's getNowSummary().
     lastNowSummary: null,
+
+    // Most recently built ExplainableObservationSnapshot (real overview +
+    // NowSummary + recent events), set by updateMetricsUI.js alongside
+    // lastNowSummary. Used by src/app/runtime/RuntimeAdapter.ts's
+    // getExplainableSnapshot() — reading it from `state` (rather than
+    // importing updateMetricsUI.js directly) keeps RuntimeAdapter.ts a
+    // thin wrapper instead of pulling in the entire legacy UI-update
+    // module graph (which touches `window` at import time).
+    lastExplainableSnapshot: null,
 };
