@@ -205,8 +205,14 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(store.getState().replaySelectedTick).toBe(Number(firstTickOption.value));
     expect(pane?.querySelector('[data-action="replay-return-to-live"]')).not.toBeNull();
 
+    // PR8e: selecting a tick also shows the Difference panel (before = the
+    // selected recorded tick, after = the current live snapshot).
+    expect(pane?.querySelector('[data-testid="difference-panel"]')).not.toBeNull();
+    expect(pane?.textContent).toContain('+1.0000'); // sigma delta: 2.0 (live) - 1.0 (tick 0)
+
     (pane?.querySelector('[data-action="replay-return-to-live"]') as HTMLButtonElement).click();
     expect(store.getState().replaySelectedTick).toBeNull();
+    expect(root.querySelector('[data-testid="difference-panel"]')).toBeNull();
   });
 
   it('shows the Cell Inspector panel instead of Now Summary once a cell is selected', () => {

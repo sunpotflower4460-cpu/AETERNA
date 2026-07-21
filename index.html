@@ -850,6 +850,21 @@
         }
         .replay-panel__note { margin: 10px 0 0; font-size: 10px; color: rgba(255,255,255,0.35); }
         .replay-panel__empty { margin: 0; color: rgba(255,255,255,0.4); font-size: 12px; }
+
+        /* ── PR8e: Difference panel (Observatory Shell) ── */
+        .difference-panel {
+            margin: 0 16px 16px; padding: 16px; border-radius: 12px;
+            background: rgba(5,10,15,0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(167,139,250,0.25); color: rgba(255,255,255,0.9);
+            font-size: 12px; max-width: 320px;
+        }
+        .difference-panel__title { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.02em; }
+        .difference-panel__table { width: 100%; border-collapse: collapse; }
+        .difference-panel__table th { text-align: right; font-weight: normal; color: rgba(255,255,255,0.4); font-size: 10px; padding-bottom: 4px; }
+        .difference-panel__table th:first-child { text-align: left; }
+        .difference-panel__cell { text-align: right; font-family: monospace; padding: 3px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+        .difference-panel__cell--label { text-align: left; font-family: inherit; color: rgba(255,255,255,0.6); }
+        .difference-panel__cell--delta { color: rgba(167,139,250,0.9); }
     </style>
 </head>
 <body>

@@ -20,7 +20,10 @@
  *    NowSummaryState via RuntimeAdapter.getNowSummary().
  * 4. On the 'history' route: the Replay panel (PR8d — item 4), showing
  *    a captured history of RuntimeSnapshot readings
- *    (src/app/replay/RuntimeSnapshotHistory.ts).
+ *    (src/app/replay/RuntimeSnapshotHistory.ts), plus the Difference
+ *    panel (PR8e — item 5) underneath whenever a specific tick is
+ *    selected — compares that recorded tick against the current live
+ *    RuntimeSnapshot.
  * 5. Any other route (experiment/research): empty — no panel content
  *    exists for them yet (not faked here).
  * The Field Stage is intentionally not duplicated: the existing legacy
@@ -33,13 +36,15 @@ import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
 import { renderReplayPanelHTML } from '../ui/shell/ReplayPanel.js';
+import { renderDifferencePanelHTML } from '../ui/shell/DifferencePanel.js';
 import type { UiStore } from './state/UiStore.js';
 import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
 import { getRuntimeSnapshot, getNowSummary, getCellValue } from './runtime/RuntimeAdapter.js';
-import { createRuntimeSnapshotHistory, pushRuntimeSnapshot } from './replay/RuntimeSnapshotHistory.js';
+import { createRuntimeSnapshotHistory, pushRuntimeSnapshot, getSnapshotByTick } from './replay/RuntimeSnapshotHistory.js';
+import { buildRuntimeSnapshotDifference } from './replay/RuntimeSnapshotDifference.js';
 
 export interface AppShellHandle {
   unmount(): void;
@@ -110,7 +115,14 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     if (route === 'history') {
       stopNowSummaryPoll();
       stopCellInspectorPoll();
-      pane.innerHTML = renderReplayPanelHTML(snapshotHistory, store.getState().replaySelectedTick);
+      const selectedTick = store.getState().replaySelectedTick;
+      let html = renderReplayPanelHTML(snapshotHistory, selectedTick);
+      if (selectedTick !== null) {
+        const before = getSnapshotByTick(snapshotHistory, selectedTick);
+        const after = getRuntimeSnapshot();
+        html += renderDifferencePanelHTML(buildRuntimeSnapshotDifference(before, after));
+      }
+      pane.innerHTML = html;
       return;
     }
 
