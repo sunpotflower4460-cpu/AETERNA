@@ -96,6 +96,32 @@ describe('createUiStore', () => {
     store.setActiveLensId('currentValue');
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('defaults to replaySelectedTick=null (live)', () => {
+    expect(createUiStore().getState().replaySelectedTick).toBeNull();
+  });
+
+  it('setReplaySelectedTick updates state and notifies subscribers', () => {
+    const store = createUiStore();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setReplaySelectedTick(42);
+    expect(store.getState().replaySelectedTick).toBe(42);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    store.setReplaySelectedTick(null);
+    expect(store.getState().replaySelectedTick).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not notify when setting the same replaySelectedTick again', () => {
+    const store = createUiStore();
+    store.setReplaySelectedTick(5);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setReplaySelectedTick(5);
+    expect(listener).not.toHaveBeenCalled();
+  });
 });
 
 describe('shouldStimulateOnTap', () => {

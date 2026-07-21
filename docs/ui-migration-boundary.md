@@ -67,6 +67,8 @@ No `RuntimeAdapter`/`RuntimeSnapshot`/`RuntimeCommand` boundary, no `Observation
 
 **Update (PR8c):** Item 3/9 (Lens) is done, scoped honestly rather than against the existing `src/ui/lens/metricLensRegistry.ts` (17 lenses, requires observer-derivation data not yet wired into `RuntimeAdapter` — see PR8b's note). `UiState.activeLensId` covers only the 2 real per-cell metrics; each Cell Inspector row is its own lens toggle. 6/9 panels remain (Replay, Difference, Causal Trace, Layer Correlation, Ratio Involvement, Guide).
 
+**Update (PR8d):** Item 4/9 (Replay) is done, on the same "build against real data, not the unconnected rich-CellObservation scaffolding" principle as PR8c — a new `RuntimeSnapshotHistory` (not `src/replay/timeReplayBuffer.ts`, which has zero live callers and needs data that doesn't exist yet) captures real `RuntimeSnapshot` readings every 1s, continuously, independent of route/stage. Gives the previously-empty `'history'` nav route its first real content. 5/9 panels remain (Difference, Causal Trace, Layer Correlation, Ratio Involvement, Guide).
+
 Migration must build the new boundary **alongside** this graph (PR3–PR6), prove it with real Runtime data end-to-end for one panel at a time (PR8's stated order: Now Summary → Cell Inspector → Lens → Replay → Difference → Causal Trace → Layer Correlation → Ratio Involvement → Guide), and only delete the corresponding legacy path once its replacement is VERIFIED via the Playwright suite introduced in PR1 — not before.
 
 ## 5. Constraints this boundary implies for PR1/PR2

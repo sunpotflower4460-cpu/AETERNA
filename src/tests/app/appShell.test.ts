@@ -108,9 +108,11 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
   });
 
   it('walks WELCOME → BASELINE_OBSERVING → TOUCH_INVITED → REACTION_OBSERVED → INSIGHT_PRESENTED → FREE_EXPLORATION', () => {
-    getRuntimeSnapshot
-      .mockReturnValueOnce({ sigma: 1.0 }) // captured at TOUCH_INVITED
-      .mockReturnValueOnce({ sigma: 1.08 }); // captured when presenting insight
+    // A stateful mock (not mockReturnValueOnce) since PR8d's replay
+    // snapshot-capture interval also calls getRuntimeSnapshot() on its own
+    // 1s cadence, independent of the flow's own TOUCH_INVITED/insight reads.
+    let currentSigma = 1.0;
+    getRuntimeSnapshot.mockImplementation(() => ({ sigma: currentSigma, phi: null, energy: null }));
 
     const root = document.createElement('div');
     const store = createUiStore();
@@ -122,16 +124,17 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(root.querySelector('[data-action]')).toBeNull();
 
     vi.advanceTimersByTime(5000);
-    // TOUCH_INVITED — baseline sigma captured
-    expect(getRuntimeSnapshot).toHaveBeenCalledTimes(1);
+    // TOUCH_INVITED — baseline sigma (1.0) captured
+    expect(getRuntimeSnapshot).toHaveBeenCalled();
 
     expect(stimulateListener).not.toBeNull();
     stimulateListener?.(); // simulates a real stimulation (PR7: not a fake timer)
-    // REACTION_OBSERVED — waiting for the 2s insight delay
+    // REACTION_OBSERVED — waiting for the 2s insight delay; sigma shifts
+    // before the insight-capturing read fires.
+    currentSigma = 1.08;
 
     vi.advanceTimersByTime(2000);
-    // INSIGHT_PRESENTED — after sigma captured, insight text rendered
-    expect(getRuntimeSnapshot).toHaveBeenCalledTimes(2);
+    // INSIGHT_PRESENTED — after sigma (1.08) captured, insight text rendered
     const cardText = root.querySelector('[data-testid="first-observation-card"]')?.textContent ?? '';
     expect(cardText).toContain('変化が観測されました');
     const finishBtn = root.querySelector('[data-action="finish"]') as HTMLButtonElement;
@@ -144,7 +147,7 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
   });
 
-  it('shows nothing in the Context Pane on a non-observe route after FREE_EXPLORATION', () => {
+  it('shows nothing in the Context Pane on the experiment/research routes after FREE_EXPLORATION', () => {
     getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
     const root = document.createElement('div');
     const store = createUiStore();
@@ -163,6 +166,47 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
 
     store.setPrimaryRoute('observe');
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('shows the Replay panel on the history route and captures snapshots continuously (PR8d)', () => {
+    let currentSigma = 1.0;
+    let currentTick = 0;
+    getRuntimeSnapshot.mockImplementation(() => ({
+      tick: currentTick,
+      sigma: currentSigma,
+      phi: null,
+      energy: null,
+    }));
+    const root = document.createElement('div');
+    const store = createUiStore();
+    mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+
+    // Capture runs on the 'observe' route too (continuous, route-independent).
+    currentSigma = 2.0;
+    currentTick = 1;
+    vi.advanceTimersByTime(1000);
+
+    store.setPrimaryRoute('history');
+    const pane = root.querySelector('[data-testid="observatory-context-pane"]');
+    expect(pane?.querySelector('[data-testid="replay-panel"]')).not.toBeNull();
+    expect(pane?.textContent).toContain('2.0000'); // latest captured sigma, shown live
+
+    const select = pane?.querySelector('[data-testid="replay-tick-select"]') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    const firstTickOption = select.querySelector('option') as HTMLOptionElement;
+    select.value = firstTickOption.value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(store.getState().replaySelectedTick).toBe(Number(firstTickOption.value));
+    expect(pane?.querySelector('[data-action="replay-return-to-live"]')).not.toBeNull();
+
+    (pane?.querySelector('[data-action="replay-return-to-live"]') as HTMLButtonElement).click();
+    expect(store.getState().replaySelectedTick).toBeNull();
   });
 
   it('shows the Cell Inspector panel instead of Now Summary once a cell is selected', () => {

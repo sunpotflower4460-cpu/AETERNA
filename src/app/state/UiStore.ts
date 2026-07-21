@@ -15,6 +15,7 @@ export interface UiStore {
   setPrimaryRoute(route: PrimaryRoute): void;
   setSelectedCellId(cellId: number | null): void;
   setActiveLensId(lensId: LensId | null): void;
+  setReplaySelectedTick(tick: number | null): void;
   subscribe(listener: (state: UiState) => void): () => void;
 }
 
@@ -48,6 +49,11 @@ export function createUiStore(initial: UiState = DEFAULT_UI_STATE): UiStore {
     setActiveLensId(lensId) {
       if (state.activeLensId === lensId) return;
       state = { ...state, activeLensId: lensId };
+      notify();
+    },
+    setReplaySelectedTick(tick) {
+      if (state.replaySelectedTick === tick) return;
+      state = { ...state, replaySelectedTick: tick };
       notify();
     },
     subscribe(listener) {

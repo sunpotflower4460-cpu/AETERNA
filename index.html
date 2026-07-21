@@ -822,6 +822,34 @@
         .cell-inspector-panel__value { font-family: monospace; color: rgba(34,211,238,0.9); }
         .cell-inspector-panel__empty { margin: 0; color: rgba(255,255,255,0.4); font-size: 12px; }
         .cell-inspector-panel__lens-hint { margin: 10px 0 0; font-size: 10px; color: rgba(255,255,255,0.35); }
+
+        /* ── PR8d: Replay panel (Observatory Shell) ── */
+        .replay-panel {
+            margin: 16px; padding: 16px; border-radius: 12px;
+            background: rgba(5,10,15,0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(251,191,36,0.2); color: rgba(255,255,255,0.9);
+            font-size: 13px; max-width: 320px;
+        }
+        .replay-panel__title { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.05em; }
+        .replay-panel__select {
+            width: 100%; margin-bottom: 10px; background: rgba(0,0,0,0.4);
+            color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; padding: 4px 6px; font-size: 12px;
+        }
+        .replay-panel__rows { margin: 0; padding: 0; list-style: none; }
+        .replay-panel__row {
+            display: flex; justify-content: space-between; gap: 12px;
+            padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .replay-panel__row:first-child { border-top: none; }
+        .replay-panel__label { color: rgba(255,255,255,0.6); }
+        .replay-panel__value { font-family: monospace; color: rgba(251,191,36,0.9); }
+        .replay-panel__live-button {
+            margin-top: 10px; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4);
+            color: rgba(251,191,36,0.95); border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+        }
+        .replay-panel__note { margin: 10px 0 0; font-size: 10px; color: rgba(255,255,255,0.35); }
+        .replay-panel__empty { margin: 0; color: rgba(255,255,255,0.4); font-size: 12px; }
     </style>
 </head>
 <body>

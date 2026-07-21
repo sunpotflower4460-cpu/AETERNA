@@ -18,8 +18,11 @@
  * 3. Once FREE_EXPLORATION, on the 'observe' route, no cell selected:
  *    the Now Summary panel (PR8a — item 1), reading the already-live
  *    NowSummaryState via RuntimeAdapter.getNowSummary().
- * 4. Any other route: empty — no panel content exists for
- *    experiment/history/research yet (not faked here).
+ * 4. On the 'history' route: the Replay panel (PR8d — item 4), showing
+ *    a captured history of RuntimeSnapshot readings
+ *    (src/app/replay/RuntimeSnapshotHistory.ts).
+ * 5. Any other route (experiment/research): empty — no panel content
+ *    exists for them yet (not faked here).
  * The Field Stage is intentionally not duplicated: the existing legacy
  * canvas shows through underneath.
  */
@@ -29,12 +32,14 @@ import { renderNavigationRailHTML } from '../ui/shell/NavigationRail.js';
 import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
+import { renderReplayPanelHTML } from '../ui/shell/ReplayPanel.js';
 import type { UiStore } from './state/UiStore.js';
 import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
 import { getRuntimeSnapshot, getNowSummary, getCellValue } from './runtime/RuntimeAdapter.js';
+import { createRuntimeSnapshotHistory, pushRuntimeSnapshot } from './replay/RuntimeSnapshotHistory.js';
 
 export interface AppShellHandle {
   unmount(): void;
@@ -50,6 +55,10 @@ const NOW_SUMMARY_POLL_MS = 1000;
 // faster than Now Summary since a selected cell's raw value changes every
 // simulation frame, unlike the coarser Now Summary derivation.
 const CELL_INSPECTOR_POLL_MS = 400;
+// How often a RuntimeSnapshot is captured into replay history — runs
+// continuously while the Shell is mounted (not gated by route/stage),
+// independent of how often the Replay panel itself is actually viewed.
+const SNAPSHOT_CAPTURE_MS = 1000;
 
 export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle {
   root.className = 'observatory-shell';
@@ -69,6 +78,7 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
   const timers: ReturnType<typeof setTimeout>[] = [];
   let nowSummaryPollId: ReturnType<typeof setInterval> | null = null;
   let cellInspectorPollId: ReturnType<typeof setInterval> | null = null;
+  let snapshotHistory = createRuntimeSnapshotHistory();
 
   function stopNowSummaryPoll() {
     if (nowSummaryPollId !== null) {
@@ -95,7 +105,16 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       return;
     }
 
-    if (store.getState().primaryRoute !== 'observe') {
+    const route = store.getState().primaryRoute;
+
+    if (route === 'history') {
+      stopNowSummaryPoll();
+      stopCellInspectorPoll();
+      pane.innerHTML = renderReplayPanelHTML(snapshotHistory, store.getState().replaySelectedTick);
+      return;
+    }
+
+    if (route !== 'observe') {
       stopNowSummaryPoll();
       stopCellInspectorPoll();
       pane.innerHTML = '';
@@ -146,6 +165,15 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
 
   renderContextPane();
 
+  // Replay history capture: runs continuously while mounted, independent
+  // of route/onboarding stage — the Replay panel (item 4/9) only reads
+  // this buffer, it doesn't control when snapshots are captured.
+  const snapshotCaptureId = setInterval(() => {
+    const snap = getRuntimeSnapshot();
+    if (snap) snapshotHistory = pushRuntimeSnapshot(snapshotHistory, snap);
+    if (store.getState().primaryRoute === 'history') renderContextPane();
+  }, SNAPSHOT_CAPTURE_MS);
+
   // ── Nav + flow-card click routing ──────────────────────────────────────
   function handleClick(event: Event) {
     const target = event.target as HTMLElement;
@@ -173,10 +201,22 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
         timers.push(setTimeout(() => flow.invite(), BASELINE_OBSERVING_MS));
       } else if (action === 'finish') {
         flow.finish();
+      } else if (action === 'replay-return-to-live') {
+        store.setReplaySelectedTick(null);
       }
     }
   }
   root.addEventListener('click', handleClick);
+
+  function handleChange(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.dataset.testid === 'replay-tick-select') {
+      const value = (target as HTMLSelectElement).value;
+      const tick = value === '' ? null : Number(value);
+      store.setReplaySelectedTick(Number.isNaN(tick as number) ? null : tick);
+    }
+  }
+  root.addEventListener('change', handleChange);
 
   function render() {
     const nav = root.querySelector('.observatory-nav');
@@ -196,8 +236,10 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       unsubscribeStimulate();
       stopNowSummaryPoll();
       stopCellInspectorPoll();
+      clearInterval(snapshotCaptureId);
       for (const t of timers) clearTimeout(t);
       root.removeEventListener('click', handleClick);
+      root.removeEventListener('change', handleChange);
       root.innerHTML = '';
     },
   };

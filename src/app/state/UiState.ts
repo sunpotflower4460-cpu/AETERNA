@@ -7,7 +7,8 @@
  * interface still have no corresponding UI, so they are not added as
  * dead fields. primaryRoute was added in PR6 (NavigationRail is its
  * consumer); selectedCellId was added in PR8b (CellInspectorPanel is
- * its consumer); activeLensId was added in PR8c.
+ * its consumer); activeLensId was added in PR8c; replaySelectedTick was
+ * added in PR8d (ReplayPanel is its consumer).
  */
 
 export type InteractionMode = 'observe' | 'inspect' | 'stimulate' | 'camera';
@@ -58,6 +59,15 @@ export interface UiState {
    * particular metric is emphasized (both rows shown equally).
    */
   activeLensId: LensId | null;
+
+  /**
+   * A tick selected for replay (src/ui/shell/ReplayPanel.ts, shown on the
+   * 'history' route) — re-displays a previously captured RuntimeSnapshot
+   * (src/app/replay/RuntimeSnapshotHistory.ts). Null means "live" (no
+   * replay selected). Selecting a tick never rewinds or otherwise
+   * touches the Runtime — it only changes what the panel displays.
+   */
+  replaySelectedTick: number | null;
 }
 
 export const DEFAULT_UI_STATE: UiState = {
@@ -65,4 +75,5 @@ export const DEFAULT_UI_STATE: UiState = {
   primaryRoute: 'observe',
   selectedCellId: null,
   activeLensId: null,
+  replaySelectedTick: null,
 };
