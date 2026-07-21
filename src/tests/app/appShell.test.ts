@@ -250,6 +250,12 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(panel).not.toBeNull();
     expect(panel?.textContent).toContain('#3');
 
+    // PR8h: the Ratio Involvement panel renders alongside Cell Inspector,
+    // honestly reporting it has no real data yet (the mocked
+    // getRuntimeSnapshot here has no observedRatios field, matching real
+    // production behavior — RuntimeSnapshot.observedRatios is null today).
+    expect(root.querySelector('[data-testid="ratio-involvement-panel__unavailable"]')).not.toBeNull();
+
     store.setSelectedCellId(null);
     expect(root.querySelector('[data-testid="cell-inspector-panel"]')).toBeNull();
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();

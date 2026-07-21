@@ -14,7 +14,11 @@
  *    (uiStore.selectedCellId, set by pointerHandlers.js's 'inspect'
  *    branch): the Cell Inspector panel (PR8b — master spec §8's PR8
  *    order, item 2), reading real per-node values via
- *    RuntimeAdapter.getCellValue — takes priority over Now Summary.
+ *    RuntimeAdapter.getCellValue — takes priority over Now Summary —
+ *    plus the Ratio Involvement panel (PR8h — item 8) underneath, which
+ *    is honest about currently having no real data to show
+ *    (RuntimeSnapshot.observedRatios is null today; see
+ *    src/ui/shell/RatioInvolvementPanel.ts's header comment).
  * 3. Once FREE_EXPLORATION, on the 'observe' route, no cell selected:
  *    the Now Summary panel (PR8a — item 1), reading the already-live
  *    NowSummaryState via RuntimeAdapter.getNowSummary().
@@ -40,6 +44,7 @@ import { renderNavigationRailHTML } from '../ui/shell/NavigationRail.js';
 import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
 import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
+import { renderRatioInvolvementPanelHTML } from '../ui/shell/RatioInvolvementPanel.js';
 import { renderReplayPanelHTML } from '../ui/shell/ReplayPanel.js';
 import { renderDifferencePanelHTML } from '../ui/shell/DifferencePanel.js';
 import { renderCausalTracePanelHTML } from '../ui/shell/CausalTracePanel.js';
@@ -149,10 +154,9 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     if (selectedCellId !== null) {
       stopNowSummaryPoll();
       const renderCell = () =>
-        (pane.innerHTML = renderCellInspectorPanelHTML(
-          getCellValue(selectedCellId),
-          store.getState().activeLensId
-        ));
+        (pane.innerHTML =
+          renderCellInspectorPanelHTML(getCellValue(selectedCellId), store.getState().activeLensId) +
+          renderRatioInvolvementPanelHTML(getRuntimeSnapshot()?.observedRatios ?? null, selectedCellId));
       renderCell();
       if (cellInspectorPollId === null) {
         cellInspectorPollId = setInterval(renderCell, CELL_INSPECTOR_POLL_MS);
