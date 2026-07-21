@@ -5,6 +5,8 @@
  * - renderNowSummaryPanelHTML shows a waiting message when summary is null
  * - lines are sorted by priority ascending and capped at 5
  * - text is escaped
+ * - each line's real `source` field is hidden by default (Public build)
+ *   and shown only when showRawDiagnostics is true (PR9)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -50,5 +52,25 @@ describe('renderNowSummaryPanelHTML', () => {
     const html = renderNowSummaryPanelHTML(summary);
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('hides each line\'s source by default', () => {
+    const summary: NowSummaryState = {
+      timestamp: 0,
+      confidence: 1,
+      lines: [{ id: 'a', priority: 1, text: 'x', source: 'DynamicViabilityState.saturationRisk', valueKind: 'derived' }],
+    };
+    const html = renderNowSummaryPanelHTML(summary);
+    expect(html).not.toContain('DynamicViabilityState.saturationRisk');
+  });
+
+  it('shows each line\'s real source when showRawDiagnostics is true', () => {
+    const summary: NowSummaryState = {
+      timestamp: 0,
+      confidence: 1,
+      lines: [{ id: 'a', priority: 1, text: 'x', source: 'DynamicViabilityState.saturationRisk', valueKind: 'derived' }],
+    };
+    const html = renderNowSummaryPanelHTML(summary, true);
+    expect(html).toContain('DynamicViabilityState.saturationRisk');
   });
 });

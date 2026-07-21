@@ -43,6 +43,16 @@
  *    exists for them yet (not faked here).
  * The Field Stage is intentionally not duplicated: the existing legacy
  * canvas shows through underneath.
+ *
+ * PR9 (Research/Developer Separation): `getRuntimeCapabilities()` (PR3,
+ * previously unwired) is resolved once at mount and its
+ * `showRawDiagnostics` flag threaded into NowSummaryPanel,
+ * CellInspectorPanel, and RatioInvolvementPanel — each reveals genuine
+ * internal metadata (metric source paths, array accessors, or an honest
+ * "not yet connected" implementation-status note) only in research/
+ * developer builds. False by default, and always false in Public builds
+ * per the kickoff prompt's hard constraint against showing Debug/Raw
+ * Diagnostics publicly.
  */
 
 import { renderTopBarHTML } from '../ui/shell/TopBar.js';
@@ -61,7 +71,13 @@ import type { PrimaryRoute, LensId } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
-import { getRuntimeSnapshot, getNowSummary, getCellValue, getExplainableSnapshot } from './runtime/RuntimeAdapter.js';
+import {
+  getRuntimeSnapshot,
+  getNowSummary,
+  getCellValue,
+  getExplainableSnapshot,
+  getRuntimeCapabilities,
+} from './runtime/RuntimeAdapter.js';
 import { createRuntimeSnapshotHistory, pushRuntimeSnapshot, getSnapshotByTick } from './replay/RuntimeSnapshotHistory.js';
 import { buildRuntimeSnapshotDifference } from './replay/RuntimeSnapshotDifference.js';
 import { computeLayerCorrelation } from './replay/computeLayerCorrelation.js';
@@ -96,6 +112,12 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
     '</div>',
     renderBottomNavigationHTML(store.getState().primaryRoute),
   ].join('');
+
+  // PR9 (Research/Developer Separation): resolved once at mount — derived
+  // from ReleaseEnvironmentConfig at boot, doesn't change mid-session.
+  // false (Public build default) hides all research/developer-only detail
+  // gated below.
+  const { showRawDiagnostics } = getRuntimeCapabilities();
 
   // ── First Observation Flow (PR7, master spec §6) ──────────────────────
   const flow: FirstObservationFlow = createFirstObservationFlow();
@@ -162,8 +184,12 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       stopNowSummaryPoll();
       const renderCell = () =>
         (pane.innerHTML =
-          renderCellInspectorPanelHTML(getCellValue(selectedCellId), store.getState().activeLensId) +
-          renderRatioInvolvementPanelHTML(getRuntimeSnapshot()?.observedRatios ?? null, selectedCellId) +
+          renderCellInspectorPanelHTML(getCellValue(selectedCellId), store.getState().activeLensId, showRawDiagnostics) +
+          renderRatioInvolvementPanelHTML(
+            getRuntimeSnapshot()?.observedRatios ?? null,
+            selectedCellId,
+            showRawDiagnostics
+          ) +
           renderGuidePanelHTML(getExplainableSnapshot()));
       renderCell();
       if (cellInspectorPollId === null) {
@@ -174,7 +200,8 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
 
     stopCellInspectorPoll();
     const renderNowSummaryAndGuide = () =>
-      (pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary()) + renderGuidePanelHTML(getExplainableSnapshot()));
+      (pane.innerHTML =
+        renderNowSummaryPanelHTML(getNowSummary(), showRawDiagnostics) + renderGuidePanelHTML(getExplainableSnapshot()));
     renderNowSummaryAndGuide();
     if (nowSummaryPollId === null) {
       nowSummaryPollId = setInterval(() => {

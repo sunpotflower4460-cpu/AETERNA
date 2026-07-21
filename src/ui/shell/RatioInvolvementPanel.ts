@@ -18,6 +18,13 @@
  * calls the real `buildObservedRatioInvolvement` whenever `ObservedRatiosState`
  * is ever non-null, and otherwise renders an explicit, honest "not yet
  * connected" state. See docs/ui-feature-status.md's PR8h entry.
+ *
+ * PR9 (Research/Developer Separation): that "not yet connected" message
+ * is implementation-status detail, not observation content — it has no
+ * value to a general public user and would only confuse them. It is now
+ * only rendered when `showRawDiagnostics` (RuntimeCapabilities, false by
+ * default and always false in Public builds) is true; Public builds show
+ * nothing at all for this panel rather than an internal-wiring caveat.
  */
 
 import {
@@ -28,7 +35,8 @@ import {
 
 export function renderRatioInvolvementPanelHTML(
   observedRatiosState: ObservedRatiosStateInput | null,
-  cellId: number | null
+  cellId: number | null,
+  showRawDiagnostics = false
 ): string {
   if (cellId === null) {
     return `<div class="ratio-involvement-panel" data-testid="ratio-involvement-panel">
@@ -37,6 +45,7 @@ export function renderRatioInvolvementPanelHTML(
   }
 
   if (!observedRatiosState) {
+    if (!showRawDiagnostics) return '';
     return `<div class="ratio-involvement-panel" data-testid="ratio-involvement-panel">
       <h3 class="ratio-involvement-panel__title">比率関与 — #${cellId}</h3>
       <p class="ratio-involvement-panel__unavailable" data-testid="ratio-involvement-panel__unavailable">

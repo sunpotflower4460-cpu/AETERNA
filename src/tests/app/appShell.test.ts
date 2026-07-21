@@ -29,11 +29,18 @@ const getRuntimeSnapshot = vi.fn();
 const getNowSummary = vi.fn(() => null);
 const getCellValue = vi.fn(() => null);
 const getExplainableSnapshot = vi.fn(() => null);
+const getRuntimeCapabilities = vi.fn(() => ({
+  externalApiEnabled: false,
+  nodeBridgeEnabled: false,
+  showDebugPanels: false,
+  showRawDiagnostics: false,
+}));
 vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({
   getRuntimeSnapshot,
   getNowSummary,
   getCellValue,
   getExplainableSnapshot,
+  getRuntimeCapabilities,
 }));
 
 let stimulateListener: (() => void) | null = null;
@@ -110,6 +117,13 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     getCellValue.mockReturnValue(null);
     getExplainableSnapshot.mockReset();
     getExplainableSnapshot.mockReturnValue(null);
+    getRuntimeCapabilities.mockReset();
+    getRuntimeCapabilities.mockReturnValue({
+      externalApiEnabled: false,
+      nodeBridgeEnabled: false,
+      showDebugPanels: false,
+      showRawDiagnostics: false,
+    });
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -260,11 +274,12 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(panel).not.toBeNull();
     expect(panel?.textContent).toContain('#3');
 
-    // PR8h: the Ratio Involvement panel renders alongside Cell Inspector,
-    // honestly reporting it has no real data yet (the mocked
-    // getRuntimeSnapshot here has no observedRatios field, matching real
-    // production behavior — RuntimeSnapshot.observedRatios is null today).
-    expect(root.querySelector('[data-testid="ratio-involvement-panel__unavailable"]')).not.toBeNull();
+    // PR8h/PR9: the Ratio Involvement panel has no real data yet (the
+    // mocked getRuntimeSnapshot here has no observedRatios field, matching
+    // real production behavior), and this mocked store defaults to Public
+    // capabilities (showRawDiagnostics: false), so it renders nothing —
+    // implementation-status detail is not shown to general public users.
+    expect(root.querySelector('[data-testid="ratio-involvement-panel__unavailable"]')).toBeNull();
 
     // PR8i: the Guide panel renders alongside Cell Inspector too.
     expect(root.querySelector('[data-testid="guide-panel"]')).not.toBeNull();
@@ -272,6 +287,38 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     store.setSelectedCellId(null);
     expect(root.querySelector('[data-testid="cell-inspector-panel"]')).toBeNull();
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('reveals research/developer-only detail when RuntimeCapabilities.showRawDiagnostics is true (PR9)', () => {
+    getRuntimeCapabilities.mockReturnValue({
+      externalApiEnabled: false,
+      nodeBridgeEnabled: false,
+      showDebugPanels: true,
+      showRawDiagnostics: true,
+    });
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    getCellValue.mockReturnValue({ cellId: 3, currentValue: 0.5, spikeTrace: 0.1 });
+    getNowSummary.mockReturnValue({
+      timestamp: 0,
+      confidence: 1,
+      lines: [{ id: 'a', priority: 1, text: 'x', source: 'Test.source', valueKind: 'derived' }],
+    });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+
+    store.setSelectedCellId(3);
+    expect(root.querySelector('[data-testid="cell-inspector-panel__source"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="ratio-involvement-panel__unavailable"]')).not.toBeNull();
+
+    store.setSelectedCellId(null);
+    expect(root.querySelector('[data-testid="now-summary-panel__source"]')).not.toBeNull();
   });
 
   it('polls getCellValue while the Cell Inspector is shown and stops on unmount', () => {

@@ -56,6 +56,18 @@ describe('renderCellInspectorPanelHTML', () => {
     const html = renderCellInspectorPanelHTML({ cellId: 1, currentValue: 1, spikeTrace: 1 }, null);
     expect(html).not.toContain('cell-inspector-panel__row--active');
   });
+
+  it('hides the raw array accessor source by default (PR9)', () => {
+    const html = renderCellInspectorPanelHTML({ cellId: 3, currentValue: 1, spikeTrace: 1 }, null);
+    expect(html).not.toContain('AeternaNetwork.currentBuffer');
+    expect(html).not.toContain('AeternaNetwork.spikeTrace');
+  });
+
+  it('shows the real raw array accessor source when showRawDiagnostics is true', () => {
+    const html = renderCellInspectorPanelHTML({ cellId: 3, currentValue: 1, spikeTrace: 1 }, null, true);
+    expect(html).toContain('AeternaNetwork.currentBuffer[3]');
+    expect(html).toContain('AeternaNetwork.spikeTrace[3]');
+  });
 });
 
 describe('getCellValue', () => {

@@ -3,11 +3,14 @@
  *
  * Confirms:
  * - no cell selected: an honest "select a cell" empty state
- * - a cell selected but no ObservedRatiosState available: an explicit
- *   "not yet connected" state (this is the real, current production state
- *   — RuntimeSnapshot.observedRatios is always null today)
+ * - a cell selected but no ObservedRatiosState available: renders nothing
+ *   by default (PR9 — implementation-status detail has no value to a
+ *   general public user) and only the explicit "not yet connected" state
+ *   when showRawDiagnostics (research/developer builds) is true
  * - a cell selected with a real ObservedRatiosState: renders via the real
- *   buildObservedRatioInvolvement, including its caution text
+ *   buildObservedRatioInvolvement, including its caution text (shown
+ *   regardless of showRawDiagnostics — this is real observation content,
+ *   not implementation-status detail)
  * - a cell with no involved ratios: an honest "no ratios" empty state
  */
 
@@ -21,8 +24,13 @@ describe('renderRatioInvolvementPanelHTML', () => {
     expect(html).toContain('セルが選択されていません');
   });
 
-  it('shows an explicit "not yet connected" state when ObservedRatiosState is unavailable', () => {
+  it('renders nothing by default when ObservedRatiosState is unavailable (Public build)', () => {
     const html = renderRatioInvolvementPanelHTML(null, 3);
+    expect(html).toBe('');
+  });
+
+  it('shows an explicit "not yet connected" state when ObservedRatiosState is unavailable and showRawDiagnostics is true', () => {
+    const html = renderRatioInvolvementPanelHTML(null, 3, true);
     expect(html).toContain('data-testid="ratio-involvement-panel__unavailable"');
     expect(html).toContain('#3');
   });
