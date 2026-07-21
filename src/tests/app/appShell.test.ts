@@ -210,9 +210,17 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     expect(pane?.querySelector('[data-testid="difference-panel"]')).not.toBeNull();
     expect(pane?.textContent).toContain('+1.0000'); // sigma delta: 2.0 (live) - 1.0 (tick 0)
 
+    // PR8f: the Causal Trace panel reports sigma (the only real change) as
+    // the strongest signal, with the mandatory not-causal-proof caution.
+    const causalPanel = pane?.querySelector('[data-testid="causal-trace-panel"]');
+    expect(causalPanel).not.toBeNull();
+    expect(causalPanel?.textContent).toContain('σ');
+    expect(causalPanel?.textContent).toContain('因果関係の証明ではありません');
+
     (pane?.querySelector('[data-action="replay-return-to-live"]') as HTMLButtonElement).click();
     expect(store.getState().replaySelectedTick).toBeNull();
     expect(root.querySelector('[data-testid="difference-panel"]')).toBeNull();
+    expect(root.querySelector('[data-testid="causal-trace-panel"]')).toBeNull();
   });
 
   it('shows the Cell Inspector panel instead of Now Summary once a cell is selected', () => {

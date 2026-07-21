@@ -865,6 +865,20 @@
         .difference-panel__cell { text-align: right; font-family: monospace; padding: 3px 0; border-top: 1px solid rgba(255,255,255,0.06); }
         .difference-panel__cell--label { text-align: left; font-family: inherit; color: rgba(255,255,255,0.6); }
         .difference-panel__cell--delta { color: rgba(167,139,250,0.9); }
+
+        /* ── PR8f: Causal Trace panel (Observatory Shell) ── */
+        .causal-trace-panel {
+            margin: 0 16px 16px; padding: 16px; border-radius: 12px;
+            background: rgba(5,10,15,0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(251,113,133,0.2); color: rgba(255,255,255,0.9);
+            font-size: 12px; max-width: 320px;
+        }
+        .causal-trace-panel__title { margin: 0 0 8px; font-size: 12px; letter-spacing: 0.02em; }
+        .causal-trace-panel__signal { margin: 0 0 6px; }
+        .causal-trace-panel__confidence { margin: 0 0 8px; font-size: 11px; color: rgba(255,255,255,0.6); }
+        .causal-trace-panel__confidence[data-confidence="high"] { color: rgba(251,113,133,0.9); }
+        .causal-trace-panel__caution { margin: 0; font-size: 10px; color: rgba(255,255,255,0.35); line-height: 1.4; }
+        .causal-trace-panel__empty { margin: 0 0 8px; color: rgba(255,255,255,0.4); font-size: 12px; }
     </style>
 </head>
 <body>
