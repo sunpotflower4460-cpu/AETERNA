@@ -13,6 +13,7 @@ export interface UiStore {
   getState(): UiState;
   setInteractionMode(mode: InteractionMode): void;
   setPrimaryRoute(route: PrimaryRoute): void;
+  setSelectedCellId(cellId: number | null): void;
   subscribe(listener: (state: UiState) => void): () => void;
 }
 
@@ -36,6 +37,11 @@ export function createUiStore(initial: UiState = DEFAULT_UI_STATE): UiStore {
     setPrimaryRoute(route) {
       if (state.primaryRoute === route) return;
       state = { ...state, primaryRoute: route };
+      notify();
+    },
+    setSelectedCellId(cellId) {
+      if (state.selectedCellId === cellId) return;
+      state = { ...state, selectedCellId: cellId };
       notify();
     },
     subscribe(listener) {

@@ -48,6 +48,32 @@ describe('createUiStore', () => {
     store.setInteractionMode('observe');
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('defaults to selectedCellId=null', () => {
+    expect(createUiStore().getState().selectedCellId).toBeNull();
+  });
+
+  it('setSelectedCellId updates state and notifies subscribers', () => {
+    const store = createUiStore();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setSelectedCellId(12);
+    expect(store.getState().selectedCellId).toBe(12);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    store.setSelectedCellId(null);
+    expect(store.getState().selectedCellId).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not notify when setting the same selectedCellId again', () => {
+    const store = createUiStore();
+    store.setSelectedCellId(5);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setSelectedCellId(5);
+    expect(listener).not.toHaveBeenCalled();
+  });
 });
 
 describe('shouldStimulateOnTap', () => {

@@ -801,6 +801,24 @@
         }
         .now-summary-panel__line:first-child { border-top: none; }
         .now-summary-panel__empty { margin: 0; color: rgba(255,255,255,0.4); font-size: 12px; }
+
+        /* ── PR8b: Cell Inspector panel (Observatory Shell) ── */
+        .cell-inspector-panel {
+            margin: 16px; padding: 16px; border-radius: 12px;
+            background: rgba(5,10,15,0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(34,211,238,0.2); color: rgba(255,255,255,0.9);
+            font-size: 13px; max-width: 320px;
+        }
+        .cell-inspector-panel__title { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.05em; }
+        .cell-inspector-panel__rows { margin: 0; padding: 0; list-style: none; }
+        .cell-inspector-panel__row {
+            display: flex; justify-content: space-between; gap: 12px;
+            padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .cell-inspector-panel__row:first-child { border-top: none; }
+        .cell-inspector-panel__label { color: rgba(255,255,255,0.6); }
+        .cell-inspector-panel__value { font-family: monospace; color: rgba(34,211,238,0.9); }
+        .cell-inspector-panel__empty { margin: 0; color: rgba(255,255,255,0.4); font-size: 12px; }
     </style>
 </head>
 <body>

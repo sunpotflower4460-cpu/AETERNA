@@ -39,6 +39,36 @@ export function getRuntimeCapabilities(): RuntimeCapabilities {
   return deriveRuntimeCapabilities(state.releaseSafety);
 }
 
+export interface CellObservationValue {
+  cellId: number;
+  /** AeternaNetwork.currentBuffer[cellId] — the raw per-node scalar field value. */
+  currentValue: number;
+  /** AeternaNetwork.spikeTrace[cellId] — per-node spike-trace accumulator. */
+  spikeTrace: number;
+}
+
+interface NetworkLike {
+  numNodes: number;
+  currentBuffer: Float32Array;
+  spikeTrace: Float32Array;
+}
+
+/**
+ * Read-only per-cell readout for the Cell Inspector (PR8b, master spec §10
+ * Inspect Mode: "Inspect中のタップでRuntimeが変わらない"). Never mutates
+ * state.network — a pure read of already-computed per-node arrays.
+ * Returns null if the network isn't constructed yet or cellId is out of range.
+ */
+export function getCellValue(cellId: number): CellObservationValue | null {
+  const network = state.network as NetworkLike | null;
+  if (!network || cellId < 0 || cellId >= network.numNodes) return null;
+  return {
+    cellId,
+    currentValue: network.currentBuffer[cellId],
+    spikeTrace: network.spikeTrace[cellId],
+  };
+}
+
 export function dispatchRuntimeCommand(command: RuntimeCommand): void {
   switch (command.type) {
     case 'APPLY_PRESET':

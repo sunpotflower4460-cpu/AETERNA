@@ -65,6 +65,23 @@ describe('handlePointerUp — interaction-mode stimulation gate', () => {
     expect(state.network.injectPredictionError).not.toHaveBeenCalled();
   });
 
+  it('selects a cell via uiStore in inspect mode, without any Runtime mutation', () => {
+    uiStore.setInteractionMode('inspect');
+    uiStore.setSelectedCellId(null);
+    state.raycaster.intersectObject = vi.fn(() => [{ index: 7 }]);
+    handlePointerUp(makeCanvasPointerUpEvent());
+    expect(uiStore.getState().selectedCellId).toBe(7);
+    expect(state.touchMem.recordTouch).not.toHaveBeenCalled();
+    expect(state.network.injectPredictionError).not.toHaveBeenCalled();
+  });
+
+  it('does not change selectedCellId in stimulate mode', () => {
+    uiStore.setInteractionMode('stimulate');
+    uiStore.setSelectedCellId(null);
+    handlePointerUp(makeCanvasPointerUpEvent());
+    expect(uiStore.getState().selectedCellId).toBeNull();
+  });
+
   it('does NOT stimulate in observe or camera mode either', () => {
     for (const mode of ['observe', 'camera'] as const) {
       state.touchMem.recordTouch.mockClear();

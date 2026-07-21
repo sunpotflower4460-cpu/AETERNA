@@ -64,7 +64,8 @@ export function handlePointerUp(event) {
         // network.injectPredictionError) are gated to 'stimulate' mode —
         // previously unconditional on any tap, with no interaction-mode
         // gate at all (docs/ui-runtime-inventory.md §12 item 9).
-        if (shouldStimulateOnTap(uiStore.getState().interactionMode)) {
+        const interactionMode = uiStore.getState().interactionMode;
+        if (shouldStimulateOnTap(interactionMode)) {
             if(state.touchMem && state.network) state.touchMem.recordTouch(normX, normY, state.network.simTime, state.network);
             if(state.raycaster && state.mouse && state.camera && state.particleSystem) {
                 state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
@@ -74,6 +75,16 @@ export function handlePointerUp(event) {
                     state.network.injectPredictionError(intersects[0].index);
                     emitStimulate();
                 }
+            }
+        } else if (interactionMode === 'inspect') {
+            // Cell Inspector (PR8b, master spec §10 Inspect Mode): select a
+            // cell for inspection WITHOUT touching Runtime state — no
+            // network.injectPredictionError / touchMem.recordTouch call here.
+            if (state.raycaster && state.mouse && state.camera && state.particleSystem) {
+                state.mouse.x = normX * 2 - 1; state.mouse.y = -(normY) * 2 + 1;
+                state.raycaster.setFromCamera(state.mouse, state.camera);
+                const intersects = state.raycaster.intersectObject(state.particleSystem);
+                if (intersects.length > 0) uiStore.setSelectedCellId(intersects[0].index);
             }
         }
     }

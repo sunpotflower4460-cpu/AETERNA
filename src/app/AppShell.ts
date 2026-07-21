@@ -10,10 +10,15 @@
  * Context Pane content, in order:
  * 1. While the First Observation Flow (PR7) hasn't reached
  *    FREE_EXPLORATION yet: its card.
- * 2. Once FREE_EXPLORATION, on the 'observe' route: the Now Summary
- *    panel (PR8a — master spec §8's PR8 order, item 1), reading the
- *    already-live NowSummaryState via RuntimeAdapter.getNowSummary().
- * 3. Any other route: empty — no panel content exists for
+ * 2. Once FREE_EXPLORATION, on the 'observe' route, with a cell selected
+ *    (uiStore.selectedCellId, set by pointerHandlers.js's 'inspect'
+ *    branch): the Cell Inspector panel (PR8b — master spec §8's PR8
+ *    order, item 2), reading real per-node values via
+ *    RuntimeAdapter.getCellValue — takes priority over Now Summary.
+ * 3. Once FREE_EXPLORATION, on the 'observe' route, no cell selected:
+ *    the Now Summary panel (PR8a — item 1), reading the already-live
+ *    NowSummaryState via RuntimeAdapter.getNowSummary().
+ * 4. Any other route: empty — no panel content exists for
  *    experiment/history/research yet (not faked here).
  * The Field Stage is intentionally not duplicated: the existing legacy
  * canvas shows through underneath.
@@ -23,12 +28,13 @@ import { renderTopBarHTML } from '../ui/shell/TopBar.js';
 import { renderNavigationRailHTML } from '../ui/shell/NavigationRail.js';
 import { renderBottomNavigationHTML } from '../ui/shell/BottomNavigation.js';
 import { renderNowSummaryPanelHTML } from '../ui/shell/NowSummaryPanel.js';
+import { renderCellInspectorPanelHTML } from '../ui/shell/CellInspectorPanel.js';
 import type { UiStore } from './state/UiStore.js';
 import type { PrimaryRoute } from './state/UiState.js';
 import { createFirstObservationFlow, type FirstObservationFlow } from './onboarding/FirstObservationFlow.js';
 import { renderFirstObservationCardHTML, deriveInsightText } from '../ui/onboarding/renderFirstObservationCard.js';
 import { onStimulate } from './interaction/stimulationEvents.js';
-import { getRuntimeSnapshot, getNowSummary } from './runtime/RuntimeAdapter.js';
+import { getRuntimeSnapshot, getNowSummary, getCellValue } from './runtime/RuntimeAdapter.js';
 
 export interface AppShellHandle {
   unmount(): void;
@@ -40,6 +46,10 @@ const REACTION_TO_INSIGHT_MS = 2000;
 // 60fps); polling at 1s stays within the "max 2 FPS" Now Summary budget
 // (master spec §16) without needing a dedicated change-subscription.
 const NOW_SUMMARY_POLL_MS = 1000;
+// Cell Inspector budget is "2-5 FPS while shown" (master spec §16) — poll
+// faster than Now Summary since a selected cell's raw value changes every
+// simulation frame, unlike the coarser Now Summary derivation.
+const CELL_INSPECTOR_POLL_MS = 400;
 
 export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle {
   root.className = 'observatory-shell';
@@ -58,11 +68,19 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
   let insightText: string | null = null;
   const timers: ReturnType<typeof setTimeout>[] = [];
   let nowSummaryPollId: ReturnType<typeof setInterval> | null = null;
+  let cellInspectorPollId: ReturnType<typeof setInterval> | null = null;
 
   function stopNowSummaryPoll() {
     if (nowSummaryPollId !== null) {
       clearInterval(nowSummaryPollId);
       nowSummaryPollId = null;
+    }
+  }
+
+  function stopCellInspectorPoll() {
+    if (cellInspectorPollId !== null) {
+      clearInterval(cellInspectorPollId);
+      cellInspectorPollId = null;
     }
   }
 
@@ -72,16 +90,31 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
 
     if (flow.getState().stage !== 'FREE_EXPLORATION') {
       stopNowSummaryPoll();
+      stopCellInspectorPoll();
       pane.innerHTML = renderFirstObservationCardHTML(flow.getState().stage, insightText);
       return;
     }
 
     if (store.getState().primaryRoute !== 'observe') {
       stopNowSummaryPoll();
+      stopCellInspectorPoll();
       pane.innerHTML = '';
       return;
     }
 
+    const selectedCellId = store.getState().selectedCellId;
+    if (selectedCellId !== null) {
+      stopNowSummaryPoll();
+      pane.innerHTML = renderCellInspectorPanelHTML(getCellValue(selectedCellId));
+      if (cellInspectorPollId === null) {
+        cellInspectorPollId = setInterval(() => {
+          pane.innerHTML = renderCellInspectorPanelHTML(getCellValue(selectedCellId));
+        }, CELL_INSPECTOR_POLL_MS);
+      }
+      return;
+    }
+
+    stopCellInspectorPoll();
     pane.innerHTML = renderNowSummaryPanelHTML(getNowSummary());
     if (nowSummaryPollId === null) {
       nowSummaryPollId = setInterval(() => {
@@ -149,6 +182,7 @@ export function mountAppShell(root: HTMLElement, store: UiStore): AppShellHandle
       unsubscribeFlow();
       unsubscribeStimulate();
       stopNowSummaryPoll();
+      stopCellInspectorPoll();
       for (const t of timers) clearTimeout(t);
       root.removeEventListener('click', handleClick);
       root.innerHTML = '';

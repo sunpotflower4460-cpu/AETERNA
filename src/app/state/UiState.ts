@@ -3,12 +3,11 @@
  *
  * Deliberately minimal slice of the target UiState (master spec §8.3) —
  * only fields with a real, live consumer are included.
- * contextPanel/contextSheetState/selectedCellId/activeLensId/
- * displayDensity from the full target interface still have no
- * corresponding UI (Context Pane doesn't exist yet — see
- * docs/ui-migration-boundary.md), so they are not added as dead fields.
- * primaryRoute was added in PR6 once NavigationRail became a real
- * consumer (src/ui/shell/NavigationRail.ts, src/app/AppShell.ts).
+ * contextPanel/contextSheetState/activeLensId/displayDensity from the
+ * full target interface still have no corresponding UI, so they are not
+ * added as dead fields. primaryRoute was added in PR6
+ * (NavigationRail is its consumer); selectedCellId was added in PR8b
+ * (CellInspectorPanel is its consumer).
  */
 
 export type InteractionMode = 'observe' | 'inspect' | 'stimulate' | 'camera';
@@ -31,9 +30,19 @@ export interface UiState {
    * docs/ui-feature-status.md PR6 entry). Has no effect on the legacy UI.
    */
   primaryRoute: PrimaryRoute;
+
+  /**
+   * The cell (network node index) currently selected for inspection, set
+   * by a tap while interactionMode==='inspect' (src/perception/pointerHandlers.js).
+   * Selecting a cell never mutates Runtime state (master spec §10
+   * "Inspect中のタップでRuntimeが変わらない") — see
+   * src/app/runtime/RuntimeAdapter.ts's getCellValue, a read-only accessor.
+   */
+  selectedCellId: number | null;
 }
 
 export const DEFAULT_UI_STATE: UiState = {
   interactionMode: 'stimulate',
   primaryRoute: 'observe',
+  selectedCellId: null,
 };

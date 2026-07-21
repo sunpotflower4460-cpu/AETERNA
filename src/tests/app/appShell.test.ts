@@ -27,7 +27,8 @@ import { createUiStore } from '../../app/state/UiStore.js';
 
 const getRuntimeSnapshot = vi.fn();
 const getNowSummary = vi.fn(() => null);
-vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({ getRuntimeSnapshot, getNowSummary }));
+const getCellValue = vi.fn(() => null);
+vi.mock('../../app/runtime/RuntimeAdapter.js', () => ({ getRuntimeSnapshot, getNowSummary, getCellValue }));
 
 let stimulateListener: (() => void) | null = null;
 vi.mock('../../app/interaction/stimulationEvents.js', () => ({
@@ -99,6 +100,8 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
     getRuntimeSnapshot.mockReset();
     getNowSummary.mockReset();
     getNowSummary.mockReturnValue(null);
+    getCellValue.mockReset();
+    getCellValue.mockReturnValue(null);
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -160,6 +163,57 @@ describe('First Observation Flow lifecycle wired into AppShell', () => {
 
     store.setPrimaryRoute('observe');
     expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('shows the Cell Inspector panel instead of Now Summary once a cell is selected', () => {
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    getCellValue.mockReturnValue({ cellId: 3, currentValue: 0.5, spikeTrace: 0.1 });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+    expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+
+    store.setSelectedCellId(3);
+    expect(root.querySelector('[data-testid="now-summary-panel"]')).toBeNull();
+    const panel = root.querySelector('[data-testid="cell-inspector-panel"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.textContent).toContain('#3');
+
+    store.setSelectedCellId(null);
+    expect(root.querySelector('[data-testid="cell-inspector-panel"]')).toBeNull();
+    expect(root.querySelector('[data-testid="now-summary-panel"]')).not.toBeNull();
+  });
+
+  it('polls getCellValue while the Cell Inspector is shown and stops on unmount', () => {
+    getRuntimeSnapshot.mockReturnValue({ sigma: 1.0 });
+    getCellValue.mockReturnValue({ cellId: 3, currentValue: 0.5, spikeTrace: 0.1 });
+    const root = document.createElement('div');
+    const store = createUiStore();
+    const handle = mountAppShell(root, store);
+
+    (root.querySelector('[data-action="start"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(5000);
+    stimulateListener?.();
+    vi.advanceTimersByTime(2000);
+    (root.querySelector('[data-action="finish"]') as HTMLButtonElement).click();
+    store.setSelectedCellId(3);
+
+    const callsAtSelection = getCellValue.mock.calls.length;
+    expect(callsAtSelection).toBeGreaterThan(0);
+
+    vi.advanceTimersByTime(2000);
+    expect(getCellValue.mock.calls.length).toBeGreaterThan(callsAtSelection);
+
+    handle.unmount();
+    const callsAfterUnmount = getCellValue.mock.calls.length;
+    vi.advanceTimersByTime(5000);
+    expect(getCellValue.mock.calls.length).toBe(callsAfterUnmount);
   });
 
   it('polls getNowSummary while showing the Now Summary panel and stops on unmount', () => {
