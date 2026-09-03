@@ -61,6 +61,36 @@
 **反証子:** bit 一致が取れない場合、その原因（隠れた非決定性の発生源）を特定し
 記録するまで K2 を開始しない。原因不明のまま K2 に進むことは禁止する。
 
+**K1 開始時点のベースライン（本 PR の検証で確認、2026-09-03）:** CI が存在しな
+かったため未検出だった既存の失敗が、K0 時点で以下の通り確認された。これは
+本 PR（docs-only）が引き起こしたものではない——本 PR は `src/` を一切変更して
+おらず、以下のテストはいずれも `docs/vessel/`, `README.md`,
+`docs/agent-guardrails.md`, `docs/current-roadmap.md`, `AGENTS.md` を参照しない。
+K1 は CI 新設と同時にこのベースラインをゼロにする（緑にしてから隠すのではなく、
+現状を先に記録する）。
+
+```
+Test Files  7 failed | 208 passed (215)
+     Tests  9 failed | 3498 passed (3507)
+```
+
+失敗ファイル（vitest run、2026-09-03 時点）:
+
+- `src/tests/behavioral/sensoryReturn.test.ts`
+- `src/tests/scenario.test.ts`
+  （Scenario J: Expected Touch Miss、Scenario AW: Moderate Openness Exploration）
+- `src/tests/behavioral/actuationPulse.test.ts`
+  （W2-D: low output readiness suppresses pulse generation）
+- `src/tests/observer/nonlinearPotentialAccelerationPreview.test.ts`
+- `src/tests/observer/nonlinearPotentialAppliedUpdateProposal.test.ts`（2件）
+- `src/tests/stabilization/energyRealityAuditDocs.test.ts`（2件）
+- `src/tests/world/externalDriveField.test.ts`
+  （waveform を breath/heartbeat/life rhythm として提示していないかの guard）
+
+K1 の作業内容に、CI 新設と並行してこれら9件の根本原因調査・修正を追加する。
+修正せずに CI を緑化する（該当テストを skip/削除する）ことは
+`docs/agent-guardrails.md` の変更規律に反するため禁止する。
+
 ## K2 — 純粋物理コア PR2〜PR5（器だけを作る）
 
 **目的:** `docs/pure-physics-implementation-plan.md` §8 の PR2〜PR5 をそのまま実行する。
