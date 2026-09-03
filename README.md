@@ -200,6 +200,13 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/agent-guardrails.md` — Agent rules for safe changes
 - `docs/pure-physics-core-design.md` — AETERNA PURE PHYSICS core design
 - `docs/pure-physics-implementation-plan.md` — staged implementation plan for `src/pure/`
+- `docs/vessel/VESSEL_CHARTER.md` — Vessel Charter (K0): what "completing AETERNA as a vessel" means, and what it does not claim
+- `docs/vessel/vessel-roadmap.md` — K-Series roadmap (K0-K8), completion conditions, and decisive falsifiers
+- `docs/vessel/closed-life-loop-design.md` — Physical closure (K5) vs life-like closure (K6) design
+- `docs/vessel/anti-delusion-apparatus.md` — The four rings that guard against misreading observations
+- `docs/vessel/claim-ladder.md` — Claim ladder (C0-C5) integrating existing value kinds
+- `docs/vessel/white-ceilings.md` — Hypothesized reachable emergence levels per white, before measurement
+- `docs/vessel/imports-from-siblings.md` — What is and is not adopted from sibling repositories
 - `docs/observation-and-expression-boundary.md` — Boundary rules for Aeterna actual output, observer records, interpretation candidates, and unknowns
 - `docs/auto-experiment-report-format.md` — Intuitive report format for automated experiment observations
 - `docs/current-roadmap.md` — Current roadmap

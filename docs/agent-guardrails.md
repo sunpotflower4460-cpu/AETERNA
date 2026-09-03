@@ -43,6 +43,23 @@ For PURE PHYSICS work, follow:
 Do not rewrite, summarize, or sanitize those source documents when adding them.
 Treat them as the approved implementation constitution for future `src/pure/` work.
 
+## AETERNA Vessel work (K-Series)
+
+For work under the K-Series roadmap (completing AETERNA as a vessel that could
+host intelligence, without claiming it does), follow:
+
+- `AGENTS.md` (repo root) — operating contract: one phase per session, no
+  self-grading, ask before inventing a spec decision
+- `docs/vessel/VESSEL_CHARTER.md` — what a vessel is, and the claim ceiling
+- `docs/vessel/vessel-roadmap.md` — K0-K8 completion conditions and decisive
+  falsifiers; do not start a phase without a stated falsifier
+- `docs/vessel/anti-delusion-apparatus.md` — the four rings; do not weaken a
+  ring to make an observation look stronger
+
+A K-Series PR that reports a phase complete without the corresponding actual
+command output, or that reports a falsifier as satisfied without recording it
+in `docs/vessel/white-ceilings.md`, is incomplete regardless of code state.
+
 ## Report format
 
 When reporting experiment results, use this human-readable structure:

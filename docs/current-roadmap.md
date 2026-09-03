@@ -1,5 +1,15 @@
 # Current Roadmap
 
+> **Note on the K-Series (Vessel roadmap):** `docs/vessel/vessel-roadmap.md`
+> defines a separate, independent phase series (K0-K8) for completing AETERNA
+> as a vessel via `src/pure/`. It runs parallel to the legacy series below and
+> does not renumber or assume any legacy phase status. See
+> `docs/vessel/vessel-roadmap.md` ("既存ロードマップの陳腐化解消") for the
+> known staleness in the W-Series table below (W1-W6 marked 未着手 while
+> largely wired in legacy `src/core/AeternaNetwork.js`) and in the two
+> conflicting v6.1-v6.4 numbering systems — both are legacy-series issues,
+> tracked there rather than resolved in this document.
+
 - PR1 repo hygiene
 - PR2 baseline
 - PR3 local prediction
