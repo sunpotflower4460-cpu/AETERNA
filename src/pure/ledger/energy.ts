@@ -44,6 +44,8 @@ import { applyDissipationStep } from '../field/stepDissipation.ts';
 import type { DriveSpec } from '../drive/drive.ts';
 import { evaluateDrive } from '../drive/drive.ts';
 import { applyDriveStep } from '../field/stepDrive.ts';
+import type { MediumHistoryParams } from '../medium/history.ts';
+import { applyMediumHistoryStep } from '../medium/history.ts';
 
 export interface EnergyLedgerEntry {
   nBefore: number;
@@ -181,5 +183,59 @@ export function runDriveTick(
       driveWorkN,
       driveWorkH,
     },
+  };
+}
+
+/**
+ * PUT-IN (PR6 addition): everything runDriveTick takes, plus the current
+ *   nu(x) (reused as-is - the tick's dissipation step already consumed
+ *   it) and MediumHistoryParams
+ * EMERGED: psi after the full PR6 tick (conservative -> dissipation ->
+ *   drive -> mediumHistory, the fixed solverStepOrder up through PR6;
+ *   observe is still PR7) plus nu(x) advanced by one tick, plus the same
+ *   DriveTickLedgerEntry runDriveTick already produced
+ * claim-tier: C3 (see src/tests/pure/mediumNonContact.test.ts for the
+ *   "psi/N/H provably unchanged by this step" check - which is why this
+ *   function returns runDriveTick's own ledger unmodified rather than
+ *   re-measuring N/H after the medium-history step)
+ * floors (誠実な床): observe (PR7) is not implemented yet.
+ *
+ * docs/pure-physics-implementation-plan.md PR6 の要求「媒質履歴ステップ
+ * 前後でψは変わらない」「媒質履歴ステップ前後でN/Hは変わらない」は、
+ * ここでは「そもそも測り直さない」という実装で満たす。ledgerは
+ * runDriveTick が確定した値をそのまま返す（medium history が
+ * ψ・N・Hに影響する経路を持たないことの直接的な帰結であり、
+ * 何かを追加で保証するコードではない）。
+ *
+ * nu の更新には、この tick の「最終的な」psi（駆動まで終えた後の値）
+ * を使う（`applyMediumHistoryStep` の PUT-IN 参照）。使う nu 自体は
+ * この tick 開始時の値（= このtickの散逸ステップが実際に使った値）
+ * であり、次tickの散逸ステップはここで返す nuNext を使う。
+ */
+export interface MediumHistoryTickResult {
+  psi: ComplexField;
+  nu: Float64Array;
+  ledger: DriveTickLedgerEntry;
+}
+
+export function runMediumHistoryTick(
+  psi: ComplexField,
+  conservativeStepper: ConservativeStepper,
+  geometry: TorusGeometry,
+  alpha: number,
+  g: number,
+  nu: Float64Array,
+  drive: DriveSpec,
+  t: number,
+  dt: number,
+  mediumParams: MediumHistoryParams,
+): MediumHistoryTickResult {
+  const { psi: psiAfterDrive, ledger } = runDriveTick(psi, conservativeStepper, geometry, alpha, g, nu, drive, t, dt);
+  const nuNext = applyMediumHistoryStep(psiAfterDrive, nu, mediumParams, dt);
+
+  return {
+    psi: psiAfterDrive,
+    nu: nuNext,
+    ledger,
   };
 }
