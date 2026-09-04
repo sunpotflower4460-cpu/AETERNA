@@ -477,16 +477,23 @@ describe('AETERNA Behavioral Scenarios', async () => {
         it('should show missing touch surprise when expected touch does not arrive', async () => {
             const config: ScenarioConfig = {
                 name: 'expected-touch-miss',
+                seed: 1,
                 totalFrames: 800,
                 touchScript: [
-                    // Establish pattern: touch every 100 frames
-                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
-                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
-                    { frame: 300, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
-                    { frame: 400, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    // Establish pattern: touch every 100 frames. duration:15 (not the
+                    // original duration:1) - see src/perception/touchExpectation.ts:
+                    // CONFIDENCE_INCREASE=0.01 per touch-active frame vs
+                    // CONFIDENCE_DECAY=0.998 per no-touch frame means a 1-frame tap
+                    // asymptotes to ~0.045 confidence over a 100-frame cycle, never
+                    // reaching the 0.3 gate missingTouchSurprise requires. duration:15
+                    // reaches ~0.32 after the 3rd touch, well before the frame-500 miss.
+                    { frame: 100, x: 0.5, y: 0.5, pressure: 1.0, duration: 15 },
+                    { frame: 200, x: 0.5, y: 0.5, pressure: 1.0, duration: 15 },
+                    { frame: 300, x: 0.5, y: 0.5, pressure: 1.0, duration: 15 },
+                    { frame: 400, x: 0.5, y: 0.5, pressure: 1.0, duration: 15 },
                     // Miss expected touch at frame 500
                     // Touch again later at frame 700
-                    { frame: 700, x: 0.5, y: 0.5, pressure: 1.0, duration: 1 },
+                    { frame: 700, x: 0.5, y: 0.5, pressure: 1.0, duration: 15 },
                 ],
                 collectMetrics: true,
                 metricsInterval: 5,
@@ -1507,6 +1514,7 @@ describe('AETERNA Behavioral Scenarios', async () => {
         it('should show explorationMotivation with moderate arousal + awareness + openness', async () => {
             const config: ScenarioConfig = {
                 name: 'moderate-openness-exploration',
+                seed: 1,
                 totalFrames: 1000,
                 touchScript: [
                     // Moderate touch to maintain arousal/awareness
@@ -1516,6 +1524,22 @@ describe('AETERNA Behavioral Scenarios', async () => {
                 ],
                 collectMetrics: true,
                 metricsInterval: 25,
+                // With no initial state override, the default organism startup
+                // transient (boundaryIntegrity 1.0 -> ~0.27, safetyNeed 0.12 -> ~0.63
+                // within the first 100 frames - confirmed with a fixed seed, so this
+                // is a real startup dynamic, not RNG noise) suppresses
+                // explorationMotivation via deriveNeedMotivation.ts's safety/boundary
+                // penalties for the entire 300-700 sampling window this test checks,
+                // regardless of touch. Sibling scenarios (e.g.
+                // src/tests/scenario/actuationPulseScenario.ts's W2-A) already set an
+                // explicit initialHomeostaticState to start past this transient; this
+                // scenario's own title ("Moderate Openness Exploration") calls for the
+                // same, which it had omitted.
+                initialHomeostaticState: {
+                    boundaryIntegrity: 0.84,
+                    restorationBias: 0.62,
+                    selfPreservationBias: 0.44,
+                },
             };
 
             const result = await runScenario(config);
@@ -1531,7 +1555,23 @@ describe('AETERNA Behavioral Scenarios', async () => {
                 console.log('Scenario AW mid avgExplorationMotivation:', avgExplorationMotivation);
                 console.log('Scenario AW mid avgNoveltyMotivation:', avgNoveltyMotivation);
 
-                // Should show some exploration motivation
+                // KNOWN OPEN FINDING (docs/vessel/vessel-roadmap.md K1 baseline), not a
+                // K1-scope fix: this assertion is left failing deliberately, not
+                // disabled. It is 0 deterministically (confirmed with seed:1 above,
+                // not RNG flakiness). Root cause traced as far as
+                // src/organism/deriveNeedMotivation.ts's deriveExplorationMotivation:
+                // safetyNeed (~0.70-0.77) and feltState.boundaryIntegrity (~0.25) sit
+                // on the wrong side of its penalty thresholds (>0.5 and <0.4) for the
+                // entire 300-700 sampling window. Raising initialHomeostaticState
+                // above (matching the convention in
+                // src/tests/scenario/actuationPulseScenario.ts's W2-A) barely moves
+                // either value: both converge to essentially the same ~100-frame
+                // trajectory regardless of starting boundaryIntegrity, indicating a
+                // startup attractor in deriveFeltState.ts's overload/irritability
+                // chain rather than an initial-condition problem. Deciding whether
+                // that convergence is intended organism behavior (e.g. a "settling
+                // in" period) or a bug requires organism-design authority this task
+                // doesn't have.
                 expect(avgExplorationMotivation).toBeGreaterThan(0.05);
             }
 
