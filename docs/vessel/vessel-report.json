@@ -72,34 +72,40 @@
       "nextMissingCause": "PR5の実装（完了済み）"
     },
     {
-      "white": "K2 PR5 (+駆動J)",
-      "reachedLevel": "未測定",
-      "stopReason": "長時間の自然発展runを一度も実行していない",
-      "nextMissingCause": "別途事前登録された専用run"
+      "white": "K2 PR5 (+駆動J、ν均一・chiなし)",
+      "reachedLevel": "L2未達（実測済み）",
+      "stopReason": "5 seed全てで最大持続1tick、tau_min=500に遠く及ばない",
+      "nextMissingCause": "tau_minを実際の力学スケール（数十tick）に合わせ直した新しい事前登録実験"
     },
     {
-      "white": "K2 PR6 / K3 (+媒質履歴)",
-      "reachedLevel": "未測定",
-      "stopReason": "同上",
-      "nextMissingCause": "同上、加えてK3固有の決定的反証子"
+      "white": "K2 PR6 / K3 (+媒質履歴、chiあり)",
+      "reachedLevel": "L2未達（実測済み）",
+      "stopReason": "5 seed全てで最大持続34-39tick。ν均一条件の30倍以上だがtau_min=500の1/10未満",
+      "nextMissingCause": "同上。加えて30倍差の機構的説明"
     },
     {
       "white": "K2 PR7 / K4 (読み取り専用観測)",
       "reachedLevel": "判定対象外（測定器）",
-      "stopReason": "測定器の凍結のみで測定は未実行",
-      "nextMissingCause": "上記runをこの測定器で見ること"
+      "stopReason": "測定器の凍結のみで測定は未実行だったが、K7追加runで実際に使用した",
+      "nextMissingCause": "—"
     },
     {
       "white": "K5 (物理的閉路)",
-      "reachedLevel": "未測定",
-      "stopReason": "K6のL2チェックはtau_minが観測窓を超え判定不能だった",
-      "nextMissingCause": "tau_minより十分長い専用run"
+      "reachedLevel": "L2未達（実測済み、K2 PR6/K3の行と同一run）",
+      "stopReason": "同上",
+      "nextMissingCause": "同上"
     },
     {
       "white": "K6 (reafference弁別)",
       "reachedLevel": "判定対象外（emergence level測定ではない）",
       "stopReason": "—",
       "nextMissingCause": "docs/vessel/vessel-roadmap.md K6節の誠実な限界を参照"
+    },
+    {
+      "white": "K7追加 (自然発展下でのL2実測)",
+      "reachedLevel": "L2未達（条件1・条件2とも、5 seed全て）",
+      "stopReason": "tau_min=500という選定が実際の力学の持続スケール（数十tick）に対して過大だった可能性がある（実測後の気づき、事後調整せず）",
+      "nextMissingCause": "tau_minを実スケールに合わせ直した新実験。L3/L4用の新しい測定器"
     }
   ],
   "perSeed": [
