@@ -375,6 +375,64 @@ core に一切持ち込まない（`VESSEL_CHARTER.md` §4）。指数緩和に�
 **反証子:** 観測 ON/OFF で 1 bit でも差が出た場合、観測系は無効と判定し、
 観測実装を修正するまで K5 を開始しない。
 
+**PR7 / K4 完了（2026-09-04）:** `src/pure/observe/{vortexCandidates,
+coherence,correlation}.ts`, `src/pure/run/{runPureExperiment,
+exportPureReport,parameterSweep}.ts` を実装。`src/tests/pure/` に
+26テスト追加（計163テスト）。観測対象4分類（自発構造・履歴依存・
+自己維持・統合）を次のように操作化した：
+
+- **自発構造**: `vortexCandidates.ts` — 位相circulationの量子化による
+  標準的な位相欠陥検出（GPE/BEC文献の標準手法）。手作りの4象限
+  phaseパターンで、既知の位置に既知の符号（+1/-1）のwindingが
+  検出されることを確認（象限の順序を反転すると符号も反転）
+- **統合**: `coherence.ts` — Kuramoto型オーダーパラメータのdA重み付き
+  連続版（振幅では重み付けしない設計判断をモジュールdocで明記）。
+  一様位相=1、対称にキャンセルする配置=0、ゼロ場=0（NaNでない）
+  ことを確認
+- **履歴依存**: `correlation.ts` — ν(x)と|ψ(x)|²のdA重み付きピアソン
+  相関。既知の相関パターン(+1/-1/0近傍)で確認。「同tickの空間相関」と
+  「真の履歴依存（過去との相関）」の違いをfloorsに明記——本ファイル
+  単体では後者を測れない
+- **自己維持**: `vortexCandidates.ts` の `trackVortexPersistence` —
+  呼び出し側が集めた複数tickの検出結果履歴から、各plaquetteが
+  同符号windingを連続保持した最長tick数を返す（Aeterna-Genesis の
+  `tracked_id_lifetime` 判定に相当する生データ）
+
+非干渉性（観測が力学に一切影響しない）は二重に保証した：
+(1) ソーススキャンで `field/ledger/drive/medium/geometry` のどれも
+`observe/`・`run/` を import していないことを確認、
+(2) `runPureExperiment` を `observe: true/false` の両方で走らせ、
+`finalPsi`・`finalNu`・`ledgerHistory` がビット一致することを
+複数パラメータ組で確認。
+
+レポート出力 (`exportPureReport.ts`) は「Observed facts / In one
+sentence / How it appears / Possibility / Still unknown」形式の
+JSON/Markdownを生成するが、**その中身（実際の観測事実の文章）は
+このモジュール自身が自動生成しない**——第8監査（評価基準と結論を
+同型にしない）に従い、生の数値から解釈文を書くのはK6/K7で人間または
+別途事前登録された分析ステップが行う。JSON には seed・params・
+solverSettings（solverStepOrderを含む）・ticks・ledger summaryが
+含まれることを確認した。
+
+自動スイープ (`parameterSweep.ts`) は列挙のみを行い、優劣判断や
+意識確定を一切しない設計（`vortexPersistenceAtLeast` という一例の
+機械的条件のみを提供、選定・ランキングなし）。同一seed・同一
+組み合わせでのスイープが2回ともビット一致することを確認した。
+
+**PR7 / K4 の床（誠実な未達）:** これは測定器の設置であり、測定
+そのものではない。実際のAETERNA駆動下でどんな渦候補・コヒーレンス・
+相関パターンが生じるか（あるいは生じないか）は未観測——それがK5
+（物理的閉路を置く）とK6（生命的閉路の観測、事前登録された零仮説
+との比較）の仕事。coherence.ts の「振幅で重み付けしない」設計や
+correlation.ts の「同tick相関のみ」という選択は、他にも正当な
+操作化があり得る中の一つの選択であることをそれぞれのモジュールdocに
+明記した。
+
+これでK2（PR2〜PR7）とK3〜K4が完了し、`docs/pure-physics-
+implementation-plan.md` の実装計画そのものは完走した。次に進む
+K5は同計画にない新規フェーズであり、`docs/vessel/closed-life-loop-
+design.md` の設計に基づく。
+
 ## K5 — 物理的閉路を置く（既存憲法にない新規フェーズ）
 
 **目的:** `docs/pure-physics-implementation-plan.md` の J(x,t) は開放系の外部
