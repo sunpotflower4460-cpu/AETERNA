@@ -242,7 +242,35 @@ linearCayleyStep,stepConservative,invariants}.ts` を実装。
 テストケース——例えば平坦計量極限での既知の分散関係——との比較は、
 このPRの範囲外とした）。
 
-**次: PR4** — N/H 帳簿 + 散逸。
+**PR4 完了（2026-09-04）:** `src/pure/field/stepDissipation.ts`,
+`src/pure/ledger/energy.ts` を実装。`src/tests/pure/` に18テスト追加
+（計99テスト）。
+
+- 散逸は `ψ ← ψ・exp(−ν(x)dt)` による厳密な指数減衰（線形近似ではない）
+- `dissipationLoss_N ≥ 0` は ν(x)≥0 なら代数的に保証されることを、
+  均一 ν・非均一 ν の両方で確認（不変条件は空間構造に依存しない）
+- `dissipationLoss_H` は均一 ν の場合のみ非負を要求し、実際に
+  50〜100tick・複数の (α,g) 組で非負を確認。孤立した散逸ステップに
+  ついても解析予測（運動項は exp(−2νdt)、四次項は exp(−4νdt) で
+  スケールする）と数値結果が一致することを確認した
+- `numericalDrift_H` が保存部だけに由来し、ν(x) の大きさ（0〜50まで
+  振った）に一切依存しないことを確認。散逸ステップの H 変化が
+  `numericalDrift_H` に漏れ込んでいないという、設計書の合流条件
+  「numericalDrift_H が保存ブロック以外で使われない」を直接検証した
+- 帳簿の恒等式 `N(t+1)=N(t)−dissipationLoss_N+residual_N` /
+  `H(t+1)=H(t)−dissipationLoss_H+numericalDrift_H+residual_H`
+  （PR4時点では駆動項がまだ無いため driveWork=0）が毎tick成立し、
+  residual が許容誤差内（N: 相対 <1e-8、H: 絶対 <1e-8）に収まることを
+  100tickにわたり確認
+
+**PR4 の床（誠実な未達）:** 均一 ν(x)=ν₀ のみを扱った。不均一 ν(x) は
+PR6（媒質履歴）で初めて実際の力学として現れ、その時点で
+`dissipationLoss_H` は符号保証を失う（設計書 §7 の明文どおり、これは
+バグではなく不均一吸収が勾配エネルギーを作る物理現象）。駆動 J はまだ
+無いため driveWork_N/H は常に0であり、この帳簿の駆動項付き完全形は
+PR5 の仕事。
+
+**次: PR5** — 外部駆動 J(x,t) + driveWork。
 
 ## K3 — 媒質履歴 ν(x)（PR6）＝ 唯一許可された書き戻し
 
