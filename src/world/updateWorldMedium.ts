@@ -41,7 +41,11 @@ export function updateWorldMedium(
   pulse: ActuationPulse | null,
   dt: number,
 ): WorldMediumState {
-  const timestamp = Date.now();
+  // Simulated time in ms (see initializeWorldMediumState.ts), not
+  // Date.now(): the "natural drift" phase below must be a function of
+  // simulated elapsed time so the same seed and input sequence reproduce
+  // bit-exactly regardless of real wall-clock timing.
+  const timestamp = world.timestamp + dt * 1000;
 
   // Natural baseline values for decay
   const baselineLight = 0.5;
