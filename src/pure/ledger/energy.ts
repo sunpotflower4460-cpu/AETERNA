@@ -41,6 +41,9 @@ import type { TorusGeometry } from '../geometry/torus.ts';
 import type { ConservativeStepper } from '../field/stepConservative.ts';
 import { computeNorm, computeHamiltonian } from '../field/invariants.ts';
 import { applyDissipationStep } from '../field/stepDissipation.ts';
+import type { DriveSpec } from '../drive/drive.ts';
+import { evaluateDrive } from '../drive/drive.ts';
+import { applyDriveStep } from '../field/stepDrive.ts';
 
 export interface EnergyLedgerEntry {
   nBefore: number;
@@ -103,6 +106,80 @@ export function runDissipationTick(
       numericalDriftH,
       residualN,
       residualH,
+    },
+  };
+}
+
+/**
+ * PUT-IN (PR5 addition): psi at tick start, the same ConservativeStepper/
+ *   nu/dt runDissipationTick takes, plus a DriveSpec and the current time t
+ * EMERGED: psi after one full PR5 tick (conservative -> dissipation ->
+ *   drive, the fixed order in PURE_CORE_SOLVER_STEP_ORDER) plus
+ *   driveWork_N/H
+ * claim-tier: C3 (see src/tests/pure/driveWork.test.ts for the positive-
+ *   phase and ledger-closure checks, negativeDriveWork.test.ts for the
+ *   sign-flip check)
+ * floors (誠実な床): mediumHistory and observe are not implemented yet
+ *   (PR6/PR7) - this is still not the full solver tick.
+ *
+ * docs/pure-physics-implementation-plan.md §7, 駆動を含めた完全形:
+ *
+ *   N(t+1) = N(t) + driveWork_N - dissipationLoss_N + residual_N
+ *   H(t+1) = H(t) + driveWork_H - dissipationLoss_H + numericalDrift_H + residual_H
+ *
+ * runDissipationTick は既に residual_N/H を「保存部＋散逸部だけ」の
+ * 恒等式として確定している（residualH は代数的に厳密0、residualN は
+ * 保存部自身の浮動小数点誤差のみ）。この事実は駆動の有無に依存しない
+ * ので、その値を変えずにそのまま再利用できる。駆動はその出力へ
+ * もう一段適用されるだけであり、上の完全形は
+ *
+ *   N(t+1) = nAfterDrive = nAfterDissipation + driveWorkN
+ *          = (nBefore - dissipationLossN + residualN) + driveWorkN
+ *
+ * という代入だけで成立する（H側も同様）。
+ */
+export interface DriveTickLedgerEntry extends EnergyLedgerEntry {
+  nAfterDrive: number;
+  hAfterDrive: number;
+  driveWorkN: number;
+  driveWorkH: number;
+}
+
+export interface DriveTickResult {
+  psi: ComplexField;
+  ledger: DriveTickLedgerEntry;
+}
+
+export function runDriveTick(
+  psi: ComplexField,
+  conservativeStepper: ConservativeStepper,
+  geometry: TorusGeometry,
+  alpha: number,
+  g: number,
+  nu: Float64Array,
+  drive: DriveSpec,
+  t: number,
+  dt: number,
+): DriveTickResult {
+  const { operator } = conservativeStepper;
+  const { psi: psiAfterDissipation, ledger } = runDissipationTick(psi, conservativeStepper, geometry, alpha, g, nu, dt);
+
+  const driveField = evaluateDrive(drive, t);
+  const psiAfterDrive = applyDriveStep(psiAfterDissipation, driveField, dt);
+  const nAfterDrive = computeNorm(psiAfterDrive, geometry);
+  const hAfterDrive = computeHamiltonian(psiAfterDrive, operator, geometry, alpha, g);
+
+  const driveWorkN = nAfterDrive - ledger.nAfterDissipation;
+  const driveWorkH = hAfterDrive - ledger.hAfterDissipation;
+
+  return {
+    psi: psiAfterDrive,
+    ledger: {
+      ...ledger,
+      nAfterDrive,
+      hAfterDrive,
+      driveWorkN,
+      driveWorkH,
     },
   };
 }
