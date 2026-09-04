@@ -1,0 +1,247 @@
+{
+  "baseSeed": 1,
+  "seedCount": 20,
+  "calibrationSeed": 0,
+  "params": {
+    "N": 6,
+    "M": 20,
+    "shiftCellsPerTick": 2,
+    "alpha": 1,
+    "g": 1,
+    "nu0": 0.2,
+    "kappa": 1,
+    "rho": 0.3,
+    "lambda": 20,
+    "dt": 0.01,
+    "shoutAmplitude": 0.5,
+    "shoutOmega": 5,
+    "shoutPhase": 0.3,
+    "shoutTicks": 5,
+    "windowHalfWidth": 2,
+    "observeAfterTicks": 3,
+    "calibrationSeed": 0,
+    "baseSeed": 1,
+    "seedCount": 20
+  },
+  "solverStepOrder": [
+    "conservative",
+    "dissipation",
+    "drive",
+    "exchange",
+    "mediumHistory",
+    "observe"
+  ],
+  "ticks": 15,
+  "ledgerSummary": {
+    "finalTargetEnergy": -0.00035804472718463116,
+    "finalControlAmplitude": -0.05485686954404934,
+    "seedCount": 20,
+    "roundTripTicks": 10,
+    "observationTick": 15
+  },
+  "nullHypothesisComparison": {
+    "boundaryDensity": {
+      "meanDifference": -0.0009451818739268007,
+      "standardError": 0.00005653069338830159,
+      "distinguishable": true
+    },
+    "coherence": {
+      "meanDifference": -0.00047274866511448404,
+      "standardError": 0.0004376672177095116,
+      "distinguishable": false
+    },
+    "distinguishable": true
+  },
+  "emergenceCeilingMap": [
+    {
+      "white": "K2 PR2 (器のみ)",
+      "reachedLevel": "判定対象外",
+      "stopReason": "時間発展が存在しない",
+      "nextMissingCause": "PR3の実装（完了済み）"
+    },
+    {
+      "white": "K2 PR3 (保存部のみ)",
+      "reachedLevel": "判定対象外",
+      "stopReason": "保存系はエネルギー注入源を持たず持続構造を生まない",
+      "nextMissingCause": "PR4-PR5の実装（完了済み）"
+    },
+    {
+      "white": "K2 PR4 (+散逸)",
+      "reachedLevel": "判定対象外",
+      "stopReason": "駆動なしの散逸系は単調減衰する",
+      "nextMissingCause": "PR5の実装（完了済み）"
+    },
+    {
+      "white": "K2 PR5 (+駆動J)",
+      "reachedLevel": "未測定",
+      "stopReason": "長時間の自然発展runを一度も実行していない",
+      "nextMissingCause": "別途事前登録された専用run"
+    },
+    {
+      "white": "K2 PR6 / K3 (+媒質履歴)",
+      "reachedLevel": "未測定",
+      "stopReason": "同上",
+      "nextMissingCause": "同上、加えてK3固有の決定的反証子"
+    },
+    {
+      "white": "K2 PR7 / K4 (読み取り専用観測)",
+      "reachedLevel": "判定対象外（測定器）",
+      "stopReason": "測定器の凍結のみで測定は未実行",
+      "nextMissingCause": "上記runをこの測定器で見ること"
+    },
+    {
+      "white": "K5 (物理的閉路)",
+      "reachedLevel": "未測定",
+      "stopReason": "K6のL2チェックはtau_minが観測窓を超え判定不能だった",
+      "nextMissingCause": "tau_minより十分長い専用run"
+    },
+    {
+      "white": "K6 (reafference弁別)",
+      "reachedLevel": "判定対象外（emergence level測定ではない）",
+      "stopReason": "—",
+      "nextMissingCause": "docs/vessel/vessel-roadmap.md K6節の誠実な限界を参照"
+    }
+  ],
+  "perSeed": [
+    {
+      "seed": 1,
+      "boundaryDensityA": 0.0009348575594824979,
+      "boundaryDensityB": 0.0018815807360971167,
+      "globalCoherenceA": 0.15080279322837498,
+      "globalCoherenceB": 0.1496841773826475
+    },
+    {
+      "seed": 2,
+      "boundaryDensityA": 0.0011256672859718802,
+      "boundaryDensityB": 0.002269907460067818,
+      "globalCoherenceA": 0.15391355062184006,
+      "globalCoherenceB": 0.15692496081066024
+    },
+    {
+      "seed": 3,
+      "boundaryDensityA": 0.0010143196485021349,
+      "boundaryDensityB": 0.0020640378686007073,
+      "globalCoherenceA": 0.1423129462794893,
+      "globalCoherenceB": 0.13955062726702805
+    },
+    {
+      "seed": 4,
+      "boundaryDensityA": 0.0012761039440046397,
+      "boundaryDensityB": 0.002648769018147543,
+      "globalCoherenceA": 0.18607725121046645,
+      "globalCoherenceB": 0.1870664090457759
+    },
+    {
+      "seed": 5,
+      "boundaryDensityA": 0.0012917482287828157,
+      "boundaryDensityB": 0.0025765085680595225,
+      "globalCoherenceA": 0.06281325264101491,
+      "globalCoherenceB": 0.06177314080252773
+    },
+    {
+      "seed": 6,
+      "boundaryDensityA": 0.000891476738916773,
+      "boundaryDensityB": 0.0017703314089484582,
+      "globalCoherenceA": 0.04209419497544561,
+      "globalCoherenceB": 0.04289540583635577
+    },
+    {
+      "seed": 7,
+      "boundaryDensityA": 0.0006231727252305379,
+      "boundaryDensityB": 0.001029807278516243,
+      "globalCoherenceA": 0.22442350908299144,
+      "globalCoherenceB": 0.22238351887782493
+    },
+    {
+      "seed": 8,
+      "boundaryDensityA": 0.0009857435915264414,
+      "boundaryDensityB": 0.0017326857874206774,
+      "globalCoherenceA": 0.16534883661747832,
+      "globalCoherenceB": 0.16544272606307006
+    },
+    {
+      "seed": 9,
+      "boundaryDensityA": 0.0010274637008471717,
+      "boundaryDensityB": 0.001870827427671048,
+      "globalCoherenceA": 0.2663589336632625,
+      "globalCoherenceB": 0.2665238583828686
+    },
+    {
+      "seed": 10,
+      "boundaryDensityA": 0.0011985312878806224,
+      "boundaryDensityB": 0.002337260484587176,
+      "globalCoherenceA": 0.02772415156204065,
+      "globalCoherenceB": 0.029985001683379378
+    },
+    {
+      "seed": 11,
+      "boundaryDensityA": 0.0010518121741098989,
+      "boundaryDensityB": 0.0020229084457396647,
+      "globalCoherenceA": 0.07961752649378151,
+      "globalCoherenceB": 0.08268917102194599
+    },
+    {
+      "seed": 12,
+      "boundaryDensityA": 0.0007581131640057746,
+      "boundaryDensityB": 0.0014039976002464885,
+      "globalCoherenceA": 0.14278939313473688,
+      "globalCoherenceB": 0.14016545048545045
+    },
+    {
+      "seed": 13,
+      "boundaryDensityA": 0.0010912964301226958,
+      "boundaryDensityB": 0.0021194239737411117,
+      "globalCoherenceA": 0.317745019050642,
+      "globalCoherenceB": 0.3184690904237428
+    },
+    {
+      "seed": 14,
+      "boundaryDensityA": 0.0010532715520600686,
+      "boundaryDensityB": 0.001978208251595149,
+      "globalCoherenceA": 0.14255710182392817,
+      "globalCoherenceB": 0.14230450238022108
+    },
+    {
+      "seed": 15,
+      "boundaryDensityA": 0.0008261727486457383,
+      "boundaryDensityB": 0.0014939414437803613,
+      "globalCoherenceA": 0.13511083425020992,
+      "globalCoherenceB": 0.1342186103020028
+    },
+    {
+      "seed": 16,
+      "boundaryDensityA": 0.0010977378381254834,
+      "boundaryDensityB": 0.002153989348355411,
+      "globalCoherenceA": 0.09540523881393755,
+      "globalCoherenceB": 0.09528118353028062
+    },
+    {
+      "seed": 17,
+      "boundaryDensityA": 0.0011609494658805092,
+      "boundaryDensityB": 0.0022911210360894584,
+      "globalCoherenceA": 0.14970671968641946,
+      "globalCoherenceB": 0.153364298026984
+    },
+    {
+      "seed": 18,
+      "boundaryDensityA": 0.0010359806389319075,
+      "boundaryDensityB": 0.001944912576357753,
+      "globalCoherenceA": 0.1503344045099042,
+      "globalCoherenceB": 0.15074034161514163
+    },
+    {
+      "seed": 19,
+      "boundaryDensityA": 0.0007484395475093579,
+      "boundaryDensityB": 0.0012716528331754926,
+      "globalCoherenceA": 0.05614149784889941,
+      "globalCoherenceB": 0.057504116119524475
+    },
+    {
+      "seed": 20,
+      "boundaryDensityA": 0.0012257319403048829,
+      "boundaryDensityB": 0.0024603561421806443,
+      "globalCoherenceA": 0.0887097946665417,
+      "globalCoherenceB": 0.09247533340626277
+    }
+  ]
+}

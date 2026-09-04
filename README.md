@@ -200,12 +200,16 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/agent-guardrails.md` — Agent rules for safe changes
 - `docs/pure-physics-core-design.md` — AETERNA PURE PHYSICS core design
 - `docs/pure-physics-implementation-plan.md` — staged implementation plan for `src/pure/`
+- `VESSEL_REPORT.md` — Vessel judgment report (K8): human-readable summary of where the vessel stands (K0-K7), what may and may not be claimed
 - `docs/vessel/VESSEL_CHARTER.md` — Vessel Charter (K0): what "completing AETERNA as a vessel" means, and what it does not claim
-- `docs/vessel/vessel-roadmap.md` — K-Series roadmap (K0-K8), completion conditions, and decisive falsifiers
+- `docs/vessel/vessel-roadmap.md` — K-Series roadmap (K0-K8), completion conditions, and decisive falsifiers (K0-K7 complete)
 - `docs/vessel/closed-life-loop-design.md` — Physical closure (K5) vs life-like closure (K6) design
+- `docs/vessel/K5-exchange-medium-adr.md` — K5 implementation ADR: concretizing chi/boundary/coupling into code
+- `docs/vessel/K6-reafference-preregistration.md` — K6 pre-registered reafference discrimination protocol
 - `docs/vessel/anti-delusion-apparatus.md` — The four rings that guard against misreading observations
 - `docs/vessel/claim-ladder.md` — Claim ladder (C0-C5) integrating existing value kinds
-- `docs/vessel/white-ceilings.md` — Hypothesized reachable emergence levels per white, before measurement
+- `docs/vessel/white-ceilings.md` — Reachable emergence levels per white: hypotheses (pre-K2) plus the K7 ceiling map of what is and isn't measured
+- `docs/vessel/vessel-report.json` — Machine-readable K8 report (seed, params, solverStepOrder, ledger summary, null-hypothesis comparison, ceiling map)
 - `docs/vessel/imports-from-siblings.md` — What is and is not adopted from sibling repositories
 - `docs/observation-and-expression-boundary.md` — Boundary rules for Aeterna actual output, observer records, interpretation candidates, and unknowns
 - `docs/auto-experiment-report-format.md` — Intuitive report format for automated experiment observations
