@@ -13,7 +13,9 @@
   "include": [
     "src/bridge/**/*.ts",
     "src/signal/**/*.ts",
-    "src/types/**/*.ts"
+    "src/types/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/pure/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"]
 }
