@@ -511,7 +511,11 @@ K5-exchange-medium-adr.md`が明記する将来拡張）。交換境界𝒮は�
 同じエネルギー・同じスペクトルで入った場合とで、場の応答が違うか。エネルギー
 とスペクトルを揃えることを必須とする（揃えなければ振幅の違いを測っているに
 過ぎない）。既存の `src/closure/deriveReafferenceComparison.ts`（legacy 側）
-は設計参照として使用する。
+は設計参照として使用する（ヒューリスティックな重み付けはpure側に持ち込まない）。
+
+条件A/B・比較する量・判定規則・固定パラメータの具体的な凍結内容は
+`docs/vessel/K6-reafference-preregistration.md` に記録する（実装・実行に
+先立って作成し、結果を見てから書き換えない）。
 
 **採用する機械判定規則**（`Aeterna-Genesis/docs/EMERGENCE_LEVELS.md` をそのまま
 採用し、自前の閾値を発明しない）:
