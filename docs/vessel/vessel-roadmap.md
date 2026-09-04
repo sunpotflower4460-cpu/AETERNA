@@ -270,7 +270,41 @@ PR6（媒質履歴）で初めて実際の力学として現れ、その時点�
 無いため driveWork_N/H は常に0であり、この帳簿の駆動項付き完全形は
 PR5 の仕事。
 
-**次: PR5** — 外部駆動 J(x,t) + driveWork。
+**PR5 完了（2026-09-04）:** `src/pure/drive/drive.ts`, `src/pure/field/stepDrive.ts`
+を実装し、`src/pure/ledger/energy.ts` に `runDriveTick`（`runDissipationTick`
+を内部で再利用し、その出力へ駆動ステップをもう一段適用する構成）を追加。
+`src/tests/pure/` に13テスト追加（計114テスト）。
+
+- J(x,t) = spatialProfile(x)・exp(i(ωt+phase)) という、ψを一切読まない
+  純関数として実装（ソーススキャンで「psi」というコード上の識別子が
+  存在しないことを直接検証——ドキュメント中の説明文としての言及とは
+  区別する、既存の claimGuard.ts と同じ「言及と使用の区別」）
+- 駆動ステップ ψ ← ψ + J・dt は陽解法（Euler）だが、これは
+  `linearCayleyStep.ts` が禁じる前進オイラーとは別種の操作である
+  ことをモジュールdocで明示：後者はψに比例するフィードバック項の
+  不安定性の問題であり、Jはψに依存しない外部強制項なのでその議論は
+  適用されない
+- 一様位相のψに対し、ψと同位相のJが全セルで |ψ|² を厳密に増加させる
+  こと（孤立試験）、ψと逆位相（π shift）のJが全セルで厳密に減少させる
+  ことを確認。`runDriveTick` を通した `driveWork_N` の符号が
+  cos(相対位相) の符号を、位相を0〜2πまで振って追跡することも確認
+- 振幅ゼロの駆動（`spatialProfile` が全セル0）が `runDriveTick` を
+  `runDissipationTick` とビット一致させること（駆動が唯一の追加経路で
+  あり、他の経路でψを変えないことの直接証拠）を確認
+- 駆動ありでも帳簿の恒等式 `N(t+1)=N(t)+driveWork_N−dissipationLoss_N+residual_N` /
+  `H(t+1)=H(t)+driveWork_H−dissipationLoss_H+numericalDrift_H+residual_H`
+  が40tickにわたり成立することを確認（`residual_N/H` は PR4 で確定した
+  意味・値のまま変わらないことを設計上保証し、数値でも確認した）
+
+**PR5 の床（誠実な未達）:** driveWork_H の符号は一般に保証しない
+（設計書の帳簿定義どおり、駆動仕事は正負どちらもありうる想定であり、
+本PRのテストも符号を断定していない）。媒質履歴 ν(x) はまだ実装して
+いない（PR6）ため、この時点の駆動はまだ「一定の ν₀ を持つ吸収体へ
+外部からエネルギーを注ぐ」だけであり、持続的パターンが生まれるか
+どうかはまだ観測対象になっていない（`docs/vessel/white-ceilings.md`
+参照）。
+
+**次: PR6** — 媒質履歴 ν(x)（唯一許可された書き戻し）。
 
 ## K3 — 媒質履歴 ν(x)（PR6）＝ 唯一許可された書き戻し
 
