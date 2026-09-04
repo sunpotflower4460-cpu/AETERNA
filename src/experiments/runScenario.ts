@@ -1420,7 +1420,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     });
 
     // Initialize network and disk
-    const network = new AeternaNetwork(segments);
+    const network = new AeternaNetwork(segments, { seed: config.seed });
     const disk = new PhysicalDisk();
     const touchMem = new TouchMemory(segments);
     applyScenarioStateOverrides(network, config);

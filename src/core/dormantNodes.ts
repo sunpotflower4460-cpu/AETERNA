@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getHardwareRandomFloat, getHardwareRandomSigned } from './hardwareRandom.ts';
+import { resolveRandomFloat, resolveRandomSigned } from './hardwareRandom.ts';
 
 const DORMANT_NODE_RATIO = 0.05;
 const DORMANT_WAKE_PRESSURE_DECAY = 0.986;
@@ -147,7 +147,7 @@ export function updateDormantNodes(network: any) {
         + localActivity * DORMANT_WAKE_SIGNAL_ACTIVITY
         + localError * DORMANT_WAKE_SIGNAL_ERROR
         + hotspot * DORMANT_WAKE_SIGNAL_HOTSPOT
-        + getHardwareRandomSigned() * DORMANT_WAKE_SIGNAL_RANDOM;
+        + resolveRandomSigned(network) * DORMANT_WAKE_SIGNAL_RANDOM;
 
       if (
         network.dormantWakeCooldown[i] <= 0
@@ -157,7 +157,7 @@ export function updateDormantNodes(network: any) {
         && wakeSignal > DORMANT_WAKE_TRIGGER_SIGNAL
       ) {
         network.isDormantNode[i] = 0;
-        network.dormantWakeCooldown[i] = DORMANT_WAKE_COOLDOWN_MIN + Math.floor(getHardwareRandomFloat() * DORMANT_WAKE_COOLDOWN_RANGE);
+        network.dormantWakeCooldown[i] = DORMANT_WAKE_COOLDOWN_MIN + Math.floor(resolveRandomFloat(network) * DORMANT_WAKE_COOLDOWN_RANGE);
         network.totalDormantWakeCount += 1;
         pushDormantWakeEvent(network, i, wakeSignal);
       }

@@ -4,7 +4,7 @@
 // See docs/external-constants-removal.md
 import { PHI_INV, SCHUMANN_RES, GAMMA_SYNC } from '../constants/aeternaConstants.js';
 import { state } from '../organism/state.js';
-import { getHardwareRandomFloat, hasHardwareRandomSource } from './hardwareRandom.ts';
+import { resolveRandomFloat, resolveRandomNoiseSourceLabel } from './hardwareRandom.ts';
 import { getLivingStateInfluence } from '../organism/livingState.ts';
 import { defaultCoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
 import type { CoreDynamicsConstantsConfig } from '../config/coreDynamicsConstantsConfig.ts';
@@ -13,13 +13,13 @@ export function triggerNoise(network: any, tension: number, sigmaDisp: number) {
   const thermalRate = state.disk.omega_t > 30 ? 0.02 : 0.05;
   const eventRate = tension * 0.2 + Math.abs(sigmaDisp - 1.0) * 0.1;
   const finalRate = network.clampFinite(thermalRate + eventRate, 0, 1, 0);
-  network.hardwareRandomNoiseSource = hasHardwareRandomSource() ? 'crypto' : 'fallback';
+  network.hardwareRandomNoiseSource = resolveRandomNoiseSourceLabel(network);
   let injectedMagnitude = 0;
   let injectedEvents = 0;
   for (let i = 0; i < 3; i++) {
-    if (getHardwareRandomFloat() < finalRate) {
-      const index = Math.floor(getHardwareRandomFloat() * network.numNodes);
-      const magnitude = 1.0 + getHardwareRandomFloat();
+    if (resolveRandomFloat(network) < finalRate) {
+      const index = Math.floor(resolveRandomFloat(network) * network.numNodes);
+      const magnitude = 1.0 + resolveRandomFloat(network);
       network.currentBuffer[index] += magnitude;
       injectedMagnitude += magnitude;
       injectedEvents++;

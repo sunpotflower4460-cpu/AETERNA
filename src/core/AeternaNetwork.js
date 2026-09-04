@@ -66,11 +66,21 @@ import { createComplexFieldState } from './complexField.ts';
 import { updateComplexField } from './updateComplexField.ts';
 import { deriveVortexCandidates } from '../observer/deriveVortexCandidates.ts';
 import { defaultComplexFieldConfig } from '../types/complexField.ts';
+import { createSeededRandom } from '../utils/seededRandom.ts';
 
 export class AeternaNetwork {
-    constructor(segments = 72) {
+    constructor(segments = 72, options = {}) {
         this.segments = segments;
         this.numNodes = segments * segments;
+        // K1 opt-in determinism (docs/vessel/vessel-roadmap.md): when a seed
+        // is passed, core noise/dormant-wake randomness uses this seeded PRNG
+        // instead of the crypto-backed hardwareRandom source, making a run
+        // reproducible. Omitted (the default, e.g. the interactive app in
+        // main.ts) preserves existing crypto-backed behavior unchanged.
+        this.deterministicSeed = options.seed ?? null;
+        this.seededRandom = options.seed !== undefined && options.seed !== null
+            ? createSeededRandom(options.seed)
+            : null;
         this.R = PHI;
         this.r = 1.0;
         this.torusMetricConfig = normalizeTorusMetricConfig({
