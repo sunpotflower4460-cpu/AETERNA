@@ -55,11 +55,23 @@ export interface PureCoreParams {
 
 export type LinearSolverKind = 'direct' | 'iterative' | 'spectral';
 
-/** tick内ステップ順序。docs/pure-physics-implementation-plan.md §2 で固定された順序。 */
+/**
+ * tick内ステップ順序。docs/pure-physics-implementation-plan.md §2 で
+ * 固定された基本順序（conservative/dissipation/drive/mediumHistory/
+ * observe）に、K5で 'exchange' を明示的に追加する（`docs/vessel/
+ * K5-exchange-medium-adr.md` 選択4）。drive の後・mediumHistory の前に
+ * 置く理由も同ADRに記載: 媒質履歴はそのtickで場を通過した最終的な
+ * エネルギー（交換で出入りした分も含む）に応答するべきであり、
+ * 交換自体はconservative/dissipation/driveが確定した後のψに対して
+ * 行うべきだから。docs/pure-physics-implementation-plan.md §9が禁じる
+ * のは「暗黙の」変更であり、これはADRとテスト更新を伴う明示的な変更
+ * である。
+ */
 export const PURE_CORE_SOLVER_STEP_ORDER = [
   'conservative',
   'dissipation',
   'drive',
+  'exchange',
   'mediumHistory',
   'observe',
 ] as const;

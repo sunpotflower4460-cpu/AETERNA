@@ -28,7 +28,7 @@ describe('pure core report export: required fields (docs/pure-physics-implementa
 
     expect(report.seed).toBe(params.seed);
     expect(report.params).toEqual(params);
-    expect(report.solverSettings.solverStepOrder).toEqual(['conservative', 'dissipation', 'drive', 'mediumHistory', 'observe']);
+    expect(report.solverSettings.solverStepOrder).toEqual(['conservative', 'dissipation', 'drive', 'exchange', 'mediumHistory', 'observe']);
     expect(report.ticks).toBe(10);
     expect(report.ledgerSummary).toBeDefined();
     expect(Number.isFinite(report.ledgerSummary.finalN)).toBe(true);

@@ -48,10 +48,15 @@ describe('pure core params', () => {
   });
 
   it('fixes the tick-internal solver step order', () => {
+    // 'exchange' was added between 'drive' and 'mediumHistory' in K5
+    // (docs/vessel/K5-exchange-medium-adr.md choice 4) - an explicit,
+    // documented, test-covered change, not the implicit one
+    // docs/pure-physics-implementation-plan.md §9 forbids.
     expect(PURE_CORE_SOLVER_STEP_ORDER).toEqual([
       'conservative',
       'dissipation',
       'drive',
+      'exchange',
       'mediumHistory',
       'observe',
     ]);

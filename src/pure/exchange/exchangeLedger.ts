@@ -43,6 +43,8 @@ import { computeRingHamiltonian, computeRingNorm } from './ringInvariants.ts';
 import { applyExchangeCoupling } from './coupling.ts';
 import type { ExchangeCouplingConfig } from './boundary.ts';
 import { computeNorm, computeHamiltonian } from '../field/invariants.ts';
+import type { MediumHistoryParams } from '../medium/history.ts';
+import { applyMediumHistoryStep } from '../medium/history.ts';
 
 export interface FourBookLedgerEntry {
   psiLedger: DriveTickLedgerEntry;
@@ -121,4 +123,56 @@ export function runClosedLoopTick(
       exchangeWorkHChi: hAfterExchangeChi - hBeforeExchangeChi,
     },
   };
+}
+
+/**
+ * PUT-IN (K5-PR4 addition): everything runClosedLoopTick takes, plus
+ *   MediumHistoryParams for psi's own nu(x) (chi's nu_chi stays a
+ *   constant this PR, per docs/vessel/K5-exchange-medium-adr.md's
+ *   "answered elsewhere" list)
+ * EMERGED: the full tick per PURE_CORE_SOLVER_STEP_ORDER through
+ *   mediumHistory (conservative -> dissipation -> drive -> exchange ->
+ *   mediumHistory; observe is still separate, PR7-style) - psi, chi,
+ *   psi's updated nu(x), and the FourBookLedgerEntry
+ * claim-tier: C2 (implemented; wires already-proven pieces together in
+ *   the ADR's decided order - see src/tests/pure/exchangeCutoffControl.test.ts
+ *   and roundTripDelay.test.ts for the properties this composition must
+ *   have)
+ * floors (誠実な床): medium history responds to psi's POST-exchange
+ *   field (the tick's final psi), matching PR6's own "nu responds to
+ *   the tick's final energy" design and choice 4 of the ADR.
+ */
+export interface FullClosedLoopTickResult {
+  psi: ComplexField;
+  nu: Float64Array;
+  chi: ComplexField;
+  ledger: FourBookLedgerEntry;
+}
+
+export function runFullClosedLoopTick(
+  psi: ComplexField,
+  conservativeStepper: ConservativeStepper,
+  psiGeometry: TorusGeometry,
+  alpha: number,
+  g: number,
+  nu: Float64Array,
+  drive: DriveSpec,
+  t: number,
+  dt: number,
+  chi: ComplexField,
+  chiOperator: RingLaplacianOperator,
+  chiGeometry: ExchangeRingGeometry,
+  alphaChi: number,
+  shiftCellsPerTick: number,
+  nuChi: Float64Array,
+  couplingConfig: ExchangeCouplingConfig,
+  mediumParams: MediumHistoryParams,
+): FullClosedLoopTickResult {
+  const { psi: psiAfterExchange, chi: chiAfterExchange, ledger } = runClosedLoopTick(
+    psi, conservativeStepper, psiGeometry, alpha, g, nu, drive, t, dt,
+    chi, chiOperator, chiGeometry, alphaChi, shiftCellsPerTick, nuChi, couplingConfig,
+  );
+  const nuNext = applyMediumHistoryStep(psiAfterExchange, nu, mediumParams, dt);
+
+  return { psi: psiAfterExchange, nu: nuNext, chi: chiAfterExchange, ledger };
 }
