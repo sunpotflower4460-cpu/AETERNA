@@ -438,7 +438,10 @@ design.md` の設計に基づく。
 **目的:** `docs/pure-physics-implementation-plan.md` の J(x,t) は開放系の外部
 駆動として指定されており、場から J への戻り道がない。ここで初めて物理的閉路
 （`VESSEL_CHARTER.md` §2 の左列）を置く。詳細設計は
-`docs/vessel/closed-life-loop-design.md` を参照。
+`docs/vessel/closed-life-loop-design.md` を参照。抽象設計を実装可能な
+数式・データ構造へ具体化する際の技術選択（χの厳密巡回シフト表現、
+𝒮の単一セル境界、対称結合の厳密ラビ回転表現）とその理由は
+`docs/vessel/K5-exchange-medium-adr.md` に記録する。
 
 **置くもの（これだけ）:**
 - 交換境界 𝒮 — トーラス上のセル部分集合。幾何のみで定義する
