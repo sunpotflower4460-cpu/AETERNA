@@ -181,6 +181,39 @@ K1 の作業内容に、CI 新設と並行してこれら9件の根本原因調�
 **反証子:** PR3 で N 保存・H 有界性・2次収束が確認できない場合、散逸・駆動・
 媒質履歴を一切載せない（`docs/pure-physics-implementation-plan.md` §11 の明文）。
 
+**PR2 完了（2026-09-04）:** `src/pure/params.ts`, `src/pure/geometry/torus.ts`,
+`src/pure/geometry/laplaceBeltrami.ts`, `src/pure/field/state.ts`,
+`src/pure/random/seededPrng.ts` を実装。`src/tests/pure/` に47テスト
+（`pureParams`, `torusGeometry`, `laplaceBeltramiSelfAdjoint`, `pureFieldState`,
+`seededPrngDeterminism`, `pureCoreForbiddenPatterns`）。
+
+- L の自己随伴性は「対称な辺の transmissibility を使う」という設計から
+  代数的に保証され、数値検証でも相対誤差 <1e-9（`laplaceBeltrami.ts` の
+  モジュールdocに証明を記載）。N=4,8,16 の格子で確認
+- L(定数場) = 0 を確認（ラプラシアンの基本性質）
+- トーラス全面積は解析解 `4π²Rr` と厳密一致（cell-centered midpoint rule
+  での cos の和が任意の N≥2 で厳密にゼロになる離散直交性による。N=4,8,16,33
+  で確認、丸め誤差のみ）
+- 同一seedでの初期状態の bit 一致を確認（`pureFieldState.test.ts`）
+- `src/pure/` 全体を対象にした禁止識別子スキャン（`Math.random(`, `Date.now(`,
+  `clamp(`, `maxDelta`, `amplitudeClamp`, `boost`, `stabilize`, `makeAlive`,
+  `makeConscious`, `forceRecovery`, `desiredTarget`）と、legacy/organism層への
+  import 禁止を、コメントと実コードを区別した上で機械チェックするテストを
+  `pureCoreForbiddenPatterns.test.ts` として追加（`claimGuard.ts` と同じ
+  「言及と使用を混同しない」設計）
+- `src/pure/random/seededPrng.ts` は新規実装せず `src/utils/seededRandom.ts`
+  を re-export（K1 で確立した「既存実装を再利用する」原則をそのまま適用）
+- `tsconfig.json` に `allowImportingTsExtensions: true` を追加（`src/pure/**`
+  を include に加えたことで、値インポートの `.ts` 拡張子表記——このリポジトリの
+  既存の型インポートと同じ記法——を通すために必要。`noEmit: true` なので安全）
+
+**PR2 の床（誠実な未達）:** 時間発展は一切実装していない（`stepConservative.ts`
+はまだ存在しない）。L の離散化が連続極限の Laplace-Beltrami 作用素に
+どの収束レートで一致するかは検証していない（それは PR3 の
+`hamiltonianConvergence.test.ts` の仕事）。
+
+**次: PR3** — 保存部 Strang 分割 + Cayley/CN（線形部の前進オイラー禁止）。
+
 ## K3 — 媒質履歴 ν(x)（PR6）＝ 唯一許可された書き戻し
 
 **目的:** `docs/pure-physics-implementation-plan.md` §8 PR6 をそのまま実行する。
