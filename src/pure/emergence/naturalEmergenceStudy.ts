@@ -3,14 +3,22 @@
  *   emergence-preregistration.md's frozen values) and a seed
  * EMERGED: whether L2 (per Aeterna-Genesis/docs/EMERGENCE_LEVELS.md,
  *   operationalized in the pre-registration) was observed over a long,
- *   naturally-driven run, in either the minimal (condition 1: nu
- *   frozen, no chi) or full (condition 2: medium history + exchange
- *   coupling) configuration
- * claim-tier: C2 (implemented exactly per the frozen pre-registration;
- *   see src/tests/pure/naturalEmergenceStudy.test.ts for small-scale
- *   orchestration/determinism checks, and
- *   src/tests/pure/naturalEmergenceFrozenFinding.test.ts for the
- *   actual, once-run, pinned result at the full frozen scale)
+ *   naturally-driven run, in any of four (useChi x mediumHistoryOn)
+ *   configurations
+ * claim-tier: C2 (implemented exactly per the frozen pre-registration
+ *   for the two ORIGINAL pre-registered configurations - useChi=false/
+ *   kappa=0 "condition 1" and useChi=true/kappa>0 "condition 2"; see
+ *   src/tests/pure/naturalEmergenceFrozenFinding.test.ts for their
+ *   pinned golden-value results. The other two configurations
+ *   (useChi=true/kappa=0 and useChi=false/kappa>0) are EXPLORATORY
+ *   follow-up isolation conditions, added after that frozen result to
+ *   answer "which of chi or medium history explains condition 2's
+ *   persistence advantage" - see src/tests/pure/
+ *   naturalEmergenceIsolation.test.ts and docs/vessel/vessel-
+ *   roadmap.md's K7 follow-up section for that exploratory finding.
+ *   Exploratory analysis of already-completed pre-registered data does
+ *   not itself need pre-registration - only NEW confirmatory threshold
+ *   claims would.)
  * floors (誠実な床): this only tests L2. L3 (motion tracking) and L4
  *   (inside/outside contrast, perturbation recovery) need instruments
  *   this module does not build - see the pre-registration's own
@@ -29,7 +37,7 @@ import { createExchangeRingGeometry } from '../exchange/ringGeometry.ts';
 import { createRingLaplacian } from '../exchange/ringLaplacian.ts';
 import { selectExchangeBoundaryCell, createExchangeCouplingConfig } from '../exchange/boundary.ts';
 import { runFullClosedLoopTick } from '../exchange/exchangeLedger.ts';
-import { runDriveTick } from '../ledger/energy.ts';
+import { runDriveTick, runMediumHistoryTick } from '../ledger/energy.ts';
 import type { DriveSpec } from '../drive/drive.ts';
 import type { MediumHistoryParams } from '../medium/history.ts';
 import { detectVortexCandidates, vortexPersistenceAtLeast, type VortexCandidate } from '../observe/vortexCandidates.ts';
@@ -116,7 +124,9 @@ export function runNaturalEmergenceCondition(config: NaturalEmergenceConfig, see
       const result = runDriveTick(psi, stepper, psiGeometry, config.alpha, config.g, nu, drive, t, config.dt);
       psi = result.psi;
     } else {
-      throw new Error('runNaturalEmergenceCondition: non-degenerate medium history without chi is not a pre-registered condition');
+      const result = runMediumHistoryTick(psi, stepper, psiGeometry, config.alpha, config.g, nu, drive, t, config.dt, mediumParams);
+      psi = result.psi;
+      nu = result.nu;
     }
 
     const candidates = detectVortexCandidates(psi, psiGeometry);

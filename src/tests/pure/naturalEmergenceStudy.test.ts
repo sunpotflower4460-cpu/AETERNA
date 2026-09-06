@@ -44,11 +44,13 @@ describe('pure core natural emergence study: orchestration (docs/vessel/K7-natur
     expect(r1).toEqual(r2);
   });
 
-  it('rejects a non-pre-registered configuration (medium history without chi)', () => {
+  it('also supports medium history without chi (an exploratory isolation condition added after the frozen run - see naturalEmergenceIsolation.test.ts)', () => {
     const config = smallConfig(false);
     config.kappa = 1;
     config.rho = 0.3;
-    expect(() => runNaturalEmergenceCondition(config, 1)).toThrow();
+    const result = runNaturalEmergenceCondition(config, 1);
+    expect(typeof result.l2Satisfied).toBe('boolean');
+    expect(Number.isFinite(result.maxPersistenceTicks)).toBe(true);
   });
 
   it('runNaturalEmergenceStudy runs one result per seed', () => {
