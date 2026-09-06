@@ -36,11 +36,12 @@ export const EMERGENCE_CEILING_MAP: readonly VesselReportEmergenceEntry[] = [
   { white: 'K2 PR3 (保存部のみ)', reachedLevel: '判定対象外', stopReason: '保存系はエネルギー注入源を持たず持続構造を生まない', nextMissingCause: 'PR4-PR5の実装（完了済み）' },
   { white: 'K2 PR4 (+散逸)', reachedLevel: '判定対象外', stopReason: '駆動なしの散逸系は単調減衰する', nextMissingCause: 'PR5の実装（完了済み）' },
   { white: 'K2 PR5 (+駆動J、ν均一・chiなし)', reachedLevel: 'L2未達（実測済み）', stopReason: '5 seed全てで最大持続1tick、tau_min=500に遠く及ばない', nextMissingCause: 'tau_minを実際の力学スケール（数十tick）に合わせ直した新しい事前登録実験' },
-  { white: 'K2 PR6 / K3 (+媒質履歴、chiあり)', reachedLevel: 'L2未達（実測済み）', stopReason: '5 seed全てで最大持続34-39tick。ν均一条件の30倍以上だがtau_min=500の1/10未満', nextMissingCause: '同上。加えて30倍差の機構的説明' },
+  { white: 'K2 PR6 / K3 (+媒質履歴、chiあり)', reachedLevel: 'L2未達（実測済み）', stopReason: '5 seed全てで最大持続34-39tick。ν均一条件の30倍以上だがtau_min=500の1/10未満', nextMissingCause: '同上。30倍差はχ単独にほぼ完全に起因することを探索的follow-upで確認済み（媒質履歴の寄与はゼロ）' },
   { white: 'K2 PR7 / K4 (読み取り専用観測)', reachedLevel: '判定対象外（測定器）', stopReason: '測定器の凍結のみで測定は未実行だったが、K7追加runで実際に使用した', nextMissingCause: '—' },
   { white: 'K5 (物理的閉路)', reachedLevel: 'L2未達（実測済み、K2 PR6/K3の行と同一run）', stopReason: '同上', nextMissingCause: '同上' },
   { white: 'K6 (reafference弁別)', reachedLevel: '判定対象外（emergence level測定ではない）', stopReason: '—', nextMissingCause: 'docs/vessel/vessel-roadmap.md K6節の誠実な限界を参照' },
   { white: 'K7追加 (自然発展下でのL2実測)', reachedLevel: 'L2未達（条件1・条件2とも、5 seed全て）', stopReason: 'tau_min=500という選定が実際の力学の持続スケール（数十tick）に対して過大だった可能性がある（実測後の気づき、事後調整せず）', nextMissingCause: 'tau_minを実スケールに合わせ直した新実験。L3/L4用の新しい測定器' },
+  { white: 'K7追加・探索的（持続優位性の機構分離）', reachedLevel: '判定対象外（探索的分析、新規の確証的閾値判定なし）', stopReason: '媒質履歴のみは優位性ゼロ、χのみは30倍優位性のほぼ全てを再現（5 seed全てで検証済み）', nextMissingCause: 'χの局所的対称性の破れという仮説の直接検証（結合強度λを振った依存性測定等）' },
 ];
 
 export interface VesselReportLedgerSummary {
