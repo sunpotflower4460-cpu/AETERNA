@@ -36,7 +36,7 @@ describe('pure core K8 vessel report: required fields (docs/vessel/vessel-roadma
     expect(report.seedCount).toBe(config.seedCount);
     expect(report.calibrationSeed).toBe(config.calibrationSeed);
     expect(report.params).toEqual(config);
-    expect(report.solverStepOrder).toEqual(['conservative', 'dissipation', 'drive', 'exchange', 'mediumHistory', 'observe']);
+    expect(report.solverStepOrder).toEqual(['conservative', 'dissipation', 'drive', 'exchange', 'mediumHistory', 'gHistory', 'observe']);
     expect(typeof report.ticks).toBe('number');
     expect(report.ticks).toBeGreaterThan(0);
 

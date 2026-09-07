@@ -73,6 +73,7 @@ export const PURE_CORE_SOLVER_STEP_ORDER = [
   'drive',
   'exchange',
   'mediumHistory',
+  'gHistory',
   'observe',
 ] as const;
 

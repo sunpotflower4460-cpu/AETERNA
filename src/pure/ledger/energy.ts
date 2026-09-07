@@ -46,6 +46,8 @@ import { evaluateDrive } from '../drive/drive.ts';
 import { applyDriveStep } from '../field/stepDrive.ts';
 import type { MediumHistoryParams } from '../medium/history.ts';
 import { applyMediumHistoryStep } from '../medium/history.ts';
+import type { GHistoryParams } from '../medium/gHistory.ts';
+import { applyGHistoryStep } from '../medium/gHistory.ts';
 
 export interface EnergyLedgerEntry {
   nBefore: number;
@@ -71,16 +73,17 @@ export function runDissipationTick(
   conservativeStepper: ConservativeStepper,
   geometry: TorusGeometry,
   alpha: number,
-  g: number,
+  g: number | Float64Array,
   nu: Float64Array,
   dt: number,
 ): DissipationTickResult {
   const { operator } = conservativeStepper;
+  const gField = typeof g === 'number' ? undefined : g;
 
   const nBefore = computeNorm(psi, geometry);
   const hBefore = computeHamiltonian(psi, operator, geometry, alpha, g);
 
-  const psiAfterConservative = conservativeStepper.step(psi);
+  const psiAfterConservative = conservativeStepper.step(psi, gField);
   const nAfterConservative = computeNorm(psiAfterConservative, geometry);
   const hAfterConservative = computeHamiltonian(psiAfterConservative, operator, geometry, alpha, g);
 
@@ -157,7 +160,7 @@ export function runDriveTick(
   conservativeStepper: ConservativeStepper,
   geometry: TorusGeometry,
   alpha: number,
-  g: number,
+  g: number | Float64Array,
   nu: Float64Array,
   drive: DriveSpec,
   t: number,
@@ -223,7 +226,7 @@ export function runMediumHistoryTick(
   conservativeStepper: ConservativeStepper,
   geometry: TorusGeometry,
   alpha: number,
-  g: number,
+  g: number | Float64Array,
   nu: Float64Array,
   drive: DriveSpec,
   t: number,
@@ -237,5 +240,67 @@ export function runMediumHistoryTick(
     psi: psiAfterDrive,
     nu: nuNext,
     ledger,
+  };
+}
+
+/**
+ * PUT-IN (K12-PR2 addition): everything runMediumHistoryTick takes,
+ *   except g MUST be the current g(x) (Float64Array, not a scalar -
+ *   this function is g(x)-specific, unlike runMediumHistoryTick which
+ *   stays usable with either), plus GHistoryParams
+ * EMERGED: psi after the full tick (conservative -> dissipation ->
+ *   drive -> mediumHistory -> gHistory, the K12-extended
+ *   solverStepOrder - exchange/observe are still separate, K5/K7-style)
+ *   plus g(x) advanced by one tick, plus runMediumHistoryTick's own
+ *   ledger extended with mediumWork_H
+ * claim-tier: C2 (implemented; wires already-proven pieces together per
+ *   docs/vessel/K12-memory-channel-adr.md's Choice 2/3 decided order -
+ *   see src/tests/pure/gHistoryConservativeStep.test.ts and
+ *   mediumWorkH.test.ts for the properties this composition must have)
+ * floors (誠実な床): mediumWork_H reuses ledger.hAfterDrive (already
+ *   computeHamiltonian(psiAfterDrive, gCurrent) from inside
+ *   runDriveTick - see docs/vessel/K12-memory-channel-adr.md Choice 3)
+ *   rather than recomputing it, so this is the SAME H value the rest of
+ *   the ledger already reports as hAfterDissipation/hAfterDrive's
+ *   sibling, not a second independent measurement that could disagree
+ *   with it by construction.
+ */
+export interface GHistoryTickLedgerEntry extends DriveTickLedgerEntry {
+  /** computeHamiltonian(psiFinal, gNext) - computeHamiltonian(psiFinal, gCurrent) - see docs/vessel/K12-memory-channel-adr.md Choice 3. NOT folded into numericalDrift_H (different physical source: this is H's own parameterization changing, not conservative-step discretization error). */
+  mediumWorkH: number;
+}
+
+export interface GHistoryTickResult {
+  psi: ComplexField;
+  nu: Float64Array;
+  gField: Float64Array;
+  ledger: GHistoryTickLedgerEntry;
+}
+
+export function runGHistoryTick(
+  psi: ComplexField,
+  conservativeStepper: ConservativeStepper,
+  geometry: TorusGeometry,
+  alpha: number,
+  gField: Float64Array,
+  nu: Float64Array,
+  drive: DriveSpec,
+  t: number,
+  dt: number,
+  mediumParams: MediumHistoryParams,
+  gHistoryParams: GHistoryParams,
+): GHistoryTickResult {
+  const { operator } = conservativeStepper;
+  const { psi: psiAfterDrive, nu: nuNext, ledger } = runMediumHistoryTick(psi, conservativeStepper, geometry, alpha, gField, nu, drive, t, dt, mediumParams);
+  const gNext = applyGHistoryStep(psiAfterDrive, gField, gHistoryParams, dt);
+
+  const hWithNewG = computeHamiltonian(psiAfterDrive, operator, geometry, alpha, gNext);
+  const mediumWorkH = hWithNewG - ledger.hAfterDrive;
+
+  return {
+    psi: psiAfterDrive,
+    nu: nuNext,
+    gField: gNext,
+    ledger: { ...ledger, mediumWorkH },
   };
 }

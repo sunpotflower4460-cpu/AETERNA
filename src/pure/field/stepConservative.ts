@@ -1,13 +1,22 @@
 /**
  * PUT-IN: a complex field psi, a LaplaceBeltramiOperator, TorusGeometry,
- *   alpha, g, dt
+ *   alpha, g, dt; step() also optionally takes a per-tick gField(x)
+ *   (docs/vessel/K12-memory-channel-adr.md Choice 2) overriding the
+ *   scalar g baked in at construction, for that one call only
  * EMERGED: psi advanced by one full conservative tick
  * claim-tier: C3 (analytically validated - N conservation and exact
  *   norm-preservation of the linear sub-step are proven properties of
  *   the pieces this composes; the composition's own 2nd-order accuracy
  *   is checked in src/tests/pure/hamiltonianConvergence.test.ts)
  * floors (誠実な床): this is the conservative block only. No
- *   dissipation, drive, or medium history yet (PR4/PR5/PR6).
+ *   dissipation, drive, or medium history yet (PR4/PR5/PR6). gField is
+ *   read fresh on every step() call rather than baked into the stepper
+ *   at construction time, because K12's g(x) changes tick-to-tick while
+ *   the linear solver (which never depends on g at all - only the
+ *   nonlinear half-steps read it) is expensive to rebuild; see the ADR
+ *   for the alternative (rebuilding the whole stepper per tick) this
+ *   rejected. Omitting gField is EXACTLY today's behavior, unchanged
+ *   bit-for-bit (falls back to the scalar `params.g` from construction).
  *
  * docs/pure-physics-implementation-plan.md §2, Strang分割:
  *
@@ -45,8 +54,13 @@ export interface ConservativeStepperParams {
 export interface ConservativeStepper {
   readonly operator: LaplaceBeltramiOperator;
   readonly linearStepper: LinearStepper;
-  /** Advances psi by one full conservative tick. Does not mutate the input. */
-  step(psi: ComplexField): ComplexField;
+  /**
+   * Advances psi by one full conservative tick. Does not mutate the
+   * input. `gField`, if given, is used for BOTH nonlinear half-steps
+   * INSTEAD of the scalar g from construction (K12's g(x) - see module
+   * doc). Omit it to get exactly the pre-K12 behavior.
+   */
+  step(psi: ComplexField, gField?: Float64Array): ComplexField;
 }
 
 function createLinearStepper(operator: LaplaceBeltramiOperator, geometry: TorusGeometry, alpha: number, dt: number, kind: LinearSolverKind): LinearStepper {
@@ -70,14 +84,15 @@ export function createConservativeStepper(
   const linearStepper = createLinearStepper(operator, geometry, params.alpha, params.dt, params.linearSolverKind ?? 'direct');
   const dtHalf = params.dt / 2;
 
-  function step(psi: ComplexField): ComplexField {
+  function step(psi: ComplexField, gField?: Float64Array): ComplexField {
+    const g: number | Float64Array = gField ?? params.g;
     const working: ComplexField = {
       real: Float64Array.from(psi.real),
       imag: Float64Array.from(psi.imag),
     };
-    applyNonlinearPhaseStep(working, params.g, dtHalf);
+    applyNonlinearPhaseStep(working, g, dtHalf);
     const afterLinear = linearStepper.step(working);
-    applyNonlinearPhaseStep(afterLinear, params.g, dtHalf);
+    applyNonlinearPhaseStep(afterLinear, g, dtHalf);
     return afterLinear;
   }
 

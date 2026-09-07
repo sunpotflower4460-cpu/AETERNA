@@ -29,6 +29,7 @@
     "drive",
     "exchange",
     "mediumHistory",
+    "gHistory",
     "observe"
   ],
   "ticks": 15,
