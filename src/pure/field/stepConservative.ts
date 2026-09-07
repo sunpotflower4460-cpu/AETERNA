@@ -27,19 +27,39 @@
 import type { ComplexField, TorusGeometry } from '../geometry/torus.ts';
 import type { LaplaceBeltramiOperator } from '../geometry/laplaceBeltrami.ts';
 import { createLinearCayleyStepper, type LinearCayleyStepper } from './linearCayleyStep.ts';
+import { createLinearCayleySpectralStepper } from './linearCayleySpectralStep.ts';
 import { applyNonlinearPhaseStep } from './nonlinearPhaseStep.ts';
+import type { LinearSolverKind } from '../params.ts';
+
+/** Structural shape shared by createLinearCayleyStepper (dense-LU, linearCayleyStep.ts) and createLinearCayleySpectralStepper (FFT+cyclic-tridiagonal, linearCayleySpectralStep.ts, docs/vessel/K-series-II-brain-and-universe-plan.md K9). Both compute the identical Cayley transform - only the algorithm differs. */
+export type LinearStepper = LinearCayleyStepper;
 
 export interface ConservativeStepperParams {
   alpha: number;
   g: number;
   dt: number;
+  /** Which linear solver implements the Cayley/CN step. Defaults to 'direct' (the original dense-LU stepper) when omitted - existing callers are unaffected. 'spectral' requires geometry.N to be a power of 2 (thrown here, not silently rounded). 'iterative' is not yet implemented. */
+  linearSolverKind?: LinearSolverKind;
 }
 
 export interface ConservativeStepper {
   readonly operator: LaplaceBeltramiOperator;
-  readonly linearStepper: LinearCayleyStepper;
+  readonly linearStepper: LinearStepper;
   /** Advances psi by one full conservative tick. Does not mutate the input. */
   step(psi: ComplexField): ComplexField;
+}
+
+function createLinearStepper(operator: LaplaceBeltramiOperator, geometry: TorusGeometry, alpha: number, dt: number, kind: LinearSolverKind): LinearStepper {
+  if (kind === 'direct') {
+    return createLinearCayleyStepper(operator, geometry, alpha, dt);
+  }
+  if (kind === 'spectral') {
+    if ((geometry.N & (geometry.N - 1)) !== 0) {
+      throw new Error(`createConservativeStepper: linearSolverKind='spectral' requires geometry.N to be a power of 2, got ${geometry.N}`);
+    }
+    return createLinearCayleySpectralStepper(operator, geometry, alpha, dt);
+  }
+  throw new Error(`createConservativeStepper: linearSolverKind '${kind}' is not implemented (only 'direct' and 'spectral' are available)`);
 }
 
 export function createConservativeStepper(
@@ -47,7 +67,7 @@ export function createConservativeStepper(
   geometry: TorusGeometry,
   params: ConservativeStepperParams,
 ): ConservativeStepper {
-  const linearStepper = createLinearCayleyStepper(operator, geometry, params.alpha, params.dt);
+  const linearStepper = createLinearStepper(operator, geometry, params.alpha, params.dt, params.linearSolverKind ?? 'direct');
   const dtHalf = params.dt / 2;
 
   function step(psi: ComplexField): ComplexField {
