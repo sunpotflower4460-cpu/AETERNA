@@ -64,3 +64,42 @@ describe('pure core nonlinear phase step (exact)', () => {
     expect(psi.imag[0]).toBeCloseTo(expectedImag, 12);
   });
 });
+
+describe('pure core K12: nonlinear phase step with g(x) (docs/vessel/K12-memory-channel-adr.md Choice 2)', () => {
+  it('a uniform Float64Array g(x) produces the EXACT same result as the equivalent scalar g (bit-for-bit)', () => {
+    const gValue = 1.7;
+    const dtHalf = 0.03;
+    const buildPsi = (): ComplexField => ({ real: Float64Array.from([1, 0.3, -0.7, 2]), imag: Float64Array.from([0, -0.9, 0.4, -1]) });
+
+    const psiScalar = buildPsi();
+    applyNonlinearPhaseStep(psiScalar, gValue, dtHalf);
+
+    const psiArray = buildPsi();
+    applyNonlinearPhaseStep(psiArray, new Float64Array(psiArray.real.length).fill(gValue), dtHalf);
+
+    expect(psiArray.real).toEqual(psiScalar.real);
+    expect(psiArray.imag).toEqual(psiScalar.imag);
+  });
+
+  it('each cell rotates using only its OWN g(x) value, independent of neighboring cells', () => {
+    const psi: ComplexField = { real: Float64Array.from([1, 1]), imag: Float64Array.from([0, 0]) };
+    const gField = Float64Array.from([2, 5]);
+    const dtHalf = 0.1;
+    applyNonlinearPhaseStep(psi, gField, dtHalf);
+
+    const isolatedCell0: ComplexField = { real: Float64Array.from([1]), imag: Float64Array.from([0]) };
+    applyNonlinearPhaseStep(isolatedCell0, 2, dtHalf);
+    const isolatedCell1: ComplexField = { real: Float64Array.from([1]), imag: Float64Array.from([0]) };
+    applyNonlinearPhaseStep(isolatedCell1, 5, dtHalf);
+
+    expect(psi.real[0]).toBe(isolatedCell0.real[0]);
+    expect(psi.imag[0]).toBe(isolatedCell0.imag[0]);
+    expect(psi.real[1]).toBe(isolatedCell1.real[0]);
+    expect(psi.imag[1]).toBe(isolatedCell1.imag[0]);
+  });
+
+  it('throws when g(x) length does not match psi length', () => {
+    const psi: ComplexField = { real: Float64Array.from([1, 2, 3]), imag: Float64Array.from([0, 0, 0]) };
+    expect(() => applyNonlinearPhaseStep(psi, new Float64Array(2), 0.1)).toThrow();
+  });
+});

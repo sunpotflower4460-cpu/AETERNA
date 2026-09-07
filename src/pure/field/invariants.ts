@@ -37,17 +37,32 @@ export function computeNorm(psi: ComplexField, geometry: TorusGeometry): number 
 }
 
 /**
- * H = alpha*<psi,-L*psi>_dA + (g/2)*sum(|psi|^4*dA). `operator` must be
- * the same LaplaceBeltramiOperator instance used to build the
- * conservative stepper for this run (see module doc).
+ * H = alpha*<psi,-L*psi>_dA + (g/2)*sum(|psi|^4*dA), or, when g is a
+ * per-cell Float64Array g(x) (docs/vessel/K12-memory-channel-adr.md
+ * Choice 3, needed to measure mediumWork_H), H = alpha*<psi,-L*psi>_dA
+ * + sum((g(x)/2)*|psi|^4*dA) - the same quartic term with g pulled
+ * inside the sum instead of factored out, since it now varies per
+ * cell. Passing a scalar `g: number` is EXACTLY today's formula,
+ * unchanged bit-for-bit. A uniform Float64Array filled with that same
+ * scalar value is NOT guaranteed bit-identical to the scalar path
+ * (floating-point addition is not associative, so "multiply once after
+ * summing" and "multiply inside each term of the sum" can differ in
+ * the last bit) - see src/tests/pure/gFieldHamiltonian.test.ts, which
+ * checks the array path to floating-point precision, not bit equality,
+ * against the scalar path. `operator` must be the same
+ * LaplaceBeltramiOperator instance used to build the conservative
+ * stepper for this run (see module doc).
  */
 export function computeHamiltonian(
   psi: ComplexField,
   operator: LaplaceBeltramiOperator,
   geometry: TorusGeometry,
   alpha: number,
-  g: number,
+  g: number | Float64Array,
 ): number {
+  if (typeof g !== 'number' && g.length !== psi.real.length) {
+    throw new Error(`computeHamiltonian: g(x) length (${g.length}) does not match psi length (${psi.real.length})`);
+  }
   const lPsi = applyLaplaceBeltrami(operator, psi);
   const negLPsi: ComplexField = {
     real: new Float64Array(lPsi.real.length),
@@ -61,12 +76,26 @@ export function computeHamiltonian(
   // inner product (its imaginary part is 0 up to floating-point roundoff).
   const kinetic = weightedInnerProduct(psi, negLPsi, geometry).real;
 
-  let quarticSum = 0;
   const { cellArea } = geometry;
-  for (let i = 0; i < psi.real.length; i++) {
-    const amplitudeSquared = psi.real[i] * psi.real[i] + psi.imag[i] * psi.imag[i];
-    quarticSum += amplitudeSquared * amplitudeSquared * cellArea[i];
+  let quarticEnergy: number;
+  if (typeof g === 'number') {
+    // Unchanged bit-for-bit from before g(x) support existed: g factored
+    // out of the sum, multiplied once at the end.
+    let quarticSum = 0;
+    for (let i = 0; i < psi.real.length; i++) {
+      const amplitudeSquared = psi.real[i] * psi.real[i] + psi.imag[i] * psi.imag[i];
+      quarticSum += amplitudeSquared * amplitudeSquared * cellArea[i];
+    }
+    quarticEnergy = (g / 2) * quarticSum;
+  } else {
+    // g(x) varies per cell, so it cannot be factored out of the sum -
+    // a genuinely different (not just reordered) floating-point path.
+    quarticEnergy = 0;
+    for (let i = 0; i < psi.real.length; i++) {
+      const amplitudeSquared = psi.real[i] * psi.real[i] + psi.imag[i] * psi.imag[i];
+      quarticEnergy += (g[i] / 2) * amplitudeSquared * amplitudeSquared * cellArea[i];
+    }
   }
 
-  return alpha * kinetic + (g / 2) * quarticSum;
+  return alpha * kinetic + quarticEnergy;
 }
