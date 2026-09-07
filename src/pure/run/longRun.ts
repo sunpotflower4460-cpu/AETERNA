@@ -1,20 +1,37 @@
 /**
  * PUT-IN: PureCoreParams, a DriveSpec, a tick budget, a checkpoint
- *   interval, and ledger-residual tolerances (verification harness
+ *   interval, ledger-residual tolerances (verification harness
  *   settings, per docs/pure-physics-implementation-plan.md §6.3 - not
- *   physics)
- * EMERGED: the run advanced tick-by-tick, producing periodic snapshots
- *   (src/pure/persist/snapshot.ts), until either the tick budget is
- *   reached or an AGENTS.md stop condition is detected
+ *   physics), and optionally a resumeFrom state (tick/psi/nu restored
+ *   from a prior checkpoint, possibly in a completely separate process)
+ * EMERGED: the run advanced tick-by-tick from t=0 or from resumeFrom,
+ *   producing periodic snapshots (src/pure/persist/snapshot.ts), until
+ *   either the tick budget is reached or an AGENTS.md stop condition is
+ *   detected
  * claim-tier: C2 (see src/tests/pure/longRun.test.ts: a run that hits a
  *   deliberately-tiny residual tolerance stops exactly where expected
  *   and preserves the last good state, not the corrupted one; a normal
  *   run reaches its full tick budget and produces the expected number
- *   of checkpoints)
+ *   of checkpoints). The resumeFrom path's bit-exactness across an
+ *   actual separate OS process is C3 (see
+ *   scripts/k10-persistence-validation.ts and its recorded results in
+ *   docs/vessel/vessel-roadmap.md's K10 entry - not merely an in-process
+ *   simulation of "a fresh process" as src/tests/pure/snapshot.test.ts
+ *   already does, but two genuinely separate `tsx` invocations
+ *   communicating only through a JSON file on disk).
  * floors (誠実な床): checks only the RUNTIME stop conditions from
  *   AGENTS.md that make sense to evaluate tick-by-tick during a run
- *   (NaN/Infinity in psi/nu/chi, and the N/H ledger residual exceeding
- *   its tolerance). The other AGENTS.md conditions (self-adjointness/
+ *   (NaN/Infinity in psi/nu, and the N/H ledger residual exceeding its
+ *   tolerance). This loop runs runMediumHistoryTick (psi + nu(x) only,
+ *   the K2 PR6 configuration) - it does NOT drive K5's chi/exchange
+ *   closed loop (runFullClosedLoopTick in
+ *   src/pure/exchange/exchangeLedger.ts), so chi is out of scope here
+ *   and is never checked for non-finiteness by this module. Extending
+ *   persistence/long-run orchestration to the full closed loop is left
+ *   for whichever later phase first needs to checkpoint a running world
+ *   (K11's L6 self-sustaining-closure instrument is the likely first
+ *   caller - see docs/vessel/K-series-II-brain-and-universe-plan.md
+ *   K11). The other AGENTS.md conditions (self-adjointness/
  *   conservation-law test failures, seed non-reproducibility, forbidden
  *   source patterns, docs/impl contradiction, observer non-
  *   interference) are source-scan or test-suite concerns, not something
@@ -52,13 +69,28 @@ export interface LedgerResidualTolerance {
   h: number;
 }
 
+export interface LongRunResumeState {
+  tick: number;
+  psi: ComplexField;
+  nu: Float64Array;
+}
+
 export interface LongRunConfig {
   params: PureCoreParams;
   drive: DriveSpec;
+  /** Ticks to run FROM the start point (tick 0, or resumeFrom.tick if given) - never an absolute target. */
   totalTicks: number;
   checkpointInterval: number;
   residualTolerance: LedgerResidualTolerance;
   linearSolverKind?: LinearSolverKind;
+  /**
+   * Resume from a previously checkpointed state (e.g. restoreSnapshot's
+   * output) instead of t=0 initial conditions. This is what makes a
+   * cross-process checkpoint/restore test possible: build this from a
+   * PureCoreSnapshotState restored in a completely separate invocation
+   * (see scripts/k10-persistence-validation.ts).
+   */
+  resumeFrom?: LongRunResumeState;
 }
 
 export interface StopConditionReport {
@@ -98,6 +130,9 @@ export function runLongRun(config: LongRunConfig): LongRunResult {
   if (!Number.isInteger(config.checkpointInterval) || config.checkpointInterval < 1) {
     throw new Error(`runLongRun: checkpointInterval must be a positive integer, got ${config.checkpointInterval}`);
   }
+  if (config.resumeFrom && (!Number.isInteger(config.resumeFrom.tick) || config.resumeFrom.tick < 0)) {
+    throw new Error(`runLongRun: resumeFrom.tick must be a non-negative integer, got ${config.resumeFrom.tick}`);
+  }
 
   const { params, drive } = config;
   const geometry = createTorusGeometry({ R: params.R, r: params.r, N: params.N });
@@ -106,19 +141,28 @@ export function runLongRun(config: LongRunConfig): LongRunResult {
   const stepper = createConservativeStepper(operator, geometry, { alpha: params.alpha, g: params.g, dt: params.dt, linearSolverKind: config.linearSolverKind });
   const mediumParams: MediumHistoryParams = { kappa: params.kappa, rho: params.rho, nu0: params.nu0 };
 
-  const initial = createPureFieldState(params, geometry);
-  let psi: ComplexField = { real: initial.real, imag: initial.imag };
-  let nu: Float64Array = initial.nu;
+  const startTick = config.resumeFrom?.tick ?? 0;
+  let psi: ComplexField;
+  let nu: Float64Array;
+  if (config.resumeFrom) {
+    psi = config.resumeFrom.psi;
+    nu = config.resumeFrom.nu;
+  } else {
+    const initial = createPureFieldState(params, geometry);
+    psi = { real: initial.real, imag: initial.imag };
+    nu = initial.nu;
+  }
 
   const checkpoints: LongRunCheckpoint[] = [];
   let stopCondition: StopConditionReport | undefined;
-  let finalTick = 0;
+  let finalTick = startTick;
 
   const takeCheckpoint = (tick: number): void => {
     checkpoints.push({ tick, snapshot: createSnapshot({ params, solverSettings, tick, psi, nu }) });
   };
 
-  for (let tick = 0; tick < config.totalTicks; tick++) {
+  for (let i = 0; i < config.totalTicks; i++) {
+    const tick = startTick + i;
     const t = tick * params.dt;
     const attemptedTick = tick + 1;
     let result: { psi: ComplexField; nu: Float64Array; ledger: DriveTickLedgerEntry };

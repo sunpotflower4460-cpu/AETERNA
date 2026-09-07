@@ -8,15 +8,15 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "outDir": "dist",
-    "rootDir": "src"
+    "outDir": "dist"
   },
   "include": [
     "src/bridge/**/*.ts",
     "src/signal/**/*.ts",
     "src/types/**/*.ts",
     "src/utils/**/*.ts",
-    "src/pure/**/*.ts"
+    "src/pure/**/*.ts",
+    "scripts/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts"]
 }

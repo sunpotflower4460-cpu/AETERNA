@@ -106,3 +106,64 @@ describe('pure core K10 long run: stop conditions halt the run and preserve the 
     expect(() => runLongRun({ ...baseConfig(6), checkpointInterval: 0 })).toThrow();
   });
 });
+
+describe('pure core K10 long run: resumeFrom reproduces an uninterrupted run split across two calls', () => {
+  it('running 30 then resuming for 20 more matches a single uninterrupted 50-tick run bit-for-bit', () => {
+    const config = baseConfig(6);
+    const uninterrupted = runLongRun(config);
+
+    const firstHalf = runLongRun({ ...config, totalTicks: 30 });
+    expect(firstHalf.stopped).toBe(false);
+    const lastCheckpoint = firstHalf.checkpoints[firstHalf.checkpoints.length - 1];
+    expect(lastCheckpoint.tick).toBe(30);
+
+    const secondHalf = runLongRun({
+      ...config,
+      totalTicks: 20,
+      resumeFrom: { tick: firstHalf.finalTick, psi: firstHalf.finalPsi, nu: firstHalf.finalNu },
+    });
+
+    expect(secondHalf.finalTick).toBe(uninterrupted.finalTick);
+    expect(secondHalf.finalPsi.real).toEqual(uninterrupted.finalPsi.real);
+    expect(secondHalf.finalPsi.imag).toEqual(uninterrupted.finalPsi.imag);
+    expect(secondHalf.finalNu).toEqual(uninterrupted.finalNu);
+  });
+
+  it('a resumed run restored from a serialized-and-parsed snapshot (simulating a fresh process) still matches bit-for-bit', () => {
+    const config = baseConfig(6);
+    const uninterrupted = runLongRun(config);
+
+    const firstHalf = runLongRun({ ...config, totalTicks: 30 });
+    const checkpointSnapshot = firstHalf.checkpoints[firstHalf.checkpoints.length - 1].snapshot;
+    // Round-trip through actual JSON text, as a real checkpoint file would be.
+    const rehydrated = JSON.parse(JSON.stringify(checkpointSnapshot)) as typeof checkpointSnapshot;
+
+    const secondHalf = runLongRun({
+      ...config,
+      totalTicks: 20,
+      resumeFrom: {
+        tick: rehydrated.tick,
+        psi: { real: Float64Array.from(rehydrated.psiReal), imag: Float64Array.from(rehydrated.psiImag) },
+        nu: Float64Array.from(rehydrated.nu),
+      },
+    });
+
+    expect(secondHalf.finalPsi.real).toEqual(uninterrupted.finalPsi.real);
+    expect(secondHalf.finalPsi.imag).toEqual(uninterrupted.finalPsi.imag);
+    expect(secondHalf.finalNu).toEqual(uninterrupted.finalNu);
+  });
+
+  it('checkpoints taken during a resumed run are tagged with absolute tick numbers, not relative ones', () => {
+    const config = { ...baseConfig(6), totalTicks: 10, checkpointInterval: 5 };
+    const seed = runLongRun(config);
+    const resumed = runLongRun({ ...config, resumeFrom: { tick: 100, psi: seed.finalPsi, nu: seed.finalNu } });
+    expect(resumed.checkpoints.map((c) => c.tick)).toEqual([105, 110]);
+  });
+
+  it('throws for a negative or non-integer resumeFrom.tick', () => {
+    const config = baseConfig(6);
+    const bad = runLongRun(config).finalPsi;
+    expect(() => runLongRun({ ...config, resumeFrom: { tick: -1, psi: bad, nu: new Float64Array(36) } })).toThrow();
+    expect(() => runLongRun({ ...config, resumeFrom: { tick: 1.5, psi: bad, nu: new Float64Array(36) } })).toThrow();
+  });
+});
