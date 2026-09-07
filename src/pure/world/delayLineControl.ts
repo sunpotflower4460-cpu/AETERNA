@@ -34,6 +34,9 @@ import type { ComplexField } from '../geometry/torus.ts';
 import { applyExchangeCoupling } from '../exchange/coupling.ts';
 import type { ExchangeCouplingConfig } from '../exchange/boundary.ts';
 import type { DistributedBoundaryPair } from './distributedBoundary.ts';
+import type { WorldField } from './worldField.ts';
+import { runDissipationTick } from '../ledger/energy.ts';
+import { applyMediumHistoryStep } from '../medium/history.ts';
 
 export interface DelayLineConfig {
   /** Ticks between a value entering the buffer and it being returned (scaled by dampingFactor). Measured from a real chi - see module doc. */
@@ -107,4 +110,42 @@ export function applyDelayLineExchange(
   }
 
   return { psi: currentPsi, buffers: nextBuffers };
+}
+
+export interface WorldTickWithDelayLineResult {
+  psi: ComplexField;
+  psiNu: Float64Array;
+  buffers: DelayLineBuffer[];
+}
+
+/**
+ * The delay-line null-hypothesis's own full psi tick, mirroring
+ * worldTick.ts's runWorldTick structure exactly on the psi side (own
+ * conservative+dissipation, no drive - runDissipationTick's signature
+ * has no drive parameter, same structural guarantee as runWorldTick)
+ * but with the distributed exchange replaced by applyDelayLineExchange.
+ *
+ * PUT-IN nowhere receives a DriveSpec at all: chi's own drive J is
+ * physically defined as a spatial profile OVER CHI'S FIELD (see
+ * drive.ts / K13's own runWorldTick, where J is threaded into chi's
+ * own runDriveTick) - a delay line with no internal field has nowhere
+ * for J to act on. This is not an oversight: it is the honest
+ * consequence of removing chi's field-ness, and it is exactly what
+ * makes this control test what "being a spatially extended field with
+ * its own energy uptake" buys beyond a passive boundary echo - see
+ * docs/vessel/vessel-roadmap.md's K13 section for the recorded result.
+ */
+export function runWorldTickWithDelayLine(
+  psi: ComplexField,
+  psiNu: Float64Array,
+  psiWorld: WorldField,
+  buffers: readonly DelayLineBuffer[],
+  pairs: readonly DistributedBoundaryPair[],
+  lambda: number,
+  dt: number,
+): WorldTickWithDelayLineResult {
+  const { psi: psiAfterOwnTick } = runDissipationTick(psi, psiWorld.stepper, psiWorld.geometry, psiWorld.params.alpha, psiWorld.params.g, psiNu, dt);
+  const { psi: psiAfterExchange, buffers: nextBuffers } = applyDelayLineExchange(psiAfterOwnTick, buffers, pairs, lambda, dt);
+  const psiNuNext = applyMediumHistoryStep(psiAfterExchange, psiNu, psiWorld.mediumParams, dt);
+  return { psi: psiAfterExchange, psiNu: psiNuNext, buffers: nextBuffers };
 }
