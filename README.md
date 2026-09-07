@@ -202,7 +202,8 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 - `docs/pure-physics-implementation-plan.md` — staged implementation plan for `src/pure/`
 - `VESSEL_REPORT.md` — Vessel judgment report (K8): human-readable summary of where the vessel stands (K0-K7), what may and may not be claimed
 - `docs/vessel/VESSEL_CHARTER.md` — Vessel Charter (K0): what "completing AETERNA as a vessel" means, and what it does not claim
-- `docs/vessel/vessel-roadmap.md` — K-Series roadmap (K0-K8), completion conditions, and decisive falsifiers (K0-K7 complete)
+- `docs/vessel/vessel-roadmap.md` — K-Series roadmap (K0-K8), completion conditions, and decisive falsifiers (K0-K8 complete)
+- `docs/vessel/K-series-II-brain-and-universe-plan.md` — K-Series II plan (K9-K16): scalable solver, persistence, L3/L4/L6 instruments, memory channels, a real world (chi), pre-registered campaign, runtime — plan only, not implemented
 - `docs/vessel/closed-life-loop-design.md` — Physical closure (K5) vs life-like closure (K6) design
 - `docs/vessel/K5-exchange-medium-adr.md` — K5 implementation ADR: concretizing chi/boundary/coupling into code
 - `docs/vessel/K6-reafference-preregistration.md` — K6 pre-registered reafference discrimination protocol
