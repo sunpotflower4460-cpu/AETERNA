@@ -18,6 +18,16 @@
  *   table changes, this constant must be updated to match (there is no
  *   single source of truth enforced across the two by tooling - a known,
  *   accepted floor for a docs-and-code duplication of this kind).
+ *
+ *   K16 update (docs/vessel/K16-report-v2-design.md Choice 1): this
+ *   file, its VesselReport/EMERGENCE_CEILING_MAP, VESSEL_REPORT.md, and
+ *   docs/vessel/vessel-report.json are INTENTIONALLY left frozen exactly
+ *   as K8 shipped them (through K7) - not retroactively patched. The
+ *   single source of truth this floor asked for now exists at
+ *   src/pure/run/emergenceCeilingMap.ts (K2 through K14, kept in sync
+ *   with white-ceilings.md by src/tests/pure/emergenceCeilingMapDocSync.
+ *   test.ts) and is consumed by src/pure/run/exportVesselReportV2.ts,
+ *   not by this file.
  */
 
 import type { ReafferenceStudyConfig, ReafferenceStudyResult } from '../reafference/runReafferenceStudy.ts';
