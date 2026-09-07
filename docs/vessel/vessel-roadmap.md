@@ -1493,6 +1493,126 @@ coreへの結線・legacy UIの隔離は本PRの完了条件に含めていな�
 
 ---
 
+## K16 — 器の判定書 第二版・天井の地図 第二版
+
+**目的:** `docs/vessel/K-series-II-brain-and-universe-plan.md` K16節参照
+（計画本体が「プラン本体 — K9〜K16」と明記するとおり、**このフェーズを
+もって計画本体のフェーズは全て完了する**）。K9〜K15の全結果を
+`VESSEL_REPORT_V2.md`（やさしい日本語）と`vessel-report-v2.json`
+（機械可読）の第二版として出す。`EMERGENCE_CEILING_MAP`のdocs/code
+二重管理を解消し、単一の真実からdocs側を生成する。
+
+**完了条件・決定的反証子:** 計画本文がK16に固有の完了条件を与えていない
+ため、`docs/vessel/K16-report-v2-design.md`で自ら定めた（本文書冒頭の
+「計画本文にない完了条件を自分で決める」節参照）。
+
+**K16 完了（2026-09-07）:** 4つのPRで実装した。`src/tests/pure/`に
+27テスト追加（計4150テスト、うち25はK16専用の新規テスト
+——emergenceCeilingMap.test.ts 9、emergenceCeilingMapDocSync.test.ts 1、
+exportVesselReportV2.test.ts 14、vesselReportV2JsonUpToDate.test.ts 1
+——残り2は新規追加した2つのsrc/pure/ファイル（emergenceCeilingMap.ts・
+exportVesselReportV2.ts）を自動的に対象へ含める既存のソーススキャン
+テスト`pureCoreForbiddenPatterns.test.ts`の動的増分。実測値は
+`npx vitest run`の出力で確認済み: K16着手前4123→PR1/PR2後4134
+（+11=10専用+1動的）→PR3後4150（+16=15専用+1動的）、フルテストスイート
+4149/4150パス、唯一の失敗は本K-series変更と無関係のlegacy領域の既知issue
+（Scenario AW）のみ）。
+
+### K16-PR0: 設計メモ
+
+`docs/vessel/K16-report-v2-design.md`。3つの選択: (1) V1（K8）は凍結し
+V2は新規に作る、(2) 正準データソースは新規`emergenceCeilingMap.ts`、
+`white-ceilings.md`はそこから生成する、(3) V2は新しい型・新しいファイル
+でK9〜K15の実測結果を構造化データとして持つ。
+
+### K16-PR1・PR2: `EMERGENCE_CEILING_MAP`の二重管理解消
+
+`src/pure/run/emergenceCeilingMap.ts`を新設し、V1の10行（K2〜K7）と
+`white-ceilings.md`が既に持っていたがコードには反映されていなかった
+7行（K12腕A・腕B、K13、K14-PR3〜PR5×3）を合わせた17行を単一の場所に
+まとめた。各行に`systemSizes`・`ticks`・`worldPresence`という新しい
+フィールドを追加し、系サイズ・時間スケール・世界の有無という3軸を
+持たせた。`scripts/k16-generate-ceiling-map-docs.ts`がこの配列から
+`white-ceilings.md`内の`<!-- BEGIN/END GENERATED -->`マーカーで囲んだ
+ブロックを再生成する。既存の表をマーカーで囲む際、実際にコミット済み
+テキストと生成結果を1行ずつ突き合わせ、1箇所（太字マーカーの付け忘れ）
+の食い違いを発見・修正した——これは「転記ミスを機械的に検知する」という
+K16の目的そのものが、実装の最初の一歩で実際に機能した例である。
+`emergenceCeilingMapDocSync.test.ts`がこの一致を継続的に検査する。
+
+V1（`exportVesselReport.ts`・`VESSEL_REPORT.md`・`vessel-report.json`）は
+一切変更しなかった——K8完了時点（K7まで）の凍結されたスナップショット
+として残し、ヘッダーコメントに新しい単一情報源への参照を1行追記した
+のみ（コード・exportの変更は伴わない）。
+
+**発見された実装上の罠:** `k16-generate-ceiling-map-docs.ts`の初版は
+`main()`をモジュールトップレベルで無条件に呼び出しており、
+`emergenceCeilingMapDocSync.test.ts`がこのスクリプトから`render*`関数を
+importしただけで、テスト実行のたびにdocsファイルの読み書きが副作用として
+走ってしまっていた（テスト実行時にスクリプトの標準出力が紛れ込むことで
+発覚）。`import.meta.url === file://${process.argv[1]}`によるガードを
+追加し、直接実行時のみ`main()`が走るよう修正した。
+
+### K16-PR3: `exportVesselReportV2.ts` + `vessel-report-v2.json`
+
+K9〜K15それぞれの主要な実測結果を、`vessel-roadmap.md`から構造化データへ
+手動転記した`VesselReportV2`型（新規ファイル、V1拡張ではない）。
+`emergenceCeilingMap.ts`をそのままインポートし、系サイズ・時間スケール・
+世界の有無での到達レベル表（`buildSizeTimescaleWorldTable`）は
+`EMERGENCE_CEILING_MAP`から**機械的に導出**する関数として実装した——
+手動で二重に持たない。
+
+転記の過程で、`vessel-roadmap.md`のK14完了記録自体に内部矛盾（「累計15
+テスト追加（PR1: 6、PR2: 5、PR5: 9のうち...4件）」という記述が6+5+9=20と
+合わず、しかも15とも一致しない）を発見した。実際に`npx vitest run`で
+K14が追加した3つのテストファイルを個別に実行して検証したところ、
+`deriveTauMin.test.ts`は5テスト（記録は6）、`foreignFieldControl.test.ts`
+は5テスト（記録と一致）、`worldSelfSustainingClosure.test.ts`は9テスト
+（記録と一致）で、実測に基づく正しい合計は22（19の専用テスト+3の動的
+増分）だった。この食い違い自体はvessel-roadmap.mdのK14節を遡って修正する
+スコープ外の作業と判断し、V2側では検証済みの数値（22）を採用し、その旨を
+`exportVesselReportV2.ts`のfloorsコメントに明記した——遡って書き換えず、
+発見した事実として記録する。
+
+累計テスト数（`totalTestsAfter`）というフィールドは持たせなかった:
+vessel-roadmap.md自身がK9〜K13では`src/tests/pure/`限定の累計、K14の
+チェックポイント報告・K15の完了記録ではlegacy込みの全体累計、と単位を
+一貫させていないことに気づいたため、どちらかに揃えることで他方を誤って
+表現するより、この誠実な限界として開示する方を選んだ。
+
+15テスト追加（`exportVesselReportV2.test.ts`14件: 決定性・系羅列・K9性能表
+の単調性・K10の文字どおりの目標未達・K12の分散ゼロ・K14 L2/L6のnull・
+K15検証表・ピボット表の導出性など、`vesselReportV2JsonUpToDate.test.ts`
+1件）。
+
+### K16-PR4: `VESSEL_REPORT_V2.md` + 完了記録
+
+やさしい日本語で、K9〜K15を通じて分かったこと・言えないこと・次に
+やるべきことをまとめた。K8の`VESSEL_REPORT.md`と同じ構成・同じ主張の
+階段を踏襲しつつ、K9〜K15固有の内容（速さ・永続性・非干渉性・媒質履歴の
+棄却・世界χ・第二期キャンペーン・ランタイム）で埋めた。
+
+**副次的な確認（F5・F8、計画§5の修正改善ポイント）:** F5
+「`EMERGENCE_CEILING_MAP`の単一情報源化（K16）」は本フェーズで解消した。
+F8「`tsconfig`のincludeをpure runtimeのエントリまで広げる（K15）」は、
+`tsconfig.json`の`include`が既に`src/pure/**/*.ts`という包括的なglobで
+あり、K15が`src/pure/runtime/`にファイルを置いた時点で既に満たされていた
+ことを確認した（追加の変更は不要）。
+
+### K16の床（誠実な限界）
+
+- V2の各フェーズのサマリ数値は`vessel-roadmap.md`からの手動転記であり、
+  emergenceCeilingMap.tsのような自動同期の仕組みは持たない
+- `white-ceilings.md`の生成対象は「K7 天井の地図」表のみ。「現時点での
+  ステータス」表・冒頭の仮説表は手書きのまま残した
+- F1〜F4・F6・F7（計画§5の修正改善ポイント）はK16の対象外のまま残る
+
+**計画本体（K9〜K16）はこれで完了する。** 計画§7が明記するとおり、
+3次元・多成分・GPUといった新しい方向は、K16の後に新しいADR・事前登録を
+経て初めて開く——今回の範囲外である。
+
+---
+
 ## 既存ロードマップの陳腐化解消
 
 `docs/current-roadmap.md` と本書との関係を明記する。
