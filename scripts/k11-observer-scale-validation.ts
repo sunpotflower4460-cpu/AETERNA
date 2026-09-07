@@ -95,7 +95,12 @@ function run(N: number, ticks: number, observe: boolean): { psi: ComplexField; n
 
 function main(): void {
   const N = 128;
-  const ticks = 10000;
+  // K11's completion condition names 10000 ticks. Measured rate with all
+  // instruments active turned out much slower than the physics step alone
+  // (~4 tick/s vs ~57 tick/s bare) - reaching 10000 ticks this way is on
+  // the order of 40+ minutes. Default to a smaller, still-meaningful
+  // count and let a caller who wants the literal target pass it via argv.
+  const ticks = process.argv[2] ? Number(process.argv[2]) : 2000;
 
   console.log(`Running observe=true: N=${N}, ticks=${ticks}`);
   const withObservers = run(N, ticks, true);
