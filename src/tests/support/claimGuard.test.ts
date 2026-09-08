@@ -41,4 +41,14 @@ describe('claimGuard', () => {
     expect(findAffirmativeClaim('nothing forbidden here', ['AETERNA is alive', 'AETERNA is conscious'])).toBeUndefined();
     expect(findAffirmativeClaim('AETERNA is conscious.', ['AETERNA is alive', 'AETERNA is conscious'])).toBe('AETERNA is conscious');
   });
+
+  it('does not mistake "Notably"/"denote"/"annotate" for the negation cue "not" (word-boundary regression)', () => {
+    expect(containsAffirmativeClaim('Notably, AETERNA is alive and thriving.', 'AETERNA is alive')).toBe(true);
+    expect(containsAffirmativeClaim('To denote clearly: AETERNA is alive.', 'AETERNA is alive')).toBe(true);
+    expect(containsAffirmativeClaim('We annotate the log: AETERNA is alive.', 'AETERNA is alive')).toBe(true);
+  });
+
+  it('still recognizes "cannot" as a genuine negation cue', () => {
+    expect(containsAffirmativeClaim('One cannot say AETERNA is alive.', 'AETERNA is alive')).toBe(false);
+  });
 });

@@ -158,6 +158,42 @@ afterEach(async () => {
   }
 });
 
+describe('pure core K15 RuntimeProcess: getCheckpoints() actually honors checkpointInterval (review fix)', () => {
+  it('accumulates exactly one checkpoint per checkpointInterval ticks, oldest first', async () => {
+    const process = new RuntimeProcess(baseConfig({ checkpointInterval: 5 }));
+    await process.runTicks(17);
+    expect(process.getCheckpoints().map((c) => c.tick)).toEqual([5, 10, 15]);
+  });
+
+  it('a checkpoint\'s content matches getLatestWorldSnapshot() taken at that exact tick', async () => {
+    const config = baseConfig({ checkpointInterval: 5 });
+    const process = new RuntimeProcess(config);
+    await process.runTicks(5);
+    const atTick5 = process.getLatestWorldSnapshot();
+    await process.runTicks(5); // advance to tick 10, past the tick-5 checkpoint
+
+    const checkpoints = process.getCheckpoints();
+    expect(checkpoints[0].tick).toBe(5);
+    expect(checkpoints[0].psiReal).toEqual(atTick5.psiReal);
+    expect(checkpoints[0].chiReal).toEqual(atTick5.chiReal);
+  });
+
+  it('records no checkpoints at all when fewer ticks than checkpointInterval have run', async () => {
+    const process = new RuntimeProcess(baseConfig({ checkpointInterval: 100 }));
+    await process.runTicks(10);
+    expect(process.getCheckpoints()).toEqual([]);
+  });
+
+  it('stops recording further checkpoints once a stop condition is hit, keeping only the ones taken before it', async () => {
+    const process = new RuntimeProcess(baseConfig({ checkpointInterval: 5, residualTolerance: { n: 1e-300, h: 1e-6 } }));
+    const result = await process.runTicks(50);
+    expect(result.stopped).toBe(true);
+    for (const checkpoint of process.getCheckpoints()) {
+      expect(checkpoint.tick).toBeLessThanOrEqual(result.finalTick);
+    }
+  });
+});
+
 describe('pure core K15 RuntimeProcess: observation API connected vs disconnected does not change the field (decisive falsifier)', () => {
   it('a run WITH a real WebSocket client actively connected and broadcasting matches a run with the API never started, bit-for-bit', async () => {
     const config = baseConfig();

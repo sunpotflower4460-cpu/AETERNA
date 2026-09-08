@@ -243,9 +243,16 @@ describe('nonlinear potential applied update proposal', () => {
     // this preview chain to do its job (it must read the medium's current
     // field to derive potential/gradient/force from it) and is not a
     // mutation. Only flag the field being used as an assignment target -
-    // `field[i] = ...` / `field[i] += ...` etc, never `field[i] ==`.
-    const mutationPattern = (identifier: string) =>
-      new RegExp(`${identifier}\\s*\\[[^\\]]*\\]\\s*[+\\-*/]?=(?!=)`);
+    // `field[i] = ...` / `field[i] += ...` / `field[i]++` / `++field[i]`
+    // etc, never a comparison (`field[i] ==`). Covers every compound
+    // assignment operator (not just +-*/) and both increment/decrement
+    // forms - an earlier version of this pattern missed `field[i]++`,
+    // `field[i]--`, and `%=`/`**=`/bitwise compound assignments entirely.
+    const mutationPattern = (identifier: string) => {
+      const indexed = `${identifier}\\s*\\[[^\\]]*\\]`;
+      const assignmentOps = '(?:\\+=|-=|\\*\\*=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>>=|>>=|=(?!=))';
+      return new RegExp(`${indexed}\\s*${assignmentOps}|${indexed}\\s*(?:\\+\\+|--)|(?:\\+\\+|--)\\s*${indexed}`);
+    };
 
     for (const identifier of [
       'mediumRealField',
@@ -257,6 +264,25 @@ describe('nonlinear potential applied update proposal', () => {
       'waveEnergyOutflowField',
     ]) {
       expect(source, `${identifier} appears to be a mutation target`).not.toMatch(mutationPattern(identifier));
+    }
+
+    // Self-check that the pattern is actually sensitive, not vacuously
+    // passing - a regex that matched nothing would make the loop above
+    // meaningless. Covers the exact forms an earlier version missed.
+    const pattern = mutationPattern('mediumRealField');
+    for (const mutatingSnippet of [
+      'mediumRealField[0] = 1;',
+      'mediumRealField[i] += 1;',
+      'mediumRealField[i] %= cap;',
+      'mediumRealField[i] **= 2;',
+      'mediumRealField[i]++;',
+      'mediumRealField[i]--;',
+      '++mediumRealField[i];',
+    ]) {
+      expect(mutatingSnippet, `pattern failed to catch: ${mutatingSnippet}`).toMatch(pattern);
+    }
+    for (const nonMutatingSnippet of ['mediumRealField[i] === 0', 'mediumRealField[i] == target', 'const x = mediumRealField[i];']) {
+      expect(nonMutatingSnippet, `pattern incorrectly flagged a read/comparison: ${nonMutatingSnippet}`).not.toMatch(pattern);
     }
   });
 });

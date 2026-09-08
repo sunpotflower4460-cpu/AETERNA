@@ -9,8 +9,9 @@
  *   tick, so a real Node process stays responsive to WebSocket clients
  *   and injected signals while ticks are advancing), `injectSignal` to
  *   queue an external signal for the NEXT tick processed, and read
- *   `getLatestObservationSnapshot`/`getLatestWorldSnapshot`/`getInputLog`
- *   at any time
+ *   `getLatestObservationSnapshot`/`getLatestWorldSnapshot`/`getInputLog`/
+ *   `getCheckpoints` at any time - the last of these accumulates
+ *   automatically every `config.checkpointInterval` ticks
  * claim-tier: C2 (see src/tests/pure/runtimeProcess.test.ts: bit-
  *   identical to a manual runWorldTick loop for the same signals;
  *   checkpoint-and-restart across two RuntimeProcess instances matches
@@ -110,6 +111,7 @@ export class RuntimeProcess {
   private readonly inputLog: InputLogEntry[];
   private readonly pendingSignals: InputLogEntry[] = [];
   private stopCondition: WorldStopConditionReport | undefined;
+  private readonly checkpoints: WorldSnapshot[] = [];
 
   constructor(config: RuntimeProcessConfig) {
     if (!Number.isInteger(config.checkpointInterval) || config.checkpointInterval < 1) {
@@ -171,6 +173,19 @@ export class RuntimeProcess {
       chi: this.chi,
       chiNu: this.chiNu,
     });
+  }
+
+  /**
+   * Snapshots taken automatically every `config.checkpointInterval` ticks
+   * (mirroring worldLongRun.ts's own checkpoint cadence), oldest first.
+   * A caller still decides whether/how to persist these to disk - this
+   * class does none of its own file I/O (see the module floors) - but it
+   * now actually DOES something with the checkpointInterval it validates,
+   * rather than accepting and ignoring it (a gap caught in review: every
+   * caller was re-implementing this exact interval check externally).
+   */
+  getCheckpoints(): readonly WorldSnapshot[] {
+    return this.checkpoints;
   }
 
   getLatestObservationSnapshot(): ObservationSnapshot | undefined {
@@ -249,6 +264,10 @@ export class RuntimeProcess {
       this.lastLedger = result.ledger;
       this.tick = attemptedTick;
       ticksRun++;
+
+      if (this.tick % this.config.checkpointInterval === 0) {
+        this.checkpoints.push(this.getLatestWorldSnapshot());
+      }
 
       await yieldToEventLoop();
     }

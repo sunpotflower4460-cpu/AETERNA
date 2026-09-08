@@ -15,7 +15,14 @@
  */
 
 const NEGATIVE_SECTION_HEADING = /(❌|avoid|forbidden|prohibited|避ける|should not say|do not say)/i;
-const NEGATION_CUE = /(not|avoid|avoided|prohibited|forbidden|never|❌|does not|do not|should not|must not|not:)[^.]{0,60}$/i;
+/**
+ * Bare words are wrapped in \b...\b so e.g. "Notably", "cannot"-adjacent
+ * text like "denote"/"annotate", or "nevertheless" don't spuriously
+ * satisfy the cue merely by containing "not"/"never" as a substring
+ * (a real false-negative found in review: "Notably, AETERNA is alive"
+ * was being treated as negated because "Not" alone matched bare `not`).
+ */
+const NEGATION_CUE = /(?:\b(?:not|cannot|never|avoid|avoided|prohibited|forbidden)\b|❌)[^.]{0,60}$/i;
 const NEGATION_WINDOW = 80;
 
 interface LineRange {
