@@ -13,13 +13,17 @@
     "check:release": "tsx scripts/run-release-checks.ts"
   },
   "dependencies": {
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "@types/three": "^0.170.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
+    "tsx": "^4.23.13",
     "typescript": "^5.5.4",
     "vite": "^5.4.8",
     "vitest": "^2.1.4"

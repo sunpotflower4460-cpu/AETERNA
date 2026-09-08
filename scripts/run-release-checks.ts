@@ -213,6 +213,7 @@ section('5. Forbidden Claims Check');
 
 const FILES_TO_CHECK_FOR_CLAIMS = [
   resolve(ROOT, 'README.md'),
+  resolve(ROOT, 'VESSEL_REPORT.md'),
   resolve(ROOT, 'docs/public-research-mode.md'),
   resolve(ROOT, 'docs/first-release-notes.md'),
   resolve(ROOT, 'docs/deployment-readiness.md'),

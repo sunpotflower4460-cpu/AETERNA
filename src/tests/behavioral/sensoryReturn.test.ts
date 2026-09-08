@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { WorldMediumState } from '../types/worldMediumState.ts';
-import { initializeWorldMediumState } from '../world/initializeWorldMediumState.ts';
-import { updateWorldMedium } from '../world/updateWorldMedium.ts';
-import { deriveSensoryReturn } from '../perception/deriveSensoryReturn.ts';
-import { sensoryReturnToPerturbation } from '../perception/sensoryReturnToPerturbation.ts';
-import type { ActuationPulse } from '../types/actuationPulse.ts';
+import type { WorldMediumState } from '../../types/worldMediumState.ts';
+import { initializeWorldMediumState } from '../../world/initializeWorldMediumState.ts';
+import { updateWorldMedium } from '../../world/updateWorldMedium.ts';
+import { deriveSensoryReturn } from '../../perception/deriveSensoryReturn.ts';
+import { sensoryReturnToPerturbation } from '../../perception/sensoryReturnToPerturbation.ts';
+import type { ActuationPulse } from '../../types/actuationPulse.ts';
 
 describe('deriveSensoryReturn', () => {
   it('should return empty array when previousWorld is null', () => {

@@ -1,0 +1,542 @@
+{
+  "formatVersion": 2,
+  "coveredPhases": [
+    "K9",
+    "K10",
+    "K11",
+    "K12",
+    "K13",
+    "K14",
+    "K15"
+  ],
+  "k9": {
+    "performanceTable": [
+      {
+        "N": 24,
+        "solverKind": "dense",
+        "setupMs": 875,
+        "ticksPerSecond": 621
+      },
+      {
+        "N": 32,
+        "solverKind": "spectral",
+        "setupMs": 1,
+        "ticksPerSecond": 311
+      },
+      {
+        "N": 64,
+        "solverKind": "spectral",
+        "setupMs": 2,
+        "ticksPerSecond": 162
+      },
+      {
+        "N": 128,
+        "solverKind": "spectral",
+        "setupMs": 14,
+        "ticksPerSecond": 61
+      },
+      {
+        "N": 256,
+        "solverKind": "spectral",
+        "setupMs": 16,
+        "ticksPerSecond": 23
+      }
+    ],
+    "newTests": 56,
+    "floorDeferred": "F7（ゼロアロケーション）はK10へ明示的に先送り"
+  },
+  "k10": {
+    "crossProcessRun": {
+      "N": 32,
+      "ticks": 100000,
+      "bitIdentical": true
+    },
+    "chainedRun": {
+      "N": 128,
+      "totalTicks": 300000,
+      "checkpointResumeCycles": 14,
+      "ticksPerSecondRange": [
+        51.5,
+        53.4
+      ],
+      "stoppedEarly": false
+    },
+    "memoryGrowth": {
+      "fromMb": 184,
+      "toMb": 210,
+      "overTicks": 200000,
+      "note": "約14%の増加、単調増加傾向の確証はしていない（プロセス間競合が交絡）"
+    },
+    "honestShortfall": "文字どおりの10^6tickには届いていない。52tick/sでの推定約5.3時間に対し、実際には300,000tick（目標の30%）で報告した",
+    "newTests": 26
+  },
+  "k11": {
+    "instrumentsBuilt": 13,
+    "decisiveFalsifierResult": "観測ON/OFFで1ビットでも差が出れば測定器は無効。→ 差は出なかった。",
+    "observerNonInterference": {
+      "ticksRun": 2000,
+      "literalTarget": 10000,
+      "result": "MATCH: bit-identical psi and nu with observe on vs off"
+    },
+    "honestShortfall": "完了条件はN=128・10^4tickでの観測ON/OFFビット一致を要求するが、実際にはN=128・2,000tick（目標の20%）で確認した",
+    "newTests": 74
+  },
+  "k12": {
+    "arms": [
+      {
+        "armName": "腕A（時間スケール掃引、既存ν(x)）",
+        "configCount": 7,
+        "seedCount": 10,
+        "l2SatisfiedFraction": "0/10（全設定）",
+        "maxPersistenceTicks": 2,
+        "varianceAcrossAllRuns": 0,
+        "verdict": "K3仮説棄却"
+      },
+      {
+        "armName": "腕B（第二の記憶チャンネルg(x)）",
+        "configCount": 7,
+        "seedCount": 10,
+        "l2SatisfiedFraction": "0/10（全設定）",
+        "maxPersistenceTicks": 2,
+        "varianceAcrossAllRuns": 0,
+        "verdict": "腕Aと同型の棄却"
+      }
+    ],
+    "decisiveFalsifierVerdict": "成立。maxPersistenceTicksは140 run全て（腕A・腕B、7設定×10 seedの全組み合わせ）で厳密に2tickだった（分散ゼロ）",
+    "newTests": 34
+  },
+  "k13": {
+    "N": 8,
+    "seedCount": 5,
+    "comparison": [
+      {
+        "metric": "L2満足",
+        "real": "0/5",
+        "delayLine": "0/5",
+        "distinguished": "区別できない"
+      },
+      {
+        "metric": "L3満足",
+        "real": "5/5",
+        "delayLine": "5/5",
+        "distinguished": "区別できない（既知の飽和）"
+      },
+      {
+        "metric": "run終了時のN_ψ（範囲）",
+        "real": "0.009029〜0.009130",
+        "delayLine": "0.000002〜0.000003",
+        "distinguished": "区別された（3000倍以上の差）"
+      },
+      {
+        "metric": "maxPersistenceTicks（範囲）",
+        "real": "141〜233",
+        "delayLine": "160〜281",
+        "distinguished": "明確な傾向なし"
+      }
+    ],
+    "decisiveFalsifierVerdict": "区別された",
+    "newTests": 43
+  },
+  "k14": {
+    "l2": [
+      {
+        "N": 64,
+        "l2Satisfied": "0/10",
+        "maxPersistenceTicksMedianRange": "11（10〜14）",
+        "finalCandidateCountMedianRange": "51（44〜72）"
+      },
+      {
+        "N": 128,
+        "l2Satisfied": "0/10",
+        "maxPersistenceTicksMedianRange": "19（18〜21）",
+        "finalCandidateCountMedianRange": "0（0〜4）"
+      },
+      {
+        "N": 256,
+        "l2Satisfied": "0/10",
+        "maxPersistenceTicksMedianRange": "52（46〜63）",
+        "finalCandidateCountMedianRange": "3409（3150〜3608）"
+      }
+    ],
+    "l3l4": [
+      {
+        "condition": "開放系",
+        "nPsiMedianRange": "1.107795（1.107689〜1.107941）",
+        "maxPersistenceTicksMedianRange": "2（1〜2）",
+        "l3Satisfied": "20/20"
+      },
+      {
+        "condition": "閉鎖系（K13世界）",
+        "nPsiMedianRange": "0.003165（0.003158〜0.003168）",
+        "maxPersistenceTicksMedianRange": "11（10〜15）",
+        "l3Satisfied": "20/20"
+      },
+      {
+        "condition": "遅延線対照",
+        "nPsiMedianRange": "0.000005（0.000004〜0.000005）",
+        "maxPersistenceTicksMedianRange": "14（13〜18）",
+        "l3Satisfied": "20/20"
+      }
+    ],
+    "l6": {
+      "seedCount": 10,
+      "satisfiesL6Fraction": "0/10",
+      "survivalTicksMedianRange": "65.5（60〜82）",
+      "censoredCount": 0
+    },
+    "k6Control": {
+      "nPsiRelativeDiff": "約11,100%",
+      "nPsiVerdict": "区別された（ただし較正不一致でconfound、解釈不能）",
+      "maxPersistenceRelativeDiff": "約9.1%",
+      "maxPersistenceVerdict": "区別できない（事前登録した20%基準未満）"
+    },
+    "secondPeriodDecisiveFalsifierHonestShortfall": "文字どおりのN=256・10^6tickには届いていない（1seedあたり約4.3日と見積もり）。L3が飽和しているため、代わりにL2・L6という2つの独立指標が到達した全規模で一貫してnullだったことを暫定的な根拠として記録した",
+    "newTests": 22
+  },
+  "k15": {
+    "validation": [
+      {
+        "property": "チェックポイント/再起動のビット一致",
+        "method": "本物の別プロセスでcheckpoint→resume、非中断runの最終snapshotとdiff",
+        "result": "IDENTICAL（バイト完全一致）"
+      },
+      {
+        "property": "入力ログからのリプレイのビット一致",
+        "method": "ライブ生成ロジックにアクセスしない別プロセスでのリプレイとdiff",
+        "result": "IDENTICAL（バイト完全一致）"
+      },
+      {
+        "property": "観測API接続 vs 非接続",
+        "method": "実wsクライアントを実サーバーに接続し続けた状態での比較",
+        "result": "ビット完全一致"
+      },
+      {
+        "property": "帳簿の継続的な閉鎖",
+        "method": "N=32・4分間（240.8秒）の実時間soak run",
+        "result": "10,100tick完走、停止条件なし"
+      },
+      {
+        "property": "メモリの安定性",
+        "method": "同soak runでのRSSサンプリング",
+        "result": "187.5〜211.9MB、単調増加傾向なし"
+      },
+      {
+        "property": "チェックポイント・入力ログ・観測APIの同時機能",
+        "method": "同soak run: 20回のチェックポイント、73回の信号注入、3687件のブロードキャスト",
+        "result": "全て正常に動作"
+      }
+    ],
+    "honestShortfall": "計画が要求する文字どおりの「24時間連続運転」は実行していない（実時間の制約、tick数の問題ではない）。可視化のpure coreへの結線・legacy UI隔離も時間の制約で未着手",
+    "newTests": 78
+  },
+  "emergenceCeilingMap": [
+    {
+      "phase": "K2 PR2",
+      "white": "K2 PR2（器のみ）",
+      "reachedLevel": "判定対象外",
+      "stopReason": "時間発展そのものが存在しない",
+      "nextMissingCause": "PR3の実装（既に完了）",
+      "systemSizes": null,
+      "ticks": null,
+      "worldPresence": "n/a"
+    },
+    {
+      "phase": "K2 PR3",
+      "white": "K2 PR3（保存部のみ）",
+      "reachedLevel": "判定対象外",
+      "stopReason": "保存系はエネルギー注入源を持たず、初期条件の自由分散が続くだけで「白」として持続しない",
+      "nextMissingCause": "PR4〜PR5の実装（既に完了）",
+      "systemSizes": null,
+      "ticks": null,
+      "worldPresence": "n/a"
+    },
+    {
+      "phase": "K2 PR4",
+      "white": "K2 PR4（+散逸）",
+      "reachedLevel": "判定対象外",
+      "stopReason": "駆動なしの散逸系は単調減衰する吸収体であり、持続構造を生まない",
+      "nextMissingCause": "PR5の実装（既に完了）",
+      "systemSizes": null,
+      "ticks": null,
+      "worldPresence": "n/a"
+    },
+    {
+      "phase": "K2 PR5",
+      "white": "K2 PR5（+駆動J、ν=ν₀均一）",
+      "reachedLevel": "**L2未達（実測済み）**。5 seed全てで最大持続1tick、最終tickでは渦候補0個",
+      "stopReason": "`tau_min=500`tickに対し実際の持続はその1/500以下。持続的構造を生む自由度が無い",
+      "nextMissingCause": "K7追加事前登録が既に実施済み（`docs/vessel/K7-natural-emergence-preregistration.md`）。**次はtau_minを実際の力学スケール（〜数十tick）に合わせた新しい事前登録実験**",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "none"
+    },
+    {
+      "phase": "K2 PR6 / K3",
+      "white": "K2 PR6 / K3（+媒質履歴ν(x)）",
+      "reachedLevel": "**L2未達（実測済み、条件2の一部として）**。5 seed全てで最大持続34〜39tick——条件1の30倍以上だが`tau_min=500`の1/10未満",
+      "stopReason": "媒質履歴+交換結合ありでも、持続がtau_minに対して依然として2桁足りない",
+      "nextMissingCause": "上記と同じtau_min再選定に加え、なぜ条件2が条件1よりおよそ30倍長く持続するかの機構的説明（未解明）",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi"
+    },
+    {
+      "phase": "K2 PR7 / K4",
+      "white": "K2 PR7 / K4（読み取り専用観測）",
+      "reachedLevel": "判定対象外（測定器）",
+      "stopReason": "測定器を凍結しただけで、測定を実行していない",
+      "nextMissingCause": "上記のPR5/K3のrunを、この測定器で実際に見る（**K7追加で実施済み**）",
+      "systemSizes": null,
+      "ticks": null,
+      "worldPresence": "n/a"
+    },
+    {
+      "phase": "K5",
+      "white": "K5（物理的閉路：χ・𝒮・対称結合）",
+      "reachedLevel": "**L2未達（実測済み、条件2として）**。K2 PR6/K3の行と同一の実測（媒質履歴+χを組み合わせた条件2）",
+      "stopReason": "同上",
+      "nextMissingCause": "同上",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi"
+    },
+    {
+      "phase": "K6",
+      "white": "K6（reafference弁別）",
+      "reachedLevel": "判定対象外（自他弁別の測定であり、emergence levelの測定ではない）",
+      "stopReason": "—",
+      "nextMissingCause": "上記「誠実な限界」節・`vessel-roadmap.md` K6節参照",
+      "systemSizes": null,
+      "ticks": null,
+      "worldPresence": "n/a"
+    },
+    {
+      "phase": "K7追加",
+      "white": "K7追加: 自然発展下でのL2実測",
+      "reachedLevel": "**L2未達（条件1・条件2とも、5 seed全て）**。詳細は`vessel-roadmap.md` K7節参照",
+      "stopReason": "`tau_min=500`という選定が、実際の力学の持続スケール（〜数十tick）に対して過大だった可能性がある（実測後の気づきであり、事後に閾値を下げて再判定はしていない）",
+      "nextMissingCause": "tau_minを実際のスケールに合わせ直した新しい事前登録実験",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "none"
+    },
+    {
+      "phase": "K7追加（探索的）",
+      "white": "K7追加（探索的）: 持続優位性の機構分離",
+      "reachedLevel": "条件2の持続優位性（30倍）は**χ単独でほぼ完全に再現**（5 seed全て、条件2と1tick以内の一致）。媒質履歴単独では**優位性ゼロ**（条件1と完全一致）",
+      "stopReason": "χの単一セル結合が、空間一様な駆動だけでは破れない局所的対称性の破れを持続的に与える（仮説、証明はしていない）",
+      "nextMissingCause": "この機構（局所対称性の破れ→欠陥核形成）の直接的な検証。χの結合強度λを振った場合の持続時間の依存性",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi"
+    },
+    {
+      "phase": "K12腕A",
+      "white": "K12腕A: 時間スケール掃引（既存ν(x)、χなし）",
+      "reachedLevel": "**L2未達・K3仮説棄却（7設定×10 seed全て）**。全ての(κ,ρ)組（対照含む）でL2満足0/10、maxPersistenceTicksは全設定・全seedで厳密に2tick（分散ゼロ）",
+      "stopReason": "ρを1/3ρ0.3〜1/1000ρ0.3（33,333tick）まで3桁振っても、χ不在では持続tickが物理定数から完全に独立——媒質履歴だけでは持続を左右する自由度になっていない。K7追加の探索的follow-up（χ単独が優位性のほぼ全てを再現）と整合する",
+      "nextMissingCause": "κ・ρの掃引そのものはこれ以上不要（決定的反証子成立）。K13でχを世界へ拡張した後、同じ掃引をχあり構成で再試行する価値はある（媒質履歴がχと組み合わさって初めて効くかは未検証）",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 8000,
+      "worldPresence": "none"
+    },
+    {
+      "phase": "K12腕B",
+      "white": "K12腕B: 第二の記憶チャンネルg(x)（χなし）",
+      "reachedLevel": "**L2未達・K3仮説と同型の腕Bの棄却（7設定×10 seed全て）**。腕Aと完全に同一のパターン（L2満足0/10、maxPersistenceTicks厳密に2tick、分散ゼロ）",
+      "stopReason": "腕Aと同一の機構的理由。g(x)という「置き場所」を変えても、χ不在で持続を左右する自由度にはならない——(a)時間スケールの問題ではなく(b)チャンネルの置き場所の問題でもなく、χの不在そのものが律速している可能性を示唆する",
+      "nextMissingCause": "上記K12腕Aと同じ。誠実な限界: L3満足は7設定×10 seed全て（腕A・B合わせて140/140）で100%だったが、これは`src/pure/observe/vortexTracking.ts`が自ら明記する床（`circulation != 0`は検出器の設計上つねに真、`com_velocity != 0`は2tick生存する候補ならほぼ自動的に満たされる）による飽和であり、L3が意味のある弁別を行った結果ではない。この飽和はL2には及ばない（L2は独立に0/10で棄却が成立している）ため、K3仮説棄却という結論自体はL3の飽和に依存していない",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 8000,
+      "worldPresence": "none"
+    },
+    {
+      "phase": "K13",
+      "white": "K13: 世界χ・遅延線零仮説（N=8、5 seed）",
+      "reachedLevel": "**L2未達（実測済み、5/5）。決定的反証子は「区別された」**（run終了時のN_ψが条件Real vs 条件DelayLineで3000倍以上差、事前登録した20%閾値を大幅超過）",
+      "stopReason": "χを場として置いたことはN_ψという直接指標では明確に何かを買っているが、L2/L3レベルの構造獲得への寄与はまだ確認されていない。差の主因が「χがエネルギーを受け取れる場であること」と「χが分散・非線形の内部力学を持つこと」のどちらかは、この単一比較では分離できていない",
+      "nextMissingCause": "N=8のみでの実行。系サイズを広げた再測定（K14が担当）。DelayLine側にも同等のエネルギー収支を与えた対照を追加する別実験（未着手）",
+      "systemSizes": [
+        8
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi"
+    },
+    {
+      "phase": "K14-PR3",
+      "white": "K14-PR3: L2再測定（独立導出tau_min、N=64/128/256）",
+      "reachedLevel": "**L2未達（30 run全て、3つのN共通）**。maxPersistenceTicksはNとともに増加（11→19→52中央値）するが、tau_min=667tickの1/6にも届かない",
+      "stopReason": "K7が観測した過去の値から逆算しない独立導出tau_min（667tick）に対しても、実際の持続は依然として1桁以上不足する。系サイズを64→256まで広げても質的に変わらない",
+      "nextMissingCause": "tau_minという閾値の問題ではないことが確定した以上、次に足りない自由度を探すにはL2以外の白（3次元・多成分等）を検討する段階に近づいている",
+      "systemSizes": [
+        64,
+        128,
+        256
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi"
+    },
+    {
+      "phase": "K14-PR4",
+      "white": "K14-PR4: L3/L4（開放系・閉鎖系・遅延線対照、N=64、各20 seed）",
+      "reachedLevel": "**決定的反証子は「区別された」**（N_ψ・maxPersistenceTicksとも事前登録した20%閾値を大幅超過。L3満足は3条件とも100%で飽和のため弁別に使えない）",
+      "stopReason": "世界（χ）を持つ構成は開放系より明確に異なるN_ψ・持続性を示すが、これは「構造がより高いレベルに到達した」ことの直接証拠ではなく、エネルギー収支の違いを反映している可能性がK13から持ち越されたまま未分離",
+      "nextMissingCause": "K13と同じ：エネルギー収支を揃えた対照実験。L4（内外コントラスト等）はK14では未実行",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi"
+    },
+    {
+      "phase": "K14-PR5 (L6)",
+      "white": "K14-PR5: L6（K13世界版の自己維持閉環、N=64、10 seed）",
+      "reachedLevel": "**L6未達（10/10）**。駆動停止後、構造指標は要求される散逸時間666.7tickの1/8未満（60〜82tick）で閾値を割り込む。censoredは0件——「まだ分からない」ではなく確定した不成立",
+      "stopReason": "K13の実世界構成は、この設計・このパラメータ域では、外部エネルギー流入を止めた後の自己維持を示さない。χの内部力学だけでは、自己維持に必要な「エネルギーを蓄える・遅く放出する」自由度が不足している可能性",
+      "nextMissingCause": "λ（結合強度）やχ自身の散逸ν0を振ったパラメータ探索（未着手）。structureThreshold自体の零仮説較正（K14-L6-preregistration.mdの誠実な限界参照）",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 3000,
+      "worldPresence": "world-chi"
+    },
+    {
+      "phase": "K14-PR5 (K6対照群)",
+      "white": "K14-PR5: K6対照群（自己由来χ vs 外部由来χ′、結合形式固定、20 seed）",
+      "reachedLevel": "**混在した結果**: N_ψは巨大に異なるが較正不一致にconfound（解釈不能）。maxPersistenceTicksは自己・外部で**区別できない**（相対差9.1%、事前登録した20%基準未満）",
+      "stopReason": "結合の形式（対称ラビ回転）を揃えた上では、渦持続性という指標でψは由来（自己か外部か）を弁別しなかった——これはK6本体が残した「回転vs加法」交絡を分離した上での、初めての由来限定の観測",
+      "nextMissingCause": "エネルギーを較正したinjectionStrengthでの再確認（今回は事前登録上あえて較正しなかった）。N_ψ以外の、振幅スケールに左右されにくい指標を増やす",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 2000,
+      "worldPresence": "foreign-chi"
+    }
+  ],
+  "sizeTimescaleWorldTable": [
+    {
+      "phase": "K2 PR5",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "none",
+      "reachedLevel": "**L2未達（実測済み）**。5 seed全てで最大持続1tick、最終tickでは渦候補0個"
+    },
+    {
+      "phase": "K2 PR6 / K3",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi",
+      "reachedLevel": "**L2未達（実測済み、条件2の一部として）**。5 seed全てで最大持続34〜39tick——条件1の30倍以上だが`tau_min=500`の1/10未満"
+    },
+    {
+      "phase": "K5",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi",
+      "reachedLevel": "**L2未達（実測済み、条件2として）**。K2 PR6/K3の行と同一の実測（媒質履歴+χを組み合わせた条件2）"
+    },
+    {
+      "phase": "K7追加",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "none",
+      "reachedLevel": "**L2未達（条件1・条件2とも、5 seed全て）**。詳細は`vessel-roadmap.md` K7節参照"
+    },
+    {
+      "phase": "K7追加（探索的）",
+      "systemSizes": [
+        10
+      ],
+      "ticks": 1200,
+      "worldPresence": "ring-chi",
+      "reachedLevel": "条件2の持続優位性（30倍）は**χ単独でほぼ完全に再現**（5 seed全て、条件2と1tick以内の一致）。媒質履歴単独では**優位性ゼロ**（条件1と完全一致）"
+    },
+    {
+      "phase": "K12腕A",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 8000,
+      "worldPresence": "none",
+      "reachedLevel": "**L2未達・K3仮説棄却（7設定×10 seed全て）**。全ての(κ,ρ)組（対照含む）でL2満足0/10、maxPersistenceTicksは全設定・全seedで厳密に2tick（分散ゼロ）"
+    },
+    {
+      "phase": "K12腕B",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 8000,
+      "worldPresence": "none",
+      "reachedLevel": "**L2未達・K3仮説と同型の腕Bの棄却（7設定×10 seed全て）**。腕Aと完全に同一のパターン（L2満足0/10、maxPersistenceTicks厳密に2tick、分散ゼロ）"
+    },
+    {
+      "phase": "K13",
+      "systemSizes": [
+        8
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi",
+      "reachedLevel": "**L2未達（実測済み、5/5）。決定的反証子は「区別された」**（run終了時のN_ψが条件Real vs 条件DelayLineで3000倍以上差、事前登録した20%閾値を大幅超過）"
+    },
+    {
+      "phase": "K14-PR3",
+      "systemSizes": [
+        64,
+        128,
+        256
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi",
+      "reachedLevel": "**L2未達（30 run全て、3つのN共通）**。maxPersistenceTicksはNとともに増加（11→19→52中央値）するが、tau_min=667tickの1/6にも届かない"
+    },
+    {
+      "phase": "K14-PR4",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 2000,
+      "worldPresence": "world-chi",
+      "reachedLevel": "**決定的反証子は「区別された」**（N_ψ・maxPersistenceTicksとも事前登録した20%閾値を大幅超過。L3満足は3条件とも100%で飽和のため弁別に使えない）"
+    },
+    {
+      "phase": "K14-PR5 (L6)",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 3000,
+      "worldPresence": "world-chi",
+      "reachedLevel": "**L6未達（10/10）**。駆動停止後、構造指標は要求される散逸時間666.7tickの1/8未満（60〜82tick）で閾値を割り込む。censoredは0件——「まだ分からない」ではなく確定した不成立"
+    },
+    {
+      "phase": "K14-PR5 (K6対照群)",
+      "systemSizes": [
+        64
+      ],
+      "ticks": 2000,
+      "worldPresence": "foreign-chi",
+      "reachedLevel": "**混在した結果**: N_ψは巨大に異なるが較正不一致にconfound（解釈不能）。maxPersistenceTicksは自己・外部で**区別できない**（相対差9.1%、事前登録した20%基準未満）"
+    }
+  ]
+}

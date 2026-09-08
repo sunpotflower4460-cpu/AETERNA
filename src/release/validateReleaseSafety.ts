@@ -70,7 +70,6 @@ export function validateReleaseSafety(params: {
   const isPublic = channel === 'publicResearch';
   const isPreview = channel === 'preview';
   const isLocal = channel === 'local';
-  const isExperimental = channel === 'experimental';
 
   // Normalized copies (mutated below when normalization is needed)
   let normReleaseConfig: ReleaseEnvironmentConfig = { ...releaseConfig };

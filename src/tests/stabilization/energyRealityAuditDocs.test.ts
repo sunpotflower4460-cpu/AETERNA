@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
+import { findAffirmativeClaim } from '../support/claimGuard.ts';
 
 const ROOT = resolve(__dirname, '../../..');
 
@@ -65,8 +66,7 @@ describe('v2.8 energy reality audit docs', () => {
 
   it('does not add affirmative life/consciousness/energy-flow claims in v2.8 docs', () => {
     const combined = REQUIRED_DOCS.map(read).join('\n');
-    for (const claim of FORBIDDEN_AFFIRMATIVE_CLAIMS) {
-      expect(combined, `Found forbidden claim: ${claim}`).not.toContain(claim);
-    }
+    const hit = findAffirmativeClaim(combined, FORBIDDEN_AFFIRMATIVE_CLAIMS);
+    expect(hit, `Found forbidden claim stated affirmatively: ${hit}`).toBeUndefined();
   });
 });

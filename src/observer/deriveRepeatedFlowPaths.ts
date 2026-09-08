@@ -379,11 +379,8 @@ export function deriveRepeatedFlowPaths(
   const dtClamped = clamp01((dt ?? 1 / 60) * 60);
 
   // -------------------------------------------------------------------------
-  // Build lookup maps for current and previous cells
+  // Build lookup map for previous cells
   // -------------------------------------------------------------------------
-  const currentCellMap = new Map<string, LocalExcitabilityCell>(
-    localField.cells.map((c) => [c.regionId, c]),
-  );
   const prevCellMap = new Map<string, LocalExcitabilityCell>(
     previousLocalField.cells.map((c) => [c.regionId, c]),
   );

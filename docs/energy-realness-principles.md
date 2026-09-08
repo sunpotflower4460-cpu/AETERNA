@@ -119,6 +119,12 @@ If this residual exceeds tolerance, the system must not present the behavior as 
 
 This check is not a proof of life, consciousness, or intelligence. It is a numerical integrity check for the energy model.
 
+Until `conservationResidual` is within tolerance, any energy-related display must say:
+
+```text
+Energy flow is not yet verified. Current values are diagnostic/proxy readings.
+```
+
 ## Supply cutoff principle
 
 AETERNA should not implement `if supply is zero, then decay` as an outcome rule.

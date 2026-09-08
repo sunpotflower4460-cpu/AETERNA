@@ -72,11 +72,18 @@ export function deriveNonlinearPotentialFieldPreparation(input: {
     const real = finiteSample(realRaw);
     const imag = finiteSample(imagRaw);
     const amplitudeSquared = real * real + imag * imag;
-    const potentialEnergy =
-      0.5 * config.localQuadraticCoefficient * amplitudeSquared +
-      0.25 * config.localQuarticCoefficient * amplitudeSquared * amplitudeSquared;
-    const gradientScale =
-      config.localQuadraticCoefficient + config.localQuarticCoefficient * amplitudeSquared;
+    // A zero coefficient must contribute exactly zero, even when
+    // amplitudeSquared has overflowed to Infinity: 0 * Infinity is NaN in
+    // IEEE 754, which would otherwise poison an inert (coefficient-zero)
+    // term instead of correctly vanishing.
+    const quarticPotentialTerm =
+      config.localQuarticCoefficient === 0
+        ? 0
+        : 0.25 * config.localQuarticCoefficient * amplitudeSquared * amplitudeSquared;
+    const potentialEnergy = 0.5 * config.localQuadraticCoefficient * amplitudeSquared + quarticPotentialTerm;
+    const quarticGradientTerm =
+      config.localQuarticCoefficient === 0 ? 0 : config.localQuarticCoefficient * amplitudeSquared;
+    const gradientScale = config.localQuadraticCoefficient + quarticGradientTerm;
     const gradientReal = gradientScale * real;
     const gradientImag = gradientScale * imag;
 

@@ -14,7 +14,9 @@ describe('World Medium State', () => {
     it('should create valid initial state', () => {
       const state = initializeWorldMediumState();
 
-      expect(state.timestamp).toBeGreaterThan(0);
+      // timestamp is simulated time in ms (0 at t=0), not Date.now() - see
+      // initializeWorldMediumState.ts and docs/vessel/vessel-roadmap.md K1.
+      expect(state.timestamp).toBe(0);
       expect(state.ambientLight).toBeGreaterThanOrEqual(0);
       expect(state.ambientLight).toBeLessThanOrEqual(1);
       expect(state.ambientNoise).toBeGreaterThanOrEqual(0);

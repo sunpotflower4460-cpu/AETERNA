@@ -9,6 +9,7 @@ export async function runActuationPulseScenarioSuite(): Promise<ActuationPulseSc
   const scenarios: ScenarioConfig[] = [
     {
       name: 'W2-A-quiet-no-forced-output',
+      seed: 1,
       totalFrames: 600,
       metricsInterval: 5,
       touchScript: [],
@@ -21,6 +22,7 @@ export async function runActuationPulseScenarioSuite(): Promise<ActuationPulseSc
     },
     {
       name: 'W2-B-recovery-linked-pulse',
+      seed: 1,
       totalFrames: 800,
       metricsInterval: 5,
       collectMetrics: true,
@@ -36,6 +38,7 @@ export async function runActuationPulseScenarioSuite(): Promise<ActuationPulseSc
     },
     {
       name: 'W2-C-boundary-linked-force-pulse',
+      seed: 1,
       totalFrames: 850,
       metricsInterval: 5,
       collectMetrics: true,
@@ -56,6 +59,7 @@ export async function runActuationPulseScenarioSuite(): Promise<ActuationPulseSc
     },
     {
       name: 'W2-D-low-output-readiness-suppression',
+      seed: 1,
       totalFrames: 650,
       metricsInterval: 5,
       collectMetrics: true,
@@ -78,6 +82,7 @@ export async function runActuationPulseScenarioSuite(): Promise<ActuationPulseSc
     },
     {
       name: 'W2-E-no-semantic-output',
+      seed: 1,
       totalFrames: 500,
       metricsInterval: 5,
       collectMetrics: true,

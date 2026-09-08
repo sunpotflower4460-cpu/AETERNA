@@ -17,7 +17,12 @@ import type { WorldMediumState } from '../types/worldMediumState.ts';
  */
 export function initializeWorldMediumState(): WorldMediumState {
   return {
-    timestamp: Date.now(),
+    // Simulated time in ms, not wall-clock: starts at 0 and accumulates by
+    // dt in updateWorldMedium. Using Date.now() here made every run
+    // (and the "natural drift" phase computed from it) depend on real
+    // elapsed wall-clock time, defeating seed-based reproducibility -
+    // see docs/vessel/vessel-roadmap.md K1.
+    timestamp: 0,
 
     // Moderate ambient conditions
     ambientLight: 0.5, // Mid-range light level

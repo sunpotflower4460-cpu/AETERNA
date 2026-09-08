@@ -72,7 +72,7 @@ const REGION_COUNT = REGION_IDS.length;
  * Used to introduce mild spatial variation without artificial fluctuation.
  * This is deterministic and produces stable gradients.
  */
-function spatialBias(index: number, total: number): number {
+function spatialBias(index: number): number {
   // Sinusoidal variation along the torus U and V axes
   const u = Math.floor(index / 4) / 3; // 0..1 in U
   const v = (index % 4) / 3;          // 0..1 in V
@@ -93,7 +93,7 @@ function deriveCell(
   const dtClamped = clamp01((dt ?? 1 / 60) * 60); // normalize to [0,1] per-frame scale
 
   // Spatial bias for mild regional variation (purely deterministic)
-  const bias = spatialBias(index, REGION_COUNT);
+  const bias = spatialBias(index);
 
   // -------------------------------------------------------------------------
   // activationLevel: global activity proxy, modulated by spatial bias

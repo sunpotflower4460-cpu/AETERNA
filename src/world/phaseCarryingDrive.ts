@@ -6,6 +6,7 @@ import type {
   PhaseCarryingDriveDiagnostic,
   PhaseCarryingDriveState,
 } from '../types/phaseCarryingDrive.ts';
+import { createSeededRandom } from '../utils/seededRandom.ts';
 
 const TAU = Math.PI * 2;
 
@@ -27,17 +28,9 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function makeSeededRandom(seedInput: number): () => number {
-  let state = Math.floor(Math.abs(seedInput || 1)) >>> 0;
-  if (state === 0) state = 1;
-  return () => {
-    state = (1664525 * state + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-}
-
 function createSeededSpatialPhaseField(size: number, seed: number): Float64Array {
-  const random = makeSeededRandom(seed);
+  const safeSeed = Math.floor(Math.abs(seed || 1)) >>> 0;
+  const random = createSeededRandom(safeSeed === 0 ? 1 : safeSeed);
   const field = new Float64Array(size);
   for (let i = 0; i < size; i++) field[i] = random();
   return field;

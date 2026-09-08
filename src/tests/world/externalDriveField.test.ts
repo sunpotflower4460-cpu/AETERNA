@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { containsAffirmativeClaim } from '../support/claimGuard.ts';
 import {
   createExternalDriveField,
   updateExternalDriveFieldZero,
@@ -221,10 +222,13 @@ describe('periodic external drive', () => {
     const result = updatePeriodicExternalDrive(state, periodicConfig);
     const text = JSON.stringify(result.report);
 
-    expect(text).not.toContain('breath');
-    expect(text).not.toContain('heartbeat');
-    expect(text).not.toContain('life');
-    expect(text).not.toContain('Energy is flowing through AETERNA');
+    // A bare substring check would trip on the report's own honest disclaimer
+    // ("This does not prove life, consciousness..."). Check for the word
+    // stated affirmatively instead - see src/tests/support/claimGuard.ts.
+    expect(containsAffirmativeClaim(text, 'breath')).toBe(false);
+    expect(containsAffirmativeClaim(text, 'heartbeat')).toBe(false);
+    expect(containsAffirmativeClaim(text, 'life')).toBe(false);
+    expect(containsAffirmativeClaim(text, 'Energy is flowing through AETERNA')).toBe(false);
   });
 
   it('normalizes negative waveform parameters to zero rather than creating negative input', () => {
