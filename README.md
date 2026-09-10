@@ -21,6 +21,8 @@ AETERNA-NATURAL は、トーラス場の中で起きる流れ・位相・渦候�
 UI の用語・説明は日本語ファーストで整理されています。
 研究者モードでは英語名、開発者モードでは内部IDも確認できます。
 
+人向けの短いコンパス（単細胞フロントとこのラボの分け方）→ [`COMPASS.md`](COMPASS.md)
+
 ---
 
 Observe how patterns, traces, phase changes, and candidate structures appear in a torus-based field.
@@ -191,6 +193,7 @@ See `docs/deployment-readiness.md` for the full deployment guide and `docs/manua
 
 ## Docs
 
+- `COMPASS.md` — 人向けコンパス（単細胞フロントは Genesis、このラボはトーラス観測）
 - `docs/public-research-mode.md` — Public Research Mode specification
 - `docs/public-demo-polish.md` — v2.2 Public Demo Polish notes
 - `docs/first-demo-checklist.md` — First demo QA checklist
